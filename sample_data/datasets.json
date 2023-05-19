@@ -1,0 +1,10 @@
+[
+    {
+        "name": "MBTA Rapid Transit",
+        "description": "Boston Subway System Lines and Stops",
+        "category": "transportation",
+        "city": "Boston, MA",
+        "raw_data_archive": "boston/mbta_rapid_transit.zip",
+        "raw_data_type": "shape_file_archive"
+    }
+]

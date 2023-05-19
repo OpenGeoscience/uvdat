@@ -4,6 +4,7 @@ from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
+from uvdat.core import views
 
 router = routers.SimpleRouter()
 # OpenAPI generation
@@ -12,6 +13,9 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+
+router.register(r'datasets', views.DatasetViewSet, basename='datasets')
+router.register(r'cities', views.CityViewSet, basename='cities')
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),

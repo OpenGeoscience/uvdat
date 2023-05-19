@@ -22,6 +22,7 @@ class UvdatMixin(ConfigMixin):
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
+            'django.contrib.gis',
             'uvdat.core.apps.CoreConfig',
         ] + configuration.INSTALLED_APPS
 
@@ -29,6 +30,23 @@ class UvdatMixin(ConfigMixin):
         configuration.INSTALLED_APPS += [
             's3_file_field',
         ]
+
+        configuration.DATABASES = {
+            'default': {
+                'ENGINE': 'django.contrib.gis.db.backends.postgis',
+                'NAME': 'django',
+                'USER': 'postgres',
+                'PASSWORD': 'postgres',
+                'HOST': 'postgres',
+                'PORT': '5432',
+            }
+        }
+
+        configuration.CACHES = {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            }
+        }
 
 
 class DevelopmentConfiguration(UvdatMixin, DevelopmentBaseConfiguration):

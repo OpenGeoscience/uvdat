@@ -37,7 +37,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
-        'django',
+        'django==4.1',
+        # TODO: remove django version constraint
+        # when girder4 becomes compatible with 4.2
         'django-allauth',
         'django-configurations[database,email]',
         'django-extensions',
@@ -45,6 +47,9 @@ setup(
         'django-oauth-toolkit',
         'djangorestframework',
         'drf-yasg',
+        'geopandas',
+        'geojson2vt',
+        'pyshp',
         # Production-only
         'django-composed-configuration[prod]>=0.20',
         'django-s3-file-field[boto3]',

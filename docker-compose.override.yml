@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
+    command: [ "./manage.py", "runserver", "0.0.0.0:8000" ]
     # Log printing via Rich is enhanced by a TTY
     tty: true
     env_file: ./dev/.env.docker-compose
@@ -21,13 +21,16 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: [
-      "celery",
-      "--app", "uvdat.celery",
-      "worker",
-      "--loglevel", "INFO",
-      "--without-heartbeat"
-    ]
+    command:
+      [
+        "celery",
+        "--app",
+        "uvdat.celery",
+        "worker",
+        "--loglevel",
+        "INFO",
+        "--without-heartbeat"
+      ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
     env_file: ./dev/.env.docker-compose
