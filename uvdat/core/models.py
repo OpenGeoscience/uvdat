@@ -13,7 +13,7 @@ class City(TimeStampedModel, models.Model):
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    city = models.ForeignKey(City, on_delete=models.CASCADE)
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="datasets")
     category = models.CharField(max_length=25)
 
     # A ZIP file containing the original data files

@@ -48,7 +48,6 @@ setup(
         'djangorestframework',
         'drf-yasg',
         'geopandas',
-        'geojson2vt',
         'pyshp',
         # Production-only
         'django-composed-configuration[prod]>=0.20',

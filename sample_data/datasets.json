@@ -6,5 +6,29 @@
         "city": "Boston, MA",
         "raw_data_archive": "boston/mbta_rapid_transit.zip",
         "raw_data_type": "shape_file_archive"
+    },
+    {
+        "name": "MBTA Commuter Rail",
+        "description": "Rail linework and station points for passenger, freight, and Amtrak and MBTA Commuter Rail trains.",
+        "category": "transportation",
+        "city": "Boston, MA",
+        "raw_data_archive": "boston/commuter_rail.zip",
+        "raw_data_type": "shape_file_archive"
+    },
+    {
+        "name": "Hurricane Surge Inundation Zones",
+        "description": "This layer represents worst-case Hurricane Surge Inundation areas for Category 1 through 4 hurricanes striking the coast of Massachusetts.",
+        "category": "climate",
+        "city": "Boston, MA",
+        "raw_data_archive": "boston/hurr_inun.zip",
+        "raw_data_type": "shape_file_archive"
+    },
+    {
+        "name": "FEMA National Flood Hazard",
+        "description": "The National Flood Hazard Layer (NFHL) dataset represents the current effective flood risk data for those parts of the country where maps have been modernized by the Federal Emergency Management Agency (FEMA).",
+        "category": "climate",
+        "city": "Boston, MA",
+        "raw_data_archive": "boston/flood_hazard_fema.zip",
+        "raw_data_type": "shape_file_archive"
     }
 ]
