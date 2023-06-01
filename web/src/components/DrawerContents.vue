@@ -3,7 +3,7 @@ import VectorTileLayer from "ol/layer/VectorTile.js";
 import { currentCity, map } from "@/store";
 import { getDatasetJSON } from "@/api/rest";
 import { ref } from "vue";
-import { createVectorSourceFromGeoJSON } from "@/utils.js";
+import { createVectorSourceFromGeoJSON, createStyle } from "@/utils.js";
 
 export default {
   setup() {
@@ -11,15 +11,41 @@ export default {
     const openPanel = ref(0);
 
     function updateActiveDatasets() {
-      map.value.getTargetElement().classList.add("spinner");
-      selectedDatasets.value.forEach(async (dataset) => {
-        getDatasetJSON(dataset.id).then((data) => {
-          map.value.addLayer(
-            new VectorTileLayer({
-              source: createVectorSourceFromGeoJSON(data, map.value),
-            })
-          );
-        });
+      const datasetIdsWithExistingLayers = [];
+      const currentMapLayers = map.value.getLayers();
+      const selectedDatasetIds = selectedDatasets.value.map(
+        (dataset) => dataset.id
+      );
+      currentMapLayers.forEach((layer) => {
+        const layerDatasetId = layer.getProperties().datasetId;
+        if (layerDatasetId) {
+          datasetIdsWithExistingLayers.push(layerDatasetId);
+          layer.setVisible(selectedDatasetIds.includes(layerDatasetId));
+        }
+      });
+      selectedDatasetIds.forEach(async (datasetId) => {
+        if (!datasetIdsWithExistingLayers.includes(datasetId)) {
+          map.value.getTargetElement().classList.add("spinner");
+          getDatasetJSON(datasetId).then((data) => {
+            if (data) {
+              map.value.addLayer(
+                new VectorTileLayer({
+                  source: createVectorSourceFromGeoJSON(data, map.value),
+                  style: function (feature) {
+                    return createStyle({
+                      type: feature.get("type"),
+                      colors: feature.get("colors"),
+                    });
+                  },
+                  properties: {
+                    datasetId,
+                  },
+                })
+              );
+            }
+            map.value.getTargetElement().classList.remove("spinner");
+          });
+        }
       });
     }
 

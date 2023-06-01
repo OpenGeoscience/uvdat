@@ -23,5 +23,7 @@ class DatasetViewSet(ModelViewSet):
     )
     def get_geojson(self, request, *args, **kwargs):
         dataset = self.get_object()
+        if not dataset.geodata_file:
+            return HttpResponse({})
         with dataset.geodata_file.open() as geodata:
             return HttpResponse(geodata)

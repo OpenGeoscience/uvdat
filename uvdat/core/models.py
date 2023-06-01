@@ -15,6 +15,7 @@ class Dataset(TimeStampedModel, models.Model):
     description = models.TextField(null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="datasets")
     category = models.CharField(max_length=25)
+    style = models.JSONField(blank=True, null=True)
 
     # A ZIP file containing the original data files
     raw_data_archive = S3FileField(null=True, blank=True)

@@ -22,13 +22,13 @@ export function loadCities() {
     if (data.length) {
       currentCity.value = data[0];
     }
+    clearMap();
   });
 }
-export function switchCity() {
-  if (!currentCity.value) {
+export function clearMap() {
+  if (!currentCity.value || !map.value) {
     return;
   }
-  // clear map
   mapLayers.value = [];
   map.value.setView(
     new View({
@@ -42,4 +42,4 @@ export function switchCity() {
     })
   );
 }
-watch(currentCity, switchCity);
+watch(currentCity, clearMap);

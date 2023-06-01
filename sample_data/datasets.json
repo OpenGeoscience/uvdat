@@ -5,7 +5,16 @@
         "category": "transportation",
         "city": "Boston, MA",
         "raw_data_archive": "boston/mbta_rapid_transit.zip",
-        "raw_data_type": "shape_file_archive"
+        "raw_data_type": "shape_file_archive",
+        "style": {
+            "property_map": {
+                "colors": "LINE"
+            },
+            "options": {
+                "color_delimiter": "/",
+                "outline": "white"
+            }
+        }
     },
     {
         "name": "MBTA Commuter Rail",
@@ -13,7 +22,15 @@
         "category": "transportation",
         "city": "Boston, MA",
         "raw_data_archive": "boston/commuter_rail.zip",
-        "raw_data_type": "shape_file_archive"
+        "raw_data_type": "shape_file_archive",
+        "style": {
+            "property_map": {
+                "colors": "gray"
+            },
+            "options": {
+                "outline": "black"
+            }
+        }
     },
     {
         "name": "Hurricane Surge Inundation Zones",
@@ -21,7 +38,21 @@
         "category": "climate",
         "city": "Boston, MA",
         "raw_data_archive": "boston/hurr_inun.zip",
-        "raw_data_type": "shape_file_archive"
+        "raw_data_type": "shape_file_archive",
+        "style": {
+            "property_map": {
+                "colors": "HURR_CAT"
+            },
+            "options": {
+                "palette": {
+                    "1": "powderblue",
+                    "2": "deepskyblue",
+                    "3": "royalblue",
+                    "4": "mediumblue",
+                    "5": "darkblue"
+                }
+            }
+        }
     },
     {
         "name": "FEMA National Flood Hazard",
@@ -29,6 +60,22 @@
         "category": "climate",
         "city": "Boston, MA",
         "raw_data_archive": "boston/flood_hazard_fema.zip",
-        "raw_data_type": "shape_file_archive"
+        "raw_data_type": "shape_file_archive",
+        "style": {
+            "property_map": {
+                "colors": "FLD_ZONE"
+            },
+            "options": {
+                "palette": {
+                    "A": "gold",
+                    "AE": "orange",
+                    "AH": "tomato",
+                    "AO": "orangered",
+                    "VE": "darkred",
+                    "D": "gray",
+                    "X": "green"
+                }
+            }
+        }
     }
 ]

@@ -37,6 +37,7 @@ class Command(BaseCommand):
                     category=dataset['category'],
                     city=City.objects.get(name=dataset['city']),
                     raw_data_type=dataset['raw_data_type'],
+                    style=dataset.get('style'),
                 )
                 archive_location = Path('sample_data', dataset['raw_data_archive'])
                 with open(archive_location, 'rb') as archive:

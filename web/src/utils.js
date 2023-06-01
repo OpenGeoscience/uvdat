@@ -2,6 +2,7 @@ import geojsonvt from "geojson-vt";
 import VectorTileSource from "ol/source/VectorTile.js";
 import GeoJSON from "ol/format/GeoJSON.js";
 import Projection from "ol/proj/Projection.js";
+import { Fill, Stroke, Circle, Style } from "ol/style.js";
 
 // https://openlayers.org/en/latest/examples/geojson-vt.html
 
@@ -40,7 +41,10 @@ export const replacer = function (key, value) {
       type: type,
       coordinates: geometry,
     },
-    properties: value.tags,
+    properties: {
+      ...value.tags,
+      type,
+    },
   };
 };
 
@@ -82,4 +86,37 @@ export const createVectorSourceFromGeoJSON = (data, map) => {
     },
   });
   return vectorSource;
+};
+
+export const createStyle = (args) => {
+  let colors = ["#00000022"];
+  if (args.colors) {
+    colors = args.colors.split(",");
+  }
+  if (!args.type) {
+    return new Style();
+  }
+  return colors.map((colorHex, index) => {
+    const styleSpec = {
+      zIndex: colors.length - index,
+    };
+    if (args.type.includes("Point")) {
+      styleSpec.image = new Circle({
+        radius: 5 + 2 * index,
+        fill: new Fill({
+          color: colorHex,
+        }),
+      });
+    } else if (args.type.includes("Line")) {
+      styleSpec.stroke = new Stroke({
+        color: colorHex,
+        width: 3 + 2 * index,
+      });
+    } else if (args.type.includes("Polygon")) {
+      styleSpec.fill = new Fill({
+        color: colorHex.length > 7 ? colorHex : colorHex + "bb",
+      });
+    }
+    return new Style(styleSpec);
+  });
 };

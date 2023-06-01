@@ -71,6 +71,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255, unique=True)),
                 ('description', models.TextField(blank=True, null=True)),
                 ('category', models.CharField(max_length=25)),
+                ('style', models.JSONField(blank=True, null=True)),
                 ('raw_data_archive', s3_file_field.fields.S3FileField(blank=True, null=True)),
                 ('raw_data_type', models.CharField(default='shape_file_archive', max_length=25)),
                 (

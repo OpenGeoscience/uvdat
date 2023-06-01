@@ -5,7 +5,7 @@ from uvdat.core.models import City, Dataset
 class DatasetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dataset
-        exclude = ['geometries']
+        exclude = ['geometries', 'style']
 
 
 class CitySerializer(serializers.ModelSerializer):

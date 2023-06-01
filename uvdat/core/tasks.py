@@ -8,6 +8,7 @@ from celery import shared_task
 from django.contrib.gis.geos import GEOSGeometry, GeometryCollection
 from django.core.files.base import ContentFile
 from uvdat.core.models import Dataset
+from uvdat.core.utils import add_styling
 
 
 @shared_task
@@ -37,6 +38,7 @@ def convert_shape_file_archive(dataset_id):
                     if filename.endswith(".prj"):
                         original_projection = zip_archive.open(filename).read().decode()
 
+        features = add_styling(features, dataset.style)
         with open(geodata_path, 'w') as geodata_file:
             json.dump({'type': 'FeatureCollection', 'features': features}, geodata_file)
         geodata = geopandas.read_file(geodata_path)
