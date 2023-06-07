@@ -23,6 +23,7 @@ class UvdatMixin(ConfigMixin):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'django.contrib.gis',
+            'django_large_image',
             'uvdat.core.apps.CoreConfig',
         ] + configuration.INSTALLED_APPS
 

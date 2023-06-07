@@ -9,6 +9,9 @@ class City(TimeStampedModel, models.Model):
     center = geo_models.PointField()
     default_zoom = models.IntegerField(default=10)
 
+    class Meta:
+        verbose_name_plural = 'cities'
+
 
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -26,3 +29,6 @@ class Dataset(TimeStampedModel, models.Model):
 
     # GeoJSON file, containing geometries AND other properties for features
     geodata_file = S3FileField(null=True, blank=True)
+
+    # Raster file, containing a cloud-optimized geotiff
+    raster_file = S3FileField(null=True, blank=True)

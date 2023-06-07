@@ -45,6 +45,7 @@ class Migration(migrations.Migration):
             options={
                 'get_latest_by': 'modified',
                 'abstract': False,
+                'verbose_name_plural': 'cities',
             },
         ),
         migrations.CreateModel(
@@ -89,6 +90,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ('geodata_file', s3_file_field.fields.S3FileField(blank=True, null=True)),
+                ('raster_file', s3_file_field.fields.S3FileField(blank=True, null=True)),
             ],
             options={
                 'get_latest_by': 'modified',

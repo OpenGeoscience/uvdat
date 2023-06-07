@@ -77,5 +77,19 @@
                 }
             }
         }
+    },
+    {
+        "name": "Massachusetts Elevation Data",
+        "description": "Low resolution sampling of land elevation in meters above sea level",
+        "category": "elevation",
+        "city": "Boston, MA",
+        "raw_data_archive": "boston/easternmass.tif",
+        "raw_data_type": "cloud_optimized_geotiff",
+        "style": {
+            "options": {
+                "apply_colormap_to_band": 1,
+                "colormap": "coolwarm"
+            }
+        }
     }
 ]
