@@ -27,7 +27,7 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         url_path=r'vector-tiles/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)',
         url_name='vector_tiles',
     )
-    def get_geojson(self, request, x: int, y: int, z: int, **kwargs):
+    def get_vector_tile(self, request, x: int, y: int, z: int, **kwargs):
         dataset = self.get_object()
         if not dataset.geodata_file:
             return HttpResponse(status=400)

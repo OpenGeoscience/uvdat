@@ -86,11 +86,24 @@ export default {
           :key="dataset.name"
           :label="dataset.name"
           :value="dataset"
+          :disabled="!dataset.geodata_file && !dataset.raster_file"
           @change="updateActiveDatasets"
           density="compact"
           multiple
           hide-details
-        />
+        >
+          <template v-slot:label>
+            {{ dataset.name }}
+            {{
+              !dataset.geodata_file && !dataset.raster_file
+                ? "(processing)"
+                : ""
+            }}
+            <v-tooltip activator="parent" location="end">{{
+              dataset.description
+            }}</v-tooltip>
+          </template>
+        </v-checkbox>
       </v-expansion-panel-text>
     </v-expansion-panel>
     <v-expansion-panel title="Active Layers">

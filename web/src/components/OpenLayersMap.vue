@@ -13,6 +13,9 @@ export default {
       map.value = new Map({
         target: "mapContainer",
       });
+      map.value.on("loadstart", function () {
+        map.value.getTargetElement().classList.add("spinner");
+      });
       map.value.on("loadend", function () {
         map.value.getTargetElement().classList.remove("spinner");
       });
