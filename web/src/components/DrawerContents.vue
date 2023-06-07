@@ -1,9 +1,14 @@
 <script>
+import TileLayer from "ol/layer/Tile.js";
 import VectorTileLayer from "ol/layer/VectorTile.js";
+import XYZSource from "ol/source/XYZ.js";
+import VectorTileSource from "ol/source/VectorTile.js";
+import GeoJSON from "ol/format/GeoJSON.js";
+
 import { currentCity, map } from "@/store";
-import { getDatasetJSON } from "@/api/rest";
+import { baseURL } from "@/api/auth";
 import { ref } from "vue";
-import { createVectorSourceFromGeoJSON, createStyle } from "@/utils.js";
+import { createStyle } from "@/utils.js";
 
 export default {
   setup() {
@@ -23,28 +28,40 @@ export default {
           layer.setVisible(selectedDatasetIds.includes(layerDatasetId));
         }
       });
-      selectedDatasetIds.forEach(async (datasetId) => {
-        if (!datasetIdsWithExistingLayers.includes(datasetId)) {
-          map.value.getTargetElement().classList.add("spinner");
-          getDatasetJSON(datasetId).then((data) => {
-            if (data) {
-              map.value.addLayer(
-                new VectorTileLayer({
-                  source: createVectorSourceFromGeoJSON(data, map.value),
-                  style: function (feature) {
-                    return createStyle({
-                      type: feature.get("type"),
-                      colors: feature.get("colors"),
-                    });
-                  },
-                  properties: {
-                    datasetId,
-                  },
-                })
-              );
-            }
-            map.value.getTargetElement().classList.remove("spinner");
-          });
+      selectedDatasets.value.forEach(async (dataset) => {
+        if (!datasetIdsWithExistingLayers.includes(dataset.id)) {
+          if (dataset.raster_file) {
+            map.value.addLayer(
+              new TileLayer({
+                properties: {
+                  datasetId: dataset.id,
+                },
+                source: new XYZSource({
+                  url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/`,
+                  projection: "EPSG:3857",
+                }),
+                opacity: 0.7,
+              })
+            );
+          } else if (dataset.geodata_file) {
+            map.value.addLayer(
+              new VectorTileLayer({
+                properties: {
+                  datasetId: dataset.id,
+                },
+                source: new VectorTileSource({
+                  format: new GeoJSON(),
+                  url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
+                }),
+                style: function (feature) {
+                  return createStyle({
+                    type: feature.getGeometry().getType(),
+                    colors: feature.get("colors"),
+                  });
+                },
+              })
+            );
+          }
         }
       });
     }

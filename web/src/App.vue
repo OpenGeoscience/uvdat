@@ -37,7 +37,7 @@ export default defineComponent({
     </v-overlay>
     <v-app-bar app prominent>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>UVDAT Prototype</v-toolbar-title>
+      <v-toolbar-title>UVDAT</v-toolbar-title>
       <v-spacer />
       {{ currentError }}
       <v-spacer />
