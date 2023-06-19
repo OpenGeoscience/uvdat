@@ -24,11 +24,11 @@ class Dataset(TimeStampedModel, models.Model):
     raw_data_archive = S3FileField(null=True, blank=True)
     raw_data_type = models.CharField(max_length=25, default="shape_file_archive")
 
-    # Geometries only field for faster intersection queries
-    geometries = geo_models.GeometryCollectionField(null=True, blank=True)
-
-    # GeoJSON file, containing geometries AND other properties for features
+    # GeoJSON file, containing geometries and other properties for features
     geodata_file = S3FileField(null=True, blank=True)
+
+    # JSON file, containing GeoJSON tiles, nested by z-x-y tile coordinates
+    vector_tiles_file = S3FileField(null=True, blank=True)
 
     # Raster file, containing a cloud-optimized geotiff
     raster_file = S3FileField(null=True, blank=True)

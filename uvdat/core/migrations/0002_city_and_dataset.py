@@ -76,12 +76,6 @@ class Migration(migrations.Migration):
                 ('raw_data_archive', s3_file_field.fields.S3FileField(blank=True, null=True)),
                 ('raw_data_type', models.CharField(default='shape_file_archive', max_length=25)),
                 (
-                    'geometries',
-                    django.contrib.gis.db.models.fields.GeometryCollectionField(
-                        srid=4326, blank=True, null=True
-                    ),
-                ),
-                (
                     'city',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
@@ -90,6 +84,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ('geodata_file', s3_file_field.fields.S3FileField(blank=True, null=True)),
+                ('vector_tiles_file', s3_file_field.fields.S3FileField(blank=True, null=True)),
                 ('raster_file', s3_file_field.fields.S3FileField(blank=True, null=True)),
             ],
             options={

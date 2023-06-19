@@ -48,6 +48,7 @@ setup(
         'djangorestframework',
         'django-large-image',
         'drf-yasg',
+        'ijson',
         'matplotlib',
         'geojson2vt',
         'geopandas',

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import large_image_converter
 from pathlib import Path
 from celery import shared_task
-from django.contrib.gis.geos import GEOSGeometry, GeometryCollection
+from geojson2vt import geojson2vt, vt2geojson
 from django.core.files.base import ContentFile
 from uvdat.core.models import Dataset
 from uvdat.core.utils import add_styling
@@ -85,6 +85,7 @@ def convert_shape_file_archive(dataset_id):
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir, 'archive.zip')
         geodata_path = Path(temp_dir, 'geo.json')
+        tiled_geo_path = Path(temp_dir, 'tiled_geo.json')
 
         with open(archive_path, 'wb') as archive_file:
             archive_file.write(dataset.raw_data_archive.open('rb').read())
@@ -105,14 +106,34 @@ def convert_shape_file_archive(dataset_id):
         geodata = geodata.to_crs(4326)
 
         geodata.to_file(geodata_path)
+        tiled_geo = {}
         with open(geodata_path, 'rb') as geodata_file:
-            dataset.geodata_file.save(geodata_path, ContentFile(geodata_file.read()))
+            contents = geodata_file.read()
+            dataset.geodata_file.save(geodata_path, ContentFile(contents))
 
-        geometry_only = [
-            GEOSGeometry(json.dumps(feature['geometry']))
-            for feature in geodata.__geo_interface__['features']
-        ]
-        dataset.geometries = GeometryCollection(geometry_only)
+            # convert to tiles and save to vector_tiles_file
+            tile_index = geojson2vt.geojson2vt(
+                json.loads(contents.decode()),
+                {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
+            )
+            for coord in tile_index.tile_coords:
+                tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
+                features = tile.get('features')
+                if features and len(features) > 0:
+                    if not coord['z'] in tiled_geo:
+                        tiled_geo[coord['z']] = {}
+                    if not coord['x'] in tiled_geo[coord['z']]:
+                        tiled_geo[coord['z']][coord['x']] = {}
+
+                    tiled_geo[coord['z']][coord['x']][coord['y']] = vt2geojson.vt2geojson(tile)
+
+        with open(tiled_geo_path, 'w') as tiled_geo_file:
+            json.dump(tiled_geo, tiled_geo_file)
+        with open(tiled_geo_path, 'rb') as tiled_geo_file:
+            dataset.vector_tiles_file.save(
+                tiled_geo_path,
+                ContentFile(tiled_geo_file.read()),
+            )
 
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
         dataset.save()
