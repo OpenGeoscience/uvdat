@@ -1,19 +1,17 @@
 <script>
-import TileLayer from "ol/layer/Tile.js";
-import VectorTileLayer from "ol/layer/VectorTile.js";
-import XYZSource from "ol/source/XYZ.js";
-import VectorTileSource from "ol/source/VectorTile.js";
-import GeoJSON from "ol/format/GeoJSON.js";
-
+import draggable from "vuedraggable";
 import { currentCity, map } from "@/store";
-import { baseURL } from "@/api/auth";
 import { ref } from "vue";
-import { createStyle } from "@/utils.js";
+import { addDatasetLayerToMap } from "@/utils.js";
 
 export default {
+  components: {
+    draggable,
+  },
   setup() {
     const selectedDatasets = ref([]);
-    const openPanel = ref(0);
+    const openPanels = ref([0]);
+    const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function updateActiveDatasets() {
       const datasetIdsWithExistingLayers = [];
@@ -21,75 +19,83 @@ export default {
       const selectedDatasetIds = selectedDatasets.value.map(
         (dataset) => dataset.id
       );
+      if (selectedDatasetIds.length) {
+        openPanels.value = [0, 1];
+      }
+
       currentMapLayers.forEach((layer) => {
         const layerDatasetId = layer.getProperties().datasetId;
         if (layerDatasetId) {
           datasetIdsWithExistingLayers.push(layerDatasetId);
+          const layerIndex = selectedDatasets.value.findIndex(
+            (d) => d.id === layerDatasetId
+          );
+          if (layerIndex >= 0) {
+            layer.setZIndex(selectedDatasets.value.length - layerIndex);
+          }
           layer.setVisible(selectedDatasetIds.includes(layerDatasetId));
         }
       });
-      selectedDatasets.value.forEach(async (dataset) => {
+      selectedDatasets.value.forEach(async (dataset, index) => {
         if (!datasetIdsWithExistingLayers.includes(dataset.id)) {
-          if (dataset.raster_file) {
-            map.value.addLayer(
-              new TileLayer({
-                properties: {
-                  datasetId: dataset.id,
-                },
-                source: new XYZSource({
-                  url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/`,
-                  projection: "EPSG:3857",
-                }),
-                opacity: 0.7,
-              })
-            );
-          } else if (dataset.geodata_file) {
-            map.value.addLayer(
-              new VectorTileLayer({
-                properties: {
-                  datasetId: dataset.id,
-                },
-                source: new VectorTileSource({
-                  format: new GeoJSON(),
-                  url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
-                }),
-                style: function (feature) {
-                  return createStyle({
-                    type: feature.getGeometry().getType(),
-                    colors: feature.get("colors"),
-                  });
-                },
-              })
-            );
-          }
+          addDatasetLayerToMap(dataset, selectedDatasets.value.length - index);
         }
       });
+    }
+
+    function toggleDataset(dataset) {
+      const enable = !selectedDatasets.value.includes(dataset);
+      selectedDatasets.value = selectedDatasets.value.filter(
+        (d) => d !== dataset
+      );
+      if (enable) {
+        selectedDatasets.value = [dataset, ...selectedDatasets.value];
+      }
+      updateActiveDatasets();
+    }
+
+    function reorderLayers() {
+      map.value
+        .getLayers()
+        .getArray()
+        .forEach((layer) => {
+          const layerDatasetId = layer.getProperties().datasetId;
+          if (layerDatasetId) {
+            const layerIndex = selectedDatasets.value.findIndex(
+              (d) => d.id === layerDatasetId
+            );
+            if (layerIndex >= 0) {
+              layer.setZIndex(selectedDatasets.value.length - layerIndex);
+            }
+          }
+        });
     }
 
     return {
       selectedDatasets,
       currentCity,
-      openPanel,
+      openPanels,
+      toggleDataset,
       updateActiveDatasets,
+      activeLayerTableHeaders,
+      reorderLayers,
     };
   },
 };
 </script>
 
 <template>
-  <v-expansion-panels variant="accordion" v-model="openPanel">
+  <v-expansion-panels multiple variant="accordion" v-model="openPanels">
     <v-expansion-panel title="Available Layers">
       <v-expansion-panel-text>
         <v-checkbox
           v-for="dataset in currentCity.datasets"
-          v-model="selectedDatasets"
+          :model-value="selectedDatasets.includes(dataset)"
           :key="dataset.name"
           :label="dataset.name"
-          :value="dataset"
           :disabled="!dataset.geodata_file && !dataset.raster_file"
-          @change="updateActiveDatasets"
+          @change="() => toggleDataset(dataset)"
           density="compact"
-          multiple
           hide-details
         >
           <template v-slot:label>
@@ -106,8 +112,28 @@ export default {
         </v-checkbox>
       </v-expansion-panel-text>
     </v-expansion-panel>
+
     <v-expansion-panel title="Active Layers">
-      <v-expansion-panel-text> TODO </v-expansion-panel-text>
+      <v-expansion-panel-text>
+        <draggable
+          v-model="selectedDatasets"
+          @change="reorderLayers"
+          item-key="id"
+        >
+          <template #item="{ element }">
+            <v-card class="px-3 py-1">
+              <v-icon>mdi-drag-horizontal-variant</v-icon>
+              {{ element.name }}
+            </v-card>
+          </template>
+        </draggable>
+      </v-expansion-panel-text>
     </v-expansion-panel>
   </v-expansion-panels>
 </template>
+
+<style>
+.v-expansion-panel-text__wrapper {
+  padding: 8px 10px 16px !important;
+}
+</style>

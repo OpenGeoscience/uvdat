@@ -20,7 +20,9 @@
     "ol-geojson-vt": "^1.0.1",
     "openlayers": "^4.6.5",
     "shpjs": "^4.0.4",
+    "sortablejs": "^1.15.0",
     "vue": "^3.2.13",
+    "vuedraggable": "^4.1.0",
     "vuetify": "^3.2.2"
   },
   "devDependencies": {

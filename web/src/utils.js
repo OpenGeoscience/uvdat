@@ -41,7 +41,7 @@ function createStyle(args) {
   });
 }
 
-export function addDatasetLayerToMap(dataset) {
+export function addDatasetLayerToMap(dataset, zIndex) {
   if (dataset.raster_file) {
     map.value.addLayer(
       new TileLayer({
@@ -52,6 +52,7 @@ export function addDatasetLayerToMap(dataset) {
           url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?projection=EPSG:3857`,
         }),
         opacity: 0.7,
+        zIndex,
       })
     );
   } else if (dataset.geodata_file) {
@@ -70,6 +71,7 @@ export function addDatasetLayerToMap(dataset) {
             colors: feature.get("colors"),
           });
         },
+        zIndex,
       })
     );
   }
