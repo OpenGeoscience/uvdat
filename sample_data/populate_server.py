@@ -1,4 +1,5 @@
 import json
+import requests
 from pathlib import Path
 from django.core.management.base import BaseCommand
 
@@ -48,9 +49,15 @@ class Command(BaseCommand):
                     raw_data_type=dataset['raw_data_type'],
                     style=dataset.get('style'),
                 )
-                archive_location = Path('sample_data', dataset['raw_data_archive'])
+                archive_location = Path('sample_data', dataset['path'])
+                if not archive_location.exists():
+                    print('\t Downloading data file.')
+                    archive_location.parent.mkdir(parents=True, exist_ok=True)
+                    with open(archive_location, 'wb') as archive:
+                        r = requests.get(dataset['url'])
+                        archive.write(r.content)
                 with open(archive_location, 'rb') as archive:
                     new_dataset.raw_data_archive.save(archive_location, ContentFile(archive.read()))
-                print('\t Starting conversion task...')
+                print('\t Starting conversion task.')
                 convert_raw_archive.delay(new_dataset.id)
-                # convert_raw_archive(new_dataset.id)
+                print()
