@@ -1,4 +1,5 @@
 .terraform/
+.vscode/
 staticfiles/
 sample_data/**/*
 

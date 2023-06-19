@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgres:
-    image: postgis/postgis:13-3.2
+    image: postgis/postgis:14-3.3
     environment:
       POSTGRES_DB: django
       POSTGRES_PASSWORD: postgres
