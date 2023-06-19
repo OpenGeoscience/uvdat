@@ -35,5 +35,7 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         with dataset.vector_tiles_file.open() as vector_tile_json:
             # use ijson to fetch only needed key (much faster than json parse)
             tile = ijson.items(vector_tile_json, f'{z}.{x}.{y}', use_float=True)
-            return HttpResponse(json.dumps(tile.__next__()), status=200)
-        return HttpResponse(status=500)
+            try:
+                return HttpResponse(json.dumps(tile.__next__()), status=200)
+            except StopIteration:
+                return HttpResponse(status=404)
