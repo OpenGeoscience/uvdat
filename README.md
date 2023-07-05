@@ -8,10 +8,13 @@ _Currently in Phase 1 of development_
 1. To prepare the web client, install its requirements with `cd web && npm i`.
 2. Run the docker containers with `docker-compose up`. Be sure to check that all containers were able to start and stay running successfully before continuing.
 3. While the containers are up, run the following commands in a separate terminal to prepare the database:
-  a. Run `docker-compose run --rm django ./manage.py migrate`.
-  b. Run `docker-compose run --rm django ./manage.py createsuperuser`
+
+   a. Run `docker-compose run --rm django ./manage.py migrate`.
+
+   b. Run `docker-compose run --rm django ./manage.py createsuperuser`
      and follow the prompts to create your own user.
-  c. Run `docker-compose run --rm django ./manage.py populate` to use sample data.
+
+   c. Run `docker-compose run --rm django ./manage.py populate` to use sample data.
 
 ### Run Application
 1. Run `docker-compose up`.
