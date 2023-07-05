@@ -5,7 +5,6 @@ import zipfile
 import geopandas
 import json
 import numpy
-import matplotlib.pyplot as plt
 import large_image_converter
 from pathlib import Path
 from celery import shared_task
@@ -31,13 +30,12 @@ def convert_cog(dataset_id):
         raster_path = Path(temp_dir, 'raster.tiff')
         cog_raster_path = Path(temp_dir, 'cog_raster.tiff')
 
-        apply_colormap_to_band = -1
-        colormap_name = 'viridis'
+        trim_distribution_percentage = 0
         if dataset.style and dataset.style.get('options'):
             options = dataset.style.get('options')
-            apply_colormap_to_band = options.get('apply_colormap_to_band', apply_colormap_to_band)
-            colormap_name = options.get('colormap', colormap_name)
-        colormap = plt.get_cmap(colormap_name)
+            trim_distribution_percentage = options.get(
+                "trim_distribution_percentage", trim_distribution_percentage
+            )
 
         with dataset.raw_data_archive.open('rb') as raw_data_archive:
             input_data = rasterio.open(raw_data_archive)
@@ -47,29 +45,40 @@ def convert_cog(dataset_id):
                 driver='GTiff',
                 height=input_data.height,
                 width=input_data.width,
-                count=input_data.count if apply_colormap_to_band == -1 else input_data.count + 2,
-                dtype=numpy.uint8,
+                count=1,
+                dtype=numpy.float32,
                 crs=input_data.crs,
                 transform=input_data.transform,
             )
+            band = input_data.read(1)
 
-            output_band_index = 1
-            for i in range(1, input_data.count + 1):
-                band = input_data.read(i)
-                if i == apply_colormap_to_band:
-                    # normalize values between 0 and 1
-                    band_range = [band.min(), band.max()]
-                    normalize = numpy.vectorize(lambda x: (x - band_range[0]) / band_range[1])
-                    band = normalize(band)
-                    band = colormap(band)
-                    for index, channel in enumerate(['r', 'g', 'b']):
-                        channel_data = band[:, :, index] * 255
-                        output_data.write(channel_data, output_band_index)
-                        output_band_index += 1
-                else:
-                    output_data.write(band, output_band_index)
-                    output_band_index += 1
+            # trim a number of values from both ends of the distribution
+            histogram, bin_edges = numpy.histogram(band, bins=1000)
+            trim_n = band.size * trim_distribution_percentage
+            new_min = None
+            new_max = None
+            sum_values = 0
+            for bin_index, bin_count in enumerate(histogram):
+                bin_edge = bin_edges[bin_index]
+                sum_values += bin_count
+                if new_min is None and sum_values > trim_n:
+                    new_min = bin_edge
+                if new_max is None and sum_values > band.size - trim_n:
+                    new_max = bin_edge
+            if new_min:
+                band[band < new_min] = new_min
+            if new_max:
+                band[band > new_max] = new_max
 
+            # normalize between 0 and 255 to be represented as a png
+            band_range = [float(band.min()), float(band.max())]
+            dataset.style['data_range'] = band_range
+            normalize = numpy.vectorize(
+                lambda x: x if x is None else round((x - band_range[0]) / band_range[1] * 255)
+            )
+            band = normalize(band)
+
+            output_data.write(band, 1)
             output_data.close()
 
             large_image_converter.convert(str(raster_path), str(cog_raster_path))
