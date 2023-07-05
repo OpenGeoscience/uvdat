@@ -18,8 +18,9 @@ _Currently in Phase 1 of development_
 
 ### Run Application
 1. Run `docker-compose up`.
-2. Access the site, starting at http://localhost:8000/admin/ and http://localhost:8080/.
-3. When finished, use `Ctrl+C` to stop the docker-compose command.
+2. You can access the admin page at port 8000: http://localhost:8000/admin/
+3. The user interface is on port **8080**: http://localhost:8080/
+4. When finished, use `Ctrl+C` to stop the docker-compose command.
 
 ### Application Maintenance
 Occasionally, new package dependencies or schema changes will necessitate
