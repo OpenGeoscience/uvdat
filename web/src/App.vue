@@ -60,14 +60,15 @@ export default defineComponent({
       v-if="currentCity"
       v-model="drawer"
       permanent
+      width="250"
       class="main-area drawer"
     >
       <DrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
-      v-if="currentDataset"
-      v-model="drawer"
+      :model-value="currentDataset !== undefined"
       permanent
+      width="250"
       class="main-area drawer options-drawer"
     >
       <OptionsDrawerContents />

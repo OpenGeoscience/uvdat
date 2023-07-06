@@ -134,8 +134,9 @@ export default {
                 size="small"
                 class="expand-icon"
                 @click="expandOptionsPanel(element)"
-                >mdi-arrow-expand-right</v-icon
               >
+                mdi-arrow-expand-right
+              </v-icon>
               {{ element.name }}
             </v-card>
           </template>

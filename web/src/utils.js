@@ -61,14 +61,17 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     const tileParams = {
       projection: "EPSG:3857",
       band: 1,
-      palette: "plasma",
-      max: 100,
+      palette: dataset.style?.colormap || "plasma",
     };
+    if (
+      dataset.style?.colormap_range !== undefined &&
+      dataset.style?.colormap_range.length === 2
+    ) {
+      tileParams.min = dataset.style.colormap_range[0];
+      tileParams.max = dataset.style.colormap_range[1];
+    }
     if (dataset.style?.options?.transparency_threshold !== undefined) {
       tileParams.nodata = dataset.style.options.transparency_threshold;
-    }
-    if (dataset.style?.colormap !== undefined) {
-      tileParams.palette = dataset.style.colormap;
     }
     const tileParamString = Object.keys(tileParams)
       .map((key) => key + "=" + tileParams[key])
@@ -82,7 +85,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
         source: new XYZSource({
           url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
         }),
-        opacity: 0.7,
+        opacity: dataset.style?.opacity || 1,
         zIndex,
       })
     );
@@ -102,6 +105,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
             colors: feature.get("colors"),
           });
         },
+        opacity: dataset.style?.opacity || 1,
         zIndex,
       })
     );
