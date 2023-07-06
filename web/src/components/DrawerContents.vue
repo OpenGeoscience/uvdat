@@ -1,6 +1,6 @@
 <script>
 import draggable from "vuedraggable";
-import { currentCity, map } from "@/store";
+import { currentCity, currentDataset, map } from "@/store";
 import { ref } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
 
@@ -50,6 +50,8 @@ export default {
       );
       if (enable) {
         selectedDatasets.value = [dataset, ...selectedDatasets.value];
+      } else if (dataset.id === currentDataset.value.id) {
+        currentDataset.value = undefined;
       }
       updateActiveDatasets();
     }
@@ -71,6 +73,10 @@ export default {
         });
     }
 
+    function expandOptionsPanel(dataset) {
+      currentDataset.value = dataset;
+    }
+
     return {
       selectedDatasets,
       currentCity,
@@ -79,6 +85,7 @@ export default {
       updateActiveDatasets,
       activeLayerTableHeaders,
       reorderLayers,
+      expandOptionsPanel,
     };
   },
 };
@@ -105,9 +112,9 @@ export default {
                 ? "(processing)"
                 : ""
             }}
-            <v-tooltip activator="parent" location="end">{{
-              dataset.description
-            }}</v-tooltip>
+            <v-tooltip activator="parent" location="end" max-width="300">
+              {{ dataset.description }}
+            </v-tooltip>
           </template>
         </v-checkbox>
       </v-expansion-panel-text>
@@ -123,6 +130,12 @@ export default {
           <template #item="{ element }">
             <v-card class="px-3 py-1">
               <v-icon>mdi-drag-horizontal-variant</v-icon>
+              <v-icon
+                size="small"
+                class="expand-icon"
+                @click="expandOptionsPanel(element)"
+                >mdi-arrow-expand-right</v-icon
+              >
               {{ element.name }}
             </v-card>
           </template>
@@ -135,5 +148,8 @@ export default {
 <style>
 .v-expansion-panel-text__wrapper {
   padding: 8px 10px 16px !important;
+}
+.expand-icon {
+  float: right;
 }
 </style>

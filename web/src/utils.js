@@ -8,6 +8,21 @@ import { Fill, Stroke, Circle, Style } from "ol/style.js";
 import { baseURL } from "@/api/auth";
 import { map } from "@/store";
 
+export const rasterColormaps = [
+  "plasma",
+  "viridis",
+  "inferno",
+  "magma",
+  "cividis",
+  "spring",
+  "summer",
+  "autumn",
+  "winter",
+  "cool",
+  "hot",
+  "gray",
+];
+
 function createStyle(args) {
   let colors = ["#00000022"];
   if (args.colors) {
@@ -52,9 +67,13 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     if (dataset.style?.options?.transparency_threshold !== undefined) {
       tileParams.nodata = dataset.style.options.transparency_threshold;
     }
+    if (dataset.style?.colormap !== undefined) {
+      tileParams.palette = dataset.style.colormap;
+    }
     const tileParamString = Object.keys(tileParams)
       .map((key) => key + "=" + tileParams[key])
       .join("&");
+
     map.value.addLayer(
       new TileLayer({
         properties: {

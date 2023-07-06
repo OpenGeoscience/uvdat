@@ -4,7 +4,7 @@ import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
 import { ref, watch } from "vue";
-import { City } from "./types.js";
+import { City, Dataset } from "./types.js";
 import { getCities } from "@/api/rest";
 
 export const loading = ref<boolean>(false);
@@ -12,6 +12,7 @@ export const currentError = ref<string>();
 
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
+export const currentDataset = ref<Dataset>();
 
 export const map = ref();
 export const mapLayers = ref();

@@ -1,23 +1,27 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from "vue";
-import { currentCity, cities, loading, loadCities } from "@/store";
-import OpenLayersMap from "@/components/OpenLayersMap.vue";
+import { currentCity, cities, loading, loadCities } from "./store";
+import OpenLayersMap from "./components/OpenLayersMap.vue";
 import DrawerContents from "./components/DrawerContents.vue";
-import { currentError } from "./store";
+import { currentError, currentDataset } from "./store";
+import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 
 export default defineComponent({
   components: {
     OpenLayersMap,
     DrawerContents,
+    OptionsDrawerContents,
   },
   setup() {
     const drawer = ref(true);
 
     onMounted(loadCities);
+    currentDataset.value = undefined;
 
     return {
       drawer,
       currentCity,
+      currentDataset,
       cities,
       loading,
       currentError,
@@ -56,25 +60,48 @@ export default defineComponent({
       v-if="currentCity"
       v-model="drawer"
       permanent
-      class="map-area"
+      class="main-area drawer"
     >
       <DrawerContents />
     </v-navigation-drawer>
-    <div :class="drawer ? 'map-area shifted' : 'map-area'">
+    <v-navigation-drawer
+      v-if="currentDataset"
+      v-model="drawer"
+      permanent
+      class="main-area drawer options-drawer"
+    >
+      <OptionsDrawerContents />
+    </v-navigation-drawer>
+    <div
+      :class="
+        drawer
+          ? currentDataset
+            ? 'main-area shifted-2'
+            : 'main-area shifted-1'
+          : 'main-area'
+      "
+    >
       <OpenLayersMap />
     </div>
   </v-app>
 </template>
 
 <style scoped>
-.map-area {
+.main-area {
   position: absolute;
   top: 65px;
   height: calc(100% - 70px);
   width: 100%;
 }
-.map-area.shifted {
+.options-drawer {
+  left: 250px;
+}
+.shifted-1 {
   left: 250px;
   width: calc(100% - 250px);
+}
+.shifted-2 {
+  left: 500px;
+  width: calc(100% - 500px);
 }
 </style>
