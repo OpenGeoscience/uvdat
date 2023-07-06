@@ -54,9 +54,6 @@ def convert_cog(dataset_id):
             )
             band = input_data.read(1)
 
-            if transparency_threshold is not None:
-                band[band < transparency_threshold] = transparency_threshold
-
             if trim_distribution_percentage:
                 # trim a number of values from both ends of the distribution
                 histogram, bin_edges = numpy.histogram(band, bins=1000)
@@ -76,13 +73,11 @@ def convert_cog(dataset_id):
                 if new_max:
                     band[band > new_max] = new_max
 
-            # normalize between 0 and 255 to be represented as a png
+            if transparency_threshold is not None:
+                band[band < transparency_threshold] = transparency_threshold
+
             band_range = [float(band.min()), float(band.max())]
             dataset.style['data_range'] = band_range
-            normalize = numpy.vectorize(
-                lambda x: x if x is None else round((x - band_range[0]) / band_range[1] * 255)
-            )
-            band = normalize(band)
 
             output_data.write(band, 1)
             output_data.close()
