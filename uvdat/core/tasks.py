@@ -30,9 +30,11 @@ def convert_cog(dataset_id):
         raster_path = Path(temp_dir, 'raster.tiff')
         cog_raster_path = Path(temp_dir, 'cog_raster.tiff')
 
-        trim_distribution_percentage = 0
+        transparency_threshold = None
+        trim_distribution_percentage = None
         if dataset.style and dataset.style.get('options'):
             options = dataset.style.get('options')
+            transparency_threshold = options.get("transparency_threshold", transparency_threshold)
             trim_distribution_percentage = options.get(
                 "trim_distribution_percentage", trim_distribution_percentage
             )
@@ -52,23 +54,27 @@ def convert_cog(dataset_id):
             )
             band = input_data.read(1)
 
-            # trim a number of values from both ends of the distribution
-            histogram, bin_edges = numpy.histogram(band, bins=1000)
-            trim_n = band.size * trim_distribution_percentage
-            new_min = None
-            new_max = None
-            sum_values = 0
-            for bin_index, bin_count in enumerate(histogram):
-                bin_edge = bin_edges[bin_index]
-                sum_values += bin_count
-                if new_min is None and sum_values > trim_n:
-                    new_min = bin_edge
-                if new_max is None and sum_values > band.size - trim_n:
-                    new_max = bin_edge
-            if new_min:
-                band[band < new_min] = new_min
-            if new_max:
-                band[band > new_max] = new_max
+            if transparency_threshold is not None:
+                band[band < transparency_threshold] = transparency_threshold
+
+            if trim_distribution_percentage:
+                # trim a number of values from both ends of the distribution
+                histogram, bin_edges = numpy.histogram(band, bins=1000)
+                trim_n = band.size * trim_distribution_percentage
+                new_min = None
+                new_max = None
+                sum_values = 0
+                for bin_index, bin_count in enumerate(histogram):
+                    bin_edge = bin_edges[bin_index]
+                    sum_values += bin_count
+                    if new_min is None and sum_values > trim_n:
+                        new_min = bin_edge
+                    if new_max is None and sum_values > band.size - trim_n:
+                        new_max = bin_edge
+                if new_min:
+                    band[band < new_min] = new_min
+                if new_max:
+                    band[band > new_max] = new_max
 
             # normalize between 0 and 255 to be represented as a png
             band_range = [float(band.min()), float(band.max())]

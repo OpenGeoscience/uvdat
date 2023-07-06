@@ -43,13 +43,25 @@ function createStyle(args) {
 
 export function addDatasetLayerToMap(dataset, zIndex) {
   if (dataset.raster_file) {
+    const tileParams = {
+      projection: "EPSG:3857",
+      band: 1,
+      palette: "plasma",
+      max: 100,
+    };
+    if (dataset.style?.options?.transparency_threshold !== undefined) {
+      tileParams.nodata = dataset.style.options.transparency_threshold;
+    }
+    const tileParamString = Object.keys(tileParams)
+      .map((key) => key + "=" + tileParams[key])
+      .join("&");
     map.value.addLayer(
       new TileLayer({
         properties: {
           datasetId: dataset.id,
         },
         source: new XYZSource({
-          url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?projection=EPSG:3857`,
+          url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
         }),
         opacity: 0.7,
         zIndex,

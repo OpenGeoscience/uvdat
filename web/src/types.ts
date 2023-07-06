@@ -9,6 +9,7 @@ export interface Dataset {
   tile_file: string;
   created: string;
   modified: string;
+  style: object;
 }
 
 export interface City {
