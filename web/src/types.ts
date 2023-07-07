@@ -6,10 +6,12 @@ export interface Dataset {
   raw_data_archive: string;
   raw_data_type: string;
   geodata_file: string;
-  tile_file: string;
+  vector_tiles_file: string;
+  raster_file: string;
   created: string;
   modified: string;
   style: object;
+  processing: boolean;
 }
 
 export interface City {

@@ -57,7 +57,9 @@ function createStyle(args) {
 }
 
 export function addDatasetLayerToMap(dataset, zIndex) {
-  if (dataset.raster_file) {
+  if (dataset.processing) {
+    return;
+  } else if (dataset.raster_file) {
     const tileParams = {
       projection: "EPSG:3857",
       band: 1,

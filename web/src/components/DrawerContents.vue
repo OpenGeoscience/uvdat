@@ -100,18 +100,14 @@ export default {
           :model-value="selectedDatasets.includes(dataset)"
           :key="dataset.name"
           :label="dataset.name"
-          :disabled="!dataset.geodata_file && !dataset.raster_file"
+          :disabled="dataset.processing"
           @change="() => toggleDataset(dataset)"
           density="compact"
           hide-details
         >
           <template v-slot:label>
             {{ dataset.name }}
-            {{
-              !dataset.geodata_file && !dataset.raster_file
-                ? "(processing)"
-                : ""
-            }}
+            {{ dataset.processing ? "(processing)" : "" }}
             <v-tooltip activator="parent" location="end" max-width="300">
               {{ dataset.description }}
             </v-tooltip>

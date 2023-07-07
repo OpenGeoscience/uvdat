@@ -2,6 +2,8 @@
 import { currentDataset, map } from "@/store";
 import { onMounted, ref, watch } from "vue";
 import { rasterColormaps, addDatasetLayerToMap } from "../utils";
+import { convertDataset } from "../api/rest";
+import { currentCity, pollForProcessingDataset } from "../store";
 
 export default {
   setup() {
@@ -9,6 +11,7 @@ export default {
     const colormap = ref("plasma");
     const datasetRange = ref(undefined);
     const colormapRange = ref(undefined);
+    const showConfirmConvert = ref(false);
 
     function collapseOptionsPanel() {
       currentDataset.value = undefined;
@@ -57,6 +60,17 @@ export default {
       }
     }
 
+    function runConversion() {
+      showConfirmConvert.value = false;
+      convertDataset(currentDataset.value.id).then((dataset) => {
+        currentDataset.value = dataset;
+        currentCity.value.datasets = currentCity.value.datasets.map((d) =>
+          d.id === dataset.id ? dataset : d
+        );
+        pollForProcessingDataset(dataset.id);
+      });
+    }
+
     onMounted(populateRefs);
     watch(currentDataset, populateRefs);
     watch(opacity, updateLayerOpacity);
@@ -71,6 +85,8 @@ export default {
       colormap,
       datasetRange,
       colormapRange,
+      showConfirmConvert,
+      runConversion,
     };
   },
 };
@@ -78,7 +94,7 @@ export default {
 
 <template>
   <v-card class="fill-height" v-if="currentDataset">
-    <v-icon class="collapse-icon" @click="collapseOptionsPanel">
+    <v-icon class="close-icon" @click="collapseOptionsPanel">
       mdi-close
     </v-icon>
     <v-card-title class="medium-title">Options</v-card-title>
@@ -140,12 +156,37 @@ export default {
           </template>
         </v-range-slider>
       </div>
+
+      <div class="bottom" @click="showConfirmConvert = true">
+        <v-icon>mdi-refresh</v-icon>
+        Rerun conversion task
+      </div>
+
+      <v-dialog v-model="showConfirmConvert">
+        <v-card>
+          <v-card-title>
+            Confirmation
+            <v-icon class="close-icon" @click="showConfirmConvert = false">
+              mdi-close
+            </v-icon>
+          </v-card-title>
+          <v-card-text>
+            Are you sure you want to rerun the conversion task? This will delete
+            the current converted data and start a new conversion task. The
+            conversion task will read the raw data archive, convert it, and save
+            it.
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="primary" @click="runConversion">Convert</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
   </v-card>
 </template>
 
 <style>
-.collapse-icon {
+.close-icon {
   float: right;
   top: 10px;
   right: 5px;
@@ -155,5 +196,12 @@ export default {
 }
 .wrap-subtitle {
   white-space: break-spaces !important;
+}
+.bottom {
+  text-align: center;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 100%;
 }
 </style>
