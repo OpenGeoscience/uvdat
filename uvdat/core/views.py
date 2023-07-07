@@ -3,12 +3,14 @@ import json
 import ijson
 
 from django.http import HttpResponse
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from django_large_image.rest import LargeImageFileDetailMixin
 
 from uvdat.core.models import City, Dataset
 from uvdat.core.serializers import CitySerializer, DatasetSerializer
+from uvdat.core.tasks import convert_raw_archive
 
 
 TILES_DIR = tempfile.TemporaryDirectory()
@@ -39,3 +41,19 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
                 return HttpResponse(json.dumps(tile.__next__()), status=200)
             except StopIteration:
                 return HttpResponse(status=404)
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path=r'convert',
+        url_name='convert',
+    )
+    def spawn_conversion_task(self, request, **kwargs):
+        dataset = self.get_object()
+        dataset.geodata_file = None
+        dataset.vector_tiles_file = None
+        dataset.raster_file = None
+        dataset.processing = True
+        dataset.save()
+        convert_raw_archive.delay(dataset.id)
+        return Response(DatasetSerializer(dataset).data, status=200)
