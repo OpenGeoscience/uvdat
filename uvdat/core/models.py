@@ -16,14 +16,14 @@ class City(TimeStampedModel, models.Model):
 class Dataset(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="datasets")
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='datasets')
     category = models.CharField(max_length=25)
     style = models.JSONField(blank=True, null=True)
     processing = models.BooleanField(default=False)
 
     # A ZIP file containing the original data files
     raw_data_archive = S3FileField(null=True, blank=True)
-    raw_data_type = models.CharField(max_length=25, default="shape_file_archive")
+    raw_data_type = models.CharField(max_length=25, default='shape_file_archive')
 
     # GeoJSON file, containing geometries and other properties for features
     geodata_file = S3FileField(null=True, blank=True)

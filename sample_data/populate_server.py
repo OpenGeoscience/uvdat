@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         print('Creating new City objects...')
-        with open("sample_data/cities.json") as cities_json:
+        with open('sample_data/cities.json') as cities_json:
             data = json.load(cities_json)
             for city in data:
                 print('\t', city['name'])
@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 )
 
         print('Creating new Dataset objects...')
-        with open("sample_data/datasets.json") as datasets_json:
+        with open('sample_data/datasets.json') as datasets_json:
             data = json.load(datasets_json)
             for dataset in data:
                 print('\t', dataset['name'])

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        CreateExtension("postgis"),
+        CreateExtension('postgis'),
         migrations.CreateModel(
             name='City',
             fields=[
@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         to='core.city',
-                        related_name="datasets",
+                        related_name='datasets',
                     ),
                 ),
                 ('geodata_file', s3_file_field.fields.S3FileField(blank=True, null=True)),

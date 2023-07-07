@@ -36,9 +36,9 @@ def convert_cog(dataset_id):
         trim_distribution_percentage = None
         if dataset.style and dataset.style.get('options'):
             options = dataset.style.get('options')
-            transparency_threshold = options.get("transparency_threshold", transparency_threshold)
+            transparency_threshold = options.get('transparency_threshold', transparency_threshold)
             trim_distribution_percentage = options.get(
-                "trim_distribution_percentage", trim_distribution_percentage
+                'trim_distribution_percentage', trim_distribution_percentage
             )
 
         with dataset.raw_data_archive.open('rb') as raw_data_archive:
@@ -108,10 +108,10 @@ def convert_shape_file_archive(dataset_id):
             with zipfile.ZipFile(archive_path) as zip_archive:
                 filenames = zip_archive.namelist()
                 for filename in filenames:
-                    if filename.endswith(".shp"):
+                    if filename.endswith('.shp'):
                         sf = shapefile.Reader(f'{archive_path}/{filename}')
                         features.extend(sf.__geo_interface__['features'])
-                    if filename.endswith(".prj"):
+                    if filename.endswith('.prj'):
                         original_projection = zip_archive.open(filename).read().decode()
 
         features = add_styling(features, dataset.style)
