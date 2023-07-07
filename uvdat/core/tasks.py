@@ -86,6 +86,10 @@ def convert_cog(dataset_id):
             with open(cog_raster_path, 'rb') as raster_file:
                 dataset.raster_file.save(cog_raster_path, ContentFile(raster_file.read()))
 
+            print(f'\t Raster conversion complete for {dataset.name}.')
+            dataset.processing = False
+            dataset.save()
+
 
 @shared_task
 def convert_shape_file_archive(dataset_id):
@@ -146,4 +150,5 @@ def convert_shape_file_archive(dataset_id):
             )
 
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
+        dataset.processing = False
         dataset.save()
