@@ -1,17 +1,16 @@
-import tempfile
 import json
-import ijson
+import tempfile
 
 from django.http import HttpResponse
+from django_large_image.rest import LargeImageFileDetailMixin
+import ijson
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from django_large_image.rest import LargeImageFileDetailMixin
 
 from uvdat.core.models import City, Dataset
 from uvdat.core.serializers import CitySerializer, DatasetSerializer
 from uvdat.core.tasks import convert_raw_archive
-
 
 TILES_DIR = tempfile.TemporaryDirectory()
 

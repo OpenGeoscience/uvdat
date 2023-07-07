@@ -1,15 +1,17 @@
-import shapefile
-import tempfile
-import rasterio
-import zipfile
-import geopandas
 import json
-import numpy
-import large_image_converter
 from pathlib import Path
+import tempfile
+import zipfile
+
 from celery import shared_task
-from geojson2vt import geojson2vt, vt2geojson
 from django.core.files.base import ContentFile
+from geojson2vt import geojson2vt, vt2geojson
+import geopandas
+import large_image_converter
+import numpy
+import rasterio
+import shapefile
+
 from uvdat.core.models import Dataset
 from uvdat.core.utils import add_styling
 

@@ -1,10 +1,11 @@
 import json
-import requests
 from pathlib import Path
-from django.core.management.base import BaseCommand
 
 from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile
+from django.core.management.base import BaseCommand
+import requests
+
 from uvdat.core.models import City, Dataset
 from uvdat.core.tasks import convert_raw_archive
 
