@@ -60,5 +60,5 @@ class Command(BaseCommand):
                 with open(archive_location, 'rb') as archive:
                     new_dataset.raw_data_archive.save(archive_location, ContentFile(archive.read()))
                 print('\t Starting conversion task.')
-                convert_raw_archive.delay(new_dataset.id)
+                convert_raw_archive(new_dataset.id)
                 print()
