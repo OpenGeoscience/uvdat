@@ -43,12 +43,6 @@ class UvdatMixin(ConfigMixin):
             }
         }
 
-        configuration.CACHES = {
-            "default": {
-                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            }
-        }
-
 
 class DevelopmentConfiguration(UvdatMixin, DevelopmentBaseConfiguration):
     pass

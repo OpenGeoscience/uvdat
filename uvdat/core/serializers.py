@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from uvdat.core.models import City, Dataset
 
 
@@ -10,7 +11,7 @@ class DatasetSerializer(serializers.ModelSerializer):
 
 class CitySerializer(serializers.ModelSerializer):
     datasets = DatasetSerializer(many=True)
-    center = serializers.SerializerMethodField("get_center")
+    center = serializers.SerializerMethodField('get_center')
 
     def get_center(self, obj):
         if obj.center:

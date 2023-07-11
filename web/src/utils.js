@@ -8,6 +8,21 @@ import { Fill, Stroke, Circle, Style } from "ol/style.js";
 import { baseURL } from "@/api/auth";
 import { map } from "@/store";
 
+export const rasterColormaps = [
+  "plasma",
+  "viridis",
+  "inferno",
+  "magma",
+  "cividis",
+  "spring",
+  "summer",
+  "autumn",
+  "winter",
+  "cool",
+  "hot",
+  "gray",
+];
+
 function createStyle(args) {
   let colors = ["#00000022"];
   if (args.colors) {
@@ -42,19 +57,28 @@ function createStyle(args) {
 }
 
 export function addDatasetLayerToMap(dataset, zIndex) {
-  if (dataset.raster_file) {
+  if (dataset.processing) {
+    return;
+  } else if (dataset.raster_file) {
     const tileParams = {
       projection: "EPSG:3857",
       band: 1,
-      palette: "plasma",
-      max: 100,
+      palette: dataset.style?.colormap || "plasma",
     };
+    if (
+      dataset.style?.colormap_range !== undefined &&
+      dataset.style?.colormap_range.length === 2
+    ) {
+      tileParams.min = dataset.style.colormap_range[0];
+      tileParams.max = dataset.style.colormap_range[1];
+    }
     if (dataset.style?.options?.transparency_threshold !== undefined) {
       tileParams.nodata = dataset.style.options.transparency_threshold;
     }
     const tileParamString = Object.keys(tileParams)
       .map((key) => key + "=" + tileParams[key])
       .join("&");
+
     map.value.addLayer(
       new TileLayer({
         properties: {
@@ -63,7 +87,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
         source: new XYZSource({
           url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
         }),
-        opacity: 0.7,
+        opacity: dataset.style?.opacity || 1,
         zIndex,
       })
     );
@@ -83,6 +107,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
             colors: feature.get("colors"),
           });
         },
+        opacity: dataset.style?.opacity || 1,
         zIndex,
       })
     );

@@ -14,7 +14,11 @@ export default {
         target: "mapContainer",
       });
       map.value.on("loadstart", function () {
-        map.value.getTargetElement().classList.add("spinner");
+        setTimeout(() => {
+          if (!map.value.loaded_) {
+            map.value.getTargetElement().classList.add("spinner");
+          }
+        }, 1000);
       });
       map.value.on("loadend", function () {
         map.value.getTargetElement().classList.remove("spinner");

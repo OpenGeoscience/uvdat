@@ -1,15 +1,17 @@
-import shapefile
-import tempfile
-import rasterio
-import zipfile
-import geopandas
 import json
-import numpy
-import large_image_converter
 from pathlib import Path
+import tempfile
+import zipfile
+
 from celery import shared_task
-from geojson2vt import geojson2vt, vt2geojson
 from django.core.files.base import ContentFile
+from geojson2vt import geojson2vt, vt2geojson
+import geopandas
+import large_image_converter
+import numpy
+import rasterio
+import shapefile
+
 from uvdat.core.models import Dataset
 from uvdat.core.utils import add_styling
 
@@ -34,9 +36,9 @@ def convert_cog(dataset_id):
         trim_distribution_percentage = None
         if dataset.style and dataset.style.get('options'):
             options = dataset.style.get('options')
-            transparency_threshold = options.get("transparency_threshold", transparency_threshold)
+            transparency_threshold = options.get('transparency_threshold', transparency_threshold)
             trim_distribution_percentage = options.get(
-                "trim_distribution_percentage", trim_distribution_percentage
+                'trim_distribution_percentage', trim_distribution_percentage
             )
 
         with dataset.raw_data_archive.open('rb') as raw_data_archive:
@@ -86,6 +88,10 @@ def convert_cog(dataset_id):
             with open(cog_raster_path, 'rb') as raster_file:
                 dataset.raster_file.save(cog_raster_path, ContentFile(raster_file.read()))
 
+            print(f'\t Raster conversion complete for {dataset.name}.')
+            dataset.processing = False
+            dataset.save()
+
 
 @shared_task
 def convert_shape_file_archive(dataset_id):
@@ -102,10 +108,10 @@ def convert_shape_file_archive(dataset_id):
             with zipfile.ZipFile(archive_path) as zip_archive:
                 filenames = zip_archive.namelist()
                 for filename in filenames:
-                    if filename.endswith(".shp"):
+                    if filename.endswith('.shp'):
                         sf = shapefile.Reader(f'{archive_path}/{filename}')
                         features.extend(sf.__geo_interface__['features'])
-                    if filename.endswith(".prj"):
+                    if filename.endswith('.prj'):
                         original_projection = zip_archive.open(filename).read().decode()
 
         features = add_styling(features, dataset.style)
@@ -146,4 +152,5 @@ def convert_shape_file_archive(dataset_id):
             )
 
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
+        dataset.processing = False
         dataset.save()

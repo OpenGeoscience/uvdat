@@ -1,10 +1,11 @@
 import json
-import requests
 from pathlib import Path
-from django.core.management.base import BaseCommand
 
 from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile
+from django.core.management.base import BaseCommand
+import requests
+
 from uvdat.core.models import City, Dataset
 from uvdat.core.tasks import convert_raw_archive
 
@@ -14,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         print('Creating new City objects...')
-        with open("sample_data/cities.json") as cities_json:
+        with open('sample_data/cities.json') as cities_json:
             data = json.load(cities_json)
             for city in data:
                 print('\t', city['name'])
@@ -32,7 +33,7 @@ class Command(BaseCommand):
                 )
 
         print('Creating new Dataset objects...')
-        with open("sample_data/datasets.json") as datasets_json:
+        with open('sample_data/datasets.json') as datasets_json:
             data = json.load(datasets_json)
             for dataset in data:
                 print('\t', dataset['name'])
