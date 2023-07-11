@@ -65,6 +65,7 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
         "path": "boston/flood_hazard_fema.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "FLD_ZONE"
@@ -90,6 +91,7 @@
         "raw_data_type": "cloud_optimized_geotiff",
         "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
         "path": "boston/easternmass.tif",
+        "network": true,
         "style": {
             "options": {
                 "transparency_threshold": 0,

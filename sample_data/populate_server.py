@@ -49,6 +49,7 @@ class Command(BaseCommand):
                     city=City.objects.get(name=dataset['city']),
                     raw_data_type=dataset['raw_data_type'],
                     style=dataset.get('style'),
+                    network=dataset.get('network', False),
                 )
                 archive_location = Path('sample_data', dataset['path'])
                 if not archive_location.exists():
