@@ -179,7 +179,7 @@ def save_network_nodes(dataset, geodata):
 
     geodata = geodata.copy()
     edge_set = geodata[geodata.geom_type != 'Point']
-    node_set = geodata[geodata.geom_type == 'Point'].drop_duplicates(subset=["STATION"])
+    node_set = geodata[geodata.geom_type == 'Point'].drop_duplicates(subset=[node_id_column])
 
     adjacencies = {}
     for name, edge_group in edge_set.groupby(connection_column):
