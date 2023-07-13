@@ -2,9 +2,11 @@ import json
 from pathlib import Path
 import tempfile
 import zipfile
+import shapely
 
 from celery import shared_task
 from django.core.files.base import ContentFile
+from django.contrib.gis.geos import Point
 from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import large_image_converter
@@ -12,7 +14,7 @@ import numpy
 import rasterio
 import shapefile
 
-from uvdat.core.models import Dataset
+from uvdat.core.models import Dataset, NetworkNode
 from uvdat.core.utils import add_styling
 
 
@@ -119,7 +121,10 @@ def convert_shape_file_archive(dataset_id):
             json.dump({'type': 'FeatureCollection', 'features': features}, geodata_file)
         geodata = geopandas.read_file(geodata_path)
         geodata = geodata.set_crs(original_projection, allow_override=True)
+
         geodata = geodata.to_crs(4326)
+        if dataset.network:
+            save_network_nodes(dataset, geodata)
 
         geodata.to_file(geodata_path)
         tiled_geo = {}
@@ -154,3 +159,99 @@ def convert_shape_file_archive(dataset_id):
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
         dataset.processing = False
         dataset.save()
+
+
+def save_network_nodes(dataset, geodata):
+    connection_column = None
+    node_id_column = None
+    if dataset.style and dataset.style.get('options'):
+        options = dataset.style.get('options')
+        connection_column = options.get('connection_column')
+        node_id_column = options.get('node_id_column')
+    if connection_column is None:
+        raise ValueError(
+            f'This dataset does not specify a "connection_column" in its options. Column options are {geodata.columns}.'
+        )
+    if node_id_column is None:
+        raise ValueError(
+            f'This dataset does not specify a "node_id_column" in its options. Column options are {geodata.columns}.'
+        )
+
+    geodata = geodata.copy().assign(adjacent=None)
+    edge_set = geodata[geodata.geom_type != 'Point']
+    node_set = geodata[geodata.geom_type == 'Point'].drop_duplicates(subset=["STATION"])
+
+    adjacencies = {}
+    for name, edge_group in edge_set.groupby(connection_column):
+        # first search among nodes that share some part of their routes
+        # (route names are expected to be separated by double spaces)
+        expected_nodes = node_set[
+            node_set.apply(
+                lambda x: len(set(x[connection_column].split('  ')) & set(name.split('  '))) > 0,
+                axis=1,
+            )
+        ]
+
+        # create one line from all arcs in this group, which share values in the connection column
+        route = edge_group.unary_union
+        if route.geom_type == 'MultiLineString':
+            route = shapely.ops.linemerge(route)
+
+        route_points = geopandas.GeoDataFrame(
+            geometry=list(shapely.extract_unique_points(route).geoms)
+        ).set_crs(node_set.crs)
+
+        # along the points of the route, find the nodes that are nearest (in order of the route points)
+        route_points_nearest_nodes = route_points.sjoin_nearest(expected_nodes).sort_index()
+        route_nodes = list(
+            route_points_nearest_nodes.drop_duplicates(subset=[node_id_column])[node_id_column]
+        )
+
+        # check if the ends of the line are close to nodes in other groups
+        route_points = list(route_points.geometry)
+        if len(route_points) > 0 and len(route_nodes) > 0:
+            terminal_indices = [0, -1]  # first and last
+            for t_i in terminal_indices:
+                terminal_point = route_points[t_i]
+                distances = node_set.distance(terminal_point)
+                closest_node = node_set.loc[distances.idxmin()]
+                if closest_node[node_id_column] not in route_nodes:
+                    route_nodes.insert(t_i, closest_node[node_id_column]),
+
+        # print(name, route_nodes)
+
+        # record adjacencies from the ordered route nodes list
+        for i in range(len(route_nodes) - 1):
+            current_node_id = route_nodes[i]
+            adjacent_node_id = route_nodes[i + 1]
+
+            if current_node_id not in adjacencies:
+                adjacencies[current_node_id] = []
+            if adjacent_node_id not in adjacencies:
+                adjacencies[adjacent_node_id] = []
+
+            if adjacent_node_id not in adjacencies[current_node_id]:
+                adjacencies[current_node_id].append(adjacent_node_id)
+            if current_node_id not in adjacencies[adjacent_node_id]:
+                adjacencies[adjacent_node_id].append(current_node_id)
+
+    # Create all NetworkNode objects first, then populate adjacencies after.
+    dataset.network_nodes.all().delete()
+    node_set.to_crs(4326)
+    for i, node in node_set.iterrows():
+        properties = node.drop(['geometry', 'colors', node_id_column])
+        properties = properties.replace(numpy.nan, 'None')
+        location = Point(x=node.geometry.x, y=node.geometry.y)
+        NetworkNode(
+            name=node[node_id_column],
+            dataset=dataset,
+            location=location,
+            properties=dict(properties),
+        ).save()
+    for i, node in node_set.iterrows():
+        adjacent_node_ids = adjacencies.get(node[node_id_column])
+        if not adjacent_node_ids:
+            continue
+        node_object = NetworkNode.objects.get(name=node[node_id_column])
+        node_object.adjacent_nodes.set(NetworkNode.objects.filter(name__in=adjacent_node_ids))
+        node_object.save()
