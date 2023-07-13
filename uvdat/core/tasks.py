@@ -177,7 +177,7 @@ def save_network_nodes(dataset, geodata):
             f'This dataset does not specify a "node_id_column" in its options. Column options are {geodata.columns}.'
         )
 
-    geodata = geodata.copy().assign(adjacent=None)
+    geodata = geodata.copy()
     edge_set = geodata[geodata.geom_type != 'Point']
     node_set = geodata[geodata.geom_type == 'Point'].drop_duplicates(subset=["STATION"])
 
