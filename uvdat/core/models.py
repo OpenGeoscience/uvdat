@@ -19,6 +19,7 @@ class Dataset(TimeStampedModel, models.Model):
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='datasets')
     category = models.CharField(max_length=25)
     style = models.JSONField(blank=True, null=True)
+    network = models.BooleanField(default=False)
     processing = models.BooleanField(default=False)
 
     # A ZIP file containing the original data files
@@ -33,3 +34,11 @@ class Dataset(TimeStampedModel, models.Model):
 
     # Raster file, containing a cloud-optimized geotiff
     raster_file = S3FileField(null=True, blank=True)
+
+
+class NetworkNode(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    location = geo_models.PointField()
+    properties = models.JSONField(blank=True, null=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='network_nodes')
+    adjacent_nodes = models.ManyToManyField('NetworkNode')

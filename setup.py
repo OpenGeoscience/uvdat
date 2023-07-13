@@ -54,6 +54,7 @@ setup(
         'geopandas',
         'pyshp',
         'rasterio',
+        'urllib3==1.26.15',  # compensate for a bug affecting swagger docs page
         'webcolors',
         # Production-only
         'django-composed-configuration[prod]>=0.20',

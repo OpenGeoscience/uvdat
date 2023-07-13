@@ -7,11 +7,14 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907b20f04fb368544295e4/download",
         "path": "boston/mbta_rapid_transit.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "LINE"
             },
             "options": {
+                "connection_column": "ROUTE",
+                "node_id_column": "STATION",
                 "color_delimiter": "/",
                 "outline": "white"
             }
@@ -25,11 +28,14 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
         "path": "boston/commuter_rail.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "gray"
             },
             "options": {
+                "connection_column": "LINE_BRNCH",
+                "node_id_column": "STATION",
                 "outline": "black"
             }
         }
@@ -65,6 +71,7 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
         "path": "boston/flood_hazard_fema.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "FLD_ZONE"
@@ -90,6 +97,7 @@
         "raw_data_type": "cloud_optimized_geotiff",
         "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
         "path": "boston/easternmass.tif",
+        "network": true,
         "style": {
             "options": {
                 "transparency_threshold": 0,
