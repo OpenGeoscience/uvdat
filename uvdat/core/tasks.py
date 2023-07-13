@@ -122,10 +122,10 @@ def convert_shape_file_archive(dataset_id):
         geodata = geopandas.read_file(geodata_path)
         geodata = geodata.set_crs(original_projection, allow_override=True)
 
-        geodata = geodata.to_crs(4326)
         if dataset.network:
             save_network_nodes(dataset, geodata)
 
+        geodata = geodata.to_crs(4326)
         geodata.to_file(geodata_path)
         tiled_geo = {}
         with open(geodata_path, 'rb') as geodata_file:
@@ -207,17 +207,6 @@ def save_network_nodes(dataset, geodata):
             route_points_nearest_nodes.drop_duplicates(subset=[node_id_column])[node_id_column]
         )
 
-        # check if the ends of the line are close to nodes in other groups
-        route_points = list(route_points.geometry)
-        if len(route_points) > 0 and len(route_nodes) > 0:
-            terminal_indices = [0, -1]  # first and last
-            for t_i in terminal_indices:
-                terminal_point = route_points[t_i]
-                distances = node_set.distance(terminal_point)
-                closest_node = node_set.loc[distances.idxmin()]
-                if closest_node[node_id_column] not in route_nodes:
-                    route_nodes.insert(t_i, closest_node[node_id_column]),
-
         # print(name, route_nodes)
 
         # record adjacencies from the ordered route nodes list
@@ -234,6 +223,8 @@ def save_network_nodes(dataset, geodata):
                 adjacencies[current_node_id].append(adjacent_node_id)
             if current_node_id not in adjacencies[adjacent_node_id]:
                 adjacencies[adjacent_node_id].append(current_node_id)
+
+    # print('total connections=', sum(len(li) for li in adjacencies.values()))
 
     # Create all NetworkNode objects first, then populate adjacencies after.
     dataset.network_nodes.all().delete()
