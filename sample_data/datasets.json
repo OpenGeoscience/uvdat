@@ -14,6 +14,7 @@
             },
             "options": {
                 "connection_column": "ROUTE",
+                "connection_column_delimiter": "/",
                 "node_id_column": "STATION",
                 "color_delimiter": "/",
                 "outline": "white"
@@ -35,6 +36,7 @@
             },
             "options": {
                 "connection_column": "LINE_BRNCH",
+                "connection_column_delimiter": "/",
                 "node_id_column": "STATION",
                 "outline": "black"
             }
@@ -102,6 +104,28 @@
             "options": {
                 "transparency_threshold": 0,
                 "trim_distribution_percentage": 0.01
+            }
+        }
+    },
+    {
+        "name": "DC Metro",
+        "description": "DC Metro Lines and Stations",
+        "category": "transportation",
+        "city": "Washington, DC",
+        "raw_data_type": "shape_file_archive",
+        "url": "https://data.kitware.com/api/v1/item/64b80188cf6a0eaef6c1416e/download",
+        "path": "washington/DC_Metro.zip",
+        "network": true,
+        "style": {
+            "property_map": {
+                "colors": "LINE"
+            },
+            "options": {
+                "connection_column": "LINE",
+                "connection_column_delimiter": ", ",
+                "node_id_column": "NAME",
+                "color_delimiter": ", ",
+                "outline": "white"
             }
         }
     }
