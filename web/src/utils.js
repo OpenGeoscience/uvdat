@@ -9,17 +9,20 @@ import { baseURL } from "@/api/auth";
 import { map } from "@/store";
 
 export const rasterColormaps = [
+  "terrain",
   "plasma",
   "viridis",
-  "inferno",
   "magma",
   "cividis",
   "spring",
   "summer",
   "autumn",
   "winter",
+  "coolwarm",
   "cool",
   "hot",
+  "seismic",
+  "hsv",
   "gray",
 ];
 
@@ -63,7 +66,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     const tileParams = {
       projection: "EPSG:3857",
       band: 1,
-      palette: dataset.style?.colormap || "plasma",
+      palette: dataset.style?.colormap || "terrain",
     };
     if (
       dataset.style?.colormap_range !== undefined &&

@@ -8,7 +8,7 @@ import { currentCity, pollForProcessingDataset } from "../store";
 export default {
   setup() {
     const opacity = ref(1);
-    const colormap = ref("plasma");
+    const colormap = ref("terrain");
     const datasetRange = ref(undefined);
     const colormapRange = ref(undefined);
     const showConfirmConvert = ref(false);
@@ -19,7 +19,7 @@ export default {
 
     function populateRefs() {
       opacity.value = currentDataset.value?.style?.opacity || 1;
-      colormap.value = currentDataset.value?.style?.colormap || "plasma";
+      colormap.value = currentDataset.value?.style?.colormap || "terrain";
       datasetRange.value =
         currentDataset.value?.style?.data_range?.map((v) => Math.round(v)) ||
         undefined;
