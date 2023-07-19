@@ -14,6 +14,8 @@ export const rasterColormaps = [
   "viridis",
   "magma",
   "cividis",
+  "rainbow",
+  "jet",
   "spring",
   "summer",
   "autumn",
@@ -22,6 +24,8 @@ export const rasterColormaps = [
   "cool",
   "hot",
   "seismic",
+  "twilight",
+  "tab20",
   "hsv",
   "gray",
 ];
