@@ -5,7 +5,7 @@
         "category": "transportation",
         "city": "Boston, MA",
         "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64907b20f04fb368544295e4/download",
+        "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
         "path": "boston/mbta_rapid_transit.zip",
         "network": true,
         "style": {
