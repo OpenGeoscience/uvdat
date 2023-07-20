@@ -5,13 +5,17 @@
         "category": "transportation",
         "city": "Boston, MA",
         "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64907b20f04fb368544295e4/download",
+        "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
         "path": "boston/mbta_rapid_transit.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "LINE"
             },
             "options": {
+                "connection_column": "ROUTE",
+                "connection_column_delimiter": "/",
+                "node_id_column": "STATION",
                 "color_delimiter": "/",
                 "outline": "white"
             }
@@ -25,11 +29,15 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
         "path": "boston/commuter_rail.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "gray"
             },
             "options": {
+                "connection_column": "LINE_BRNCH",
+                "connection_column_delimiter": "/",
+                "node_id_column": "STATION",
                 "outline": "black"
             }
         }
@@ -65,6 +73,7 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
         "path": "boston/flood_hazard_fema.zip",
+        "network": true,
         "style": {
             "property_map": {
                 "colors": "FLD_ZONE"
@@ -90,10 +99,33 @@
         "raw_data_type": "cloud_optimized_geotiff",
         "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
         "path": "boston/easternmass.tif",
+        "network": true,
         "style": {
             "options": {
                 "transparency_threshold": 0,
                 "trim_distribution_percentage": 0.01
+            }
+        }
+    },
+    {
+        "name": "DC Metro",
+        "description": "DC Metro Lines and Stations",
+        "category": "transportation",
+        "city": "Washington, DC",
+        "raw_data_type": "shape_file_archive",
+        "url": "https://data.kitware.com/api/v1/item/64b80188cf6a0eaef6c1416e/download",
+        "path": "washington/DC_Metro.zip",
+        "network": true,
+        "style": {
+            "property_map": {
+                "colors": "LINE"
+            },
+            "options": {
+                "connection_column": "LINE",
+                "connection_column_delimiter": ", ",
+                "node_id_column": "NAME",
+                "color_delimiter": ", ",
+                "outline": "white"
             }
         }
     }
