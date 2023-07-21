@@ -1,8 +1,12 @@
 <script>
 import { currentDataset, map } from "@/store";
 import { onMounted, ref, watch } from "vue";
-import { rasterColormaps, addDatasetLayerToMap } from "../utils";
-import { convertDataset } from "../api/rest";
+import {
+  rasterColormaps,
+  addDatasetLayerToMap,
+  addNetworkLayerToMap,
+} from "../utils";
+import { convertDataset, getDatasetNetwork } from "../api/rest";
 import { currentCity, pollForProcessingDataset } from "../store";
 
 export default {
@@ -12,6 +16,7 @@ export default {
     const datasetRange = ref(undefined);
     const colormapRange = ref(undefined);
     const showConfirmConvert = ref(false);
+    const networkVisMode = ref(false);
 
     function collapseOptionsPanel() {
       currentDataset.value = undefined;
@@ -60,6 +65,34 @@ export default {
       }
     }
 
+    function toggleNetworkVisMode() {
+      if (currentDataset.value) {
+        let createNetworkLayer = true;
+        map.value
+          .getLayers()
+          .getArray()
+          .forEach((layer) => {
+            const layerDatasetId = layer.getProperties().datasetId;
+            const layerIsNetwork = layer.getProperties().network;
+            if (layerDatasetId === currentDataset.value.id) {
+              if (layerIsNetwork) {
+                layer.setVisible(networkVisMode.value);
+                createNetworkLayer = false;
+              } else {
+                layer.setVisible(!networkVisMode.value);
+              }
+            }
+          });
+        if (createNetworkLayer) {
+          getDatasetNetwork(currentDataset.value.id).then((nodes) => {
+            if (nodes.length) {
+              addNetworkLayerToMap(currentDataset.value, nodes);
+            }
+          });
+        }
+      }
+    }
+
     function runConversion() {
       showConfirmConvert.value = false;
       convertDataset(currentDataset.value.id).then((dataset) => {
@@ -86,6 +119,8 @@ export default {
       datasetRange,
       colormapRange,
       showConfirmConvert,
+      networkVisMode,
+      toggleNetworkVisMode,
       runConversion,
     };
   },
@@ -155,6 +190,14 @@ export default {
             />
           </template>
         </v-range-slider>
+      </div>
+
+      <div v-if="currentDataset.network">
+        <v-switch
+          v-model="networkVisMode"
+          label="Show as node network"
+          @change="toggleNetworkVisMode"
+        />
       </div>
 
       <div class="bottom" @click="showConfirmConvert = true">

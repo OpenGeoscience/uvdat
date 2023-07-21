@@ -33,3 +33,12 @@ export interface Feature {
     [key: string]: string | object;
   };
 }
+
+export interface NetworkNode {
+  id: number;
+  location: number[];
+  name: string;
+  properties: object;
+  dataset: number;
+  adjacent_nodes: number[];
+}
