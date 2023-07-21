@@ -1,9 +1,14 @@
 import TileLayer from "ol/layer/Tile.js";
+import VectorLayer from "ol/layer/Vector";
 import VectorTileLayer from "ol/layer/VectorTile.js";
 import XYZSource from "ol/source/XYZ.js";
+import VectorSource from "ol/source/Vector";
 import VectorTileSource from "ol/source/VectorTile.js";
 import GeoJSON from "ol/format/GeoJSON.js";
 import { Fill, Stroke, Circle, Style } from "ol/style.js";
+import { Feature } from "ol";
+import { LineString, Point } from "ol/geom";
+import { fromLonLat } from "ol/proj";
 
 import { baseURL } from "@/api/auth";
 import { map } from "@/store";
@@ -119,4 +124,61 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       })
     );
   }
+}
+
+export function addNetworkLayerToMap(dataset, nodes) {
+  const source = new VectorSource();
+  const features = [];
+  const visitedNodes = [];
+  nodes.forEach((node) => {
+    features.push(
+      new Feature(
+        Object.assign(node.properties, {
+          name: node.name,
+          geometry: new Point(fromLonLat(node.location.toReversed())),
+        })
+      )
+    );
+    node.adjacent_nodes.forEach((adjId) => {
+      if (!visitedNodes.includes(adjId)) {
+        const adjNode = nodes.find((n) => n.id === adjId);
+        features.push(
+          new Feature({
+            geometry: new LineString([
+              fromLonLat(node.location.toReversed()),
+              fromLonLat(adjNode.location.toReversed()),
+            ]),
+          })
+        );
+      }
+    });
+    visitedNodes.push(node.id);
+  });
+  source.addFeatures(features);
+
+  const fill = new Fill({
+    color: "#ffffffff",
+  });
+  const stroke = new Stroke({
+    color: "#000000ff",
+    width: 3,
+  });
+  const style = new Style({
+    image: new Circle({
+      fill: fill,
+      stroke: stroke,
+      radius: 7,
+    }),
+    fill: fill,
+    stroke: stroke,
+  });
+  const layer = new VectorLayer({
+    properties: {
+      datasetId: dataset.id,
+      network: true,
+    },
+    source,
+    style,
+  });
+  map.value.addLayer(layer);
 }

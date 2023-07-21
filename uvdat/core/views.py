@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City, Dataset
-from uvdat.core.serializers import CitySerializer, DatasetSerializer
+from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
 from uvdat.core.tasks import convert_raw_archive
 
 TILES_DIR = tempfile.TemporaryDirectory()
@@ -40,6 +40,18 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
                 return HttpResponse(json.dumps(tile.__next__()), status=200)
             except StopIteration:
                 return HttpResponse(status=404)
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path=r'network',
+        url_name='network',
+    )
+    def get_network_nodes(self, request, **kwargs):
+        dataset = self.get_object()
+        return Response(
+            [NetworkNodeSerializer(n).data for n in dataset.network_nodes.all()], status=200
+        )
 
     @action(
         detail=True,

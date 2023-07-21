@@ -18,8 +18,6 @@ class NetworkNodeSerializer(serializers.ModelSerializer):
 
 
 class DatasetSerializer(serializers.ModelSerializer):
-    network_nodes = NetworkNodeSerializer(many=True)
-
     class Meta:
         model = Dataset
         fields = '__all__'
