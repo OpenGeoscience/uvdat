@@ -165,11 +165,10 @@ def save_network_nodes(dataset, geodata):
     connection_column = None
     connection_column_delimiter = None
     node_id_column = None
-    if dataset.style and dataset.style.get('options'):
-        options = dataset.style.get('options')
-        connection_column = options.get('connection_column')
-        connection_column_delimiter = options.get('connection_column_delimiter')
-        node_id_column = options.get('node_id_column')
+    if dataset.metadata:
+        connection_column = dataset.metadata.get('connection_column')
+        connection_column_delimiter = dataset.metadata.get('connection_column_delimiter')
+        node_id_column = dataset.metadata.get('node_id_column')
     if connection_column is None or connection_column not in geodata.columns:
         raise ValueError(
             f'This dataset does not specify a valid \
