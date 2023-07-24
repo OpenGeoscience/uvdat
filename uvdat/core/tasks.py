@@ -23,14 +23,17 @@ def convert_raw_archive(dataset_id):
     dataset = Dataset.objects.get(id=dataset_id)
     if dataset.raw_data_type == 'cloud_optimized_geotiff':
         convert_cog(dataset_id)
-    if dataset.raw_data_type == 'shape_file_archive':
+    elif dataset.raw_data_type == 'shape_file_archive':
         convert_shape_file_archive(dataset_id)
+    else:
+        print(f'\t\tNo op for raw data type {dataset.raw_data_type}')
 
 
 @shared_task
 def convert_cog(dataset_id):
     dataset = Dataset.objects.get(id=dataset_id)
     with tempfile.TemporaryDirectory() as temp_dir:
+        raw_data_path = Path(temp_dir, 'raw_data.tiff')
         raster_path = Path(temp_dir, 'raster.tiff')
         cog_raster_path = Path(temp_dir, 'cog_raster.tiff')
 
@@ -43,8 +46,12 @@ def convert_cog(dataset_id):
                 'trim_distribution_percentage', trim_distribution_percentage
             )
 
-        with dataset.raw_data_archive.open('rb') as raw_data_archive:
-            input_data = rasterio.open(raw_data_archive)
+        with open(raw_data_path, 'wb') as raw_data:
+            with dataset.raw_data_archive.open('rb') as raw_data_archive:
+                raw_data.write(raw_data_archive.read())
+
+        with open(raw_data_path, 'rb') as raw_data:
+            input_data = rasterio.open(raw_data)
             output_data = rasterio.open(
                 raster_path,
                 'w',
@@ -165,11 +172,10 @@ def save_network_nodes(dataset, geodata):
     connection_column = None
     connection_column_delimiter = None
     node_id_column = None
-    if dataset.style and dataset.style.get('options'):
-        options = dataset.style.get('options')
-        connection_column = options.get('connection_column')
-        connection_column_delimiter = options.get('connection_column_delimiter')
-        node_id_column = options.get('node_id_column')
+    if dataset.metadata:
+        connection_column = dataset.metadata.get('connection_column')
+        connection_column_delimiter = dataset.metadata.get('connection_column_delimiter')
+        node_id_column = dataset.metadata.get('node_id_column')
     if connection_column is None or connection_column not in geodata.columns:
         raise ValueError(
             f'This dataset does not specify a valid \
@@ -186,6 +192,7 @@ def save_network_nodes(dataset, geodata):
         )
 
     geodata = geodata.copy()
+    geodata[connection_column].fillna('', inplace=True)
     edge_set = geodata[geodata.geom_type != 'Point']
     node_set = geodata[geodata.geom_type == 'Point']
 
@@ -194,10 +201,12 @@ def save_network_nodes(dataset, geodata):
     unique_routes = node_set[connection_column].drop_duplicates()
     unique_routes = unique_routes[~unique_routes.str.contains(connection_column_delimiter)]
     for unique_route in unique_routes:
-        nodes = node_set[node_set[connection_column].str.contains(unique_route)]
-        edges = edge_set[edge_set[connection_column].str.contains(unique_route)]
+        nodes = node_set[node_set[connection_column].str.contains(unique_route, regex=False)]
+        edges = edge_set[edge_set[connection_column].str.contains(unique_route, regex=False)]
 
         # create one route line from all edges in this group
+        if len(edges) < 1:
+            continue
         route = edges.unary_union
         if route.geom_type == 'MultiLineString':
             route = shapely.ops.linemerge(route)

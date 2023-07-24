@@ -8,14 +8,16 @@
         "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
         "path": "boston/mbta_rapid_transit.zip",
         "network": true,
+        "metadata": {
+            "connection_column": "ROUTE",
+            "connection_column_delimiter": "/",
+            "node_id_column": "STATION"
+        },
         "style": {
             "property_map": {
                 "colors": "LINE"
             },
             "options": {
-                "connection_column": "ROUTE",
-                "connection_column_delimiter": "/",
-                "node_id_column": "STATION",
                 "color_delimiter": "/",
                 "outline": "white"
             }
@@ -30,14 +32,16 @@
         "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
         "path": "boston/commuter_rail.zip",
         "network": true,
+        "metadata": {
+            "connection_column": "LINE_BRNCH",
+            "connection_column_delimiter": "/",
+            "node_id_column": "STATION"
+        },
         "style": {
             "property_map": {
                 "colors": "gray"
             },
             "options": {
-                "connection_column": "LINE_BRNCH",
-                "connection_column_delimiter": "/",
-                "node_id_column": "STATION",
                 "outline": "black"
             }
         }
@@ -73,7 +77,6 @@
         "raw_data_type": "shape_file_archive",
         "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
         "path": "boston/flood_hazard_fema.zip",
-        "network": true,
         "style": {
             "property_map": {
                 "colors": "FLD_ZONE"
@@ -99,11 +102,43 @@
         "raw_data_type": "cloud_optimized_geotiff",
         "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
         "path": "boston/easternmass.tif",
-        "network": true,
         "style": {
             "options": {
                 "transparency_threshold": 0,
                 "trim_distribution_percentage": 0.01
+            }
+        }
+    },
+    {
+        "name": "Boston Harbor Daily Tide Levels",
+        "description": "Raw data was obtained using the NOAA CO-OPS API for Data Retrieval and reformatted in tabular form",
+        "category": "sensor",
+        "city": "Boston, MA",
+        "raw_data_type": "csv",
+        "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
+        "path": "boston/tide_level_data.csv",
+        "metadata": {
+            "Contents": "Daily high-low tide levels",
+            "columns": {
+                "Date": "YYYY-MM-DD",
+                "H": "High water",
+                "HH": "Higher High water",
+                "L": "Low water",
+                "LL": "Lower Low Water"
+            },
+            "contents": "Daily high-low tide levels",
+            "date_range": {
+                "from": "01-Jan-1980",
+                "to": "30-Jun-2023"
+            },
+            "location": "Boston, MA",
+            "rows": 15857,
+            "source": "https://api.tidesandcurrents.noaa.gov/api/prod/",
+            "station": {
+                "datum": "Station Datum (STND)",
+                "id": 8443970,
+                "latitude": 42.3539,
+                "longitude": -71.0503
             }
         }
     },
@@ -116,14 +151,16 @@
         "url": "https://data.kitware.com/api/v1/item/64b80188cf6a0eaef6c1416e/download",
         "path": "washington/DC_Metro.zip",
         "network": true,
+        "metadata": {
+            "connection_column": "LINE",
+            "connection_column_delimiter": ", ",
+            "node_id_column": "NAME"
+        },
         "style": {
             "property_map": {
                 "colors": "LINE"
             },
             "options": {
-                "connection_column": "LINE",
-                "connection_column_delimiter": ", ",
-                "node_id_column": "NAME",
                 "color_delimiter": ", ",
                 "outline": "white"
             }

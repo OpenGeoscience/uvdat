@@ -48,6 +48,7 @@ class Command(BaseCommand):
                     category=dataset['category'],
                     city=City.objects.get(name=dataset['city']),
                     raw_data_type=dataset['raw_data_type'],
+                    metadata=dataset.get('metadata'),
                     style=dataset.get('style'),
                     network=dataset.get('network', False),
                 )
