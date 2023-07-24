@@ -10,7 +10,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City, Dataset
 from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
-from uvdat.core.tasks import convert_raw_archive
+from uvdat.core.tasks.conversion import convert_raw_archive
 
 TILES_DIR = tempfile.TemporaryDirectory()
 
