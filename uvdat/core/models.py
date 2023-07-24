@@ -21,6 +21,7 @@ class Dataset(TimeStampedModel, models.Model):
     style = models.JSONField(blank=True, null=True)
     network = models.BooleanField(default=False)
     processing = models.BooleanField(default=False)
+    metadata = models.JSONField(blank=True, null=True)
 
     # A ZIP file containing the original data files
     raw_data_archive = S3FileField(null=True, blank=True)
