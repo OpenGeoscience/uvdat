@@ -80,10 +80,20 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         dataset = self.get_object()
         if not dataset.network:
             return Response('This dataset is not a network dataset.', status=400)
+        if "exclude_nodes" not in request.data:
+            return Response('Please specify a list of nodes to exclude in `exclude_nodes`.')
         exclude_nodes = request.data['exclude_nodes']
         edge_list = {}
+        visited_nodes = []
         for node in dataset.network_nodes.all():
-            edge_list[node.id] = [adj_node.id for adj_node in node.adjacent_nodes.all()]
+            adjacencies = [
+                adj_node.id
+                for adj_node in node.adjacent_nodes.all()
+                if adj_node.id not in visited_nodes
+            ]
+            if len(adjacencies) > 0:
+                edge_list[node.id] = sorted(adjacencies)
+            visited_nodes.append(node.id)
 
         network_gcc.delay(edge_list, exclude_nodes)
         return Response(status=200)
