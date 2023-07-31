@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 import requests
 
 from uvdat.core.models import City, Dataset
-from uvdat.core.tasks import convert_raw_archive
+from uvdat.core.tasks.conversion import convert_raw_archive
 
 
 class Command(BaseCommand):

@@ -10,7 +10,8 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City, Dataset
 from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
-from uvdat.core.tasks import convert_raw_archive
+from uvdat.core.tasks.conversion import convert_raw_archive
+from uvdat.core.tasks.networks import network_gcc
 
 TILES_DIR = tempfile.TemporaryDirectory()
 
@@ -67,4 +68,32 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         dataset.processing = True
         dataset.save()
         convert_raw_archive.delay(dataset.id)
-        return Response(DatasetSerializer(dataset).data, status=200)
+        return Response(status=200)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path=r'gcc',
+        url_name='gcc',
+    )
+    def spawn_gcc_task(self, request, **kwargs):
+        dataset = self.get_object()
+        if not dataset.network:
+            return Response('This dataset is not a network dataset.', status=400)
+        if "exclude_nodes" not in request.data:
+            return Response('Please specify a list of nodes to exclude in `exclude_nodes`.')
+        exclude_nodes = request.data['exclude_nodes']
+        edge_list = {}
+        visited_nodes = []
+        for node in dataset.network_nodes.all():
+            adjacencies = [
+                adj_node.id
+                for adj_node in node.adjacent_nodes.all()
+                if adj_node.id not in visited_nodes
+            ]
+            if len(adjacencies) > 0:
+                edge_list[node.id] = sorted(adjacencies)
+            visited_nodes.append(node.id)
+
+        network_gcc.delay(edge_list, exclude_nodes)
+        return Response(status=200)
