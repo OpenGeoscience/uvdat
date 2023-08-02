@@ -1,10 +1,8 @@
 import shapely
 import geopandas
 import numpy
-
-from celery import shared_task
+import networkx as nx
 from django.contrib.gis.geos import Point
-
 from uvdat.core.models import NetworkNode
 
 
@@ -106,6 +104,14 @@ def save_network_nodes(dataset, geodata):
         node_object.save()
 
 
-@shared_task
-def network_gcc(edge_list, exclude_nodes):
-    print({'edge_list': edge_list, 'exclude_nodes': exclude_nodes})
+def network_gcc(edges: dict[str, list[int]], exclude_nodes: list[int]) -> list[int]:
+    # Convert input keys to integer
+    int_edges = {int(k): v for k, v in edges.items()}
+
+    # Create graph, remove nodes, get GCC
+    G = nx.from_dict_of_lists(int_edges)
+    G.remove_nodes_from(exclude_nodes)
+    gcc = max(nx.connected_components(G), key=len)
+
+    # Return GCC's list of nodes
+    return list(gcc)

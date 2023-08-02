@@ -95,5 +95,5 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
                 edge_list[node.id] = sorted(adjacencies)
             visited_nodes.append(node.id)
 
-        network_gcc.delay(edge_list, exclude_nodes)
-        return Response(status=200)
+        gcc = network_gcc(edge_list, exclude_nodes)
+        return Response(gcc, status=200)
