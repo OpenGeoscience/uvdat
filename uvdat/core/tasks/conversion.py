@@ -21,16 +21,18 @@ from uvdat.core.tasks.networks import save_network_nodes
 def convert_raw_archive(dataset_id):
     dataset = Dataset.objects.get(id=dataset_id)
     if dataset.raw_data_type == 'cloud_optimized_geotiff':
-        convert_cog(dataset_id)
+        convert_cog(dataset)
+    elif dataset.raw_data_type == 'geojson':
+        convert_geojson(dataset)
     elif dataset.raw_data_type == 'shape_file_archive':
-        convert_shape_file_archive(dataset_id)
+        convert_shape_file_archive(dataset)
     else:
         print(f'\t\tNo op for raw data type {dataset.raw_data_type}')
+    dataset.processing = False
+    dataset.save()
 
 
-@shared_task
-def convert_cog(dataset_id):
-    dataset = Dataset.objects.get(id=dataset_id)
+def convert_cog(dataset):
     with tempfile.TemporaryDirectory() as temp_dir:
         raw_data_path = Path(temp_dir, 'raw_data.tiff')
         raster_path = Path(temp_dir, 'raster.tiff')
@@ -101,38 +103,21 @@ def convert_cog(dataset_id):
             dataset.save()
 
 
-@shared_task
-def convert_shape_file_archive(dataset_id):
-    dataset = Dataset.objects.get(id=dataset_id)
-    features = []
-    original_projection = None
+def convert_geojson(dataset, geodata_path=None):
     with tempfile.TemporaryDirectory() as temp_dir:
-        archive_path = Path(temp_dir, 'archive.zip')
-        geodata_path = Path(temp_dir, 'geo.json')
+        if geodata_path is None:
+            geodata_path = Path(temp_dir, 'geo.json')
+            with open(geodata_path, 'wb') as geodata_file:
+                original_data = dataset.raw_data_archive.open('rb').read()
+                geodata_file.write(original_data)
+                original_data = json.loads(original_data)
+                original_projection = original_data.get('crs').get('properties').get('name')
+            if original_projection:
+                geodata = geopandas.read_file(geodata_path)
+                geodata = geodata.set_crs(original_projection, allow_override=True)
+                geodata = geodata.to_crs(4326)
+                geodata.to_file(geodata_path)
         tiled_geo_path = Path(temp_dir, 'tiled_geo.json')
-
-        with open(archive_path, 'wb') as archive_file:
-            archive_file.write(dataset.raw_data_archive.open('rb').read())
-            with zipfile.ZipFile(archive_path) as zip_archive:
-                filenames = zip_archive.namelist()
-                for filename in filenames:
-                    if filename.endswith('.shp'):
-                        sf = shapefile.Reader(f'{archive_path}/{filename}')
-                        features.extend(sf.__geo_interface__['features'])
-                    if filename.endswith('.prj'):
-                        original_projection = zip_archive.open(filename).read().decode()
-
-        features = add_styling(features, dataset.style)
-        with open(geodata_path, 'w') as geodata_file:
-            json.dump({'type': 'FeatureCollection', 'features': features}, geodata_file)
-        geodata = geopandas.read_file(geodata_path)
-        geodata = geodata.set_crs(original_projection, allow_override=True)
-
-        geodata = geodata.to_crs(4326)
-        if dataset.network:
-            save_network_nodes(dataset, geodata)
-
-        geodata.to_file(geodata_path)
         tiled_geo = {}
         with open(geodata_path, 'rb') as geodata_file:
             contents = geodata_file.read()
@@ -161,7 +146,38 @@ def convert_shape_file_archive(dataset_id):
                 tiled_geo_path,
                 ContentFile(tiled_geo_file.read()),
             )
+        print(f'\t GeoJSON to Tiles conversion complete for {dataset.name}.')
 
+
+def convert_shape_file_archive(dataset):
+    features = []
+    original_projection = None
+    with tempfile.TemporaryDirectory() as temp_dir:
+        archive_path = Path(temp_dir, 'archive.zip')
+        geodata_path = Path(temp_dir, 'geo.json')
+
+        with open(archive_path, 'wb') as archive_file:
+            archive_file.write(dataset.raw_data_archive.open('rb').read())
+            with zipfile.ZipFile(archive_path) as zip_archive:
+                filenames = zip_archive.namelist()
+                for filename in filenames:
+                    if filename.endswith('.shp'):
+                        sf = shapefile.Reader(f'{archive_path}/{filename}')
+                        features.extend(sf.__geo_interface__['features'])
+                    if filename.endswith('.prj'):
+                        original_projection = zip_archive.open(filename).read().decode()
+
+        features = add_styling(features, dataset.style)
+        with open(geodata_path, 'w') as geodata_file:
+            json.dump({'type': 'FeatureCollection', 'features': features}, geodata_file)
+        geodata = geopandas.read_file(geodata_path)
+        geodata = geodata.set_crs(original_projection, allow_override=True)
+
+        geodata = geodata.to_crs(4326)
+        if dataset.network:
+            save_network_nodes(dataset, geodata)
+
+        geodata.to_file(geodata_path)
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
-        dataset.processing = False
-        dataset.save()
+
+        convert_geojson(dataset, geodata_path=geodata_path)
