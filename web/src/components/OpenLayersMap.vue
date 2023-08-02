@@ -3,6 +3,7 @@ import Map from "ol/Map.js";
 import Overlay from "ol/Overlay";
 import { onMounted, ref } from "vue";
 import { clearMap, map } from "@/store";
+import { displayFeatureTooltip, displayRasterTooltip } from "@/utils";
 
 export default {
   name: "OpenLayersMap",
@@ -29,46 +30,10 @@ export default {
         positioning: "bottom-left",
       });
       map.value.addOverlay(overlay);
-      function displayTooltip(evt) {
-        var pixel = evt.pixel;
-        var feature = map.value.forEachFeatureAtPixel(
-          pixel,
-          function (feature) {
-            return feature;
-          }
-        );
-        tooltip.value.style.display = feature ? "" : "none";
-        if (feature) {
-          const properties = Object.fromEntries(
-            Object.entries(feature.values_).filter(([k, v]) => k && v)
-          );
-          ["colors", "geometry", "type"].forEach(
-            (prop) => delete properties[prop]
-          );
-          const prettyString = JSON.stringify(properties)
-            .replaceAll('"', "")
-            .replaceAll(",", "\n")
-            .replaceAll("{", "")
-            .replaceAll("}", "");
-          tooltip.value.innerHTML = prettyString;
-          // make sure the tooltip isn't cut off
-          const mapCenter = map.value.get("view").get("center");
-          const viewPortSize = map.value.get("view").viewportSize_;
-          const tooltipSize = [
-            tooltip.value.clientWidth,
-            tooltip.value.clientHeight,
-          ];
-          const tooltipPosition = evt.coordinate.map((v, i) => {
-            const mapEdge = mapCenter[i] + viewPortSize[i];
-            if (v + tooltipSize[i] > mapEdge) {
-              return mapEdge - (tooltipSize[i] * 3) / 2;
-            }
-            return v;
-          });
-          overlay.setPosition(tooltipPosition);
-        }
-      }
-      map.value.on("click", displayTooltip);
+      map.value.on("click", (e) => displayFeatureTooltip(e, tooltip, overlay));
+      map.value.on("pointermove", (e) =>
+        displayRasterTooltip(e, tooltip, overlay)
+      );
     }
 
     onMounted(() => {

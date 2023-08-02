@@ -11,7 +11,8 @@ import { LineString, Point } from "ol/geom";
 import { fromLonLat } from "ol/proj";
 
 import { baseURL } from "@/api/auth";
-import { map } from "@/store";
+import { map, currentDataset, rasterTooltip } from "@/store";
+import axios from "axios";
 
 export const rasterColormaps = [
   "terrain",
@@ -181,4 +182,60 @@ export function addNetworkLayerToMap(dataset, nodes) {
     style,
   });
   map.value.addLayer(layer);
+}
+
+export function displayFeatureTooltip(evt, tooltip, overlay) {
+  if (rasterTooltip.value) return;
+  var pixel = evt.pixel;
+  var feature = map.value.forEachFeatureAtPixel(pixel, function (feature) {
+    return feature;
+  });
+  tooltip.value.style.display = feature ? "" : "none";
+  if (feature) {
+    const properties = Object.fromEntries(
+      Object.entries(feature.values_).filter(([k, v]) => k && v)
+    );
+    ["colors", "geometry", "type"].forEach((prop) => delete properties[prop]);
+    const prettyString = JSON.stringify(properties)
+      .replaceAll('"', "")
+      .replaceAll(",", "\n")
+      .replaceAll("{", "")
+      .replaceAll("}", "");
+    tooltip.value.innerHTML = prettyString;
+    // make sure the tooltip isn't cut off
+    const mapCenter = map.value.get("view").get("center");
+    const viewPortSize = map.value.get("view").viewportSize_;
+    const tooltipSize = [tooltip.value.clientWidth, tooltip.value.clientHeight];
+    const tooltipPosition = evt.coordinate.map((v, i) => {
+      const mapEdge = mapCenter[i] + viewPortSize[i];
+      if (v + tooltipSize[i] > mapEdge) {
+        return mapEdge - (tooltipSize[i] * 3) / 2;
+      }
+      return v;
+    });
+    overlay.setPosition(tooltipPosition);
+  }
+}
+
+var rasterTooltipDataCache = {};
+
+export function displayRasterTooltip(evt, tooltip, overlay) {
+  if (!currentDataset.value) return;
+  var pixel = evt.pixel;
+  var data = undefined;
+  if (rasterTooltip.value && rasterTooltipDataCache[rasterTooltip.value]) {
+    data = rasterTooltipDataCache[rasterTooltip.value];
+    console.log("pixel=", pixel, "data=", data);
+  } else {
+    var dataFile = currentDataset.value.raster_file;
+    if (dataFile) {
+      axios
+        .get(dataFile, {
+          responseType: "blob",
+        })
+        .then(async (response) => {
+          rasterTooltipDataCache[rasterTooltip.value] = response.data;
+        });
+    }
+  }
 }
