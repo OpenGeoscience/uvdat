@@ -1,5 +1,5 @@
 <script>
-import { currentDataset, map } from "@/store";
+import { currentDataset, map, rasterTooltip } from "@/store";
 import { onMounted, ref, watch } from "vue";
 import {
   rasterColormaps,
@@ -118,9 +118,10 @@ export default {
       colormap,
       datasetRange,
       colormapRange,
-      showConfirmConvert,
+      rasterTooltip,
       networkVisMode,
       toggleNetworkVisMode,
+      showConfirmConvert,
       runConversion,
     };
   },
@@ -190,6 +191,11 @@ export default {
             />
           </template>
         </v-range-slider>
+        <v-switch
+          v-model="rasterTooltip"
+          :value="currentDataset.id"
+          label="Show value tooltip"
+        />
       </div>
 
       <div v-if="currentDataset.network">
