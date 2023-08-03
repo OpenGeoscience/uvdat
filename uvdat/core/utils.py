@@ -18,11 +18,11 @@ def add_styling(features, style_dict):
                 map_value = property_map['colors']
                 property_value = feature['properties'].get(map_value)
                 if property_value:
-                    feature_colors += property_value.split(color_delimiter)
+                    feature_colors += str(property_value).split(color_delimiter)
 
         if type(palette) == dict:
-            feature_colors = [palette[c] for c in feature_colors]
-        else:
+            feature_colors = [palette[c] for c in feature_colors if c in palette]
+        elif type(palette) == list:
             feature_colors.append(palette[index % len(palette)])
 
         if outline:
