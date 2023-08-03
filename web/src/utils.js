@@ -312,6 +312,8 @@ function toggleNodeActive(nodeId, button) {
           }
           if (featureDeactivated) {
             feature.setStyle(getNetworkFeatureStyle("44"));
+          } else {
+            feature.setStyle(null); // will default to layer style
           }
         });
       }

@@ -35,6 +35,7 @@ export default {
         currentDataset.value?.style?.data_range?.map((v) => Math.round(v)) ||
         undefined;
       colormapRange.value = datasetRange.value;
+      deactivatedNodes.value = [];
     }
 
     function updateLayerOpacity() {
@@ -79,19 +80,18 @@ export default {
           .getArray()
           .forEach((layer) => {
             const layerDatasetId = layer.getProperties().datasetId;
-            const layerIsNetwork = layer.getProperties().network;
-            if (layerDatasetId === currentDataset.value.id) {
-              if (layerIsNetwork) {
-                layer.setVisible(networkVis.value !== undefined);
+            if (layer.getProperties().network) {
+              layer.setVisible(networkVis.value.id === layerDatasetId);
+              if (layerDatasetId === currentDataset.value.id) {
                 createNetworkLayer = false;
-              } else {
-                layer.setVisible(networkVis.value === undefined);
               }
+            } else {
+              layer.setVisible(networkVis.value.id !== layerDatasetId);
             }
           });
         if (createNetworkLayer) {
           getDatasetNetwork(currentDataset.value.id).then((nodes) => {
-            if (nodes.length) {
+            if (nodes.length && networkVis.value) {
               networkVis.value.nodes = nodes;
               addNetworkLayerToMap(currentDataset.value, nodes);
             }
