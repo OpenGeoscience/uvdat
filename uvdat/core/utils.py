@@ -7,30 +7,27 @@ def add_styling(features, style_dict):
 
     property_map = style_dict.get('property_map') or {}
     options = style_dict.get('options') or {}
+    outline = options.get('outline')
+    palette = options.get('palette')
+    color_delimiter = options.get('color_delimiter', ',')
 
-    for feature in features:
+    for index, feature in enumerate(features):
+        feature_colors = []
         if property_map:
-            for key, value in property_map.items():
-                if key == 'colors':
-                    color_delimiter = options.get('color_delimiter', ',')
-                    outline = options.get('outline')
-                    palette = options.get('palette')
-                    colors = (
-                        str(feature['properties'].get(value)).split(color_delimiter)
-                        if feature['properties'].get(value)
-                        else str(value).split(color_delimiter)
-                    )
-                    try:
-                        colors = [
-                            name_to_hex(palette[c]) if palette and c in palette else name_to_hex(c)
-                            for c in colors
-                        ]
-                        feature['properties'][key] = ','.join(colors)
-                        if outline:
-                            feature['properties'][key] += ',' + name_to_hex(outline)
-                    except ValueError:
-                        pass
+            if 'colors' in property_map:
+                map_value = property_map['colors']
+                property_value = feature['properties'].get(map_value)
+                if property_value:
+                    feature_colors += property_value.split(color_delimiter)
 
-                elif value in feature['properties']:
-                    feature['properties'][key] = feature['properties'][value]
+        if type(palette) == dict:
+            feature_colors = [palette[c] for c in feature_colors]
+        else:
+            feature_colors.append(palette[index % len(palette)])
+
+        if outline:
+            feature_colors.append(outline)
+
+        feature_colors = [name_to_hex(c) for c in feature_colors]
+        feature['properties']['colors'] = ','.join(feature_colors)
     return features

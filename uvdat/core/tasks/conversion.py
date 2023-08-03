@@ -109,9 +109,10 @@ def convert_geojson(dataset, geodata_path=None):
             geodata_path = Path(temp_dir, 'geo.json')
             with open(geodata_path, 'wb') as geodata_file:
                 original_data = dataset.raw_data_archive.open('rb').read()
-                geodata_file.write(original_data)
                 original_data = json.loads(original_data)
+                original_data['features'] = add_styling(original_data['features'], dataset.style)
                 original_projection = original_data.get('crs').get('properties').get('name')
+                geodata_file.write(json.dumps(original_data).encode())
             if original_projection:
                 geodata = geopandas.read_file(geodata_path)
                 geodata = geodata.set_crs(original_projection, allow_override=True)
