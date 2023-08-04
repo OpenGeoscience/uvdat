@@ -50,7 +50,10 @@ export default {
       );
       if (enable) {
         selectedDatasets.value = [dataset, ...selectedDatasets.value];
-      } else if (dataset.id === currentDataset.value.id) {
+      } else if (
+        currentDataset.value &&
+        dataset.id === currentDataset.value.id
+      ) {
         currentDataset.value = undefined;
       }
       updateActiveDatasets();
