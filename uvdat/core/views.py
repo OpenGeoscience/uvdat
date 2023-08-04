@@ -72,17 +72,19 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
 
     @action(
         detail=True,
-        methods=['post'],
+        methods=['get'],
         url_path=r'gcc',
         url_name='gcc',
     )
-    def spawn_gcc_task(self, request, **kwargs):
+    def get_gcc(self, request, **kwargs):
         dataset = self.get_object()
         if not dataset.network:
             return Response('This dataset is not a network dataset.', status=400)
-        if "exclude_nodes" not in request.data:
+        if "exclude_nodes" not in dict(request.query_params):
             return Response('Please specify a list of nodes to exclude in `exclude_nodes`.')
-        exclude_nodes = request.data['exclude_nodes']
+        exclude_nodes = request.query_params.get('exclude_nodes')
+        exclude_nodes = exclude_nodes.split(',')
+        exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
         edge_list = {}
         visited_nodes = []
         for node in dataset.network_nodes.all():
@@ -95,5 +97,5 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
                 edge_list[node.id] = sorted(adjacencies)
             visited_nodes.append(node.id)
 
-        network_gcc.delay(edge_list, exclude_nodes)
-        return Response(status=200)
+        gcc = network_gcc(edge_list, exclude_nodes)
+        return Response(gcc, status=200)

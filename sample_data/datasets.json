@@ -104,7 +104,7 @@
         "path": "boston/easternmass.tif",
         "style": {
             "options": {
-                "transparency_threshold": 0,
+                "transparency_threshold": 1,
                 "trim_distribution_percentage": 0.01
             }
         }

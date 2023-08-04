@@ -9,9 +9,18 @@ import { Fill, Stroke, Circle, Style } from "ol/style.js";
 import { Feature } from "ol";
 import { LineString, Point } from "ol/geom";
 import { fromLonLat } from "ol/proj";
+import axios from "axios";
 
 import { baseURL } from "@/api/auth";
-import { map } from "@/store";
+import { getNetworkGCC } from "@/api/rest";
+import {
+  map,
+  currentDataset,
+  rasterTooltip,
+  networkVis,
+  deactivatedNodes,
+  currentNetworkGCC,
+} from "@/store";
 
 export const rasterColormaps = [
   "terrain",
@@ -126,6 +135,101 @@ export function addDatasetLayerToMap(dataset, zIndex) {
   }
 }
 
+function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
+  const fill = new Fill({
+    color: `#ffffff${alpha}`,
+  });
+  const stroke = new Stroke({
+    color: `#000000${alpha}`,
+    width: 3,
+  });
+  const style = new Style({
+    image: new Circle({
+      fill: fill,
+      stroke: stroke,
+      radius: 7,
+    }),
+    fill: fill,
+    stroke: stroke,
+  });
+  if (highlight) {
+    const highlightStroke = new Stroke({
+      color: "yellow",
+      width: 8,
+    });
+    return [
+      new Style({
+        zIndex: 0,
+        stroke: highlightStroke,
+        image: new Circle({
+          stroke: highlightStroke,
+          radius: 8,
+        }),
+      }),
+      style,
+    ];
+  }
+  return style;
+}
+
+export function updateNetworkStyle() {
+  map.value
+    .getLayers()
+    .getArray()
+    .forEach((layer) => {
+      const layerIsNetwork = layer.getProperties().network;
+      if (layerIsNetwork) {
+        const source = layer.getSource();
+        source.getFeatures().forEach((feature) => {
+          let featureDeactivated = false;
+          let featureHighlighted = false;
+          const featureProperties = feature.values_;
+          if (
+            featureProperties.node &&
+            featureProperties.id &&
+            deactivatedNodes.value.includes(featureProperties.id)
+          ) {
+            featureDeactivated = true;
+          } else if (
+            featureProperties.edge &&
+            featureProperties.connects &&
+            featureProperties.connects.some((nId) =>
+              deactivatedNodes.value.includes(nId)
+            )
+          ) {
+            featureDeactivated = true;
+          }
+
+          if (currentNetworkGCC.value) {
+            if (
+              featureProperties.node &&
+              featureProperties.id &&
+              currentNetworkGCC.value.includes(featureProperties.id)
+            ) {
+              featureHighlighted = true;
+            } else if (
+              featureProperties.edge &&
+              featureProperties.connects &&
+              featureProperties.connects.some((nId) =>
+                currentNetworkGCC.value.includes(nId)
+              )
+            ) {
+              featureHighlighted = true;
+            }
+          }
+
+          if (featureDeactivated) {
+            feature.setStyle(getNetworkFeatureStyle("44"));
+          } else if (featureHighlighted) {
+            feature.setStyle(getNetworkFeatureStyle("ff", true));
+          } else {
+            feature.setStyle(null); // will default to layer style
+          }
+        });
+      }
+    });
+}
+
 export function addNetworkLayerToMap(dataset, nodes) {
   const source = new VectorSource();
   const features = [];
@@ -135,6 +239,8 @@ export function addNetworkLayerToMap(dataset, nodes) {
       new Feature(
         Object.assign(node.properties, {
           name: node.name,
+          id: node.id,
+          node: true,
           geometry: new Point(fromLonLat(node.location.toReversed())),
         })
       )
@@ -144,6 +250,8 @@ export function addNetworkLayerToMap(dataset, nodes) {
         const adjNode = nodes.find((n) => n.id === adjId);
         features.push(
           new Feature({
+            connects: [node.id, adjId],
+            edge: true,
             geometry: new LineString([
               fromLonLat(node.location.toReversed()),
               fromLonLat(adjNode.location.toReversed()),
@@ -156,29 +264,109 @@ export function addNetworkLayerToMap(dataset, nodes) {
   });
   source.addFeatures(features);
 
-  const fill = new Fill({
-    color: "#ffffffff",
-  });
-  const stroke = new Stroke({
-    color: "#000000ff",
-    width: 3,
-  });
-  const style = new Style({
-    image: new Circle({
-      fill: fill,
-      stroke: stroke,
-      radius: 7,
-    }),
-    fill: fill,
-    stroke: stroke,
-  });
   const layer = new VectorLayer({
     properties: {
       datasetId: dataset.id,
       network: true,
     },
+    zIndex: 99,
+    style: getNetworkFeatureStyle(),
     source,
-    style,
   });
   map.value.addLayer(layer);
+}
+
+export function displayFeatureTooltip(evt, tooltip, overlay) {
+  if (rasterTooltip.value) return;
+  var pixel = evt.pixel;
+  var feature = map.value.forEachFeatureAtPixel(pixel, function (feature) {
+    return feature;
+  });
+  tooltip.value.style.display = feature ? "" : "none";
+  tooltip.value.innerHTML = "";
+  if (feature) {
+    const properties = Object.fromEntries(
+      Object.entries(feature.values_).filter(([k, v]) => k && v)
+    );
+    ["colors", "geometry", "type", "id", "node", "edge"].forEach(
+      (prop) => delete properties[prop]
+    );
+    let prettyString = JSON.stringify(properties)
+      .replaceAll('"', "")
+      .replaceAll("{", "")
+      .replaceAll("}", "")
+      .replaceAll(",", "<br>");
+    prettyString += "<br>";
+    const tooltipDiv = document.createElement("div");
+    tooltipDiv.innerHTML = prettyString;
+    const nodeId = feature?.values_?.id;
+    if (networkVis.value && nodeId) {
+      const deactivateButton = document.createElement("button");
+      if (deactivatedNodes.value.includes(nodeId)) {
+        deactivateButton.innerHTML = "Reactivate Node";
+      } else {
+        deactivateButton.innerHTML = "Deactivate Node";
+      }
+      deactivateButton.onclick = function () {
+        toggleNodeActive(nodeId, deactivateButton);
+      };
+      deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
+      tooltipDiv.appendChild(deactivateButton);
+    }
+
+    tooltip.value.appendChild(tooltipDiv);
+    // make sure the tooltip isn't cut off
+    const mapCenter = map.value.get("view").get("center");
+    const viewPortSize = map.value.get("view").viewportSize_;
+    const tooltipSize = [tooltip.value.clientWidth, tooltip.value.clientHeight];
+    const tooltipPosition = evt.coordinate.map((v, i) => {
+      const mapEdge = mapCenter[i] + viewPortSize[i];
+      if (v + tooltipSize[i] > mapEdge) {
+        return mapEdge - (tooltipSize[i] * 3) / 2;
+      }
+      return v;
+    });
+    overlay.setPosition(tooltipPosition);
+  }
+}
+
+var rasterTooltipDataCache = {};
+
+export function displayRasterTooltip(evt, tooltip, overlay) {
+  if (!currentDataset.value) return;
+  // console.log("TODO: raster tooltip", tooltip, overlay);
+  var pixel = evt.pixel;
+  var data = undefined;
+  if (rasterTooltip.value && rasterTooltipDataCache[rasterTooltip.value]) {
+    data = rasterTooltipDataCache[rasterTooltip.value];
+    // console.log("pixel=", pixel, "data=", data);
+  } else {
+    var dataFile = currentDataset.value.raster_file;
+    if (dataFile) {
+      axios
+        .get(dataFile, {
+          responseType: "blob",
+        })
+        .then(async (response) => {
+          rasterTooltipDataCache[rasterTooltip.value] = response.data;
+        });
+    }
+  }
+}
+
+export function toggleNodeActive(nodeId, button = null) {
+  if (deactivatedNodes.value.includes(nodeId)) {
+    deactivatedNodes.value = deactivatedNodes.value.filter((n) => n !== nodeId);
+    if (button) button.innerHTML = "Deactivate Node";
+  } else {
+    deactivatedNodes.value.push(nodeId);
+    if (button) button.innerHTML = "Activate Node";
+  }
+
+  currentNetworkGCC.value = undefined;
+  getNetworkGCC(currentDataset.value.id, deactivatedNodes.value).then((gcc) => {
+    currentNetworkGCC.value = gcc;
+    updateNetworkStyle();
+  });
+  updateNetworkStyle();
 }

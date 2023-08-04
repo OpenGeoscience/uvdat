@@ -52,6 +52,7 @@ setup(
         'matplotlib',
         'geojson2vt',
         'geopandas',
+        'networkx',
         'pyshp',
         'rasterio',
         'urllib3==1.26.15',  # compensate for a bug affecting swagger docs page
