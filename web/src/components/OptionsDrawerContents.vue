@@ -4,6 +4,7 @@ import {
   rasterColormaps,
   addDatasetLayerToMap,
   addNetworkLayerToMap,
+  toggleNodeActive,
 } from "../utils";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
 import {
@@ -72,6 +73,16 @@ export default {
       }
     }
 
+    function updateColormapMin(min) {
+      colormapRange.value[0] = min;
+      updateCurrentDatasetLayer();
+    }
+
+    function updateColormapMax(max) {
+      colormapRange.value[1] = max;
+      updateCurrentDatasetLayer();
+    }
+
     function toggleNetworkVis() {
       if (currentDataset.value) {
         let createNetworkLayer = true;
@@ -125,9 +136,12 @@ export default {
       colormap,
       datasetRange,
       colormapRange,
+      updateColormapMin,
+      updateColormapMax,
       rasterTooltip,
       networkVis,
       toggleNetworkVis,
+      toggleNodeActive,
       deactivatedNodes,
       showConfirmConvert,
       runConversion,
@@ -184,7 +198,7 @@ export default {
               dense
               type="number"
               style="width: 60px"
-              @change="$set(colormapRange, 0, $event)"
+              @change="(e) => updateColormapMin(e.target.value)"
             />
           </template>
           <template v-slot:append>
@@ -195,7 +209,7 @@ export default {
               dense
               type="number"
               style="width: 60px"
-              @change="$set(colormapRange, 1, $event)"
+              @change="(e) => updateColormapMax(e.target.value)"
             />
           </template>
         </v-range-slider>
@@ -226,6 +240,13 @@ export default {
               :key="deactivated"
             >
               {{ networkVis.nodes.find((n) => n.id === deactivated)?.name }}
+              <v-btn
+                size="small"
+                style="float: right"
+                @click="(e) => toggleNodeActive(deactivated)"
+              >
+                Activate
+              </v-btn>
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
@@ -277,5 +298,8 @@ export default {
   bottom: 0;
   right: 0;
   width: 100%;
+}
+.v-btn__content {
+  white-space: inherit !important;
 }
 </style>

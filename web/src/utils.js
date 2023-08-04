@@ -12,12 +12,14 @@ import { fromLonLat } from "ol/proj";
 import axios from "axios";
 
 import { baseURL } from "@/api/auth";
+import { getNetworkGCC } from "@/api/rest";
 import {
   map,
   currentDataset,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
+  currentNetworkGCC,
 } from "@/store";
 
 export const rasterColormaps = [
@@ -133,7 +135,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
   }
 }
 
-function getNetworkFeatureStyle(alpha = "ff") {
+function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
   const fill = new Fill({
     color: `#ffffff${alpha}`,
   });
@@ -150,7 +152,82 @@ function getNetworkFeatureStyle(alpha = "ff") {
     fill: fill,
     stroke: stroke,
   });
+  if (highlight) {
+    const highlightStroke = new Stroke({
+      color: "yellow",
+      width: 8,
+    });
+    return [
+      new Style({
+        zIndex: 0,
+        stroke: highlightStroke,
+        image: new Circle({
+          stroke: highlightStroke,
+          radius: 8,
+        }),
+      }),
+      style,
+    ];
+  }
   return style;
+}
+
+export function updateNetworkStyle() {
+  map.value
+    .getLayers()
+    .getArray()
+    .forEach((layer) => {
+      const layerIsNetwork = layer.getProperties().network;
+      if (layerIsNetwork) {
+        const source = layer.getSource();
+        source.getFeatures().forEach((feature) => {
+          let featureDeactivated = false;
+          let featureHighlighted = false;
+          const featureProperties = feature.values_;
+          if (
+            featureProperties.node &&
+            featureProperties.id &&
+            deactivatedNodes.value.includes(featureProperties.id)
+          ) {
+            featureDeactivated = true;
+          } else if (
+            featureProperties.edge &&
+            featureProperties.connects &&
+            featureProperties.connects.some((nId) =>
+              deactivatedNodes.value.includes(nId)
+            )
+          ) {
+            featureDeactivated = true;
+          }
+
+          if (currentNetworkGCC.value) {
+            if (
+              featureProperties.node &&
+              featureProperties.id &&
+              currentNetworkGCC.value.includes(featureProperties.id)
+            ) {
+              featureHighlighted = true;
+            } else if (
+              featureProperties.edge &&
+              featureProperties.connects &&
+              featureProperties.connects.some((nId) =>
+                currentNetworkGCC.value.includes(nId)
+              )
+            ) {
+              featureHighlighted = true;
+            }
+          }
+
+          if (featureDeactivated) {
+            feature.setStyle(getNetworkFeatureStyle("44"));
+          } else if (featureHighlighted) {
+            feature.setStyle(getNetworkFeatureStyle("ff", true));
+          } else {
+            feature.setStyle(null); // will default to layer style
+          }
+        });
+      }
+    });
 }
 
 export function addNetworkLayerToMap(dataset, nodes) {
@@ -192,6 +269,7 @@ export function addNetworkLayerToMap(dataset, nodes) {
       datasetId: dataset.id,
       network: true,
     },
+    zIndex: 99,
     style: getNetworkFeatureStyle(),
     source,
   });
@@ -276,46 +354,19 @@ export function displayRasterTooltip(evt, tooltip, overlay) {
   }
 }
 
-function toggleNodeActive(nodeId, button) {
+export function toggleNodeActive(nodeId, button = null) {
   if (deactivatedNodes.value.includes(nodeId)) {
     deactivatedNodes.value = deactivatedNodes.value.filter((n) => n !== nodeId);
-    button.innerHTML = "Deactivate Node";
+    if (button) button.innerHTML = "Deactivate Node";
   } else {
     deactivatedNodes.value.push(nodeId);
-    button.innerHTML = "Reactivate Node";
+    if (button) button.innerHTML = "Activate Node";
   }
 
-  map.value
-    .getLayers()
-    .getArray()
-    .forEach((layer) => {
-      const layerIsNetwork = layer.getProperties().network;
-      if (layerIsNetwork) {
-        const source = layer.getSource();
-        source.getFeatures().forEach((feature) => {
-          let featureDeactivated = false;
-          const featureProperties = feature.values_;
-          if (
-            featureProperties.node &&
-            featureProperties.id &&
-            deactivatedNodes.value.includes(featureProperties.id)
-          ) {
-            featureDeactivated = true;
-          } else if (
-            featureProperties.edge &&
-            featureProperties.connects &&
-            featureProperties.connects.some((nId) =>
-              deactivatedNodes.value.includes(nId)
-            )
-          ) {
-            featureDeactivated = true;
-          }
-          if (featureDeactivated) {
-            feature.setStyle(getNetworkFeatureStyle("44"));
-          } else {
-            feature.setStyle(null); // will default to layer style
-          }
-        });
-      }
-    });
+  currentNetworkGCC.value = undefined;
+  getNetworkGCC(currentDataset.value.id, deactivatedNodes.value).then((gcc) => {
+    currentNetworkGCC.value = gcc;
+    updateNetworkStyle();
+  });
+  updateNetworkStyle();
 }
