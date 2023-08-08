@@ -143,6 +143,13 @@ export default {
                   <v-tooltip activator="parent" location="end" max-width="300">
                     {{ dataset.description }}
                   </v-tooltip>
+                  <v-icon
+                    size="small"
+                    class="expand-icon"
+                    @click.prevent="expandOptionsPanel(dataset)"
+                  >
+                    mdi-cog
+                  </v-icon>
                 </template>
               </v-checkbox>
             </v-expansion-panel-text>
@@ -166,7 +173,7 @@ export default {
                 class="expand-icon"
                 @click="expandOptionsPanel(element)"
               >
-                mdi-arrow-expand-right
+                mdi-cog
               </v-icon>
               {{ element.name }}
             </v-card>

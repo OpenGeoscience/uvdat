@@ -69,6 +69,7 @@ export default defineComponent({
       :model-value="currentDataset !== undefined"
       permanent
       width="250"
+      location="right"
       class="main-area drawer options-drawer"
     >
       <OptionsDrawerContents />
@@ -102,7 +103,8 @@ export default defineComponent({
   width: calc(100% - 250px);
 }
 .shifted-2 {
-  left: 500px;
+  left: 250px;
+  right: 250px;
   width: calc(100% - 500px);
 }
 </style>
