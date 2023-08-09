@@ -63,9 +63,7 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
                     resolution = float(resolution)
                     if resolution != 1.0:
                         step = int(1 / resolution)
-                        print(step)
                         data = data[::step][::step]
-                print(data.shape)
                 return HttpResponse(json.dumps(data.tolist()), status=200)
         else:
             return HttpResponse('Dataset has no raster file.', status=400)
