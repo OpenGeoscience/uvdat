@@ -19,13 +19,15 @@ export default {
           (rv[x[groupKey]] = rv[x[groupKey]] || []).push(x);
           return rv;
         }, {})
-      ).map(([name, children], id) => {
-        return {
-          id,
-          name,
-          children,
-        };
-      });
+      )
+        .map(([name, children], id) => {
+          return {
+            id,
+            name,
+            children,
+          };
+        })
+        .sort((a, b) => a.name > b.name);
     });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
@@ -144,6 +146,7 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
+                    v-show="selectedDatasets.includes(dataset)"
                     size="small"
                     class="expand-icon"
                     @click.prevent="expandOptionsPanel(dataset)"

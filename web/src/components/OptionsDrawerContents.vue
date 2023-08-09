@@ -177,7 +177,6 @@ export default {
           dense
           :items="rasterColormaps"
           label="Color map"
-          @input="switchColormap"
         />
         <v-card-text v-if="colormapRange" class="pa-0">
           Color map range
