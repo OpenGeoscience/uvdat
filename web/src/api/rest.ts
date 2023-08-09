@@ -1,5 +1,5 @@
 import { apiClient } from "./auth";
-import { City, Dataset, NetworkNode } from "@/types";
+import { City, Dataset, NetworkNode, RasterData } from "@/types";
 
 export async function getCities(): Promise<City[]> {
   return (await apiClient.get("cities")).data.results;
@@ -28,4 +28,18 @@ export async function getNetworkGCC(
       `datasets/${datasetId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
+}
+
+export async function getRasterData(datasetId: number): Promise<RasterData> {
+  const resolution = 0.1;
+  const data = (
+    await apiClient.get(`datasets/${datasetId}/raster-data/${resolution}`)
+  ).data;
+  const { sourceBounds } = (
+    await apiClient.get(`datasets/${datasetId}/info/metadata`)
+  ).data;
+  return {
+    data,
+    sourceBounds,
+  };
 }

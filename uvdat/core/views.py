@@ -1,9 +1,12 @@
 import json
+import ijson
 import tempfile
+import large_image
+from pathlib import Path
 
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
-import ijson
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
@@ -12,8 +15,6 @@ from uvdat.core.models import City, Dataset
 from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
 from uvdat.core.tasks.conversion import convert_raw_archive
 from uvdat.core.tasks.networks import network_gcc
-
-TILES_DIR = tempfile.TemporaryDirectory()
 
 
 class CityViewSet(ModelViewSet):
@@ -41,6 +42,31 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
                 return HttpResponse(json.dumps(tile.__next__()), status=200)
             except StopIteration:
                 return HttpResponse(status=404)
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path=r'raster-data/(?P<resolution>[\d*\.?\d*]+)',
+        url_name='raster_data',
+    )
+    def get_raster_data(self, request, resolution: str = '1', **kwargs):
+        dataset = self.get_object()
+        if dataset.raster_file:
+            with tempfile.TemporaryDirectory() as tmp:
+                raster_path = Path(tmp, 'raster')
+                with open(raster_path, 'wb') as raster_file:
+                    raster_file.write(dataset.raster_file.read())
+                source = large_image.open(raster_path)
+                data, data_format = source.getRegion(format='numpy')
+                data = data[:, :, 0]
+                if resolution:
+                    resolution = float(resolution)
+                    if resolution != 1.0:
+                        step = int(1 / resolution)
+                        data = data[::step][::step]
+                return HttpResponse(json.dumps(data.tolist()), status=200)
+        else:
+            return HttpResponse('Dataset has no raster file.', status=400)
 
     @action(
         detail=True,

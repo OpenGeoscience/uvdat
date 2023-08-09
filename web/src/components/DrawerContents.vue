@@ -1,7 +1,7 @@
 <script>
 import draggable from "vuedraggable";
 import { currentCity, currentDataset, map } from "@/store";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
 
 export default {
@@ -11,6 +11,24 @@ export default {
   setup() {
     const selectedDatasets = ref([]);
     const openPanels = ref([0]);
+    const openCategories = ref([0]);
+    const availableLayerTree = computed(() => {
+      const groupKey = "category";
+      return Object.entries(
+        currentCity.value.datasets.reduce(function (rv, x) {
+          (rv[x[groupKey]] = rv[x[groupKey]] || []).push(x);
+          return rv;
+        }, {})
+      )
+        .map(([name, children], id) => {
+          return {
+            id,
+            name,
+            children,
+          };
+        })
+        .sort((a, b) => a.name > b.name);
+    });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function updateActiveDatasets() {
@@ -84,8 +102,10 @@ export default {
       selectedDatasets,
       currentCity,
       openPanels,
+      openCategories,
       toggleDataset,
       updateActiveDatasets,
+      availableLayerTree,
       activeLayerTableHeaders,
       reorderLayers,
       expandOptionsPanel,
@@ -98,24 +118,46 @@ export default {
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
     <v-expansion-panel title="Available Layers">
       <v-expansion-panel-text>
-        <v-checkbox
-          v-for="dataset in currentCity.datasets"
-          :model-value="selectedDatasets.includes(dataset)"
-          :key="dataset.name"
-          :label="dataset.name"
-          :disabled="dataset.processing"
-          @change="() => toggleDataset(dataset)"
-          density="compact"
-          hide-details
+        <v-expansion-panels
+          multiple
+          variant="accordion"
+          v-model="openCategories"
         >
-          <template v-slot:label>
-            {{ dataset.name }}
-            {{ dataset.processing ? "(processing)" : "" }}
-            <v-tooltip activator="parent" location="end" max-width="300">
-              {{ dataset.description }}
-            </v-tooltip>
-          </template>
-        </v-checkbox>
+          <v-expansion-panel
+            v-for="category in availableLayerTree"
+            :title="category.name"
+            :key="category.id"
+          >
+            <v-expansion-panel-text>
+              <v-checkbox
+                v-for="dataset in category.children"
+                :model-value="selectedDatasets.includes(dataset)"
+                :key="dataset.name"
+                :label="dataset.name"
+                :disabled="dataset.processing"
+                @change="() => toggleDataset(dataset)"
+                density="compact"
+                hide-details
+              >
+                <template v-slot:label>
+                  {{ dataset.name }}
+                  {{ dataset.processing ? "(processing)" : "" }}
+                  <v-tooltip activator="parent" location="end" max-width="300">
+                    {{ dataset.description }}
+                  </v-tooltip>
+                  <v-icon
+                    v-show="selectedDatasets.includes(dataset)"
+                    size="small"
+                    class="expand-icon"
+                    @click.prevent="expandOptionsPanel(dataset)"
+                  >
+                    mdi-cog
+                  </v-icon>
+                </template>
+              </v-checkbox>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-expansion-panel-text>
     </v-expansion-panel>
 
@@ -134,7 +176,7 @@ export default {
                 class="expand-icon"
                 @click="expandOptionsPanel(element)"
               >
-                mdi-arrow-expand-right
+                mdi-cog
               </v-icon>
               {{ element.name }}
             </v-card>

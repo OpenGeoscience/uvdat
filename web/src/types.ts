@@ -42,3 +42,13 @@ export interface NetworkNode {
   dataset: number;
   adjacent_nodes: number[];
 }
+
+export interface RasterData {
+  sourceBounds: {
+    xmax: number;
+    xmin: number;
+    ymax: number;
+    ymin: number;
+  };
+  data: number[][];
+}

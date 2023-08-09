@@ -9,10 +9,9 @@ import { Fill, Stroke, Circle, Style } from "ol/style.js";
 import { Feature } from "ol";
 import { LineString, Point } from "ol/geom";
 import { fromLonLat } from "ol/proj";
-import axios from "axios";
 
 import { baseURL } from "@/api/auth";
-import { getNetworkGCC } from "@/api/rest";
+import { getNetworkGCC, getRasterData } from "@/api/rest";
 import {
   map,
   currentDataset,
@@ -43,6 +42,18 @@ export const rasterColormaps = [
   "hsv",
   "gray",
 ];
+
+var rasterTooltipDataCache = {};
+
+export function cacheRasterData(datasetId) {
+  console.log("fetching data...");
+  if (!rasterTooltipDataCache[datasetId]) {
+    rasterTooltipDataCache[datasetId] = {};
+    getRasterData(datasetId).then((data) => {
+      rasterTooltipDataCache[datasetId] = data;
+    });
+  }
+}
 
 function createStyle(args) {
   let colors = ["#00000022"];
@@ -112,6 +123,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
         zIndex,
       })
     );
+    cacheRasterData(dataset.id);
   } else if (dataset.geodata_file) {
     map.value.addLayer(
       new VectorTileLayer({
@@ -315,41 +327,44 @@ export function displayFeatureTooltip(evt, tooltip, overlay) {
     }
 
     tooltip.value.appendChild(tooltipDiv);
-    // make sure the tooltip isn't cut off
-    const mapCenter = map.value.get("view").get("center");
-    const viewPortSize = map.value.get("view").viewportSize_;
-    const tooltipSize = [tooltip.value.clientWidth, tooltip.value.clientHeight];
-    const tooltipPosition = evt.coordinate.map((v, i) => {
-      const mapEdge = mapCenter[i] + viewPortSize[i];
-      if (v + tooltipSize[i] > mapEdge) {
-        return mapEdge - (tooltipSize[i] * 3) / 2;
-      }
-      return v;
-    });
-    overlay.setPosition(tooltipPosition);
+    overlay.setPosition(evt.coordinate);
   }
 }
 
-var rasterTooltipDataCache = {};
-
 export function displayRasterTooltip(evt, tooltip, overlay) {
-  if (!currentDataset.value) return;
-  // console.log("TODO: raster tooltip", tooltip, overlay);
-  var pixel = evt.pixel;
-  var data = undefined;
-  if (rasterTooltip.value && rasterTooltipDataCache[rasterTooltip.value]) {
-    data = rasterTooltipDataCache[rasterTooltip.value];
-    // console.log("pixel=", pixel, "data=", data);
-  } else {
-    var dataFile = currentDataset.value.raster_file;
-    if (dataFile) {
-      axios
-        .get(dataFile, {
-          responseType: "blob",
-        })
-        .then(async (response) => {
-          rasterTooltipDataCache[rasterTooltip.value] = response.data;
-        });
+  if (rasterTooltip.value) {
+    if (rasterTooltipDataCache[rasterTooltip.value]) {
+      const { data, sourceBounds } =
+        rasterTooltipDataCache[rasterTooltip.value];
+      if (data && data.length > 0) {
+        let xProportion =
+          (evt.coordinate[0] - sourceBounds.xmin) /
+          (sourceBounds.xmax - sourceBounds.xmin);
+        let yProportion =
+          (evt.coordinate[1] - sourceBounds.ymin) /
+          (sourceBounds.ymax - sourceBounds.ymin);
+        yProportion = 1 - yProportion;
+        if (
+          xProportion < 0 ||
+          yProportion < 0 ||
+          xProportion > 1 ||
+          yProportion > 1
+        ) {
+          tooltip.value.style.display = "none";
+        } else {
+          const xIndex = Math.round(xProportion * data[0].length);
+          const yIndex = Math.round(yProportion * data.length);
+          const value = data[yIndex][xIndex];
+          tooltip.value.innerHTML = `~ ${Math.round(value)} m`;
+          tooltip.value.style.display = "";
+        }
+      } else {
+        tooltip.value.innerHTML = "waiting for data...";
+        tooltip.value.style.display = "";
+      }
+      overlay.setPosition(evt.coordinate);
+    } else {
+      cacheRasterData(rasterTooltip.value);
     }
   }
 }
