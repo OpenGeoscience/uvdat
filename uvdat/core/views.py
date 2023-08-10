@@ -13,7 +13,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City, Dataset
 from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
-from uvdat.core.tasks.conversion import convert_raw_archive
+from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
 
 
@@ -93,7 +93,7 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         dataset.raster_file = None
         dataset.processing = True
         dataset.save()
-        convert_raw_archive.delay(dataset.id)
+        convert_raw_data.delay(dataset.id)
         return Response(status=200)
 
     @action(

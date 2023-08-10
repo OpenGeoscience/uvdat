@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 import requests
 
 from uvdat.core.models import City, Dataset
-from uvdat.core.tasks.conversion import convert_raw_archive
+from uvdat.core.tasks.conversion import convert_raw_data
 
 
 class Command(BaseCommand):
@@ -62,5 +62,5 @@ class Command(BaseCommand):
                 with open(archive_location, 'rb') as archive:
                     new_dataset.raw_data_archive.save(archive_location, ContentFile(archive.read()))
                 print('\t Starting conversion task.')
-                convert_raw_archive(new_dataset.id)
+                convert_raw_data(new_dataset.id)
                 print()
