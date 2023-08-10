@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from uvdat.core.models import City, Dataset, NetworkNode
+from uvdat.core.models import City, Dataset, NetworkNode, Region
 
 
 class CityAdmin(admin.ModelAdmin):
@@ -18,6 +18,11 @@ class NetworkNodeAdmin(admin.ModelAdmin):
         return ', '.join(n.name for n in obj.adjacent_nodes.all())
 
 
+class RegionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+
+
 admin.site.register(City, CityAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
+admin.site.register(Region, RegionAdmin)
