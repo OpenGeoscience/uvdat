@@ -143,23 +143,21 @@
         }
     },
     {
-        "name": "Boston Blocks",
-        "description": "",
-        "category": "population",
+        "name": "Boston Census Blocks",
+        "description": "Boundaries of 2020 Census Blocks in the Boston Metropolitan area",
+        "category": "region",
         "city": "Boston, MA",
         "raw_data_type": "geojson",
         "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
         "path": "boston/census2020.json",
         "style": {
+            "property_map": {
+                "name": "BlockGr202"
+            },
             "options": {
+                "outline": "white",
                 "palette": [
-                    "red",
-                    "orange",
-                    "yellow",
-                    "green",
-                    "blue",
-                    "indigo",
-                    "violet"
+                    "blue"
                 ]
             }
         }

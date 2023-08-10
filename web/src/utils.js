@@ -63,29 +63,41 @@ function createStyle(args) {
   if (!args.type) {
     return new Style();
   }
-  return colors.map((colorHex, index) => {
-    const styleSpec = {
-      zIndex: colors.length - index,
-    };
-    if (args.type.includes("Point")) {
-      styleSpec.image = new Circle({
-        radius: 5 + 2 * index,
-        fill: new Fill({
-          color: colorHex,
-        }),
-      });
-    } else if (args.type.includes("Line")) {
-      styleSpec.stroke = new Stroke({
-        color: colorHex,
-        width: 3 + 2 * index,
-      });
-    } else if (args.type.includes("Polygon")) {
-      styleSpec.fill = new Fill({
-        color: colorHex.length > 7 ? colorHex : colorHex + "bb",
+  if (args.type.includes("Polygon")) {
+    let stroke = undefined;
+    if (colors.length > 1) {
+      stroke = new Stroke({
+        color: colors[1],
+        width: 5,
       });
     }
-    return new Style(styleSpec);
-  });
+    return new Style({
+      fill: new Fill({
+        color: colors[0].length > 7 ? colors[0] : colors[0] + "bb",
+      }),
+      stroke,
+    });
+  } else {
+    return colors.map((colorHex, index) => {
+      const styleSpec = {
+        zIndex: colors.length - index,
+      };
+      if (args.type.includes("Point")) {
+        styleSpec.image = new Circle({
+          radius: 5 + 2 * index,
+          fill: new Fill({
+            color: colorHex,
+          }),
+        });
+      } else if (args.type.includes("Line")) {
+        styleSpec.stroke = new Stroke({
+          color: colorHex,
+          width: 3 + 2 * index,
+        });
+      }
+      return new Style(styleSpec);
+    });
+  }
 }
 
 export function addDatasetLayerToMap(dataset, zIndex) {
