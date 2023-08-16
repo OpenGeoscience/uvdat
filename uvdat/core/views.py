@@ -12,7 +12,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City, Dataset
-from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
+from uvdat.core.serializers import (
+    CitySerializer,
+    DatasetSerializer,
+    NetworkNodeSerializer,
+    ChartSerializer,
+)
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
 
@@ -20,6 +25,16 @@ from uvdat.core.tasks.networks import network_gcc
 class CityViewSet(ModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path=r'charts',
+        url_name='charts',
+    )
+    def get_charts(self, request, **kwargs):
+        city = self.get_object()
+        return Response([ChartSerializer(c).data for c in city.charts.all()], status=200)
 
 
 class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):

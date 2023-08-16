@@ -51,3 +51,10 @@ class Region(models.Model):
     boundary = geo_models.MultiPolygonField()
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='regions')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='regions')
+
+
+class Chart(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='charts')
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='charts')
+    data = models.JSONField(blank=True, null=True)
