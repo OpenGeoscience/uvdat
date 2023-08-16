@@ -46,7 +46,6 @@ export const rasterColormaps = [
 var rasterTooltipDataCache = {};
 
 export function cacheRasterData(datasetId) {
-  console.log("fetching data...");
   if (!rasterTooltipDataCache[datasetId]) {
     rasterTooltipDataCache[datasetId] = {};
     getRasterData(datasetId).then((data) => {

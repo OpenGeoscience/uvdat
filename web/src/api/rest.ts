@@ -1,8 +1,12 @@
 import { apiClient } from "./auth";
-import { City, Dataset, NetworkNode, RasterData } from "@/types";
+import { City, Dataset, NetworkNode, RasterData, Chart } from "@/types";
 
 export async function getCities(): Promise<City[]> {
   return (await apiClient.get("cities")).data.results;
+}
+
+export async function getCityCharts(cityId: number): Promise<Chart[]> {
+  return (await apiClient.get(`cities/${cityId}/charts`)).data;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {

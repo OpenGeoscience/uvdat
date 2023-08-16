@@ -52,3 +52,13 @@ export interface RasterData {
   };
   data: number[][];
 }
+
+export interface Chart {
+  name: string;
+  city: number;
+  dataset: number;
+  data: {
+    labels: string[];
+    datasets: object[];
+  };
+}

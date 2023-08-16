@@ -1,16 +1,27 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from "vue";
-import { currentCity, cities, loading, loadCities } from "./store";
+import {
+  currentError,
+  currentDataset,
+  currentCity,
+  cities,
+  loading,
+  loadCities,
+  viewMode,
+} from "./store";
 import OpenLayersMap from "./components/OpenLayersMap.vue";
-import DrawerContents from "./components/DrawerContents.vue";
-import { currentError, currentDataset } from "./store";
+import MapDrawerContents from "./components/MapDrawerContents.vue";
+import ChartDrawerContents from "./components/ChartDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
+import ChartJS from "./components/ChartJS.vue";
 
 export default defineComponent({
   components: {
     OpenLayersMap,
-    DrawerContents,
+    MapDrawerContents,
+    ChartDrawerContents,
     OptionsDrawerContents,
+    ChartJS,
   },
   setup() {
     const drawer = ref(true);
@@ -25,6 +36,7 @@ export default defineComponent({
       cities,
       loading,
       currentError,
+      viewMode,
     };
   },
 });
@@ -63,7 +75,14 @@ export default defineComponent({
       width="250"
       class="main-area drawer"
     >
-      <DrawerContents />
+      <v-tabs v-model="viewMode" grow>
+        <v-tab value="map">Map</v-tab>
+        <v-tab value="chart">Chart</v-tab>
+      </v-tabs>
+      <v-window v-model="viewMode">
+        <v-window-item value="map"><MapDrawerContents /></v-window-item>
+        <v-window-item value="chart"><ChartDrawerContents /></v-window-item>
+      </v-window>
     </v-navigation-drawer>
     <v-navigation-drawer
       :model-value="currentDataset !== undefined"
@@ -83,7 +102,8 @@ export default defineComponent({
           : 'main-area'
       "
     >
-      <OpenLayersMap />
+      <OpenLayersMap v-if="viewMode === 'map'" />
+      <ChartJS v-else-if="viewMode === 'chart'" />
     </div>
   </v-app>
 </template>

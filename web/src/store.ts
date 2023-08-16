@@ -9,6 +9,7 @@ import { getCities, getDataset } from "@/api/rest";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
+export const viewMode = ref<string>("map");
 
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
@@ -17,6 +18,7 @@ export const currentDataset = ref<Dataset>();
 export const map = ref();
 export const mapLayers = ref();
 export const rasterTooltip = ref();
+export const chartData = ref();
 
 export const networkVis = ref();
 export const deactivatedNodes = ref([]);
