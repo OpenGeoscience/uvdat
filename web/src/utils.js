@@ -103,7 +103,10 @@ function createStyle(args) {
 export function addDatasetLayerToMap(dataset, zIndex) {
   if (dataset.processing) {
     return;
-  } else if (dataset.raster_file) {
+  }
+
+  // Add raster data
+  if (dataset.raster_file) {
     const tileParams = {
       projection: "EPSG:3857",
       band: 1,
@@ -136,7 +139,11 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       })
     );
     cacheRasterData(dataset.id);
-  } else if (dataset.geodata_file) {
+    return;
+  }
+
+  // Add GeoJSON data
+  if (dataset.geodata_file) {
     map.value.addLayer(
       new VectorTileLayer({
         properties: {
@@ -302,45 +309,54 @@ export function addNetworkLayerToMap(dataset, nodes) {
 
 export function displayFeatureTooltip(evt, tooltip, overlay) {
   if (rasterTooltip.value) return;
-  var pixel = evt.pixel;
-  var feature = map.value.forEachFeatureAtPixel(pixel, function (feature) {
+
+  // Check if any features are clicked, exit if not
+  var feature = map.value.forEachFeatureAtPixel(evt.pixel, function (feature) {
     return feature;
   });
-  tooltip.value.style.display = feature ? "" : "none";
-  tooltip.value.innerHTML = "";
-  if (feature) {
-    const properties = Object.fromEntries(
-      Object.entries(feature.values_).filter(([k, v]) => k && v)
-    );
-    ["colors", "geometry", "type", "id", "node", "edge"].forEach(
-      (prop) => delete properties[prop]
-    );
-    let prettyString = JSON.stringify(properties)
-      .replaceAll('"', "")
-      .replaceAll("{", "")
-      .replaceAll("}", "")
-      .replaceAll(",", "<br>");
-    prettyString += "<br>";
-    const tooltipDiv = document.createElement("div");
-    tooltipDiv.innerHTML = prettyString;
-    const nodeId = feature?.values_?.id;
-    if (networkVis.value && nodeId) {
-      const deactivateButton = document.createElement("button");
-      if (deactivatedNodes.value.includes(nodeId)) {
-        deactivateButton.innerHTML = "Reactivate Node";
-      } else {
-        deactivateButton.innerHTML = "Deactivate Node";
-      }
-      deactivateButton.onclick = function () {
-        toggleNodeActive(nodeId, deactivateButton);
-      };
-      deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
-      tooltipDiv.appendChild(deactivateButton);
-    }
 
-    tooltip.value.appendChild(tooltipDiv);
-    overlay.setPosition(evt.coordinate);
+  // Clear tooltip values first
+  tooltip.value.innerHTML = "";
+  tooltip.value.style.display = "";
+  if (!feature) {
+    tooltip.value.style.display = "none";
+    return;
   }
+
+  const properties = Object.fromEntries(
+    Object.entries(feature.values_).filter(([k, v]) => k && v)
+  );
+  ["colors", "geometry", "type", "id", "node", "edge"].forEach(
+    (prop) => delete properties[prop]
+  );
+  let prettyString = JSON.stringify(properties)
+    .replaceAll('"', "")
+    .replaceAll("{", "")
+    .replaceAll("}", "")
+    .replaceAll(",", "<br>");
+  prettyString += "<br>";
+  const tooltipDiv = document.createElement("div");
+  tooltipDiv.innerHTML = prettyString;
+
+  // Add things if a network feature is clicked
+  const nodeId = feature?.values_?.id;
+  if (networkVis.value && nodeId) {
+    const deactivateButton = document.createElement("button");
+    if (deactivatedNodes.value.includes(nodeId)) {
+      deactivateButton.innerHTML = "Reactivate Node";
+    } else {
+      deactivateButton.innerHTML = "Deactivate Node";
+    }
+    deactivateButton.onclick = function () {
+      toggleNodeActive(nodeId, deactivateButton);
+    };
+    deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
+    tooltipDiv.appendChild(deactivateButton);
+  }
+
+  // Set tooltip contents and position
+  tooltip.value.appendChild(tooltipDiv);
+  overlay.setPosition(evt.coordinate);
 }
 
 export function displayRasterTooltip(evt, tooltip, overlay) {
