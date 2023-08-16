@@ -338,6 +338,23 @@ export function displayFeatureTooltip(evt, tooltip, overlay) {
   const tooltipDiv = document.createElement("div");
   tooltipDiv.innerHTML = prettyString;
 
+  // Add button to crop to boundary if feature is a region
+  if (feature.getGeometry().getType().includes("Polygon")) {
+    const cropButton = document.createElement("BUTTON");
+    cropButton.onclick = () => {
+      // Set map zoom to match bounding box of region
+      map.value.getView().fit(feature.getGeometry(), {
+        size: map.value.getSize(),
+        duration: 300,
+      });
+    };
+
+    // Add button to tooltip
+    cropButton.appendChild(document.createTextNode("Zoom to Region"));
+    cropButton.classList.add("v-btn", "v-btn--variant-text", "tooltip-button");
+    tooltipDiv.appendChild(cropButton);
+  }
+
   // Add things if a network feature is clicked
   const nodeId = feature?.values_?.id;
   if (networkVis.value && nodeId) {
