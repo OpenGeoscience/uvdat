@@ -7,6 +7,7 @@ export default {
   setup() {
     const activeChart = ref();
     const availableCharts = ref();
+    chartData.value = undefined; // clear chart on init
 
     function fetchCharts() {
       activeChart.value = undefined;
