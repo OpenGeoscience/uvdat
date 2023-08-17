@@ -1,17 +1,14 @@
 <script>
-import { currentCity, chartData } from "@/store";
+import { currentCity, activeChart } from "@/store";
 import { ref, onMounted } from "vue";
 import { getCityCharts } from "@/api/rest";
 
 export default {
   setup() {
-    const activeChart = ref();
     const availableCharts = ref();
-    chartData.value = undefined; // clear chart on init
 
     function fetchCharts() {
       activeChart.value = undefined;
-      chartData.value = undefined;
       getCityCharts(currentCity.value.id).then((charts) => {
         availableCharts.value = charts;
       });
@@ -19,7 +16,6 @@ export default {
 
     function activateChart(chart) {
       activeChart.value = chart;
-      chartData.value = chart.data;
     }
 
     onMounted(fetchCharts);
@@ -48,6 +44,9 @@ export default {
       @click="activateChart(chart)"
     >
       {{ chart.name }}
+      <v-tooltip activator="parent" location="end" max-width="300">
+        {{ chart.description }}
+      </v-tooltip>
     </v-list-item>
   </v-list>
 </template>

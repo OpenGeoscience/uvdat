@@ -1,6 +1,6 @@
 <script>
 import { computed, ref } from "vue";
-import { chartData } from "@/store";
+import { activeChart } from "@/store";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -38,31 +38,36 @@ export default {
         },
       ],
     };
-    const currentXRange = ref([0, 50]);
+    const currentXStart = ref(0);
+    const currentXRange = ref(500);
 
     const showXRange = computed(() => {
       return (
-        chartData.value &&
-        chartData.value.labels.length >
-          currentXRange.value[1] - currentXRange.value[0]
+        activeChart.value && activeChart.value.chart_data.labels.length > 500
       );
     });
 
     const maxX = computed(() => {
-      return chartData.value && showXRange.value
-        ? chartData.value.labels.length
+      return activeChart.value && showXRange.value
+        ? activeChart.value.chart_data.labels.length
         : 0;
     });
 
     const data = computed(() => {
-      let currentData = chartData.value || defaultChartData;
+      let currentData = activeChart.value?.chart_data || defaultChartData;
 
       // clip to current x range
       if (showXRange.value) {
+        const slice = [
+          parseInt(currentXStart.value),
+          parseInt(currentXStart.value) + parseInt(currentXRange.value),
+        ];
         currentData = {
-          labels: currentData.labels.slice(...currentXRange.value),
+          labels: currentData.labels.slice(...slice),
           datasets: currentData.datasets.map((d) =>
-            Object.assign({}, d, { data: d.data.slice(...currentXRange.value) })
+            Object.assign({}, d, {
+              data: d.data.slice(...slice),
+            })
           ),
         };
       }
@@ -71,6 +76,7 @@ export default {
 
     return {
       options,
+      currentXStart,
       currentXRange,
       showXRange,
       maxX,
@@ -81,8 +87,34 @@ export default {
 </script>
 
 <template>
-  <div>
-    <Line :data="data" :options="options" />
-    <v-range-slider v-if="showXRange" v-model="currentXRange" :max="maxX" />
-  </div>
+  <v-container>
+    <v-row no-gutters>
+      <v-col cols="12">
+        <Line :data="data" :options="options" />
+      </v-col>
+    </v-row>
+    <v-row no-gutters v-if="showXRange">
+      <v-col cols="6"> Current X Axis Slice (From {{ maxX }} values) </v-col>
+    </v-row>
+    <v-row no-gutters v-if="showXRange">
+      <v-col cols="3">
+        <v-text-field
+          type="number"
+          label="Number of values"
+          v-model="currentXRange"
+          :max="maxX"
+          min="0"
+        />
+      </v-col>
+      <v-col cols="3">
+        <v-text-field
+          type="number"
+          label="Starting from"
+          v-model="currentXStart"
+          :max="maxX"
+          min="0"
+        />
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
