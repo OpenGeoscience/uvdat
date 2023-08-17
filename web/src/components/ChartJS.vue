@@ -54,6 +54,7 @@ export default {
     });
 
     const data = computed(() => {
+      console.log(activeChart.value);
       let currentData = activeChart.value?.chart_data || defaultChartData;
 
       // clip to current x range
@@ -75,6 +76,7 @@ export default {
     });
 
     return {
+      activeChart,
       options,
       currentXStart,
       currentXRange,
@@ -114,6 +116,27 @@ export default {
           :max="maxX"
           min="0"
         />
+      </v-col>
+    </v-row>
+    <v-row no-gutters v-if="activeChart?.metadata">
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel title="Metadata">
+            <v-expansion-panel-text>
+              <v-table>
+                <tbody>
+                  <tr
+                    v-for="[key, value] in Object.entries(activeChart.metadata)"
+                    :key="key"
+                  >
+                    <td class="font-weight-bold">{{ key }}</td>
+                    <td>{{ value }}</td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-col>
     </v-row>
   </v-container>

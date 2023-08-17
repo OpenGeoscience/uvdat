@@ -8,7 +8,6 @@
         "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
         "path": "boston/tide_level_data.csv",
         "metadata": {
-            "Contents": "Daily high-low tide levels",
             "columns": {
                 "Date": "YYYY-MM-DD",
                 "H": "High water",
