@@ -55,6 +55,11 @@ class Region(models.Model):
 
 class Chart(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='charts')
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='charts')
-    data = models.JSONField(blank=True, null=True)
+    category = models.CharField(max_length=25)
+    raw_data_file = S3FileField(null=True, blank=True)
+    raw_data_type = models.CharField(max_length=25, default='csv')
+    chart_data = models.JSONField(blank=True, null=True)
+    metadata = models.JSONField(blank=True, null=True)
+    style = models.JSONField(blank=True, null=True)

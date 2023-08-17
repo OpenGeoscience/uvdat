@@ -6,8 +6,9 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 import requests
 
-from uvdat.core.models import City, Dataset
+from uvdat.core.models import City, Dataset, Chart
 from uvdat.core.tasks.conversion import convert_raw_data
+from uvdat.core.tasks.charts import convert_chart_data
 
 
 class Command(BaseCommand):
@@ -63,4 +64,36 @@ class Command(BaseCommand):
                     new_dataset.raw_data_archive.save(archive_location, ContentFile(archive.read()))
                 print('\t Starting conversion task.')
                 convert_raw_data(new_dataset.id)
+                print()
+
+        print('Creating new Chart objects...')
+        with open('sample_data/charts.json') as charts_json:
+            data = json.load(charts_json)
+            for chart in data:
+                print('\t', chart['name'])
+                existing = Chart.objects.filter(name=chart['name'])
+                if existing.count():
+                    print('\t', 'already exists, deleting old copy.')
+                    existing.delete()
+
+                new_chart = Chart.objects.create(
+                    name=chart['name'],
+                    description=chart['description'],
+                    category=chart['category'],
+                    city=City.objects.get(name=chart['city']),
+                    raw_data_type=chart['raw_data_type'],
+                    metadata=chart.get('metadata'),
+                    style=chart.get('style'),
+                )
+                file_location = Path('sample_data', chart['path'])
+                if not file_location.exists():
+                    print('\t Downloading data file.')
+                    file_location.parent.mkdir(parents=True, exist_ok=True)
+                    with open(file_location, 'wb') as f:
+                        r = requests.get(chart['url'])
+                        f.write(r.content)
+                with open(file_location, 'rb') as f:
+                    new_chart.raw_data_file.save(file_location, ContentFile(f.read()))
+                print('\t Starting conversion task.')
+                convert_chart_data(new_chart)
                 print()

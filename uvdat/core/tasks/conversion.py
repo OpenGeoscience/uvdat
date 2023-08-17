@@ -8,15 +8,13 @@ from django.core.files.base import ContentFile
 from django.contrib.gis.geos import MultiPolygon, Polygon
 from geojson2vt import geojson2vt, vt2geojson
 
-import pandas
 import geopandas
 import large_image_converter
 import numpy
 import rasterio
 import shapefile
-from webcolors import name_to_hex
 
-from uvdat.core.models import Dataset, Region, Chart
+from uvdat.core.models import Dataset, Region
 from uvdat.core.utils import add_styling
 from uvdat.core.tasks.networks import save_network_nodes
 
@@ -37,8 +35,6 @@ def convert_raw_data(dataset_id):
         save_network_nodes(dataset)
     if dataset.category == 'region':
         save_regions(dataset)
-    if dataset.category == 'chart':
-        save_charts(dataset)
 
     dataset.processing = False
     dataset.save()
@@ -212,37 +208,3 @@ def save_regions(dataset):
         region.save()
 
     print(f"Saved regions for {dataset.name}")
-
-
-def save_charts(dataset):
-    dataset.charts.all().delete()
-    options = dataset.style.get('options')
-    chart_options = options.get('chart')
-    label_column = chart_options.get('labels')
-    dataset_columns = chart_options.get('datasets')
-    palette_options = options.get('palette')
-
-    chart_data = {
-        'labels': [],
-        'datasets': [],
-    }
-    csv_data = pandas.read_csv(dataset.raw_data_archive.open())
-    chart_data['labels'] = csv_data[label_column].fillna(-1).tolist()
-    chart_data['datasets'] = [
-        {
-            'label': dataset_column,
-            'backgroundColor': name_to_hex(palette_options.get(dataset_column, 'black')),
-            'borderColor': name_to_hex(palette_options.get(dataset_column, 'black')),
-            'data': csv_data[dataset_column].fillna(-1).tolist(),
-        }
-        for dataset_column in dataset_columns
-    ]
-
-    chart = Chart(
-        name=dataset.name,
-        city=dataset.city,
-        dataset=dataset,
-        data=chart_data,
-    )
-    chart.save()
-    print(f"Saved charts for {dataset.name}")

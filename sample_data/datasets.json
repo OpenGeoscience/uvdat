@@ -110,59 +110,6 @@
         }
     },
     {
-        "name": "Boston Harbor Daily Tide Levels",
-        "description": "Raw data was obtained using the NOAA CO-OPS API for Data Retrieval and reformatted in tabular form",
-        "category": "chart",
-        "city": "Boston, MA",
-        "raw_data_type": "csv",
-        "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
-        "path": "boston/tide_level_data.csv",
-        "metadata": {
-            "Contents": "Daily high-low tide levels",
-            "columns": {
-                "Date": "YYYY-MM-DD",
-                "H": "High water",
-                "HH": "Higher High water",
-                "L": "Low water",
-                "LL": "Lower Low Water"
-            },
-            "contents": "Daily high-low tide levels",
-            "date_range": {
-                "from": "01-Jan-1980",
-                "to": "30-Jun-2023"
-            },
-            "location": {
-                "latitude": 42.3539,
-                "longitude": -71.0503
-            },
-            "rows": 15857,
-            "source": "https://api.tidesandcurrents.noaa.gov/api/prod/",
-            "station": {
-                "datum": "Station Datum (STND)",
-                "id": 8443970
-            }
-        },
-        "style": {
-            "options": {
-                "chart": {
-                    "labels": "Date",
-                    "datasets": [
-                        "HH",
-                        "H",
-                        "L",
-                        "LL"
-                    ]
-                },
-                "palette": {
-                    "HH": "red",
-                    "H": "pink",
-                    "L": "lightblue",
-                    "LL": "blue"
-                }
-            }
-        }
-    },
-    {
         "name": "Boston Census Blocks",
         "description": "Boundaries of 2020 Census Blocks in the Boston Metropolitan area",
         "category": "region",
