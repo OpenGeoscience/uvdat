@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import RecursiveTable from "./RecursiveTable.vue";
 
 ChartJS.register(
   CategoryScale,
@@ -24,7 +25,7 @@ ChartJS.register(
 );
 
 export default {
-  components: { Line },
+  components: { Line, RecursiveTable },
   setup() {
     const options = {
       responsive: true,
@@ -54,7 +55,6 @@ export default {
     });
 
     const data = computed(() => {
-      console.log(activeChart.value);
       let currentData = activeChart.value?.chart_data || defaultChartData;
 
       // clip to current x range
@@ -123,17 +123,7 @@ export default {
         <v-expansion-panels>
           <v-expansion-panel title="Metadata">
             <v-expansion-panel-text>
-              <v-table>
-                <tbody>
-                  <tr
-                    v-for="[key, value] in Object.entries(activeChart.metadata)"
-                    :key="key"
-                  >
-                    <td class="font-weight-bold">{{ key }}</td>
-                    <td>{{ value }}</td>
-                  </tr>
-                </tbody>
-              </v-table>
+              <RecursiveTable :data="activeChart.metadata" />
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
