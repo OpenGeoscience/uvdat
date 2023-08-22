@@ -144,25 +144,43 @@ export function addDatasetLayerToMap(dataset, zIndex) {
 
   // Add GeoJSON data
   if (dataset.geodata_file) {
-    map.value.addLayer(
-      new VectorTileLayer({
-        properties: {
-          datasetId: dataset.id,
-        },
-        source: new VectorTileSource({
-          format: new GeoJSON(),
-          url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
+    const properties = { datasetId: dataset.id };
+
+    // Default to vector tile layer
+    let layer = new VectorTileLayer({
+      source: new VectorTileSource({
+        format: new GeoJSON(),
+        url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
+      }),
+      properties,
+      style: (feature) =>
+        createStyle({
+          type: feature.getGeometry().getType(),
+          colors: feature.get("colors"),
         }),
-        style: function (feature) {
-          return createStyle({
-            type: feature.getGeometry().getType(),
-            colors: feature.get("colors"),
-          });
-        },
-        opacity: dataset.style?.opacity || 1,
+      opacity: dataset.style?.opacity || 1,
+      zIndex,
+    });
+
+    // Use VectorLayer if dataset category is "region"
+    if (dataset.category === "region") {
+      layer = new VectorLayer({
+        properties,
         zIndex,
-      })
-    );
+        style: (feature) =>
+          createStyle({
+            type: feature.getGeometry().getType(),
+            colors: feature.get("properties").colors,
+          }),
+        source: new VectorSource({
+          format: new GeoJSON(),
+          url: `${baseURL}datasets/${dataset.id}/regions`,
+        }),
+      });
+    }
+
+    // Add to map
+    map.value.addLayer(layer);
   }
 }
 
