@@ -102,7 +102,10 @@ function createStyle(args) {
 export function addDatasetLayerToMap(dataset, zIndex) {
   if (dataset.processing) {
     return;
-  } else if (dataset.raster_file) {
+  }
+
+  // Add raster data
+  if (dataset.raster_file) {
     const tileParams = {
       projection: "EPSG:3857",
       band: 1,
@@ -135,26 +138,48 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       })
     );
     cacheRasterData(dataset.id);
-  } else if (dataset.geodata_file) {
-    map.value.addLayer(
-      new VectorTileLayer({
-        properties: {
-          datasetId: dataset.id,
-        },
-        source: new VectorTileSource({
-          format: new GeoJSON(),
-          url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
+    return;
+  }
+
+  // Add GeoJSON data
+  if (dataset.geodata_file) {
+    const properties = { datasetId: dataset.id };
+
+    // Default to vector tile layer
+    let layer = new VectorTileLayer({
+      source: new VectorTileSource({
+        format: new GeoJSON(),
+        url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
+      }),
+      properties,
+      style: (feature) =>
+        createStyle({
+          type: feature.getGeometry().getType(),
+          colors: feature.get("colors"),
         }),
-        style: function (feature) {
-          return createStyle({
-            type: feature.getGeometry().getType(),
-            colors: feature.get("colors"),
-          });
-        },
-        opacity: dataset.style?.opacity || 1,
+      opacity: dataset.style?.opacity || 1,
+      zIndex,
+    });
+
+    // Use VectorLayer if dataset category is "region"
+    if (dataset.category === "region") {
+      layer = new VectorLayer({
+        properties,
         zIndex,
-      })
-    );
+        style: (feature) =>
+          createStyle({
+            type: feature.getGeometry().getType(),
+            colors: feature.get("properties").colors,
+          }),
+        source: new VectorSource({
+          format: new GeoJSON(),
+          url: `${baseURL}datasets/${dataset.id}/regions`,
+        }),
+      });
+    }
+
+    // Add to map
+    map.value.addLayer(layer);
   }
 }
 
@@ -301,45 +326,71 @@ export function addNetworkLayerToMap(dataset, nodes) {
 
 export function displayFeatureTooltip(evt, tooltip, overlay) {
   if (rasterTooltip.value) return;
-  var pixel = evt.pixel;
-  var feature = map.value.forEachFeatureAtPixel(pixel, function (feature) {
+
+  // Check if any features are clicked, exit if not
+  var feature = map.value.forEachFeatureAtPixel(evt.pixel, function (feature) {
     return feature;
   });
-  tooltip.value.style.display = feature ? "" : "none";
-  tooltip.value.innerHTML = "";
-  if (feature) {
-    const properties = Object.fromEntries(
-      Object.entries(feature.values_).filter(([k, v]) => k && v)
-    );
-    ["colors", "geometry", "type", "id", "node", "edge"].forEach(
-      (prop) => delete properties[prop]
-    );
-    let prettyString = JSON.stringify(properties)
-      .replaceAll('"', "")
-      .replaceAll("{", "")
-      .replaceAll("}", "")
-      .replaceAll(",", "<br>");
-    prettyString += "<br>";
-    const tooltipDiv = document.createElement("div");
-    tooltipDiv.innerHTML = prettyString;
-    const nodeId = feature?.values_?.id;
-    if (networkVis.value && nodeId) {
-      const deactivateButton = document.createElement("button");
-      if (deactivatedNodes.value.includes(nodeId)) {
-        deactivateButton.innerHTML = "Reactivate Node";
-      } else {
-        deactivateButton.innerHTML = "Deactivate Node";
-      }
-      deactivateButton.onclick = function () {
-        toggleNodeActive(nodeId, deactivateButton);
-      };
-      deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
-      tooltipDiv.appendChild(deactivateButton);
-    }
 
-    tooltip.value.appendChild(tooltipDiv);
-    overlay.setPosition(evt.coordinate);
+  // Clear tooltip values first
+  tooltip.value.innerHTML = "";
+  tooltip.value.style.display = "";
+  if (!feature) {
+    tooltip.value.style.display = "none";
+    return;
   }
+
+  const properties = Object.fromEntries(
+    Object.entries(feature.values_).filter(([k, v]) => k && v)
+  );
+  ["colors", "geometry", "type", "id", "node", "edge"].forEach(
+    (prop) => delete properties[prop]
+  );
+  let prettyString = JSON.stringify(properties)
+    .replaceAll('"', "")
+    .replaceAll("{", "")
+    .replaceAll("}", "")
+    .replaceAll(",", "<br>");
+  prettyString += "<br>";
+  const tooltipDiv = document.createElement("div");
+  tooltipDiv.innerHTML = prettyString;
+
+  // Add button to crop to boundary if feature is a region
+  if (feature.getGeometry().getType().includes("Polygon")) {
+    const cropButton = document.createElement("BUTTON");
+    cropButton.onclick = () => {
+      // Set map zoom to match bounding box of region
+      map.value.getView().fit(feature.getGeometry(), {
+        size: map.value.getSize(),
+        duration: 300,
+      });
+    };
+
+    // Add button to tooltip
+    cropButton.appendChild(document.createTextNode("Zoom to Region"));
+    cropButton.classList.add("v-btn", "v-btn--variant-text", "tooltip-button");
+    tooltipDiv.appendChild(cropButton);
+  }
+
+  // Add things if a network feature is clicked
+  const nodeId = feature?.values_?.id;
+  if (networkVis.value && nodeId) {
+    const deactivateButton = document.createElement("button");
+    if (deactivatedNodes.value.includes(nodeId)) {
+      deactivateButton.innerHTML = "Reactivate Node";
+    } else {
+      deactivateButton.innerHTML = "Deactivate Node";
+    }
+    deactivateButton.onclick = function () {
+      toggleNodeActive(nodeId, deactivateButton);
+    };
+    deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
+    tooltipDiv.appendChild(deactivateButton);
+  }
+
+  // Set tooltip contents and position
+  tooltip.value.appendChild(tooltipDiv);
+  overlay.setPosition(evt.coordinate);
 }
 
 export function displayRasterTooltip(evt, tooltip, overlay) {

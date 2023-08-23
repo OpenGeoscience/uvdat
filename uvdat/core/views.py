@@ -1,17 +1,17 @@
 import json
-import ijson
-import tempfile
-import large_image
 from pathlib import Path
+import tempfile
 
+from django.core.serializers import serialize
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
-
+import ijson
+import large_image
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from uvdat.core.models import City, Dataset
+from uvdat.core.models import City, Dataset, Region
 from uvdat.core.serializers import (
     CitySerializer,
     DatasetSerializer,
@@ -42,6 +42,16 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     FILE_FIELD_NAME = 'raster_file'
+
+    @action(detail=True, methods=['get'])
+    def regions(self, request, **kwargs):
+        dataset = self.get_object()
+        if dataset.category != 'region':
+            return HttpResponse('Not a region dataset', status=400)
+
+        # Serialize all regions as a feature collection
+        multipolygons = Region.objects.filter(dataset=dataset)
+        return HttpResponse(serialize('geojson', multipolygons, geometry_field='boundary'))
 
     @action(
         detail=True,
