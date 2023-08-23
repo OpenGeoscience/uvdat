@@ -97,7 +97,9 @@ export default {
                 createNetworkLayer = false;
               }
             } else {
-              layer.setVisible(networkVis.value.id !== layerDatasetId);
+              layer.setVisible(
+                !layerDatasetId || networkVis.value.id !== layerDatasetId
+              );
             }
           });
         if (createNetworkLayer) {
