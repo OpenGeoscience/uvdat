@@ -77,6 +77,11 @@ def get_gcc_chart(dataset):
                 raw_data_type="json",
                 metadata=raw_data,
                 chart_data=chart_data,
+                chart_options={
+                    'chart_title': 'Size of Greatest Connected Component over Period',
+                    'x_title': 'Step when Excluded Nodes Changed',
+                    'y_title': 'Number of Nodes in GCC',
+                },
             )
             raw_data_file_path = Path(temp_dir, 'gcc_chart.json')
             with open(raw_data_file_path, 'w') as raw_data_file:

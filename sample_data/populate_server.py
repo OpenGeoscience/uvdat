@@ -82,6 +82,7 @@ class Command(BaseCommand):
                     category=chart['category'],
                     city=City.objects.get(name=chart['city']),
                     raw_data_type=chart['raw_data_type'],
+                    chart_options=chart.get('chart_options'),
                     metadata=chart.get('metadata'),
                     style=chart.get('style'),
                 )

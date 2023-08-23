@@ -31,6 +31,11 @@
                 "id": 8443970
             }
         },
+        "chart_options": {
+            "chart_title": "Daily Tide Levels",
+            "x_title": "Date Recorded",
+            "y_title": "Distance from Sensor (m)"
+        },
         "style": {
             "options": {
                 "chart": {

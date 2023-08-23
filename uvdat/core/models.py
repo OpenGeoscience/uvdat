@@ -61,5 +61,6 @@ class Chart(models.Model):
     raw_data_file = S3FileField(null=True, blank=True)
     raw_data_type = models.CharField(max_length=25, default='csv')
     chart_data = models.JSONField(blank=True, null=True)
+    chart_options = models.JSONField(blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
     style = models.JSONField(blank=True, null=True)
