@@ -27,9 +27,6 @@ ChartJS.register(
 export default {
   components: { Line, RecursiveTable },
   setup() {
-    const options = {
-      responsive: true,
-    };
     const defaultChartData = {
       labels: [],
       datasets: [
@@ -39,8 +36,44 @@ export default {
         },
       ],
     };
+    const defaultOptions = {
+      responsive: true,
+    };
     const currentXStart = ref(0);
     const currentXRange = ref(500);
+
+    const options = computed(() => {
+      const customOptions = {
+        plugins: {},
+        scales: {},
+      };
+      const savedOptions = activeChart.value.chart_options;
+      if (savedOptions.chart_title) {
+        customOptions.plugins.title = {
+          display: true,
+          text: savedOptions.chart_title,
+        };
+      }
+      if (savedOptions.x_title) {
+        if (!customOptions.scales.x) {
+          customOptions.scales.x = {};
+        }
+        customOptions.scales.x.title = {
+          display: true,
+          text: savedOptions.x_title,
+        };
+      }
+      if (savedOptions.y_title) {
+        if (!customOptions.scales.y) {
+          customOptions.scales.y = {};
+        }
+        customOptions.scales.y.title = {
+          display: true,
+          text: savedOptions.y_title,
+        };
+      }
+      return Object.assign({}, defaultOptions, customOptions);
+    });
 
     const showXRange = computed(() => {
       return (
