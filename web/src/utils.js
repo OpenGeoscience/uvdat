@@ -11,14 +11,17 @@ import { LineString, Point } from "ol/geom";
 import { fromLonLat } from "ol/proj";
 
 import { baseURL } from "@/api/auth";
-import { getNetworkGCC, getRasterData } from "@/api/rest";
+import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
   map,
+  currentCity,
   currentDataset,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
   currentNetworkGCC,
+  availableCharts,
+  activeChart,
 } from "@/store";
 
 export const rasterColormaps = [
@@ -444,6 +447,14 @@ export function toggleNodeActive(nodeId, button = null) {
   getNetworkGCC(currentDataset.value.id, deactivatedNodes.value).then((gcc) => {
     currentNetworkGCC.value = gcc;
     updateNetworkStyle();
+
+    // update chart
+    getCityCharts(currentCity.value.id).then((charts) => {
+      availableCharts.value = charts;
+      if (activeChart) {
+        activeChart.value = charts.find((c) => c.id === activeChart.value.id);
+      }
+    });
   });
   updateNetworkStyle();
 }

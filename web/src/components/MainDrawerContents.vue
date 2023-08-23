@@ -1,6 +1,12 @@
 <script>
 import draggable from "vuedraggable";
-import { currentCity, currentDataset, activeChart, map } from "@/store";
+import {
+  currentCity,
+  currentDataset,
+  activeChart,
+  availableCharts,
+  map,
+} from "@/store";
 import { ref, computed, onMounted } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
 import { getCityCharts } from "@/api/rest";
@@ -13,7 +19,6 @@ export default {
     const selectedDatasets = ref([]);
     const openPanels = ref([0]);
     const openCategories = ref([0]);
-    const availableCharts = ref();
     const availableLayerTree = computed(() => {
       const groupKey = "category";
       return Object.entries(
@@ -210,6 +215,7 @@ export default {
         <v-icon @click.prevent="fetchCharts" style="float: right"
           >mdi-refresh</v-icon
         >
+        <span v-if="availableCharts.length === 0">No charts available.</span>
         <v-list>
           <v-list-item
             v-for="chart in availableCharts"
