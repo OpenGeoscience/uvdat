@@ -1,8 +1,9 @@
 <script>
 import draggable from "vuedraggable";
-import { currentCity, currentDataset, map } from "@/store";
-import { ref, computed } from "vue";
+import { currentCity, currentDataset, activeChart, map } from "@/store";
+import { ref, computed, onMounted } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
+import { getCityCharts } from "@/api/rest";
 
 export default {
   components: {
@@ -12,6 +13,7 @@ export default {
     const selectedDatasets = ref([]);
     const openPanels = ref([0]);
     const openCategories = ref([0]);
+    const availableCharts = ref();
     const availableLayerTree = computed(() => {
       const groupKey = "category";
       return Object.entries(
@@ -99,6 +101,19 @@ export default {
       currentDataset.value = dataset;
     }
 
+    function fetchCharts() {
+      activeChart.value = undefined;
+      getCityCharts(currentCity.value.id).then((charts) => {
+        availableCharts.value = charts;
+      });
+    }
+
+    function activateChart(chart) {
+      activeChart.value = chart;
+    }
+
+    onMounted(fetchCharts);
+
     return {
       selectedDatasets,
       currentCity,
@@ -110,6 +125,10 @@ export default {
       activeLayerTableHeaders,
       reorderLayers,
       expandOptionsPanel,
+      activeChart,
+      availableCharts,
+      fetchCharts,
+      activateChart,
     };
   },
 };
@@ -183,6 +202,28 @@ export default {
             </v-card>
           </template>
         </draggable>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel title="Available Charts">
+      <v-expansion-panel-text>
+        <v-icon @click.prevent="fetchCharts" style="float: right"
+          >mdi-refresh</v-icon
+        >
+        <v-list>
+          <v-list-item
+            v-for="chart in availableCharts"
+            :key="chart.id"
+            :value="chart.id"
+            :active="activeChart && chart.id === activeChart.id"
+            @click="activateChart(chart)"
+          >
+            {{ chart.name }}
+            <v-tooltip activator="parent" location="end" max-width="300">
+              {{ chart.description }}
+            </v-tooltip>
+          </v-list-item>
+        </v-list>
       </v-expansion-panel-text>
     </v-expansion-panel>
   </v-expansion-panels>

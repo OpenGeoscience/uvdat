@@ -9,7 +9,6 @@ import { getCities, getDataset } from "@/api/rest";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
-export const viewMode = ref<string>("map");
 
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();

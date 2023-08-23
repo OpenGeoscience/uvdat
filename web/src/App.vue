@@ -7,19 +7,17 @@ import {
   cities,
   loading,
   loadCities,
-  viewMode,
+  activeChart,
 } from "./store";
 import OpenLayersMap from "./components/OpenLayersMap.vue";
-import MapDrawerContents from "./components/MapDrawerContents.vue";
-import ChartDrawerContents from "./components/ChartDrawerContents.vue";
+import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
 
 export default defineComponent({
   components: {
     OpenLayersMap,
-    MapDrawerContents,
-    ChartDrawerContents,
+    MainDrawerContents,
     OptionsDrawerContents,
     ChartJS,
   },
@@ -36,7 +34,7 @@ export default defineComponent({
       cities,
       loading,
       currentError,
-      viewMode,
+      activeChart,
     };
   },
 });
@@ -75,14 +73,7 @@ export default defineComponent({
       width="250"
       class="main-area drawer"
     >
-      <v-tabs v-model="viewMode" grow>
-        <v-tab value="map">Map</v-tab>
-        <v-tab value="chart">Chart</v-tab>
-      </v-tabs>
-      <v-window v-model="viewMode">
-        <v-window-item value="map"><MapDrawerContents /></v-window-item>
-        <v-window-item value="chart"><ChartDrawerContents /></v-window-item>
-      </v-window>
+      <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
       :model-value="currentDataset !== undefined"
@@ -102,8 +93,8 @@ export default defineComponent({
           : 'main-area'
       "
     >
-      <OpenLayersMap v-if="viewMode === 'map'" />
-      <ChartJS v-else-if="viewMode === 'chart'" />
+      <OpenLayersMap />
+      <ChartJS v-if="activeChart" />
     </div>
   </v-app>
 </template>

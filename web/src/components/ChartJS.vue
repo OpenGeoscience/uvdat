@@ -89,45 +89,66 @@ export default {
 </script>
 
 <template>
-  <v-container>
-    <v-row no-gutters>
-      <v-col cols="12">
-        <Line :data="data" :options="options" />
-      </v-col>
-    </v-row>
-    <v-row no-gutters v-if="showXRange">
-      <v-col cols="6"> Current X Axis Slice (From {{ maxX }} values) </v-col>
-    </v-row>
-    <v-row no-gutters v-if="showXRange">
-      <v-col cols="3">
-        <v-text-field
-          type="number"
-          label="Number of values"
-          v-model="currentXRange"
-          :max="maxX"
-          min="0"
-        />
-      </v-col>
-      <v-col cols="3">
-        <v-text-field
-          type="number"
-          label="Starting from"
-          v-model="currentXStart"
-          :max="maxX"
-          min="0"
-        />
-      </v-col>
-    </v-row>
-    <v-row no-gutters v-if="activeChart?.metadata">
-      <v-col cols="12">
-        <v-expansion-panels>
-          <v-expansion-panel title="Metadata">
-            <v-expansion-panel-text>
-              <RecursiveTable :data="activeChart.metadata" />
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </v-col>
-    </v-row>
-  </v-container>
+  <v-card class="chart-card">
+    <v-btn
+      style="float: right"
+      icon="mdi-close"
+      variant="plain"
+      @click="activeChart = undefined"
+    />
+    <v-container>
+      <v-row no-gutters>
+        <v-col cols="12">
+          <Line :data="data" :options="options" />
+        </v-col>
+      </v-row>
+      <v-row no-gutters v-if="showXRange">
+        <v-col cols="6"> Current X Axis Slice (From {{ maxX }} values) </v-col>
+      </v-row>
+      <v-row no-gutters v-if="showXRange">
+        <v-col cols="3">
+          <v-text-field
+            type="number"
+            label="Number of values"
+            v-model="currentXRange"
+            :max="maxX"
+            min="0"
+          />
+        </v-col>
+        <v-col cols="3">
+          <v-text-field
+            type="number"
+            label="Starting from"
+            v-model="currentXStart"
+            :max="maxX"
+            min="0"
+          />
+        </v-col>
+      </v-row>
+      <v-row no-gutters v-if="activeChart?.metadata">
+        <v-col cols="12">
+          <v-expansion-panels>
+            <v-expansion-panel title="Metadata">
+              <v-expansion-panel-text>
+                <RecursiveTable :data="activeChart.metadata" />
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-card>
 </template>
+
+<style scoped>
+.chart-card {
+  z-index: 99;
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 800px;
+  max-width: calc(100% - 20px);
+  max-height: 90%;
+  overflow: auto;
+}
+</style>
