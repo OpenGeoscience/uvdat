@@ -1,10 +1,12 @@
-import tempfile
-import shapely
-import geopandas
-import numpy
-import networkx as nx
 from pathlib import Path
+import tempfile
+
 from django.contrib.gis.geos import Point
+import geopandas
+import networkx as nx
+import numpy
+import shapely
+
 from uvdat.core.models import NetworkNode
 
 

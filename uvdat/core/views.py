@@ -13,14 +13,14 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City, Dataset, Region
 from uvdat.core.serializers import (
+    ChartSerializer,
     CitySerializer,
     DatasetSerializer,
     NetworkNodeSerializer,
-    ChartSerializer,
 )
+from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
-from uvdat.core.tasks.charts import add_gcc_chart_datum
 
 
 class CityViewSet(ModelViewSet):

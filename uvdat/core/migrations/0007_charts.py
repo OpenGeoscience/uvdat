@@ -6,7 +6,6 @@ import s3_file_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0006_regions'),
     ]
@@ -15,7 +14,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Chart',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
                 ('name', models.CharField(max_length=255, unique=True)),
                 ('description', models.TextField(blank=True, null=True)),
                 ('category', models.CharField(max_length=25)),
@@ -25,7 +29,14 @@ class Migration(migrations.Migration):
                 ('chart_options', models.JSONField(blank=True, null=True)),
                 ('metadata', models.JSONField(blank=True, null=True)),
                 ('style', models.JSONField(blank=True, null=True)),
-                ('city', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='charts', to='core.city')),
+                (
+                    'city',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='charts',
+                        to='core.city',
+                    ),
+                ),
             ],
         ),
     ]

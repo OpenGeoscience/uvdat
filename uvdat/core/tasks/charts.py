@@ -1,12 +1,13 @@
-import pandas
-import json
-import tempfile
-from pathlib import Path
 from datetime import datetime
-from webcolors import name_to_hex
-from uvdat.core.models import Chart
-from django.core.files.base import ContentFile
+import json
+from pathlib import Path
+import tempfile
 
+from django.core.files.base import ContentFile
+import pandas
+from webcolors import name_to_hex
+
+from uvdat.core.models import Chart
 
 CHART_COLORS = [
     'blue',

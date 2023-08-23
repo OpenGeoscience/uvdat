@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from uvdat.core.models import City, Dataset, NetworkNode, Chart
+from uvdat.core.models import Chart, City, Dataset, NetworkNode
 
 
 class NetworkNodeSerializer(serializers.ModelSerializer):

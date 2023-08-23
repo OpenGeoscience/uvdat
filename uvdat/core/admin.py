@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from uvdat.core.models import City, Dataset, NetworkNode, Region, Chart
+from uvdat.core.models import Chart, City, Dataset, NetworkNode, Region
 
 
 class CityAdmin(admin.ModelAdmin):

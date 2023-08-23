@@ -6,9 +6,9 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 import requests
 
-from uvdat.core.models import City, Dataset, Chart
-from uvdat.core.tasks.conversion import convert_raw_data
+from uvdat.core.models import Chart, City, Dataset
 from uvdat.core.tasks.charts import convert_chart_data
+from uvdat.core.tasks.conversion import convert_raw_data
 
 
 class Command(BaseCommand):
