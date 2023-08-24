@@ -1,26 +1,8 @@
 from datetime import datetime
-import json
-from pathlib import Path
-import tempfile
-
-from django.core.files.base import ContentFile
 import pandas
 from webcolors import name_to_hex
 
 from uvdat.core.models import Chart
-
-CHART_COLORS = [
-    'blue',
-    'red',
-    'green',
-    'orange',
-    'purple',
-    'lightblue',
-    'pink',
-    'lightgreen',
-    'lightorange',
-    'lightpurple',
-]
 
 
 def convert_chart_data(chart):
@@ -60,89 +42,76 @@ def get_gcc_chart(dataset):
     try:
         return Chart.objects.get(name=chart_name)
     except Chart.DoesNotExist:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            raw_data = {"compute_gcc_runs": []}
-            chart_data = {
-                "labels": [],
-                "datasets": [],
-            }
-            chart = Chart(
-                name=chart_name,
-                description="""
-                    A set of previously-run calculations
-                    for the network's greatest connected component (GCC),
-                    showing GCC size by number of excluded nodes
-                """,
-                city=dataset.city,
-                category="gcc",
-                raw_data_type="json",
-                metadata=raw_data,
-                chart_data=chart_data,
-                chart_options={
-                    'chart_title': 'Size of Greatest Connected Component over Period',
-                    'x_title': 'Step when Excluded Nodes Changed',
-                    'y_title': 'Number of Nodes in GCC',
-                },
-            )
-            raw_data_file_path = Path(temp_dir, 'gcc_chart.json')
-            with open(raw_data_file_path, 'w') as raw_data_file:
-                json.dump(raw_data, raw_data_file)
-            with open(raw_data_file_path, 'rb') as raw_data_file:
-                chart.raw_data_file.save(
-                    raw_data_file_path,
-                    ContentFile(raw_data_file.read()),
-                )
-            chart.save()
-            return chart
+        chart = Chart(
+            name=chart_name,
+            description="""
+                A set of previously-run calculations
+                for the network's greatest connected component (GCC),
+                showing GCC size by number of excluded nodes
+            """,
+            city=dataset.city,
+            category="gcc",
+            chart_data={},
+            metadata=[],
+            chart_options={
+                'chart_title': 'Size of Greatest Connected Component over Period',
+                'x_title': 'Step when Excluded Nodes Changed',
+                'y_title': 'Number of Nodes in GCC',
+            },
+        )
+        chart.save()
+        return chart
 
 
 def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
+    chart = get_gcc_chart(dataset)
+
+    now = datetime.now()
+    delta_seconds = -1
+    if len(chart.metadata) > 0:
+        # Compare time of previous run
+        previous_entry = chart.metadata[-1]
+        previous_time = datetime.strptime(previous_entry['run_time'], "%d/%m/%Y %H:%M")
+        delta_seconds = (now - previous_time).total_seconds()
+
+    # Five minutes from last entry will start a new chart, clear all chart data
+    # Or a negative time means the data structures need to be initialized
+    if delta_seconds > 300 or delta_seconds < 0:
+        chart.metadata = []
+        chart.chart_data['labels'] = []
+        chart.chart_data['datasets'] = [
+            {
+                'label': 'GCC Size',
+                'backgroundColor': name_to_hex('blue'),
+                'borderColor': name_to_hex('blue'),
+                'data': [],
+            },
+            {
+                'label': 'N Nodes Excluded',
+                'backgroundColor': name_to_hex('red'),
+                'borderColor': name_to_hex('red'),
+                'data': [],
+            },
+        ]
+
+    # Append to chart_data
+    labels = chart.chart_data['labels']
+    datasets = chart.chart_data['datasets']
+
+    labels.append(len(labels) + 1)  # Add x-axis entry
+    datasets[0]['data'].append(gcc_size)  # Add gcc size point
+    datasets[1]['data'].append(len(excluded_node_names))  # Add n excluded point
+
+    chart.chart_data['labels'] = labels
+    chart.chart_data['datasets'] = datasets
+
     new_entry = {
-        'run_time': datetime.now().strftime("%d/%m/%Y %H:%M"),
+        'run_time': now.strftime("%d/%m/%Y %H:%M"),
         'n_excluded_nodes': len(excluded_node_names),
         'excluded_node_names': excluded_node_names,
         'gcc_size': gcc_size,
     }
 
-    chart = get_gcc_chart(dataset)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        raw_data = json.load(chart.raw_data_file.open())
-
-        # Append to raw_data and metadata
-        raw_data["compute_gcc_runs"].append(new_entry)
-        chart.metadata = raw_data
-
-        raw_data_file_path = Path(temp_dir, 'gcc_chart.json')
-        with open(raw_data_file_path, 'w') as raw_data_file:
-            json.dump(raw_data, raw_data_file)
-        with open(raw_data_file_path, 'rb') as raw_data_file:
-            chart.raw_data_file.save(
-                raw_data_file_path,
-                ContentFile(raw_data_file.read()),
-            )
-
-    # Append to chart_data
-    x = len(excluded_node_names)
-    y = gcc_size
-    labels = list(range(dataset.network_nodes.all().count()))
-    runs = chart.chart_data['datasets']
-    target_run = 1
-    for run in runs:
-        if run['data'][x]:
-            # Datum already exists in this run, skip to next
-            target_run += 1
-    if len(runs) < target_run:
-        run_color = name_to_hex(CHART_COLORS[(target_run - 1) % len(CHART_COLORS)])
-        runs.append(
-            {
-                'label': f'Run {target_run}',
-                'backgroundColor': run_color,
-                'borderColor': run_color,
-                'data': [None for label in labels],
-            }
-        )
-    runs[target_run - 1]['data'][x] = y
-
-    chart.chart_data['datasets'] = runs
-    chart.chart_data['labels'] = labels
+    # Append to metadata
+    chart.metadata.append(new_entry)
     chart.save()
