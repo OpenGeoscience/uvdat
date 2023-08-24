@@ -36,7 +36,6 @@ export default {
         currentDataset.value?.style?.data_range?.map((v) => Math.round(v)) ||
         undefined;
       colormapRange.value = datasetRange.value;
-      deactivatedNodes.value = [];
     }
 
     function updateLayerOpacity() {

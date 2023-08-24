@@ -15,7 +15,6 @@ import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
   map,
   currentCity,
-  currentDataset,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
@@ -444,7 +443,7 @@ export function toggleNodeActive(nodeId, button = null) {
   }
 
   currentNetworkGCC.value = undefined;
-  getNetworkGCC(currentDataset.value.id, deactivatedNodes.value).then((gcc) => {
+  getNetworkGCC(networkVis.value.id, deactivatedNodes.value).then((gcc) => {
     currentNetworkGCC.value = gcc;
     updateNetworkStyle();
 

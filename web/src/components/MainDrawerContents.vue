@@ -35,7 +35,7 @@ export default {
           };
         })
         .filter((group) => group.name != "chart")
-        .sort((a, b) => a.name > b.name);
+        .sort((a, b) => a.name < b.name);
     });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
