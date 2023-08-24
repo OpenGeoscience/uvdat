@@ -130,6 +130,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       new TileLayer({
         properties: {
           datasetId: dataset.id,
+          dataset,
         },
         source: new XYZSource({
           url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
@@ -144,15 +145,16 @@ export function addDatasetLayerToMap(dataset, zIndex) {
 
   // Add GeoJSON data
   if (dataset.geodata_file) {
-    const properties = { datasetId: dataset.id };
-
     // Default to vector tile layer
     let layer = new VectorTileLayer({
       source: new VectorTileSource({
         format: new GeoJSON(),
         url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
       }),
-      properties,
+      properties: {
+        datasetId: dataset.id,
+        dataset,
+      },
       style: (feature) =>
         createStyle({
           type: feature.getGeometry().getType(),
@@ -165,7 +167,10 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     // Use VectorLayer if dataset category is "region"
     if (dataset.category === "region") {
       layer = new VectorLayer({
-        properties,
+        properties: {
+          datasetId: dataset.id,
+          dataset,
+        },
         zIndex,
         style: (feature) =>
           createStyle({
@@ -316,6 +321,7 @@ export function addNetworkLayerToMap(dataset, nodes) {
   const layer = new VectorLayer({
     properties: {
       datasetId: dataset.id,
+      dataset,
       network: true,
     },
     zIndex: 99,
@@ -325,22 +331,30 @@ export function addNetworkLayerToMap(dataset, nodes) {
   map.value.addLayer(layer);
 }
 
-export function displayFeatureTooltip(evt, tooltip, overlay) {
-  if (rasterTooltip.value) return;
+function renderRegionTooltip(tooltipDiv, feature) {
+  tooltipDiv.innerHTML = `
+    ID: ${feature.get("pk")}<br>
+    Name: ${feature.get("name")}<br>
+  `;
 
-  // Check if any features are clicked, exit if not
-  var feature = map.value.forEachFeatureAtPixel(evt.pixel, function (feature) {
-    return feature;
-  });
+  // Create button
+  const cropButton = document.createElement("BUTTON");
+  cropButton.classList = "v-btn v-btn--variant-outlined pa-2";
+  cropButton.appendChild(document.createTextNode("Zoom to Region"));
+  cropButton.onclick = () => {
+    // Set map zoom to match bounding box of region
+    map.value.getView().fit(feature.getGeometry(), {
+      size: map.value.getSize(),
+      duration: 300,
+    });
+  };
 
-  // Clear tooltip values first
-  tooltip.value.innerHTML = "";
-  tooltip.value.style.display = "";
-  if (!feature) {
-    tooltip.value.style.display = "none";
-    return;
-  }
+  // Add button to tooltip
+  tooltipDiv.appendChild(cropButton);
+}
 
+function renderNetworkTooltip(tooltipDiv, feature) {
+  // Add data
   const properties = Object.fromEntries(
     Object.entries(feature.values_).filter(([k, v]) => k && v)
   );
@@ -353,40 +367,59 @@ export function displayFeatureTooltip(evt, tooltip, overlay) {
     .replaceAll("}", "")
     .replaceAll(",", "<br>");
   prettyString += "<br>";
-  const tooltipDiv = document.createElement("div");
   tooltipDiv.innerHTML = prettyString;
 
-  // Add button to crop to boundary if feature is a region
-  if (feature.getGeometry().getType().includes("Polygon")) {
-    const cropButton = document.createElement("BUTTON");
-    cropButton.onclick = () => {
-      // Set map zoom to match bounding box of region
-      map.value.getView().fit(feature.getGeometry(), {
-        size: map.value.getSize(),
-        duration: 300,
-      });
-    };
+  // Add activation button
+  const nodeId = feature.get("id");
+  const deactivateButton = document.createElement("button");
+  if (deactivatedNodes.value.includes(nodeId)) {
+    deactivateButton.innerHTML = "Reactivate Node";
+  } else {
+    deactivateButton.innerHTML = "Deactivate Node";
+  }
+  deactivateButton.onclick = function () {
+    toggleNodeActive(nodeId, deactivateButton);
+  };
+  deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
+  tooltipDiv.appendChild(deactivateButton);
+}
 
-    // Add button to tooltip
-    cropButton.appendChild(document.createTextNode("Zoom to Region"));
-    cropButton.classList.add("v-btn", "v-btn--variant-text", "tooltip-button");
-    tooltipDiv.appendChild(cropButton);
+export function displayFeatureTooltip(evt, tooltip, overlay) {
+  if (rasterTooltip.value) return;
+
+  // Clear tooltip values in event of no feature clicked
+  tooltip.value.innerHTML = "";
+  tooltip.value.style.display = "";
+
+  // Check if any features are clicked, exit if not
+  let res = map.value.forEachFeatureAtPixel(evt.pixel, (feature, layer) => [
+    feature,
+    layer,
+  ]);
+  if (!res) {
+    tooltip.value.style.display = "none";
+    return;
   }
 
-  // Add things if a network feature is clicked
-  const nodeId = feature?.values_?.id;
-  if (networkVis.value && nodeId) {
-    const deactivateButton = document.createElement("button");
-    if (deactivatedNodes.value.includes(nodeId)) {
-      deactivateButton.innerHTML = "Reactivate Node";
-    } else {
-      deactivateButton.innerHTML = "Deactivate Node";
-    }
-    deactivateButton.onclick = function () {
-      toggleNodeActive(nodeId, deactivateButton);
-    };
-    deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
-    tooltipDiv.appendChild(deactivateButton);
+  // Get feature and layer, exit if dataset isn't provided through the layer
+  const [feature, layer] = res;
+  const dataset = layer.get("dataset");
+  if (!dataset) {
+    return;
+  }
+
+  // Create div in which tooltip contents will live
+  const tooltipDiv = document.createElement("div");
+
+  // Handle region dataset
+  if (dataset.category === "region") {
+    renderRegionTooltip(tooltipDiv, feature);
+    // Handle network dataset
+  } else if (networkVis.value && dataset.network) {
+    renderNetworkTooltip(tooltipDiv, feature);
+  } else {
+    // No defined behavior, quit and render nothing
+    return;
   }
 
   // Set tooltip contents and position
