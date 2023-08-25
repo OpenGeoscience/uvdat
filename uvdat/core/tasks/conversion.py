@@ -5,6 +5,7 @@ import zipfile
 
 from celery import shared_task
 from django.core.files.base import ContentFile
+from django.contrib.gis.geos import MultiPolygon, Polygon
 from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import large_image_converter
@@ -12,13 +13,13 @@ import numpy
 import rasterio
 import shapefile
 
-from uvdat.core.models import Dataset
+from uvdat.core.models import Dataset, Region
 from uvdat.core.utils import add_styling
 from uvdat.core.tasks.networks import save_network_nodes
 
 
 @shared_task
-def convert_raw_archive(dataset_id):
+def convert_raw_data(dataset_id):
     dataset = Dataset.objects.get(id=dataset_id)
     if dataset.raw_data_type == 'cloud_optimized_geotiff':
         convert_cog(dataset)
@@ -28,6 +29,12 @@ def convert_raw_archive(dataset_id):
         convert_shape_file_archive(dataset)
     else:
         print(f'\t\tNo op for raw data type {dataset.raw_data_type}')
+
+    if dataset.network:
+        save_network_nodes(dataset)
+    if dataset.category == 'region':
+        save_regions(dataset)
+
     dataset.processing = False
     dataset.save()
 
@@ -173,12 +180,30 @@ def convert_shape_file_archive(dataset):
             json.dump({'type': 'FeatureCollection', 'features': features}, geodata_file)
         geodata = geopandas.read_file(geodata_path)
         geodata = geodata.set_crs(original_projection, allow_override=True)
-
         geodata = geodata.to_crs(4326)
-        if dataset.network:
-            save_network_nodes(dataset, geodata)
-
         geodata.to_file(geodata_path)
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
 
         convert_geojson(dataset, geodata_path=geodata_path)
+
+
+def save_regions(dataset):
+    dataset.regions.all().delete()
+    property_map = dataset.style.get('property_map')
+    name_property = property_map.get('name') if property_map else None
+
+    geodata = json.loads(dataset.geodata_file.read().decode())
+    for feature in geodata.get('features'):
+        geometry = feature.get('geometry')
+        properties = feature.get('properties')
+        polygons = [Polygon(p if len(p) != 1 else p[0]) for p in geometry.get('coordinates')]
+        region = Region(
+            name=properties.get(name_property) if name_property else "",
+            boundary=MultiPolygon(*polygons),
+            properties=properties,
+            dataset=dataset,
+            city=dataset.city,
+        )
+        region.save()
+
+    print(f"Saved regions for {dataset.name}")

@@ -43,3 +43,11 @@ class NetworkNode(models.Model):
     properties = models.JSONField(blank=True, null=True)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='network_nodes')
     adjacent_nodes = models.ManyToManyField('NetworkNode')
+
+
+class Region(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    properties = models.JSONField(blank=True, null=True)
+    boundary = geo_models.MultiPolygonField()
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='regions')
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='regions')
