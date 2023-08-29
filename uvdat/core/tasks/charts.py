@@ -1,4 +1,5 @@
 from datetime import datetime
+
 import pandas
 from webcolors import name_to_hex
 
@@ -51,6 +52,7 @@ def get_gcc_chart(dataset):
             """,
             city=dataset.city,
             category="gcc",
+            clearable=True,
             chart_data={},
             metadata=[],
             chart_options={

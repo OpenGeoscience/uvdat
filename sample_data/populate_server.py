@@ -85,6 +85,7 @@ class Command(BaseCommand):
                     chart_options=chart.get('chart_options'),
                     metadata=chart.get('metadata'),
                     style=chart.get('style'),
+                    clearable=chart.get('clearable', False),
                 )
                 file_location = Path('sample_data', chart['path'])
                 if not file_location.exists():

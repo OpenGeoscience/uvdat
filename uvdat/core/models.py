@@ -64,3 +64,4 @@ class Chart(models.Model):
     chart_options = models.JSONField(blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
     style = models.JSONField(blank=True, null=True)
+    clearable = models.BooleanField(default=False)
