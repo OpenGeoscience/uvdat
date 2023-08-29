@@ -158,7 +158,8 @@ class ChartViewSet(ModelViewSet):
             return Chart.objects.filter(city__id=city_id)
         return Chart.objects.all()
 
-    @action(detail=True, methods=['post'])
+    # TODO: This should be POST once rest authentication is implemented
+    @action(detail=True, methods=['get'])
     def clear(self, request, **kwargs):
         chart = self.get_object()
         if not chart.clearable:
@@ -166,4 +167,5 @@ class ChartViewSet(ModelViewSet):
 
         chart.metadata = []
         chart.chart_data = {}
+        chart.save()
         return HttpResponse(status=200)

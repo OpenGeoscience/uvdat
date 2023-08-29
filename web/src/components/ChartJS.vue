@@ -1,6 +1,6 @@
 <script>
 import { computed, ref } from "vue";
-import { activeChart } from "@/store";
+import { activeChart, availableCharts } from "@/store";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -13,6 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import RecursiveTable from "./RecursiveTable.vue";
+import { clearChart, getCityCharts } from "@/api/rest";
 
 ChartJS.register(
   CategoryScale,
@@ -92,18 +93,23 @@ export default {
 
     const showXRange = computed(() => {
       return (
-        activeChart.value && activeChart.value.chart_data.labels.length > 500
+        activeChart.value?.chart_data?.labels &&
+        activeChart.value.chart_data.labels.length > 500
       );
     });
 
     const maxX = computed(() => {
-      return activeChart.value && showXRange.value
+      return activeChart.value?.chart_data?.labels && showXRange.value
         ? activeChart.value.chart_data.labels.length
         : 0;
     });
 
     const data = computed(() => {
-      let currentData = activeChart.value?.chart_data || defaultChartData;
+      let currentData = activeChart.value?.chart_data;
+
+      if (!currentData || Object.keys(currentData).length === 0) {
+        currentData = defaultChartData;
+      }
 
       // clip to current x range
       if (showXRange.value) {
@@ -136,6 +142,22 @@ export default {
       }
       return true;
     });
+    console.log(activeChart.value);
+
+    function clearAndRefresh() {
+      if (activeChart.value) {
+        clearChart(activeChart.value.id).then(() => {
+          getCityCharts(activeChart.value.city).then((charts) => {
+            availableCharts.value = charts;
+            if (activeChart) {
+              activeChart.value = charts.find(
+                (c) => c.id === activeChart.value.id
+              );
+            }
+          });
+        });
+      }
+    }
 
     return {
       activeChart,
@@ -147,6 +169,7 @@ export default {
       data,
       downloadButton,
       downloadReady,
+      clearAndRefresh,
     };
   },
 };
@@ -154,8 +177,19 @@ export default {
 
 <template>
   <v-card class="chart-card">
-    <div style="float: right">
-      <v-tooltip text="Download">
+    <div style="position: absolute; right: 0">
+      <v-tooltip text="Clear Chart Data" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon="mdi-eraser-variant"
+            variant="plain"
+            v-show="activeChart.clearable"
+            @click="clearAndRefresh"
+          />
+        </template>
+      </v-tooltip>
+      <v-tooltip text="Download" location="bottom">
         <template v-slot:activator="{ props }">
           <a ref="downloadButton">
             <v-btn
@@ -167,7 +201,7 @@ export default {
           </a>
         </template>
       </v-tooltip>
-      <v-tooltip text="Close">
+      <v-tooltip text="Close" location="bottom">
         <template v-slot:activator="{ props }">
           <v-btn
             v-bind="props"

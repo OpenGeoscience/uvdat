@@ -61,6 +61,7 @@ export interface Chart {
   raw_data_file: string;
   raw_data_type: string;
   style: object;
+  clearable: boolean;
   chart_data: {
     labels: string[];
     datasets: object[];

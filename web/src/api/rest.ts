@@ -6,7 +6,7 @@ export async function getCities(): Promise<City[]> {
 }
 
 export async function getCityCharts(cityId: number): Promise<Chart[]> {
-  return (await apiClient.get(`cities/${cityId}/charts`)).data;
+  return (await apiClient.get(`charts?city=${cityId}`)).data.results;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
@@ -46,4 +46,8 @@ export async function getRasterData(datasetId: number): Promise<RasterData> {
     data,
     sourceBounds,
   };
+}
+
+export async function clearChart(chartId: number) {
+  await apiClient.get(`charts/${chartId}/clear/`);
 }
