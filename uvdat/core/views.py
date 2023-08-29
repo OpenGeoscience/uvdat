@@ -11,7 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from uvdat.core.models import City, Dataset, Region
+from uvdat.core.models import Chart, City, Dataset, Region
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
@@ -26,16 +26,6 @@ from uvdat.core.tasks.networks import network_gcc
 class CityViewSet(ModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer
-
-    @action(
-        detail=True,
-        methods=['get'],
-        url_path=r'charts',
-        url_name='charts',
-    )
-    def get_charts(self, request, **kwargs):
-        city = self.get_object()
-        return Response([ChartSerializer(c).data for c in city.charts.all()], status=200)
 
 
 class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
@@ -156,3 +146,24 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         gcc = network_gcc(edge_list, exclude_nodes)
         add_gcc_chart_datum(dataset, excluded_node_names, len(gcc))
         return Response(gcc, status=200)
+
+
+class ChartViewSet(ModelViewSet):
+    queryset = Chart.objects.all()
+    serializer_class = ChartSerializer
+
+    def get_queryset(self, **kwargs):
+        city_id = kwargs.get('city')
+        if city_id:
+            return Chart.objects.filter(city__id=city_id)
+        return Chart.objects.all()
+
+    @action(detail=True, methods=['post'])
+    def clear(self, request, **kwargs):
+        chart = self.get_object()
+        if not chart.clearable:
+            return HttpResponse('Not a clearable chart.', status=400)
+
+        chart.metadata = []
+        chart.chart_data = {}
+        return HttpResponse(status=200)

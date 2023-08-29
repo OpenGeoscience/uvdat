@@ -17,6 +17,7 @@ schema_view = get_schema_view(
 
 router.register(r'datasets', views.DatasetViewSet, basename='datasets')
 router.register(r'cities', views.CityViewSet, basename='cities')
+router.register(r'charts', views.ChartViewSet, basename='charts')
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),

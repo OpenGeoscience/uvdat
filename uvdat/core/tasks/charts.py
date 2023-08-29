@@ -68,12 +68,8 @@ def get_gcc_chart(dataset):
 
 def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
     chart = get_gcc_chart(dataset)
-    reset = False
     if len(chart.metadata) == 0:
         # no data exists, need to initialize data structures
-        reset = True
-
-    if reset:
         chart.metadata = []
         chart.chart_data['labels'] = []
         chart.chart_data['datasets'] = [
