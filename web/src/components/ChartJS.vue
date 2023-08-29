@@ -41,6 +41,7 @@ export default {
     };
     const currentXStart = ref(0);
     const currentXRange = ref(500);
+    const downloadButton = ref();
 
     const options = computed(() => {
       const customOptions = {
@@ -122,6 +123,20 @@ export default {
       return currentData;
     });
 
+    const downloadReady = computed(() => {
+      if (downloadButton.value && activeChart.value) {
+        const filename = `${activeChart.value.name}.json`;
+        const contents = data.value;
+        downloadButton.value.setAttribute(
+          "href",
+          "data:text/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(contents))
+        );
+        downloadButton.value.setAttribute("download", filename);
+      }
+      return true;
+    });
+
     return {
       activeChart,
       options,
@@ -130,6 +145,8 @@ export default {
       showXRange,
       maxX,
       data,
+      downloadButton,
+      downloadReady,
     };
   },
 };
@@ -137,12 +154,30 @@ export default {
 
 <template>
   <v-card class="chart-card">
-    <v-btn
-      style="float: right"
-      icon="mdi-close"
-      variant="plain"
-      @click="activeChart = undefined"
-    />
+    <div style="float: right">
+      <v-tooltip text="Download">
+        <template v-slot:activator="{ props }">
+          <a ref="downloadButton">
+            <v-btn
+              v-bind="props"
+              icon="mdi-download"
+              variant="plain"
+              v-show="downloadReady"
+            />
+          </a>
+        </template>
+      </v-tooltip>
+      <v-tooltip text="Close">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon="mdi-close"
+            variant="plain"
+            @click="activeChart = undefined"
+          />
+        </template>
+      </v-tooltip>
+    </div>
     <v-container>
       <v-row no-gutters>
         <v-col cols="12">
