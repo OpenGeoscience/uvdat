@@ -56,7 +56,8 @@ def get_gcc_chart(dataset):
             chart_options={
                 'chart_title': 'Size of Greatest Connected Component over Period',
                 'x_title': 'Step when Excluded Nodes Changed',
-                'y_title': 'Number of Nodes in GCC',
+                'y_title': 'Number of Nodes',
+                'y_range': [0, dataset.network_nodes.count()],
             },
         )
         chart.save()
@@ -65,18 +66,12 @@ def get_gcc_chart(dataset):
 
 def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
     chart = get_gcc_chart(dataset)
+    reset = False
+    if len(chart.metadata) == 0:
+        # no data exists, need to initialize data structures
+        reset = True
 
-    now = datetime.now()
-    delta_seconds = -1
-    if len(chart.metadata) > 0:
-        # Compare time of previous run
-        previous_entry = chart.metadata[-1]
-        previous_time = datetime.strptime(previous_entry['run_time'], "%d/%m/%Y %H:%M")
-        delta_seconds = (now - previous_time).total_seconds()
-
-    # Five minutes from last entry will start a new chart, clear all chart data
-    # Or a negative time means the data structures need to be initialized
-    if delta_seconds > 300 or delta_seconds < 0:
+    if reset:
         chart.metadata = []
         chart.chart_data['labels'] = []
         chart.chart_data['datasets'] = [
@@ -106,7 +101,7 @@ def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
     chart.chart_data['datasets'] = datasets
 
     new_entry = {
-        'run_time': now.strftime("%d/%m/%Y %H:%M"),
+        'run_time': datetime.now().strftime("%d/%m/%Y %H:%M"),
         'n_excluded_nodes': len(excluded_node_names),
         'excluded_node_names': excluded_node_names,
         'gcc_size': gcc_size,

@@ -63,6 +63,13 @@ export default {
           text: savedOptions.x_title,
         };
       }
+      if (savedOptions.x_range) {
+        if (!customOptions.scales.x) {
+          customOptions.scales.x = {};
+        }
+        customOptions.scales.x.min = savedOptions.x_range[0];
+        customOptions.scales.x.max = savedOptions.x_range[1];
+      }
       if (savedOptions.y_title) {
         if (!customOptions.scales.y) {
           customOptions.scales.y = {};
@@ -71,6 +78,13 @@ export default {
           display: true,
           text: savedOptions.y_title,
         };
+      }
+      if (savedOptions.y_range) {
+        if (!customOptions.scales.y) {
+          customOptions.scales.y = {};
+        }
+        customOptions.scales.y.min = savedOptions.y_range[0];
+        customOptions.scales.y.max = savedOptions.y_range[1];
       }
       return Object.assign({}, defaultOptions, customOptions);
     });
