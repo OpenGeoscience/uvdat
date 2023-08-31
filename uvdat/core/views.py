@@ -9,7 +9,7 @@ import ijson
 import large_image
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
 from uvdat.core.models import Chart, City, Dataset, Region
 from uvdat.core.serializers import (
@@ -148,7 +148,7 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         return Response(gcc, status=200)
 
 
-class ChartViewSet(ModelViewSet):
+class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
     queryset = Chart.objects.all()
     serializer_class = ChartSerializer
 
