@@ -50,7 +50,7 @@ export const rasterColormaps = [
 var rasterTooltipDataCache = {};
 
 export function updateVisibleLayers() {
-  const changes = {
+  const layerState = {
     shown: [],
     hidden: [],
   };
@@ -61,7 +61,7 @@ export function updateVisibleLayers() {
       let layerEnabled = selectedDatasetIds.value.includes(layerDatasetId);
 
       if (!layerDatasetId) {
-        // map layer does not have dataset id
+        // map base layer does not have dataset id
         layerEnabled = showMapBaseLayer.value;
       }
 
@@ -74,28 +74,21 @@ export function updateVisibleLayers() {
       }
 
       if (layerEnabled) {
-        if (!layer.getVisible()) {
-          layer.setVisible(true);
-          changes.shown.push(layer);
-        } else {
-          // already visible, reorder z index
-          const layerIndex = selectedDatasetIds.value.findIndex(
-            (id) => id === layerDatasetId
-          );
-          layer.setZIndex(
-            layerDatasetId ? selectedDatasetIds.value.length - layerIndex : 0
-          );
-        }
+        layer.setVisible(true);
+        layerState.shown.push(layer);
+        const layerIndex = selectedDatasetIds.value.findIndex(
+          (id) => id === layerDatasetId
+        );
+        layer.setZIndex(
+          layerDatasetId ? selectedDatasetIds.value.length - layerIndex : 0
+        );
       } else {
-        if (layer.getVisible()) {
-          layer.setVisible(false);
-          changes.hidden.push(layer);
-        }
+        layer.setVisible(false);
+        layerState.hidden.push(layer);
       }
     });
   }
-  console.log(changes);
-  return changes;
+  return layerState;
 }
 
 export function cacheRasterData(datasetId) {
