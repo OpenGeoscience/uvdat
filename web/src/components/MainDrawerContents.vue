@@ -210,11 +210,12 @@ export default {
       </v-expansion-panel-text>
     </v-expansion-panel>
 
-    <v-expansion-panel title="Available Charts">
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.prevent="fetchCharts" class="mr-2">mdi-refresh</v-icon>
+        Available Charts
+      </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <v-icon @click.prevent="fetchCharts" style="float: right"
-          >mdi-refresh</v-icon
-        >
         <span v-if="availableCharts.length === 0">No charts available.</span>
         <v-list>
           <v-list-item
