@@ -5,6 +5,7 @@ import {
   addDatasetLayerToMap,
   addNetworkLayerToMap,
   toggleNodeActive,
+  updateVisibleLayers,
 } from "../utils";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
 import {
@@ -84,24 +85,13 @@ export default {
 
     function toggleNetworkVis() {
       if (currentDataset.value) {
-        let createNetworkLayer = true;
-        map.value
-          .getLayers()
-          .getArray()
-          .forEach((layer) => {
-            const layerDatasetId = layer.getProperties().datasetId;
-            if (layer.getProperties().network) {
-              layer.setVisible(networkVis.value.id === layerDatasetId);
-              if (layerDatasetId === currentDataset.value.id) {
-                createNetworkLayer = false;
-              }
-            } else {
-              layer.setVisible(
-                !layerDatasetId || networkVis.value.id !== layerDatasetId
-              );
-            }
-          });
-        if (createNetworkLayer) {
+        const updated = updateVisibleLayers();
+        if (
+          !updated.shown.some(
+            (l) => l.getProperties().datasetId === networkVis.value.id
+          )
+        ) {
+          // no existing one shown, create a new network layer
           getDatasetNetwork(currentDataset.value.id).then((nodes) => {
             if (nodes.length && networkVis.value) {
               networkVis.value.nodes = nodes;

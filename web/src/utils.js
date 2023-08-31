@@ -15,6 +15,7 @@ import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
   map,
   currentCity,
+  selectedDatasetIds,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
@@ -46,6 +47,55 @@ export const rasterColormaps = [
 ];
 
 var rasterTooltipDataCache = {};
+
+export function updateVisibleLayers() {
+  const changes = {
+    shown: [],
+    hidden: [],
+  };
+  const allLayers = map.value?.getLayers()?.getArray();
+  if (allLayers) {
+    allLayers.forEach((layer) => {
+      const layerDatasetId = layer.getProperties().datasetId;
+      let layerEnabled = selectedDatasetIds.value.includes(layerDatasetId);
+
+      if (!layerDatasetId) {
+        // map layer does not have dataset id
+        layerEnabled = true;
+      }
+
+      if (networkVis.value) {
+        if (layerDatasetId === networkVis.value.id) {
+          layerEnabled = layer.getProperties().network;
+        }
+      } else if (layer.getProperties().network) {
+        layerEnabled = false;
+      }
+
+      if (layerEnabled) {
+        if (!layer.getVisible()) {
+          layer.setVisible(true);
+          changes.shown.push(layer);
+        } else {
+          // already visible, reorder z index
+          const layerIndex = selectedDatasetIds.value.findIndex(
+            (id) => id === layerDatasetId
+          );
+          layer.setZIndex(
+            layerDatasetId ? selectedDatasetIds.value.length - layerIndex : 0
+          );
+        }
+      } else {
+        if (layer.getVisible()) {
+          layer.setVisible(false);
+          changes.hidden.push(layer);
+        }
+      }
+    });
+  }
+  console.log(changes);
+  return changes;
+}
 
 export function cacheRasterData(datasetId) {
   if (!rasterTooltipDataCache[datasetId]) {
@@ -179,7 +229,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
         }),
       });
     }
-
+    console.log("add", layer);
     // Add to map
     map.value.addLayer(layer);
   }

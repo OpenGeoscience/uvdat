@@ -13,6 +13,7 @@ export const currentError = ref<string>();
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
 export const currentDataset = ref<Dataset>();
+export const selectedDatasetIds = ref<number[]>([]);
 
 export const map = ref();
 export const mapLayers = ref();
