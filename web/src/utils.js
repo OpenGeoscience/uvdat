@@ -14,6 +14,7 @@ import { baseURL } from "@/api/auth";
 import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
   map,
+  showMapBaseLayer,
   currentCity,
   selectedDatasetIds,
   rasterTooltip,
@@ -61,7 +62,7 @@ export function updateVisibleLayers() {
 
       if (!layerDatasetId) {
         // map layer does not have dataset id
-        layerEnabled = true;
+        layerEnabled = showMapBaseLayer.value;
       }
 
       if (networkVis.value) {

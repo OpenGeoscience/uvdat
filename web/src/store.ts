@@ -17,6 +17,7 @@ export const selectedDatasetIds = ref<number[]>([]);
 
 export const map = ref();
 export const mapLayers = ref();
+export const showMapBaseLayer = ref(true);
 export const rasterTooltip = ref();
 export const activeChart = ref();
 export const availableCharts = ref();

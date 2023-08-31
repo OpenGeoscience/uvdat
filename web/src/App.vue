@@ -8,7 +8,9 @@ import {
   loading,
   loadCities,
   activeChart,
+  showMapBaseLayer,
 } from "./store";
+import { updateVisibleLayers } from "./utils";
 import OpenLayersMap from "./components/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
@@ -35,6 +37,8 @@ export default defineComponent({
       loading,
       currentError,
       activeChart,
+      showMapBaseLayer,
+      updateVisibleLayers,
     };
   },
 });
@@ -65,6 +69,14 @@ export default defineComponent({
           :style="{ marginTop: '15px' }"
         />
       </v-list-item>
+      <v-checkbox
+        v-model="showMapBaseLayer"
+        @change="updateVisibleLayers"
+        true-icon="mdi-map-check"
+        false-icon="mdi-map-outline"
+        style="max-width: 50px"
+        hide-details
+      />
     </v-app-bar>
     <v-navigation-drawer
       v-if="currentCity"
