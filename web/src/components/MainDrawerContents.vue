@@ -212,7 +212,7 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.prevent="fetchCharts" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="fetchCharts" class="mr-2">mdi-refresh</v-icon>
         Available Charts
       </v-expansion-panel-title>
       <v-expansion-panel-text>
