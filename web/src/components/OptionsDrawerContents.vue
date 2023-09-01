@@ -36,7 +36,6 @@ export default {
         currentDataset.value?.style?.data_range?.map((v) => Math.round(v)) ||
         undefined;
       colormapRange.value = datasetRange.value;
-      deactivatedNodes.value = [];
     }
 
     function updateLayerOpacity() {
@@ -97,7 +96,9 @@ export default {
                 createNetworkLayer = false;
               }
             } else {
-              layer.setVisible(networkVis.value.id !== layerDatasetId);
+              layer.setVisible(
+                !layerDatasetId || networkVis.value.id !== layerDatasetId
+              );
             }
           });
         if (createNetworkLayer) {

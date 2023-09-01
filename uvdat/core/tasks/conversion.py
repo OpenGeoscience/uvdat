@@ -4,8 +4,8 @@ import tempfile
 import zipfile
 
 from celery import shared_task
-from django.core.files.base import ContentFile
 from django.contrib.gis.geos import MultiPolygon, Polygon
+from django.core.files.base import ContentFile
 from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import large_image_converter
@@ -14,8 +14,8 @@ import rasterio
 import shapefile
 
 from uvdat.core.models import Dataset, Region
-from uvdat.core.utils import add_styling
 from uvdat.core.tasks.networks import save_network_nodes
+from uvdat.core.utils import add_styling
 
 
 @shared_task

@@ -1,8 +1,12 @@
 import { apiClient } from "./auth";
-import { City, Dataset, NetworkNode, RasterData } from "@/types";
+import { City, Dataset, NetworkNode, RasterData, Chart } from "@/types";
 
 export async function getCities(): Promise<City[]> {
   return (await apiClient.get("cities")).data.results;
+}
+
+export async function getCityCharts(cityId: number): Promise<Chart[]> {
+  return (await apiClient.get(`charts?city=${cityId}`)).data.results;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
@@ -42,4 +46,8 @@ export async function getRasterData(datasetId: number): Promise<RasterData> {
     data,
     sourceBounds,
   };
+}
+
+export async function clearChart(chartId: number) {
+  await apiClient.get(`charts/${chartId}/clear/`);
 }

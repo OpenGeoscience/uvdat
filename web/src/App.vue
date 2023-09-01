@@ -1,16 +1,25 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted } from "vue";
-import { currentCity, cities, loading, loadCities } from "./store";
+import {
+  currentError,
+  currentDataset,
+  currentCity,
+  cities,
+  loading,
+  loadCities,
+  activeChart,
+} from "./store";
 import OpenLayersMap from "./components/OpenLayersMap.vue";
-import DrawerContents from "./components/DrawerContents.vue";
-import { currentError, currentDataset } from "./store";
+import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
+import ChartJS from "./components/ChartJS.vue";
 
 export default defineComponent({
   components: {
     OpenLayersMap,
-    DrawerContents,
+    MainDrawerContents,
     OptionsDrawerContents,
+    ChartJS,
   },
   setup() {
     const drawer = ref(true);
@@ -25,6 +34,7 @@ export default defineComponent({
       cities,
       loading,
       currentError,
+      activeChart,
     };
   },
 });
@@ -63,7 +73,7 @@ export default defineComponent({
       width="250"
       class="main-area drawer"
     >
-      <DrawerContents />
+      <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
       :model-value="currentDataset !== undefined"
@@ -84,6 +94,7 @@ export default defineComponent({
       "
     >
       <OpenLayersMap />
+      <ChartJS v-if="activeChart" />
     </div>
   </v-app>
 </template>

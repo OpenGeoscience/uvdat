@@ -17,6 +17,8 @@ export const currentDataset = ref<Dataset>();
 export const map = ref();
 export const mapLayers = ref();
 export const rasterTooltip = ref();
+export const activeChart = ref();
+export const availableCharts = ref();
 
 export const networkVis = ref();
 export const deactivatedNodes = ref([]);

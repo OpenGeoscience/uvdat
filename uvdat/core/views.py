@@ -9,10 +9,16 @@ import ijson
 import large_image
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import City, Dataset, Region
-from uvdat.core.serializers import CitySerializer, DatasetSerializer, NetworkNodeSerializer
+from uvdat.core.models import Chart, City, Dataset, Region
+from uvdat.core.serializers import (
+    ChartSerializer,
+    CitySerializer,
+    DatasetSerializer,
+    NetworkNodeSerializer,
+)
+from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
 
@@ -123,6 +129,8 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
         edge_list = {}
         visited_nodes = []
+        excluded_node_names = []
+
         for node in dataset.network_nodes.all():
             adjacencies = [
                 adj_node.id
@@ -132,6 +140,32 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
             if len(adjacencies) > 0:
                 edge_list[node.id] = sorted(adjacencies)
             visited_nodes.append(node.id)
+            if node.id in exclude_nodes:
+                excluded_node_names.append(node.name)
 
         gcc = network_gcc(edge_list, exclude_nodes)
+        add_gcc_chart_datum(dataset, excluded_node_names, len(gcc))
         return Response(gcc, status=200)
+
+
+class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
+    queryset = Chart.objects.all()
+    serializer_class = ChartSerializer
+
+    def get_queryset(self, **kwargs):
+        city_id = kwargs.get('city')
+        if city_id:
+            return Chart.objects.filter(city__id=city_id)
+        return Chart.objects.all()
+
+    # TODO: This should be POST once rest authentication is implemented
+    @action(detail=True, methods=['get'])
+    def clear(self, request, **kwargs):
+        chart = self.get_object()
+        if not chart.clearable:
+            return HttpResponse('Not a clearable chart.', status=400)
+
+        chart.metadata = []
+        chart.chart_data = {}
+        chart.save()
+        return HttpResponse(status=200)
