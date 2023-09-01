@@ -67,7 +67,7 @@ export function updateVisibleLayers() {
 
       if (networkVis.value) {
         if (layerDatasetId === networkVis.value.id) {
-          layerEnabled = layer.getProperties().network;
+          layerEnabled = layerEnabled && layer.getProperties().network;
         }
       } else if (layer.getProperties().network) {
         layerEnabled = false;
