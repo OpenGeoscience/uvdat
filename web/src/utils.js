@@ -149,6 +149,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
   if (dataset.processing) {
     return;
   }
+  let layer = undefined;
 
   // Add raster data
   if (dataset.raster_file) {
@@ -171,27 +172,23 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       .map((key) => key + "=" + tileParams[key])
       .join("&");
 
-    map.value.addLayer(
-      new TileLayer({
-        properties: {
-          datasetId: dataset.id,
-          dataset,
-        },
-        source: new XYZSource({
-          url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
-        }),
-        opacity: dataset.style?.opacity || 1,
-        zIndex,
-      })
-    );
+    layer = new TileLayer({
+      properties: {
+        datasetId: dataset.id,
+        dataset,
+      },
+      source: new XYZSource({
+        url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
+      }),
+      opacity: dataset.style?.opacity || 1,
+      zIndex,
+    });
     cacheRasterData(dataset.id);
-    return;
   }
 
-  // Add GeoJSON data
-  if (dataset.geodata_file) {
-    // Default to vector tile layer
-    let layer = new VectorTileLayer({
+  // Use tiled GeoJSON if it exists
+  else if (dataset.tiled_geo_file) {
+    layer = new VectorTileLayer({
       source: new VectorTileSource({
         format: new GeoJSON(),
         url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
@@ -231,6 +228,33 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     // Add to map
     map.value.addLayer(layer);
   }
+
+  // Default to vector layer
+  else {
+    let dataURL = dataset.geodata_file;
+    if (dataset.category === "region") {
+      dataURL = `${baseURL}datasets/${dataset.id}/regions`;
+    }
+    layer = new VectorLayer({
+      properties: {
+        datasetId: dataset.id,
+        dataset,
+      },
+      zIndex,
+      style: (feature) =>
+        createStyle({
+          type: feature.getGeometry().getType(),
+          colors: feature.getProperties().colors,
+        }),
+      source: new VectorSource({
+        format: new GeoJSON(),
+        url: dataURL,
+      }),
+    });
+  }
+
+  // Add to map
+  map.value.addLayer(layer);
 }
 
 function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
