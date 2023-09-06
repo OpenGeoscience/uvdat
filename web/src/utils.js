@@ -223,7 +223,6 @@ export function addDatasetLayerToMap(dataset, zIndex) {
         }),
       });
     }
-    console.log("add", layer);
     // Add to map
     map.value.addLayer(layer);
   }
