@@ -493,7 +493,7 @@ export function toggleNodeActive(nodeId, button = null) {
     // update chart
     getCityCharts(currentCity.value.id).then((charts) => {
       availableCharts.value = charts;
-      if (activeChart) {
+      if (activeChart.value) {
         activeChart.value = charts.find((c) => c.id === activeChart.value.id);
       }
     });

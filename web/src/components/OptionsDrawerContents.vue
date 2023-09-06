@@ -55,7 +55,6 @@ export default {
 
     function updateCurrentDatasetLayer() {
       if (currentDataset.value) {
-        let zIndex = 0;
         currentDataset.value.style.opacity = opacity.value;
         currentDataset.value.style.colormap = colormap.value;
         currentDataset.value.style.colormap_range = colormapRange.value;
@@ -64,12 +63,15 @@ export default {
           .getArray()
           .forEach((layer) => {
             const layerDatasetId = layer.getProperties().datasetId;
-            if (layerDatasetId === currentDataset.value.id) {
-              zIndex = layer.getZIndex();
+            const layerNetwork = layer.getProperties().network;
+            if (
+              layerDatasetId === currentDataset.value.id &&
+              networkVis.value.id === layerNetwork
+            ) {
               map.value.removeLayer(layer);
+              addDatasetLayerToMap(currentDataset.value, layer.getZIndex());
             }
           });
-        addDatasetLayerToMap(currentDataset.value, zIndex);
       }
     }
 
