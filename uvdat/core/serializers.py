@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from uvdat.core.models import Chart, City, Dataset, NetworkNode, SimulationResult
+from uvdat.core.models import Chart, City, Dataset, DerivedRegion, NetworkNode, SimulationResult
 from uvdat.core.tasks.simulations import AVAILABLE_SIMULATIONS
 
 
@@ -59,4 +59,9 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SimulationResult
+
+
+class DerivedRegionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DerivedRegion
         fields = '__all__'

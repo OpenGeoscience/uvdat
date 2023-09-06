@@ -46,11 +46,43 @@ class NetworkNode(models.Model):
 
 
 class Region(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     properties = models.JSONField(blank=True, null=True)
     boundary = geo_models.MultiPolygonField()
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='regions')
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='regions')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(name='unique-name-per-dataset', fields=['dataset', 'name'])
+        ]
+
+
+class DerivedRegion(models.Model):
+    """A Region that's derived from other regions."""
+
+    class VectorOperation(models.TextChoices):
+        UNION = 'UNION', 'Union'
+        INTERSECTION = 'INTERSECTION', 'Intersection'
+
+    name = models.CharField(max_length=255)
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='derived_regions')
+    properties = models.JSONField(blank=True, null=True)
+    boundary = geo_models.MultiPolygonField()
+
+    # Data from the source regions
+    source_regions = models.ManyToManyField(Region, related_name='derived_regions')
+    source_operation = models.CharField(
+        max_length=max(len(choice[0]) for choice in VectorOperation.choices),
+        choices=VectorOperation.choices,
+    )
+
+    class Meta:
+        constraints = [
+            # We enforce name uniqueness across cities, since
+            # DerivedRegions can consist of regions from multiple datasets
+            models.UniqueConstraint(name='unique-name-per-city', fields=['city', 'name'])
+        ]
 
 
 class Chart(models.Model):

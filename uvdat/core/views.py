@@ -11,11 +11,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import Chart, City, Dataset, Region, SimulationResult
+from uvdat.core.models import Chart, City, Dataset, DerivedRegion, Region, SimulationResult
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
     DatasetSerializer,
+    DerivedRegionSerializer,
     NetworkNodeSerializer,
     SimulationResultSerializer,
 )
@@ -23,6 +24,13 @@ from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
+
+
+class DerivedRegionViewSet(
+    mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet
+):
+    queryset = DerivedRegion.objects.all()
+    serializer_class = DerivedRegionSerializer
 
 
 class CityViewSet(ModelViewSet):
