@@ -84,3 +84,9 @@ export function pollForProcessingDataset(datasetId: number) {
     }
   }, 10000);
 }
+
+export function currentDatasetChanged() {
+  rasterTooltip.value = undefined;
+}
+
+watch(currentDataset, currentDatasetChanged);
