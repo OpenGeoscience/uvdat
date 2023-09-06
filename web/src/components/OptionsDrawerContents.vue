@@ -65,7 +65,7 @@ export default {
           .forEach((layer) => {
             const layerDatasetId = layer.getProperties().datasetId;
             if (layerDatasetId === currentDataset.value.id) {
-              zIndex = layer.zIndex;
+              zIndex = layer.getZIndex();
               map.value.removeLayer(layer);
             }
           });
