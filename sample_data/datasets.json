@@ -110,13 +110,13 @@
         }
     },
     {
-        "name": "Boston Census Blocks",
-        "description": "Boundaries of 2020 Census Blocks in the Boston Metropolitan area",
+        "name": "Boston Neighborhoods",
+        "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
         "category": "region",
         "city": "Boston, MA",
         "raw_data_type": "geojson",
         "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
-        "path": "boston/census2020.json",
+        "path": "boston/neighborhoods2020.json",
         "style": {
             "property_map": {
                 "name": "BlockGr202"
@@ -125,6 +125,26 @@
                 "outline": "white",
                 "palette": [
                     "blue"
+                ]
+            }
+        }
+    },
+    {
+        "name": "Boston Census 2020 Block Groups",
+        "description": "Block groups (between 600 and 3,000 people per block) for Boston from the 2020 census",
+        "category": "region",
+        "city": "Boston, MA",
+        "raw_data_type": "shape_file_archive",
+        "url": "https://data.boston.gov/dataset/c478b600-3e3e-46fd-9f57-da89459e9928/resource/11282722-9386-4272-8a82-2fcec89e6d55/download/census2020_blockgroups.zip",
+        "path": "mass/blockgroups.json",
+        "style": {
+            "property_map": {
+                "name": "GEOID20"
+            },
+            "options": {
+                "outline": "white",
+                "palette": [
+                    "green"
                 ]
             }
         }
