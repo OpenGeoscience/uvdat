@@ -14,7 +14,9 @@ import { baseURL } from "@/api/auth";
 import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
   map,
+  showMapBaseLayer,
   currentCity,
+  selectedDatasetIds,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
@@ -46,6 +48,48 @@ export const rasterColormaps = [
 ];
 
 var rasterTooltipDataCache = {};
+
+export function updateVisibleLayers() {
+  const layerState = {
+    shown: [],
+    hidden: [],
+  };
+  const allLayers = map.value?.getLayers()?.getArray();
+  if (allLayers) {
+    allLayers.forEach((layer) => {
+      const layerDatasetId = layer.getProperties().datasetId;
+      let layerEnabled = selectedDatasetIds.value.includes(layerDatasetId);
+
+      if (!layerDatasetId) {
+        // map base layer does not have dataset id
+        layerEnabled = showMapBaseLayer.value;
+      }
+
+      if (networkVis.value) {
+        if (layerDatasetId === networkVis.value.id) {
+          layerEnabled = layerEnabled && layer.getProperties().network;
+        }
+      } else if (layer.getProperties().network) {
+        layerEnabled = false;
+      }
+
+      if (layerEnabled) {
+        layer.setVisible(true);
+        layerState.shown.push(layer);
+        const layerIndex = selectedDatasetIds.value.findIndex(
+          (id) => id === layerDatasetId
+        );
+        layer.setZIndex(
+          layerDatasetId ? selectedDatasetIds.value.length - layerIndex : 0
+        );
+      } else {
+        layer.setVisible(false);
+        layerState.hidden.push(layer);
+      }
+    });
+  }
+  return layerState;
+}
 
 export function cacheRasterData(datasetId) {
   if (!rasterTooltipDataCache[datasetId]) {
@@ -184,7 +228,6 @@ export function addDatasetLayerToMap(dataset, zIndex) {
         }),
       });
     }
-
     // Add to map
     map.value.addLayer(layer);
   }
@@ -483,7 +526,7 @@ export function toggleNodeActive(nodeId, button = null) {
     // update chart
     getCityCharts(currentCity.value.id).then((charts) => {
       availableCharts.value = charts;
-      if (activeChart) {
+      if (activeChart.value) {
         activeChart.value = charts.find((c) => c.id === activeChart.value.id);
       }
     });

@@ -13,9 +13,11 @@ export const currentError = ref<string>();
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
 export const currentDataset = ref<Dataset>();
+export const selectedDatasetIds = ref<number[]>([]);
 
 export const map = ref();
 export const mapLayers = ref();
+export const showMapBaseLayer = ref(true);
 export const rasterTooltip = ref();
 export const activeChart = ref();
 export const availableCharts = ref();
@@ -82,3 +84,9 @@ export function pollForProcessingDataset(datasetId: number) {
     }
   }, 10000);
 }
+
+export function currentDatasetChanged() {
+  rasterTooltip.value = undefined;
+}
+
+watch(currentDataset, currentDatasetChanged);

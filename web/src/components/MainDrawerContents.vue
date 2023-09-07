@@ -5,18 +5,18 @@ import {
   currentDataset,
   activeChart,
   availableCharts,
-  map,
+  selectedDatasetIds,
 } from "@/store";
 import { ref, computed, onMounted } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
 import { getCityCharts } from "@/api/rest";
+import { updateVisibleLayers } from "../utils";
 
 export default {
   components: {
     draggable,
   },
   setup() {
-    const selectedDatasets = ref([]);
     const openPanels = ref([0]);
     const openCategories = ref([0]);
     const availableLayerTree = computed(() => {
@@ -40,42 +40,29 @@ export default {
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function updateActiveDatasets() {
-      const datasetIdsWithExistingLayers = [];
-      const currentMapLayers = map.value.getLayers();
-      const selectedDatasetIds = selectedDatasets.value.map(
-        (dataset) => dataset.id
-      );
-      if (selectedDatasetIds.length) {
+      if (selectedDatasetIds.value.length) {
         openPanels.value = [0, 1];
       }
-
-      currentMapLayers.forEach((layer) => {
-        const layerDatasetId = layer.getProperties().datasetId;
-        if (layerDatasetId) {
-          datasetIdsWithExistingLayers.push(layerDatasetId);
-          const layerIndex = selectedDatasets.value.findIndex(
-            (d) => d.id === layerDatasetId
+      const updated = updateVisibleLayers();
+      selectedDatasetIds.value.forEach(async (datasetId, index) => {
+        if (
+          !updated.shown.some((l) => l.getProperties().datasetId === datasetId)
+        ) {
+          addDatasetLayerToMap(
+            currentCity.value.datasets.find((d) => d.id === datasetId),
+            selectedDatasetIds.value.length - index
           );
-          if (layerIndex >= 0) {
-            layer.setZIndex(selectedDatasets.value.length - layerIndex);
-          }
-          layer.setVisible(selectedDatasetIds.includes(layerDatasetId));
-        }
-      });
-      selectedDatasets.value.forEach(async (dataset, index) => {
-        if (!datasetIdsWithExistingLayers.includes(dataset.id)) {
-          addDatasetLayerToMap(dataset, selectedDatasets.value.length - index);
         }
       });
     }
 
     function toggleDataset(dataset) {
-      const enable = !selectedDatasets.value.includes(dataset);
-      selectedDatasets.value = selectedDatasets.value.filter(
-        (d) => d !== dataset
+      const enable = !selectedDatasetIds.value.includes(dataset.id);
+      selectedDatasetIds.value = selectedDatasetIds.value.filter(
+        (id) => id !== dataset.id
       );
       if (enable) {
-        selectedDatasets.value = [dataset, ...selectedDatasets.value];
+        selectedDatasetIds.value = [dataset.id, ...selectedDatasetIds.value];
       } else if (
         currentDataset.value &&
         dataset.id === currentDataset.value.id
@@ -86,20 +73,7 @@ export default {
     }
 
     function reorderLayers() {
-      map.value
-        .getLayers()
-        .getArray()
-        .forEach((layer) => {
-          const layerDatasetId = layer.getProperties().datasetId;
-          if (layerDatasetId) {
-            const layerIndex = selectedDatasets.value.findIndex(
-              (d) => d.id === layerDatasetId
-            );
-            if (layerIndex >= 0) {
-              layer.setZIndex(selectedDatasets.value.length - layerIndex);
-            }
-          }
-        });
+      updateVisibleLayers();
     }
 
     function expandOptionsPanel(dataset) {
@@ -120,7 +94,7 @@ export default {
     onMounted(fetchCharts);
 
     return {
-      selectedDatasets,
+      selectedDatasetIds,
       currentCity,
       openPanels,
       openCategories,
@@ -156,7 +130,7 @@ export default {
             <v-expansion-panel-text>
               <v-checkbox
                 v-for="dataset in category.children"
-                :model-value="selectedDatasets.includes(dataset)"
+                :model-value="selectedDatasetIds.includes(dataset.id)"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -171,7 +145,7 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="selectedDatasets.includes(dataset)"
+                    v-show="selectedDatasetIds.includes(dataset.id)"
                     size="small"
                     class="expand-icon"
                     @click.prevent="expandOptionsPanel(dataset)"
@@ -189,9 +163,10 @@ export default {
     <v-expansion-panel title="Active Layers">
       <v-expansion-panel-text>
         <draggable
-          v-model="selectedDatasets"
+          v-model="selectedDatasetIds"
           @change="reorderLayers"
           item-key="id"
+          item-value="id"
         >
           <template #item="{ element }">
             <v-card class="px-3 py-1">
@@ -199,11 +174,15 @@ export default {
               <v-icon
                 size="small"
                 class="expand-icon"
-                @click="expandOptionsPanel(element)"
+                @click="
+                  expandOptionsPanel(
+                    currentCity.datasets.find((d) => d.id === element)
+                  )
+                "
               >
                 mdi-cog
               </v-icon>
-              {{ element.name }}
+              {{ currentCity.datasets.find((d) => d.id === element).name }}
             </v-card>
           </template>
         </draggable>
