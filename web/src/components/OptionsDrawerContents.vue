@@ -66,7 +66,9 @@ export default {
             const layerNetwork = layer.getProperties().network;
             if (
               layerDatasetId === currentDataset.value.id &&
-              networkVis.value?.id === layerNetwork
+              (!networkVis.value ||
+                !layerNetwork ||
+                networkVis.value?.id === layerNetwork)
             ) {
               map.value.removeLayer(layer);
               addDatasetLayerToMap(currentDataset.value, layer.getZIndex());
