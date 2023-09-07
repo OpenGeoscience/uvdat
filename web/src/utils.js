@@ -143,7 +143,7 @@ export function addDatasetLayerToMap(dataset, zIndex) {
   }
 
   // Use tiled GeoJSON if it exists
-  else if (dataset.tiled_geo_file) {
+  else if (dataset.vector_tiles_file) {
     layer = new VectorTileLayer({
       source: new VectorTileSource({
         format: new GeoJSON(),
