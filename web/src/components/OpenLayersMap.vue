@@ -8,21 +8,46 @@ import {
   selectedRegions,
   regionGroupingActive,
   regionGroupingType,
+  deactivatedNodes,
+  networkVis,
 } from "@/store";
-import { displayRasterTooltip } from "@/utils";
+import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
 import type { Layer } from "ol/layer";
 import Control from "ol/control/Control";
 
 // OpenLayers variables
 const tooltip = ref();
+const showTooltip = ref(false);
 const context = ref();
 let tooltipOverlay: Overlay;
 let contextControl: Control;
 
-// Features/Regions
+// Features
 const selectedFeature = ref<Feature>();
+const selectedLayer = ref<Layer>();
 const selectedFeatureCategory = ref<string>("");
+const selectedFeatureProperties = computed(() => {
+  if (selectedFeature.value === undefined) {
+    return [];
+  }
+  const unwantedKeys = new Set([
+    "colors",
+    "geometry",
+    "type",
+    "id",
+    "node",
+    "edge",
+  ]);
+  return Object.fromEntries(
+    Object.entries(selectedFeature.value.getProperties()).filter(
+      ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
+    )
+  );
+});
+
+// Regions
+const newRegionSetName = ref("");
 const selectedRegionID = computed(() => {
   if (selectedFeatureCategory.value !== "region") {
     return undefined;
@@ -30,6 +55,14 @@ const selectedRegionID = computed(() => {
 
   return selectedFeature.value?.get("pk") as string;
 });
+
+// Ensure that if any regions of the currently selected datasets are
+// de-selected, their regions are removed from the selection
+// watch(selectedDatasetIds, (ids) => {
+//   const idSet = new Set(ids);
+
+//   selectedRegions.value = selectedRegions.value.filter((regionId) => idSet.has(Number(region)));
+// });
 
 function zoomToRegion() {
   // Set map zoom to match bounding box of region
@@ -39,7 +72,6 @@ function zoomToRegion() {
   });
 }
 
-const newRegionSetName = ref("");
 function beginRegionGrouping(groupingType: "intersection" | "union") {
   regionGroupingActive.value = true;
   regionGroupingType.value = groupingType;
@@ -47,6 +79,7 @@ function beginRegionGrouping(groupingType: "intersection" | "union") {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   selectedRegions.value = [selectedRegionID.value!];
 }
+
 function cancelRegionGrouping() {
   selectedRegions.value = [];
   newRegionSetName.value = "";
@@ -55,6 +88,7 @@ function cancelRegionGrouping() {
 
   showTooltip.value = false;
 }
+
 function removeRegionFromGrouping() {
   const idx = selectedRegions.value.findIndex(
     (x) => x === selectedRegionID.value
@@ -82,7 +116,10 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
     (feature: Feature, layer: Layer) => [feature, layer]
   );
   if (!res) {
-    tooltip.value.style.display = "none";
+    showTooltip.value = false;
+    selectedLayer.value = undefined;
+    selectedFeature.value = undefined;
+    selectedFeatureCategory.value = "";
     return;
   }
 
@@ -92,11 +129,12 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
   if (!dataset) {
     return;
   }
+  selectedLayer.value = layer;
   selectedFeature.value = feature;
   selectedFeatureCategory.value = dataset.category;
 
-  // Clear style and set position
-  tooltip.value.style.display = "";
+  // Show tooltip and set position
+  showTooltip.value = true;
   tooltipOverlay.setPosition(e.coordinate);
 }
 
@@ -185,7 +223,7 @@ onMounted(() => {
         </v-card-actions>
       </v-card>
     </div>
-    <div ref="tooltip" class="tooltip">
+    <div ref="tooltip" class="tooltip" v-show="showTooltip">
       <!-- Render for Regions -->
       <div v-if="selectedFeatureCategory === 'region'">
         <v-row no-gutters>ID: {{ selectedRegionID }}</v-row>
@@ -268,6 +306,28 @@ onMounted(() => {
               Begin region union
             </v-btn>
           </v-row>
+        </template>
+      </div>
+      <!-- Render for networks -->
+      <div v-else-if="selectedLayer?.get('dataset').network" class="pa-2">
+        <v-row no-gutters v-for="(v, k) in selectedFeatureProperties" :key="k">
+          {{ k }}: {{ v }}
+        </v-row>
+        <template v-if="networkVis">
+          <v-btn
+            variant="outlined"
+            v-if="deactivatedNodes.includes(selectedFeature.get('id'))"
+            @click="toggleNodeActive(selectedFeature.get('id'))"
+          >
+            Reactivate Node
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            @click="toggleNodeActive(selectedFeature.get('id'))"
+            v-else
+          >
+            Deactivate Node
+          </v-btn>
         </template>
       </div>
     </div>
