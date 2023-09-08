@@ -86,7 +86,7 @@ export default defineComponent({
       v-if="currentCity"
       v-model="drawer"
       permanent
-      width="250"
+      width="300"
       class="main-area drawer"
     >
       <MainDrawerContents />

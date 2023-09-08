@@ -65,6 +65,8 @@ export default {
       });
     }
 
+    // function intersectRegions() {}
+
     function toggleDataset(dataset) {
       const enable = !selectedDatasetIds.value.includes(dataset.id);
       selectedDatasetIds.value = selectedDatasetIds.value.filter(
@@ -196,6 +198,34 @@ export default {
             :key="category.id"
           >
             <v-expansion-panel-text>
+              <!-- <div v-if="category.name === 'region'">
+                <v-tooltip text="Intersect datasets" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      class="mx-1"
+                      icon
+                      size="small"
+                      tooltip
+                      v-bind="props"
+                    >
+                      <v-icon>mdi-vector-intersection</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Union datasets" location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      class="mx-1"
+                      icon
+                      size="small"
+                      tooltip
+                      v-bind="props"
+                    >
+                      <v-icon>mdi-vector-union</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+              </div> -->
               <v-checkbox
                 v-for="dataset in category.children"
                 :model-value="selectedDatasetIds.includes(dataset.id)"

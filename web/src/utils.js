@@ -399,28 +399,6 @@ export function addNetworkLayerToMap(dataset, nodes) {
   map.value.addLayer(layer);
 }
 
-function renderRegionTooltip(tooltipDiv, feature) {
-  tooltipDiv.innerHTML = `
-    ID: ${feature.get("pk")}<br>
-    Name: ${feature.get("name")}<br>
-  `;
-
-  // Create button
-  const cropButton = document.createElement("BUTTON");
-  cropButton.classList = "v-btn v-btn--variant-outlined pa-2";
-  cropButton.appendChild(document.createTextNode("Zoom to Region"));
-  cropButton.onclick = () => {
-    // Set map zoom to match bounding box of region
-    map.value.getView().fit(feature.getGeometry(), {
-      size: map.value.getSize(),
-      duration: 300,
-    });
-  };
-
-  // Add button to tooltip
-  tooltipDiv.appendChild(cropButton);
-}
-
 function renderNetworkTooltip(tooltipDiv, feature) {
   // Add data
   const properties = Object.fromEntries(
@@ -479,11 +457,8 @@ export function displayFeatureTooltip(evt, tooltip, overlay) {
   // Create div in which tooltip contents will live
   const tooltipDiv = document.createElement("div");
 
-  // Handle region dataset
-  if (dataset.category === "region") {
-    renderRegionTooltip(tooltipDiv, feature);
-    // Handle network dataset
-  } else if (networkVis.value && dataset.network) {
+  // Handle network dataset
+  if (networkVis.value && dataset.network) {
     renderNetworkTooltip(tooltipDiv, feature);
   } else {
     // No defined behavior, quit and render nothing

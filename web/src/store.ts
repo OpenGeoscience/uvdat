@@ -25,6 +25,14 @@ export const availableCharts = ref([]);
 export const activeSimulation = ref();
 export const availableSimulations = ref([]);
 
+// Regions
+export const regionGroupingActive = ref(false);
+export const regionGroupingType = ref<"intersection" | "union" | null>(null);
+export const regionIntersectionActive = ref(false);
+export const regionUnionActive = ref(false);
+export const selectedRegions = ref<string[]>([]);
+
+// Network
 export const networkVis = ref();
 export const deactivatedNodes = ref([]);
 export const currentNetworkGCC = ref();
