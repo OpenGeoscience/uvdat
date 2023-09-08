@@ -5,7 +5,7 @@ import * as olProj from "ol/proj";
 
 import { ref, watch } from "vue";
 import { City, Dataset } from "./types.js";
-import { getCities, getDataset } from "@/api/rest";
+import { getCities, getDataset, getDatasetNetwork } from "@/api/rest";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
@@ -22,10 +22,6 @@ export const rasterTooltip = ref();
 export const activeChart = ref();
 export const availableCharts = ref();
 
-export const networkVis = ref();
-export const deactivatedNodes = ref([]);
-export const currentNetworkGCC = ref();
-
 export function loadCities() {
   getCities().then((data) => {
     cities.value = data;
@@ -36,7 +32,10 @@ export function loadCities() {
       currentCity.value?.datasets.forEach((d) => {
         if (d.processing) {
           pollForProcessingDataset(d.id);
+        } else if (d.network) {
+          fetchDatasetNetwork(d);
         }
+        return d;
       });
     }
     clearMap();
@@ -83,6 +82,19 @@ export function pollForProcessingDataset(datasetId: number) {
       delete polls.value[datasetId];
     }
   }, 10000);
+}
+
+export function fetchDatasetNetwork(dataset: Dataset) {
+  getDatasetNetwork(dataset.id).then((nodes) => {
+    if (currentCity.value) {
+      currentCity.value.datasets = currentCity.value?.datasets.map((d) => {
+        if (d.id === dataset.id) {
+          d.nodes = nodes;
+        }
+        return d;
+      });
+    }
+  });
 }
 
 export function currentDatasetChanged() {

@@ -3,18 +3,14 @@ import { onMounted, ref, watch } from "vue";
 import {
   rasterColormaps,
   addDatasetLayerToMap,
-  addNetworkLayerToMap,
   toggleNodeActive,
-  updateVisibleLayers,
 } from "../utils";
-import { convertDataset, getDatasetNetwork } from "../api/rest";
+import { convertDataset } from "../api/rest";
 import {
   currentCity,
   currentDataset,
   pollForProcessingDataset,
   map,
-  networkVis,
-  deactivatedNodes,
   rasterTooltip,
 } from "../store";
 
@@ -63,13 +59,7 @@ export default {
           .getArray()
           .forEach((layer) => {
             const layerDatasetId = layer.getProperties().datasetId;
-            const layerNetwork = layer.getProperties().network;
-            if (
-              layerDatasetId === currentDataset.value.id &&
-              (!networkVis.value ||
-                !layerNetwork ||
-                networkVis.value?.id === layerNetwork)
-            ) {
+            if (layerDatasetId === currentDataset.value.id) {
               map.value.removeLayer(layer);
               addDatasetLayerToMap(currentDataset.value, layer.getZIndex());
             }
@@ -85,25 +75,6 @@ export default {
     function updateColormapMax(max) {
       colormapRange.value[1] = max;
       updateCurrentDatasetLayer();
-    }
-
-    function toggleNetworkVis() {
-      if (currentDataset.value) {
-        const updated = updateVisibleLayers();
-        if (
-          !updated.shown.some(
-            (l) => l.getProperties().datasetId === networkVis.value.id
-          )
-        ) {
-          // no existing one shown, create a new network layer
-          getDatasetNetwork(currentDataset.value.id).then((nodes) => {
-            if (nodes.length && networkVis.value) {
-              networkVis.value.nodes = nodes;
-              addNetworkLayerToMap(currentDataset.value, nodes);
-            }
-          });
-        }
-      }
     }
 
     function runConversion() {
@@ -134,10 +105,7 @@ export default {
       updateColormapMin,
       updateColormapMax,
       rasterTooltip,
-      networkVis,
-      toggleNetworkVis,
       toggleNodeActive,
-      deactivatedNodes,
       showConfirmConvert,
       runConversion,
     };
@@ -215,29 +183,25 @@ export default {
       </div>
 
       <div v-if="currentDataset.network">
-        <v-switch
-          v-model="networkVis"
-          :value="currentDataset"
-          label="Show as node network"
-          @change="toggleNetworkVis"
-        />
-
         <v-expansion-panels
-          v-show="networkVis"
+          v-show="currentDataset.deactivatedNodes"
           :model-value="0"
           variant="accordion"
         >
           <v-expansion-panel title="Deactivated Nodes">
             <v-expansion-panel-text
-              v-for="deactivated in deactivatedNodes"
-              v-show="networkVis.nodes.map((n) => n.id).includes(deactivated)"
-              :key="deactivated"
+              v-for="deactivatedId in currentDataset.deactivatedNodes"
+              :key="deactivatedId"
             >
-              {{ networkVis.nodes.find((n) => n.id === deactivated)?.name }}
+              {{
+                currentDataset.nodes.find(
+                  (n) => n.id === parseInt(deactivatedId)
+                )?.name
+              }}
               <v-btn
                 size="small"
                 style="float: right"
-                @click="(e) => toggleNodeActive(deactivated)"
+                @click="(e) => toggleNodeActive(deactivatedId, currentDataset)"
               >
                 Activate
               </v-btn>
