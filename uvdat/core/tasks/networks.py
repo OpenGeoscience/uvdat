@@ -1,11 +1,12 @@
 from pathlib import Path
 import tempfile
-
-from django.contrib.gis.geos import Point
 import geopandas
 import networkx as nx
 import numpy
 import shapely
+
+from django.contrib.gis.geos import Point
+from django.core.files.base import ContentFile
 
 from uvdat.core.models import NetworkNode
 
@@ -112,6 +113,41 @@ def save_network_nodes(dataset):
             node_object = NetworkNode.objects.get(name=node[node_id_column])
             node_object.adjacent_nodes.set(NetworkNode.objects.filter(name__in=adjacent_node_ids))
             node_object.save()
+
+
+def record_node_ids(dataset):
+    node_id_column = None
+    if dataset.metadata:
+        node_id_column = dataset.metadata.get('node_id_column')
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        geodata_path = Path(temp_dir, 'geo.json')
+        geodata = geopandas.read_file(dataset.geodata_file.open())
+
+        # Validate node ID column name
+        if node_id_column is None or node_id_column not in geodata.columns:
+            raise ValueError(
+                f'This dataset does not specify a valid \
+                    "node_id_column" in its options. Column options are {geodata.columns}.'
+            )
+
+        # Initialize and populate ID column
+        geodata['id'] = None
+        for i, row in geodata.iterrows():
+            if row[node_id_column] and str(row[node_id_column]) != 'nan':
+                saved_nodes_query = NetworkNode.objects.filter(
+                    dataset=dataset, name=row[node_id_column]
+                )
+                if saved_nodes_query.count() == 1:
+                    geodata.at[i, 'id'] = saved_nodes_query.first().id
+
+        # Update file
+        geodata.to_file(geodata_path)
+
+        # Save changed file to Dataset object
+        with open(geodata_path, 'rb') as geodata_file:
+            contents = geodata_file.read()
+            dataset.geodata_file.save(geodata_path, ContentFile(contents))
 
 
 def network_gcc(edges: dict[str, list[int]], exclude_nodes: list[int]) -> list[int]:

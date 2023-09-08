@@ -15,7 +15,7 @@ import rasterio
 import shapefile
 
 from uvdat.core.models import Dataset, Region
-from uvdat.core.tasks.networks import save_network_nodes
+from uvdat.core.tasks.networks import save_network_nodes, record_node_ids
 from uvdat.core.tasks.utils import add_styling
 
 
@@ -33,6 +33,7 @@ def convert_raw_data(dataset_id):
 
     if dataset.network:
         save_network_nodes(dataset)
+        record_node_ids(dataset)
     if dataset.category == 'region':
         save_regions(dataset)
 
