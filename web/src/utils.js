@@ -6,9 +6,6 @@ import VectorSource from "ol/source/Vector";
 import VectorTileSource from "ol/source/VectorTile.js";
 import GeoJSON from "ol/format/GeoJSON.js";
 import { Fill, Stroke, Circle, Style } from "ol/style.js";
-import { Feature } from "ol";
-import { LineString, Point } from "ol/geom";
-import { fromLonLat } from "ol/proj";
 
 import { baseURL } from "@/api/auth";
 import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
@@ -18,9 +15,6 @@ import {
   currentCity,
   selectedDatasetIds,
   rasterTooltip,
-  networkVis,
-  deactivatedNodes,
-  currentNetworkGCC,
   availableCharts,
   activeChart,
 } from "@/store";
@@ -63,14 +57,6 @@ export function updateVisibleLayers() {
       if (!layerDatasetId) {
         // map base layer does not have dataset id
         layerEnabled = showMapBaseLayer.value;
-      }
-
-      if (networkVis.value) {
-        if (layerDatasetId === networkVis.value.id) {
-          layerEnabled = layerEnabled && layer.getProperties().network;
-        }
-      } else if (layer.getProperties().network) {
-        layerEnabled = false;
       }
 
       if (layerEnabled) {
@@ -257,146 +243,58 @@ export function addDatasetLayerToMap(dataset, zIndex) {
   map.value.addLayer(layer);
 }
 
-function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
-  const fill = new Fill({
-    color: `#ffffff${alpha}`,
-  });
-  const stroke = new Stroke({
-    color: `#000000${alpha}`,
-    width: 3,
-  });
-  const style = new Style({
-    image: new Circle({
-      fill: fill,
-      stroke: stroke,
-      radius: 7,
-    }),
-    fill: fill,
-    stroke: stroke,
-  });
-  if (highlight) {
-    const highlightStroke = new Stroke({
-      color: "yellow",
-      width: 8,
-    });
-    return [
-      new Style({
-        zIndex: 0,
-        stroke: highlightStroke,
-        image: new Circle({
-          stroke: highlightStroke,
-          radius: 8,
-        }),
-      }),
-      style,
-    ];
-  }
-  return style;
-}
-
-export function updateNetworkStyle() {
+export function updateNetworkStyle(dataset) {
   map.value
     .getLayers()
     .getArray()
     .forEach((layer) => {
-      const layerIsNetwork = layer.getProperties().network;
-      if (layerIsNetwork) {
+      const layerDatasetId = layer.getProperties().datasetId;
+      if (layerDatasetId === dataset.id) {
         const source = layer.getSource();
+        const styleFunction = layer.getStyle();
         source.getFeatures().forEach((feature) => {
-          let featureDeactivated = false;
-          let featureHighlighted = false;
+          let featureStyles = styleFunction(feature);
           const featureProperties = feature.values_;
           if (
-            featureProperties.node &&
             featureProperties.id &&
-            deactivatedNodes.value.includes(featureProperties.id)
+            dataset.deactivatedNodes.includes(featureProperties.id)
           ) {
-            featureDeactivated = true;
-          } else if (
-            featureProperties.edge &&
-            featureProperties.connects &&
-            featureProperties.connects.some((nId) =>
-              deactivatedNodes.value.includes(nId)
-            )
-          ) {
-            featureDeactivated = true;
-          }
-
-          if (currentNetworkGCC.value) {
-            if (
-              featureProperties.node &&
-              featureProperties.id &&
-              currentNetworkGCC.value.includes(featureProperties.id)
-            ) {
-              featureHighlighted = true;
-            } else if (
-              featureProperties.edge &&
-              featureProperties.connects &&
-              featureProperties.connects.some((nId) =>
-                currentNetworkGCC.value.includes(nId)
-              )
-            ) {
-              featureHighlighted = true;
+            // Make node black (deactivated)
+            featureStyles = featureStyles.map((style) => {
+              style.getImage().getFill().setColor("black");
+              return style;
+            });
+          } else if (dataset.gcc) {
+            if (featureProperties.id) {
+              if (dataset.gcc.includes(parseInt(featureProperties.id))) {
+                // node in gcc, highlight yellow
+                featureStyles.push(
+                  new Style({
+                    image: new Circle({
+                      radius: 10,
+                      fill: new Fill({
+                        color: "yellow",
+                      }),
+                    }),
+                  })
+                );
+              } else {
+                // node not in gcc, make translucent
+                featureStyles = featureStyles.map((style) => {
+                  let color = style.getImage().getFill().getColor();
+                  color += "66";
+                  style.getImage().getFill().setColor(color);
+                  return style;
+                });
+              }
             }
           }
 
-          if (featureDeactivated) {
-            feature.setStyle(getNetworkFeatureStyle("44"));
-          } else if (featureHighlighted) {
-            feature.setStyle(getNetworkFeatureStyle("ff", true));
-          } else {
-            feature.setStyle(null); // will default to layer style
-          }
+          // TODO: handle styling for edges
+          feature.setStyle(featureStyles);
         });
       }
     });
-}
-
-export function addNetworkLayerToMap(dataset, nodes) {
-  const source = new VectorSource();
-  const features = [];
-  const visitedNodes = [];
-  nodes.forEach((node) => {
-    features.push(
-      new Feature(
-        Object.assign(node.properties, {
-          name: node.name,
-          id: node.id,
-          node: true,
-          geometry: new Point(fromLonLat(node.location.toReversed())),
-        })
-      )
-    );
-    node.adjacent_nodes.forEach((adjId) => {
-      if (!visitedNodes.includes(adjId)) {
-        const adjNode = nodes.find((n) => n.id === adjId);
-        features.push(
-          new Feature({
-            connects: [node.id, adjId],
-            edge: true,
-            geometry: new LineString([
-              fromLonLat(node.location.toReversed()),
-              fromLonLat(adjNode.location.toReversed()),
-            ]),
-          })
-        );
-      }
-    });
-    visitedNodes.push(node.id);
-  });
-  source.addFeatures(features);
-
-  const layer = new VectorLayer({
-    properties: {
-      datasetId: dataset.id,
-      dataset,
-      network: true,
-    },
-    zIndex: 99,
-    style: getNetworkFeatureStyle(),
-    source,
-  });
-  map.value.addLayer(layer);
 }
 
 function renderRegionTooltip(tooltipDiv, feature) {
@@ -421,7 +319,7 @@ function renderRegionTooltip(tooltipDiv, feature) {
   tooltipDiv.appendChild(cropButton);
 }
 
-function renderNetworkTooltip(tooltipDiv, feature) {
+function renderNetworkTooltip(tooltipDiv, feature, dataset) {
   // Add data
   const properties = Object.fromEntries(
     Object.entries(feature.values_).filter(([k, v]) => k && v)
@@ -440,13 +338,13 @@ function renderNetworkTooltip(tooltipDiv, feature) {
   // Add activation button
   const nodeId = feature.get("id");
   const deactivateButton = document.createElement("button");
-  if (deactivatedNodes.value.includes(nodeId)) {
+  if (dataset.deactivatedNodes?.includes(nodeId)) {
     deactivateButton.innerHTML = "Reactivate Node";
   } else {
     deactivateButton.innerHTML = "Deactivate Node";
   }
   deactivateButton.onclick = function () {
-    toggleNodeActive(nodeId, deactivateButton);
+    toggleNodeActive(nodeId, dataset, deactivateButton);
   };
   deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
   tooltipDiv.appendChild(deactivateButton);
@@ -483,8 +381,8 @@ export function displayFeatureTooltip(evt, tooltip, overlay) {
   if (dataset.category === "region") {
     renderRegionTooltip(tooltipDiv, feature);
     // Handle network dataset
-  } else if (networkVis.value && dataset.network) {
-    renderNetworkTooltip(tooltipDiv, feature);
+  } else if (dataset.network) {
+    renderNetworkTooltip(tooltipDiv, feature, dataset);
   } else {
     // No defined behavior, quit and render nothing
     return;
@@ -533,27 +431,45 @@ export function displayRasterTooltip(evt, tooltip, overlay) {
   }
 }
 
-export function toggleNodeActive(nodeId, button = null) {
-  if (deactivatedNodes.value.includes(nodeId)) {
-    deactivatedNodes.value = deactivatedNodes.value.filter((n) => n !== nodeId);
-    if (button) button.innerHTML = "Deactivate Node";
-  } else {
-    deactivatedNodes.value.push(nodeId);
-    if (button) button.innerHTML = "Activate Node";
-  }
+export function toggleNodeActive(nodeId, dataset, button = null) {
+  if (currentCity.value) {
+    currentCity.value.datasets = currentCity.value.datasets.map((d) => {
+      if (d.id === dataset.id && d.network) {
+        if (!d.deactivatedNodes) {
+          d.deactivatedNodes = [];
+        }
+        if (d.deactivatedNodes.includes(nodeId)) {
+          d.deactivatedNodes = d.deactivatedNodes.filter((n) => n !== nodeId);
+          if (button) button.innerHTML = "Deactivate Node";
+        } else {
+          d.deactivatedNodes.push(nodeId);
+          if (button) button.innerHTML = "Activate Node";
+        }
+        d.gcc = undefined;
+        getNetworkGCC(d.id, d.deactivatedNodes).then((gcc) => {
+          d.gcc = gcc;
+          updateNetworkStyle(d);
 
-  currentNetworkGCC.value = undefined;
-  getNetworkGCC(networkVis.value.id, deactivatedNodes.value).then((gcc) => {
-    currentNetworkGCC.value = gcc;
-    updateNetworkStyle();
-
-    // update chart
-    getCityCharts(currentCity.value.id).then((charts) => {
-      availableCharts.value = charts;
-      if (activeChart.value) {
-        activeChart.value = charts.find((c) => c.id === activeChart.value.id);
+          // update chart
+          getCityCharts(currentCity.value.id).then((charts) => {
+            availableCharts.value = charts;
+            if (activeChart.value) {
+              activeChart.value = charts.find(
+                (c) => c.id === activeChart.value.id
+              );
+            }
+          });
+        });
+        updateNetworkStyle(d);
+        if (!button) {
+          // make tooltip disappear
+          map.value.dispatchEvent({
+            type: "click",
+            pixel: [1, 1],
+          });
+        }
       }
+      return d;
     });
-  });
-  updateNetworkStyle();
+  }
 }
