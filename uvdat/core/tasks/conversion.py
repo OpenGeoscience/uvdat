@@ -16,7 +16,7 @@ import shapefile
 
 from uvdat.core.models import Dataset, Region
 from uvdat.core.tasks.networks import save_network_nodes
-from uvdat.core.utils import add_styling
+from uvdat.core.tasks.utils import add_styling
 
 
 @shared_task
