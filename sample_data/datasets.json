@@ -150,6 +150,23 @@
         }
     },
     {
+        "name": "Boston Zip Codes",
+        "description": "Zip codes 01001-02791",
+        "category": "region",
+        "city": "Boston, MA",
+        "raw_data_type": "shape_file_archive",
+        "url": "https://data.kitware.com/api/v1/item/64fbb4c6e99e9e6006f00114/download",
+        "path": "boston/zipcodes.json",
+        "style": {
+            "options": {
+                "outline": "white",
+                "palette": [
+                    "grey"
+                ]
+            }
+        }
+    },
+    {
         "name": "9-inch Sea Level Rise",
         "description": "From Analyze Boston; 9 inches of sea level rise is expected across emissions scenarios as likely to occur as early as the 2030s.",
         "category": "flood",
