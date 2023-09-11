@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
 import tempfile
+from typing import Any
 
-from django.core.serializers import serialize
+from django.contrib.gis.serializers import geojson
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
 import ijson
@@ -24,6 +25,15 @@ from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
+
+
+class RegionFeatureCollectionSerializer(geojson.Serializer):
+    # Override this method to ensure the pk field is a number instead of a string
+    def get_dump_object(self, obj: Any) -> Any:
+        val = super().get_dump_object(obj)
+        val["properties"]["pk"] = int(val["properties"]["pk"])
+
+        return val
 
 
 class DerivedRegionViewSet(
@@ -57,7 +67,8 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
 
         # Serialize all regions as a feature collection
         multipolygons = Region.objects.filter(dataset=dataset)
-        return HttpResponse(serialize('geojson', multipolygons, geometry_field='boundary'))
+        serializer = RegionFeatureCollectionSerializer()
+        return HttpResponse(serializer.serialize(multipolygons, geometry_field='boundary'))
 
     @action(
         detail=True,
