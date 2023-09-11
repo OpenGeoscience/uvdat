@@ -14,6 +14,15 @@ export interface Dataset {
   processing: boolean;
 }
 
+export interface Region {
+  pk: number;
+
+  name: string;
+  city: number;
+  dataset: number;
+  properties: { [key: string]: unknown };
+}
+
 export interface City {
   id: number;
   name: string;

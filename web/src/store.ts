@@ -4,7 +4,7 @@ import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
 import { ref, watch } from "vue";
-import { City, Dataset } from "./types.js";
+import { City, Dataset, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
 
 export const loading = ref<boolean>(false);
@@ -30,7 +30,7 @@ export const regionGroupingActive = ref(false);
 export const regionGroupingType = ref<"intersection" | "union" | null>(null);
 export const regionIntersectionActive = ref(false);
 export const regionUnionActive = ref(false);
-export const selectedRegions = ref<string[]>([]);
+export const selectedRegions = ref<Region[]>([]);
 
 // Network
 export const networkVis = ref();

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Map from "ol/Map.js";
 import Overlay from "ol/Overlay";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import {
   clearMap,
   map,
@@ -10,11 +10,13 @@ import {
   regionGroupingType,
   deactivatedNodes,
   networkVis,
+  selectedDatasetIds,
 } from "@/store";
 import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
 import type { Layer } from "ol/layer";
 import Control from "ol/control/Control";
+import type { Region } from "@/types";
 
 // OpenLayers variables
 const tooltip = ref();
@@ -48,21 +50,46 @@ const selectedFeatureProperties = computed(() => {
 
 // Regions
 const newRegionSetName = ref("");
-const selectedRegionID = computed(() => {
+const selectedRegion = computed(() => {
   if (selectedFeatureCategory.value !== "region") {
     return undefined;
   }
 
-  return selectedFeature.value?.get("pk") as string;
+  return selectedFeature.value?.getProperties() as Region;
+});
+const selectedRegionID = computed(() => selectedRegion.value?.pk);
+const selectedRegionIsGrouped = computed(() => {
+  if (selectedRegion.value === undefined) {
+    return false;
+  }
+
+  const { pk } = selectedRegion.value;
+  return selectedRegions.value.find((region) => region.pk === pk) !== undefined;
 });
 
 // Ensure that if any regions of the currently selected datasets are
 // de-selected, their regions are removed from the selection
-// watch(selectedDatasetIds, (ids) => {
-//   const idSet = new Set(ids);
+watch(selectedDatasetIds, (ids) => {
+  const datasetIdSet = new Set(ids);
 
-//   selectedRegions.value = selectedRegions.value.filter((regionId) => idSet.has(Number(region)));
-// });
+  // If the currently selected region was part of a dataset that was removed, de-select it
+  if (
+    selectedRegion.value !== undefined &&
+    !datasetIdSet.has(selectedRegion.value.dataset)
+  ) {
+    deselectFeature();
+  }
+
+  // Filter selected regions list
+  selectedRegions.value = selectedRegions.value.filter((region) =>
+    datasetIdSet.has(region.dataset)
+  );
+
+  // Check if the list is now empty
+  if (selectedRegions.value.length === 0) {
+    cancelRegionGrouping();
+  }
+});
 
 function zoomToRegion() {
   // Set map zoom to match bounding box of region
@@ -73,11 +100,15 @@ function zoomToRegion() {
 }
 
 function beginRegionGrouping(groupingType: "intersection" | "union") {
+  if (selectedRegion.value === undefined) {
+    throw new Error("Began region grouping with no selected region");
+  }
+
   regionGroupingActive.value = true;
   regionGroupingType.value = groupingType;
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  selectedRegions.value = [selectedRegionID.value!];
+  selectedRegions.value = [selectedRegion.value];
 }
 
 function cancelRegionGrouping() {
@@ -89,23 +120,25 @@ function cancelRegionGrouping() {
   showTooltip.value = false;
 }
 
+function deselectFeature() {
+  showTooltip.value = false;
+  selectedLayer.value = undefined;
+  selectedFeature.value = undefined;
+  selectedFeatureCategory.value = "";
+}
+
 function removeRegionFromGrouping() {
-  const idx = selectedRegions.value.findIndex(
-    (x) => x === selectedRegionID.value
-  );
-  if (idx === -1) {
-    throw new Error(
-      `Region ${selectedRegionID.value} removed from selectedRegions unexpectedly`
-    );
+  if (selectedRegionID.value === undefined) {
+    throw new Error("Tried to remove non-existent region from grouping");
   }
 
-  // Remove
-  selectedRegions.value.splice(idx, 1);
+  selectedRegions.value = selectedRegions.value.filter(
+    (region) => region.pk !== selectedRegionID.value
+  );
 
   // Check if that element was the last removed
   if (selectedRegions.value.length === 0) {
-    regionGroupingActive.value = false;
-    regionGroupingType.value = null;
+    cancelRegionGrouping();
   }
 }
 
@@ -116,10 +149,7 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
     (feature: Feature, layer: Layer) => [feature, layer]
   );
   if (!res) {
-    showTooltip.value = false;
-    selectedLayer.value = undefined;
-    selectedFeature.value = undefined;
-    selectedFeatureCategory.value = "";
+    deselectFeature();
     return;
   }
 
@@ -240,7 +270,7 @@ onMounted(() => {
         </v-row>
 
         <template v-if="regionGroupingActive">
-          <template v-if="selectedRegions.includes(selectedRegionID)">
+          <template v-if="selectedRegionIsGrouped">
             <v-row>
               <v-btn
                 variant="outlined"
@@ -267,7 +297,7 @@ onMounted(() => {
                 variant="outlined"
                 block
                 class="my-1"
-                @click="selectedRegions.push(selectedRegionID)"
+                @click="selectedRegions.push(selectedRegion)"
               >
                 <template v-slot:prepend>
                   <v-icon>
