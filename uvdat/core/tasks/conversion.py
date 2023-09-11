@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 import tempfile
@@ -125,12 +126,24 @@ def convert_geojson(dataset, geodata_path=None):
                 geodata = geodata.set_crs(original_projection, allow_override=True)
                 geodata = geodata.to_crs(4326)
                 geodata.to_file(geodata_path)
+        with open(geodata_path, 'rb') as geodata_file:
+            contents = geodata_file.read()
+            dataset.geodata_file.save(geodata_path, ContentFile(contents))
+        geojson_size = os.path.getsize(geodata_path)
+        geojson_mb = geojson_size >> 20
+        if geojson_mb > 100:
+            print(
+                f'\t Found large GeoJSON data ({geojson_mb} MB). Creating tiled GeoJSON for rendering...'
+            )
+            tile_geojson(dataset, geodata_path)
+
+
+def tile_geojson(dataset, geodata_path=None):
+    with tempfile.TemporaryDirectory() as temp_dir:
         tiled_geo_path = Path(temp_dir, 'tiled_geo.json')
         tiled_geo = {}
         with open(geodata_path, 'rb') as geodata_file:
             contents = geodata_file.read()
-            dataset.geodata_file.save(geodata_path, ContentFile(contents))
-
             # convert to tiles and save to vector_tiles_file
             tile_index = geojson2vt.geojson2vt(
                 json.loads(contents.decode()),
