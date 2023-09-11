@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 
 from uvdat.core.models import Chart, City, Dataset, DerivedRegion, NetworkNode, SimulationResult
@@ -61,7 +63,32 @@ class SimulationResultSerializer(serializers.ModelSerializer):
         model = SimulationResult
 
 
-class DerivedRegionSerializer(serializers.ModelSerializer):
+class DerivedRegionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DerivedRegion
+        fields = ['id', 'name', 'city', 'properties', 'source_regions', 'source_operation']
+
+
+class DerivedRegionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = DerivedRegion
         fields = '__all__'
+
+    boundary = serializers.SerializerMethodField()
+
+    def get_boundary(self, obj):
+        return json.loads(obj.boundary.geojson)
+
+
+class DerivedRegionCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DerivedRegion
+        fields = [
+            'name',
+            'city',
+            'regions',
+            'operation',
+        ]
+
+    regions = serializers.ListField(child=serializers.IntegerField())
+    operation = serializers.ChoiceField(choices=DerivedRegion.VectorOperation.choices)

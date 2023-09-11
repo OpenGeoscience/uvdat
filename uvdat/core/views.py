@@ -3,11 +3,15 @@ from pathlib import Path
 import tempfile
 from typing import Any
 
+from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.serializers import geojson
+from django.db import transaction
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
+from drf_yasg.utils import swagger_auto_schema
 import ijson
 import large_image
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
@@ -17,7 +21,9 @@ from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
     DatasetSerializer,
-    DerivedRegionSerializer,
+    DerivedRegionCreationSerializer,
+    DerivedRegionDetailSerializer,
+    DerivedRegionListSerializer,
     NetworkNodeSerializer,
     SimulationResultSerializer,
 )
@@ -36,11 +42,68 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
         return val
 
 
-class DerivedRegionViewSet(
-    mixins.CreateModelMixin, mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet
-):
+class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = DerivedRegion.objects.all()
-    serializer_class = DerivedRegionSerializer
+    serializer_class = DerivedRegionListSerializer
+
+    def get_serializer_class(self):
+        if self.detail:
+            return DerivedRegionDetailSerializer
+
+        return super().get_serializer_class()
+
+    @swagger_auto_schema(request_body=DerivedRegionCreationSerializer)
+    def create(self, request, *args, **kwargs):
+        serializer = DerivedRegionCreationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Ensure at least two regions provided
+        source_regions = Region.objects.filter(pk__in=serializer.validated_data['regions'])
+        if source_regions.count() < 2:
+            return HttpResponse("Derived Regions must consist of multiple regions", status=400)
+
+        # Ensure all regions are from one city
+        source_cities = list((source_regions.values_list('city', flat=True).distinct()))
+        if len(source_cities) > 1:
+            return HttpResponse(
+                f"Multiple cities included in source regions: {source_cities}", status=400
+            )
+
+        # Calculate new polygons
+        source_operation = serializer.validated_data['operation']
+        if source_operation == DerivedRegion.VectorOperation.UNION:
+            # Simply include all multipolygons from all source regions
+            new_boundary = source_regions.aggregate(polys=Union('boundary'))['polys']
+        else:
+            return HttpResponse("Intersection Operation not yet supported", status=400)
+
+        # Check for duplicate derived regions
+        city = serializer.validated_data['city']
+        existing = list(
+            DerivedRegion.objects.filter(city=city, boundary=new_boundary).values_list(
+                'id', flat=True
+            )
+        )
+        if existing:
+            return HttpResponse(
+                f"Derived Regions with identical boundary already exist: {existing}", status=400
+            )
+
+        # Save and return
+        with transaction.atomic():
+            derived_region = DerivedRegion.objects.create(
+                name=serializer.validated_data['name'],
+                city=city,
+                properties={},
+                boundary=new_boundary,
+                source_operation=source_operation,
+            )
+            derived_region.source_regions.set(source_regions)
+
+        return Response(
+            DerivedRegionDetailSerializer(instance=derived_region).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CityViewSet(ModelViewSet):
