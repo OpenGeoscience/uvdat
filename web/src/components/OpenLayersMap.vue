@@ -18,6 +18,8 @@ import type { Layer } from "ol/layer";
 import Control from "ol/control/Control";
 import type { Region } from "@/types";
 
+import { postDerivedRegion } from "@/api/rest";
+
 // OpenLayers variables
 const tooltip = ref();
 const showTooltip = ref(false);
@@ -49,7 +51,7 @@ const selectedFeatureProperties = computed(() => {
 });
 
 // Regions
-const newRegionSetName = ref("");
+const newRegionName = ref("");
 const selectedRegion = computed(() => {
   if (selectedFeatureCategory.value !== "region") {
     return undefined;
@@ -113,7 +115,7 @@ function beginRegionGrouping(groupingType: "intersection" | "union") {
 
 function cancelRegionGrouping() {
   selectedRegions.value = [];
-  newRegionSetName.value = "";
+  newRegionName.value = "";
   regionGroupingActive.value = false;
   regionGroupingType.value = null;
 
@@ -140,6 +142,23 @@ function removeRegionFromGrouping() {
   if (selectedRegions.value.length === 0) {
     cancelRegionGrouping();
   }
+}
+
+function createDerivedRegion() {
+  if (selectedRegions.value.length === 0) {
+    throw new Error("Cannot created derived region with no selected regions");
+  }
+  if (regionGroupingType.value === null) {
+    throw new Error("Region grouping type is null");
+  }
+
+  const city = selectedRegions.value[0].city;
+  postDerivedRegion(
+    newRegionName.value,
+    city,
+    selectedRegions.value.map((reg) => reg.pk),
+    regionGroupingType.value
+  );
 }
 
 function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
@@ -223,7 +242,7 @@ onMounted(() => {
 
         <v-row no-gutters class="px-2 mt-2">
           <v-text-field
-            v-model="newRegionSetName"
+            v-model="newRegionName"
             hide-details
             label="New Region Name"
           />
@@ -239,13 +258,12 @@ onMounted(() => {
             >
               Cancel
             </v-btn>
-            <!-- TODO: Implement Save -->
             <v-btn
               color="success"
               variant="flat"
               prepend-icon="mdi-check"
-              v-bind="props"
-              :disabled="selectedRegions.length < 2 || !newRegionSetName"
+              :disabled="selectedRegions.length < 2 || !newRegionName"
+              @click="createDerivedRegion"
             >
               Save
             </v-btn>
@@ -255,7 +273,7 @@ onMounted(() => {
     </div>
     <div ref="tooltip" class="tooltip" v-show="showTooltip">
       <!-- Render for Regions -->
-      <div v-if="selectedFeatureCategory === 'region'">
+      <div v-if="selectedFeature && selectedFeatureCategory === 'region'">
         <v-row no-gutters>ID: {{ selectedRegionID }}</v-row>
         <v-row no-gutters>Name: {{ selectedFeature.get("name") }}</v-row>
         <v-row>
@@ -269,7 +287,7 @@ onMounted(() => {
           >
         </v-row>
 
-        <template v-if="regionGroupingActive">
+        <template v-if="regionGroupingActive && selectedRegion">
           <template v-if="selectedRegionIsGrouped">
             <v-row>
               <v-btn
@@ -343,7 +361,7 @@ onMounted(() => {
         <v-row no-gutters v-for="(v, k) in selectedFeatureProperties" :key="k">
           {{ k }}: {{ v }}
         </v-row>
-        <template v-if="networkVis">
+        <template v-if="selectedFeature && networkVis">
           <v-btn
             variant="outlined"
             v-if="deactivatedNodes.includes(selectedFeature.get('id'))"

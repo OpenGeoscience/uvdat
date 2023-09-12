@@ -34,7 +34,7 @@ export const selectedRegions = ref<Region[]>([]);
 
 // Network
 export const networkVis = ref();
-export const deactivatedNodes = ref([]);
+export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 
 export function loadCities() {
