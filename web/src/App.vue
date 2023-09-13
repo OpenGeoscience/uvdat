@@ -96,7 +96,7 @@ export default defineComponent({
       permanent
       width="250"
       location="right"
-      class="main-area drawer options-drawer"
+      class="main-area drawer"
     >
       <OptionsDrawerContents />
     </v-navigation-drawer>
