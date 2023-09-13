@@ -52,6 +52,11 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
 
         return super().get_serializer_class()
 
+    @action(detail=True, methods=['GET'])
+    def boundary(self, request, *args, **kwargs):
+        obj: DerivedRegion = self.get_object()
+        return HttpResponse(obj.boundary.geojson)
+
     @swagger_auto_schema(request_body=DerivedRegionCreationSerializer)
     def create(self, request, *args, **kwargs):
         serializer = DerivedRegionCreationSerializer(data=request.data)
