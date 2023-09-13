@@ -11,12 +11,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import Chart, City, Dataset, Region
+from uvdat.core.models import Chart, City, Dataset, Region, SimulationResult
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
     DatasetSerializer,
     NetworkNodeSerializer,
+    SimulationResultSerializer,
 )
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
@@ -192,6 +193,22 @@ class SimulationViewSet(GenericViewSet):
         sims = get_available_simulations(city_id)
         return HttpResponse(
             json.dumps(sims),
+            status=200,
+        )
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path=r'(?P<simulation_id>[\d*]+)/results',
+    )
+    def list_results(self, request, simulation_id: int, **kwargs):
+        return HttpResponse(
+            json.dumps(
+                list(
+                    SimulationResultSerializer(s).data
+                    for s in SimulationResult.objects.filter(simulation_id=int(simulation_id)).all()
+                )
+            ),
             status=200,
         )
 

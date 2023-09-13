@@ -70,5 +70,9 @@ export async function clearChart(chartId: number) {
 }
 
 export async function runSimulation(simulationId: number, args: object) {
-  await apiClient.post(`simulations/run/${simulationId}/`, args);
+  return (await apiClient.post(`simulations/run/${simulationId}/`, args)).data;
+}
+
+export async function getSimulationResults(simulationId: number) {
+  return (await apiClient.get(`simulations/${simulationId}/results`)).data;
 }
