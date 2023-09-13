@@ -150,8 +150,11 @@ export default {
           item-value="id"
         >
           <template #item="{ element }">
-            <v-card class="px-3 py-1">
-              <v-icon>mdi-drag-horizontal-variant</v-icon>
+            <v-card class="px-3 py-1 d-flex">
+              <v-icon class="mr-3">mdi-drag-horizontal-variant</v-icon>
+              <div style="width: calc(100% - 70px)">
+                {{ currentCity.datasets.find((d) => d.id === element).name }}
+              </div>
               <v-icon
                 size="small"
                 class="expand-icon"
@@ -163,7 +166,13 @@ export default {
               >
                 mdi-cog
               </v-icon>
-              {{ currentCity.datasets.find((d) => d.id === element).name }}
+              <v-icon
+                size="small"
+                class="expand-icon"
+                @click="toggleDataset({ id: element })"
+              >
+                mdi-close
+              </v-icon>
             </v-card>
           </template>
         </draggable>
