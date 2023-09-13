@@ -142,7 +142,6 @@ export default {
       }
       return true;
     });
-    console.log(activeChart.value);
 
     function clearAndRefresh() {
       if (activeChart.value) {
