@@ -21,6 +21,7 @@ from uvdat.core.serializers import (
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
+from uvdat.core.tasks.simulations import get_available_simulations
 
 
 class CityViewSet(ModelViewSet):
@@ -169,3 +170,21 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
         chart.chart_data = {}
         chart.save()
         return HttpResponse(status=200)
+
+
+class SimulationViewSet(GenericViewSet):
+    # Not based on a database model;
+    # Available Simulations must be hard-coded and associated with a function
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path="available",
+    )
+    def list_available(self, request, **kwargs):
+        city_id = kwargs.get('city')
+        sims = get_available_simulations(city_id)
+        return HttpResponse(
+            json.dumps(sims),
+            status=200,
+        )
