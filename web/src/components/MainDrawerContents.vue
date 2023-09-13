@@ -9,7 +9,7 @@ import {
   availableSimulations,
   selectedDatasetIds,
 } from "@/store";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
 import { getCityDatasets, getCityCharts, getCitySimulations } from "@/api/rest";
 import { updateVisibleLayers } from "../utils";
@@ -78,7 +78,6 @@ export default {
       ) {
         currentDataset.value = undefined;
       }
-      updateActiveDatasets();
     }
 
     function reorderLayers() {
@@ -113,6 +112,7 @@ export default {
 
     onMounted(fetchCharts);
     onMounted(fetchSimulations);
+    watch(selectedDatasetIds, updateActiveDatasets);
 
     return {
       selectedDatasetIds,
