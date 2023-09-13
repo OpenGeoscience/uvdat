@@ -1,5 +1,6 @@
 import re
 from uvdat.core.models import Dataset
+from uvdat.core.serializers import DatasetSerializer
 
 
 def flood_scenario_1(network_dataset, elevation_dataset, flood_dataset):
@@ -47,10 +48,13 @@ def get_available_simulations(city_id: int):
             {
                 'name': a['name'],
                 'options': list(
-                    a['type'].objects.filter(
+                    DatasetSerializer(d).data
+                    for d in a['type']
+                    .objects.filter(
                         city__id=city_id,
                         **a['options_query'],
                     )
+                    .all()
                 ),
             }
             for a in available['args']
