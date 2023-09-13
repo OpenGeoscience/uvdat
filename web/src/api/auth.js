@@ -28,7 +28,10 @@ apiClient.interceptors.request.use((config) => ({
 }));
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    currentError.value = undefined;
+    return response;
+  },
   (error) => {
     if (error.response?.status === 500) {
       currentError.value = "Server error; see server logs for details.";
