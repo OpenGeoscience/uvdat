@@ -1,11 +1,12 @@
 import re
-from uvdat.core.models import Dataset
-from uvdat.core.serializers import DatasetSerializer
+
+from uvdat.core.models import Dataset, SimulationResult
+from uvdat.core.serializers import DatasetSerializer, SimulationResultSerializer
 
 
-def flood_scenario_1(network_dataset, elevation_dataset, flood_dataset):
+def flood_scenario_1(result, network_dataset, elevation_dataset, flood_dataset):
     disabled_nodes = []
-    print(network_dataset, elevation_dataset, flood_dataset)
+    print(result, network_dataset, elevation_dataset, flood_dataset)
     return disabled_nodes
 
 
@@ -69,5 +70,13 @@ def get_available_simulations(city_id: int):
 def run_simulation(simulation_id: int, **kwargs):
     simulation_matches = [s for s in AVAILABLE_SIMULATIONS if s['id'] == simulation_id]
     if len(simulation_matches) > 0:
+        sim_result, created = SimulationResult.objects.get_or_create(
+            simulation_id=simulation_id, input_args=kwargs
+        )
+        sim_result.output_data = None
+        sim_result.save()
+
         simulation = simulation_matches[0]
-        return simulation['func'](**kwargs)
+        simulation['func'](sim_result, **kwargs)
+        return SimulationResultSerializer(sim_result).data
+    return f"No simulation found with id {simulation_id}."

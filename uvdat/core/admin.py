@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from uvdat.core.models import Chart, City, Dataset, NetworkNode, Region
+from uvdat.core.models import Chart, City, Dataset, NetworkNode, Region, SimulationResult
 
 
 class CityAdmin(admin.ModelAdmin):
@@ -26,8 +26,13 @@ class ChartAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
 
 
+class SimulationResultAdmin(admin.ModelAdmin):
+    list_display = ['id', 'simulation_id', 'input_args']
+
+
 admin.site.register(City, CityAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
 admin.site.register(Region, RegionAdmin)
 admin.site.register(Chart, ChartAdmin)
+admin.site.register(SimulationResult, SimulationResultAdmin)

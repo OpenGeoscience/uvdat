@@ -65,3 +65,9 @@ class Chart(models.Model):
     metadata = models.JSONField(blank=True, null=True)
     style = models.JSONField(blank=True, null=True)
     clearable = models.BooleanField(default=False)
+
+
+class SimulationResult(TimeStampedModel, models.Model):
+    simulation_id = models.IntegerField()
+    input_args = models.JSONField(blank=True, null=True)
+    output_data = models.JSONField(blank=True, null=True)
