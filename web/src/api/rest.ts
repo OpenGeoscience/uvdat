@@ -9,15 +9,15 @@ import {
 } from "@/types";
 
 export async function getCities(): Promise<City[]> {
-  return (await apiClient.get("cities")).data.results;
+  return (await apiClient.get("cities")).data;
 }
 
 export async function getCityDatasets(cityId: number): Promise<Dataset[]> {
-  return (await apiClient.get(`datasets?city=${cityId}`)).data.results;
+  return (await apiClient.get(`datasets?city=${cityId}`)).data;
 }
 
 export async function getCityCharts(cityId: number): Promise<Chart[]> {
-  return (await apiClient.get(`charts?city=${cityId}`)).data.results;
+  return (await apiClient.get(`charts?city=${cityId}`)).data;
 }
 
 export async function getCitySimulations(
@@ -66,5 +66,9 @@ export async function getRasterData(datasetId: number): Promise<RasterData> {
 }
 
 export async function clearChart(chartId: number) {
-  await apiClient.get(`charts/${chartId}/clear/`);
+  await apiClient.post(`charts/${chartId}/clear/`);
+}
+
+export async function runSimulation(simulationId: number, args: object) {
+  await apiClient.post(`simulations/run/${simulationId}/`, args);
 }
