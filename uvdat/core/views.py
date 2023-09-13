@@ -21,7 +21,7 @@ from uvdat.core.serializers import (
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
-from uvdat.core.tasks.simulations import get_available_simulations
+from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
 
 
 class CityViewSet(ModelViewSet):
@@ -165,8 +165,7 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
             return Chart.objects.filter(city__id=city_id)
         return Chart.objects.all()
 
-    # TODO: This should be POST once rest authentication is implemented
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['post'])
     def clear(self, request, **kwargs):
         chart = self.get_object()
         if not chart.clearable:
@@ -193,5 +192,17 @@ class SimulationViewSet(GenericViewSet):
         sims = get_available_simulations(city_id)
         return HttpResponse(
             json.dumps(sims),
+            status=200,
+        )
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path=r'run/(?P<simulation_id>[\d*]+)',
+    )
+    def run(self, request, simulation_id: int, **kwargs):
+        result = run_simulation(int(simulation_id), **request.data)
+        return HttpResponse(
+            json.dumps({'result': result}),
             status=200,
         )

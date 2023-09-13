@@ -4,7 +4,9 @@ from uvdat.core.serializers import DatasetSerializer
 
 
 def flood_scenario_1(network_dataset, elevation_dataset, flood_dataset):
+    disabled_nodes = []
     print(network_dataset, elevation_dataset, flood_dataset)
+    return disabled_nodes
 
 
 AVAILABLE_SIMULATIONS = [
@@ -62,3 +64,10 @@ def get_available_simulations(city_id: int):
         del available['func']
         sims.append(available)
     return sims
+
+
+def run_simulation(simulation_id: int, **kwargs):
+    simulation_matches = [s for s in AVAILABLE_SIMULATIONS if s['id'] == simulation_id]
+    if len(simulation_matches) > 0:
+        simulation = simulation_matches[0]
+        return simulation['func'](**kwargs)
