@@ -103,7 +103,6 @@ export default {
     function fetchSimulations() {
       activeSimulation.value = undefined;
       getCitySimulations(currentCity.value.id).then((sims) => {
-        console.log(sims);
         availableSimulations.value = sims;
       });
     }

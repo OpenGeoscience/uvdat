@@ -8,6 +8,7 @@ import {
   loading,
   loadCities,
   activeChart,
+  activeSimulation,
   showMapBaseLayer,
 } from "./store";
 import { updateVisibleLayers } from "./utils";
@@ -15,6 +16,7 @@ import OpenLayersMap from "./components/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
+import SimulationsPanel from "./components/SimulationsPanel.vue";
 
 export default defineComponent({
   components: {
@@ -22,6 +24,7 @@ export default defineComponent({
     MainDrawerContents,
     OptionsDrawerContents,
     ChartJS,
+    SimulationsPanel,
   },
   setup() {
     const drawer = ref(true);
@@ -37,6 +40,7 @@ export default defineComponent({
       loading,
       currentError,
       activeChart,
+      activeSimulation,
       showMapBaseLayer,
       updateVisibleLayers,
     };
@@ -107,6 +111,7 @@ export default defineComponent({
     >
       <OpenLayersMap />
       <ChartJS v-if="activeChart" />
+      <SimulationsPanel v-if="activeSimulation" />
     </div>
   </v-app>
 </template>
