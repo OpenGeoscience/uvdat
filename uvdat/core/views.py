@@ -30,9 +30,15 @@ class CityViewSet(ModelViewSet):
 
 
 class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
-    queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     FILE_FIELD_NAME = 'raster_file'
+
+    def get_queryset(self):
+        city_id = self.request.query_params.get('city')
+        if city_id:
+            return Dataset.objects.filter(city__id=city_id)
+        else:
+            return Dataset.objects.all()
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

@@ -11,7 +11,7 @@ import {
 } from "@/store";
 import { ref, computed, onMounted } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
-import { getCityCharts, getCitySimulations } from "@/api/rest";
+import { getCityDatasets, getCityCharts, getCitySimulations } from "@/api/rest";
 import { updateVisibleLayers } from "../utils";
 
 export default {
@@ -19,7 +19,7 @@ export default {
     draggable,
   },
   setup() {
-    const openPanels = ref([0]);
+    const openPanels = ref([1]);
     const openCategories = ref([0]);
     const availableLayerTree = computed(() => {
       const groupKey = "category";
@@ -40,6 +40,13 @@ export default {
         .sort((a, b) => a.name < b.name);
     });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
+
+    function fetchDatasets() {
+      currentDataset.value = undefined;
+      getCityDatasets(currentCity.value.id).then((datasets) => {
+        currentCity.value.datasets = datasets;
+      });
+    }
 
     function updateActiveDatasets() {
       if (selectedDatasetIds.value.length) {
@@ -106,10 +113,12 @@ export default {
     }
 
     onMounted(fetchCharts);
+    onMounted(fetchSimulations);
 
     return {
       selectedDatasetIds,
       currentCity,
+      fetchDatasets,
       openPanels,
       openCategories,
       toggleDataset,
@@ -133,7 +142,40 @@ export default {
 
 <template>
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
-    <v-expansion-panel title="Available Layers">
+    <v-expansion-panel title="Active Layers">
+      <v-expansion-panel-text>
+        <draggable
+          v-model="selectedDatasetIds"
+          @change="reorderLayers"
+          item-key="id"
+          item-value="id"
+        >
+          <template #item="{ element }">
+            <v-card class="px-3 py-1">
+              <v-icon>mdi-drag-horizontal-variant</v-icon>
+              <v-icon
+                size="small"
+                class="expand-icon"
+                @click="
+                  expandOptionsPanel(
+                    currentCity.datasets.find((d) => d.id === element)
+                  )
+                "
+              >
+                mdi-cog
+              </v-icon>
+              {{ currentCity.datasets.find((d) => d.id === element).name }}
+            </v-card>
+          </template>
+        </draggable>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.stop="fetchDatasets" class="mr-2">mdi-refresh</v-icon>
+        Available Datasets
+      </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-expansion-panels
           multiple
@@ -165,7 +207,7 @@ export default {
                   <v-icon
                     v-show="selectedDatasetIds.includes(dataset.id)"
                     size="small"
-                    class="expand-icon"
+                    class="expand-icon ml-1"
                     @click.prevent="expandOptionsPanel(dataset)"
                   >
                     mdi-cog
@@ -175,35 +217,6 @@ export default {
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel title="Active Layers">
-      <v-expansion-panel-text>
-        <draggable
-          v-model="selectedDatasetIds"
-          @change="reorderLayers"
-          item-key="id"
-          item-value="id"
-        >
-          <template #item="{ element }">
-            <v-card class="px-3 py-1">
-              <v-icon>mdi-drag-horizontal-variant</v-icon>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="
-                  expandOptionsPanel(
-                    currentCity.datasets.find((d) => d.id === element)
-                  )
-                "
-              >
-                mdi-cog
-              </v-icon>
-              {{ currentCity.datasets.find((d) => d.id === element).name }}
-            </v-card>
-          </template>
-        </draggable>
       </v-expansion-panel-text>
     </v-expansion-panel>
 

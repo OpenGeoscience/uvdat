@@ -12,6 +12,10 @@ export async function getCities(): Promise<City[]> {
   return (await apiClient.get("cities")).data.results;
 }
 
+export async function getCityDatasets(cityId: number): Promise<Dataset[]> {
+  return (await apiClient.get(`datasets?city=${cityId}`)).data.results;
+}
+
 export async function getCityCharts(cityId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?city=${cityId}`)).data.results;
 }
@@ -19,7 +23,7 @@ export async function getCityCharts(cityId: number): Promise<Chart[]> {
 export async function getCitySimulations(
   cityId: number
 ): Promise<Simulation[]> {
-  return (await apiClient.get(`simulations/available/?city=${cityId}`)).data;
+  return (await apiClient.get(`simulations/available?city=${cityId}`)).data;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
