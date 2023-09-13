@@ -5,11 +5,13 @@ import {
   currentDataset,
   activeChart,
   availableCharts,
+  activeSimulation,
+  availableSimulations,
   selectedDatasetIds,
 } from "@/store";
 import { ref, computed, onMounted } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
-import { getCityCharts } from "@/api/rest";
+import { getCityCharts, getCitySimulations } from "@/api/rest";
 import { updateVisibleLayers } from "../utils";
 
 export default {
@@ -91,6 +93,18 @@ export default {
       activeChart.value = chart;
     }
 
+    function fetchSimulations() {
+      activeSimulation.value = undefined;
+      getCitySimulations(currentCity.value.id).then((sims) => {
+        console.log(sims);
+        availableSimulations.value = sims;
+      });
+    }
+
+    function activateSimulation(sim) {
+      activeSimulation.value = sim;
+    }
+
     onMounted(fetchCharts);
 
     return {
@@ -108,6 +122,10 @@ export default {
       availableCharts,
       fetchCharts,
       activateChart,
+      activeSimulation,
+      availableSimulations,
+      fetchSimulations,
+      activateSimulation,
     };
   },
 };
@@ -207,6 +225,32 @@ export default {
             {{ chart.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
               {{ chart.description }}
+            </v-tooltip>
+          </v-list-item>
+        </v-list>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.stop="fetchSimulations" class="mr-2">mdi-refresh</v-icon>
+        Available Simulations
+      </v-expansion-panel-title>
+      <v-expansion-panel-text>
+        <span v-if="availableSimulations.length === 0"
+          >No simulations available.</span
+        >
+        <v-list>
+          <v-list-item
+            v-for="sim in availableSimulations"
+            :key="sim.id"
+            :value="sim.id"
+            :active="activeSimulation && sim.id === activeSimulation.id"
+            @click="activateSimulation(sim)"
+          >
+            {{ sim.name }}
+            <v-tooltip activator="parent" location="end" max-width="300">
+              {{ sim.description }}
             </v-tooltip>
           </v-list-item>
         </v-list>
