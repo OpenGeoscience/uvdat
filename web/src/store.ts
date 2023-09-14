@@ -3,7 +3,7 @@ import TileLayer from "ol/layer/Tile.js";
 import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
-import { computed, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { City, Dataset, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
 import { Layer } from "ol/layer.js";
@@ -15,7 +15,7 @@ export const currentError = ref<string>();
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
 export const currentDataset = ref<Dataset>();
-export const selectedDatasetIds = ref<number[]>([]);
+export const selectedDatasetIds = reactive(new Set<number>());
 
 export const map = ref();
 export const activeMapLayerIds = ref<string[]>([]);
@@ -42,7 +42,7 @@ export const regionIntersectionActive = ref(false);
 export const regionUnionActive = ref(false);
 export const selectedRegions = ref<Region[]>([]);
 export const availableDerivedRegions = ref<DerivedRegion[]>([]);
-export const selectedDerivedRegionIds = ref<number[]>([]);
+export const selectedDerivedRegionIds = reactive(new Set<number>());
 
 // Network
 export const networkVis = ref();

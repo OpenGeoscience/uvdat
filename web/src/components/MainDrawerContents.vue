@@ -78,7 +78,7 @@ export default {
 
     // TODO: Fix opening expansion panels when enabling layers
     function toggleDataset(dataset) {
-      if (selectedDatasetIds.value.includes(dataset.id)) {
+      if (selectedDatasetIds.has(dataset.id)) {
         hideDatasetFromMap(dataset);
       } else {
         addDatasetToMap(dataset);
@@ -86,7 +86,7 @@ export default {
     }
 
     function toggleDerivedRegion(region) {
-      if (selectedDerivedRegionIds.value.includes(region.id)) {
+      if (selectedDerivedRegionIds.has(region.id)) {
         hideDerivedRegionFromMap(region);
       } else {
         addDerivedRegionToMap(region);
@@ -184,7 +184,7 @@ export default {
             <v-expansion-panel-text>
               <v-checkbox
                 v-for="dataset in category.children"
-                :model-value="selectedDatasetIds.includes(dataset.id)"
+                :model-value="selectedDatasetIds.has(dataset.id)"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -199,7 +199,7 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="selectedDatasetIds.includes(dataset.id)"
+                    v-show="selectedDatasetIds.has(dataset.id)"
                     size="small"
                     class="expand-icon ml-1"
                     @click.prevent="expandOptionsPanel(dataset)"

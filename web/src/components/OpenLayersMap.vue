@@ -71,20 +71,18 @@ const selectedRegionIsGrouped = computed(() => {
 
 // Ensure that if any regions of the currently selected datasets are
 // de-selected, their regions are removed from the selection
-watch(selectedDatasetIds, (ids) => {
-  const datasetIdSet = new Set(ids);
-
+watch(selectedDatasetIds, (idSet) => {
   // If the currently selected region was part of a dataset that was removed, de-select it
   if (
     selectedRegion.value !== undefined &&
-    !datasetIdSet.has(selectedRegion.value.dataset)
+    !idSet.has(selectedRegion.value.dataset)
   ) {
     deselectFeature();
   }
 
   // Filter selected regions list
   selectedRegions.value = selectedRegions.value.filter((region) =>
-    datasetIdSet.has(region.dataset)
+    idSet.has(region.dataset)
   );
 
   // Check if the list is now empty

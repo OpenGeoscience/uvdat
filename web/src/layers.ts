@@ -26,16 +26,15 @@ function getDatasetLayer(datasetId: number): Layer | undefined {
 }
 
 export function addDatasetToMap(dataset: Dataset) {
-  // Append to front of dataset Ids
-  selectedDatasetIds.value = [dataset.id, ...selectedDatasetIds.value];
+  // Add dataset id to selected datasets
+  selectedDatasetIds.add(dataset.id);
 
   // Check if layer with this dataset already exists
   const existingLayer = getDatasetLayer(dataset.id);
 
   // Get either existing layer or create a new one
   const layer =
-    existingLayer ||
-    addDatasetLayerToMap(dataset, selectedDatasetIds.value.length - 1);
+    existingLayer || addDatasetLayerToMap(dataset, selectedDatasetIds.size - 1);
 
   if (layer === undefined) {
     throw new Error("No layer returned when adding dataset layer to map");
@@ -49,10 +48,8 @@ export function addDatasetToMap(dataset: Dataset) {
 }
 
 export function hideDatasetFromMap(dataset: Dataset) {
-  // Filter out dataset from selectedDatasets
-  selectedDatasetIds.value = selectedDatasetIds.value.filter(
-    (id) => id !== dataset.id
-  );
+  // Remove dataset id from selected datasets
+  selectedDatasetIds.delete(dataset.id);
 
   // Filter out dataset layer from active map layers
   const layer = getDatasetLayer(dataset.id);
@@ -84,11 +81,8 @@ function getDerivedRegionLayer(derivedRegionId: number): Layer | undefined {
 }
 
 export function addDerivedRegionToMap(derivedRegion: DerivedRegion) {
-  // Append to front of dataset Ids
-  selectedDerivedRegionIds.value = [
-    derivedRegion.id,
-    ...selectedDerivedRegionIds.value,
-  ];
+  // Add derived region id to selected regions
+  selectedDerivedRegionIds.add(derivedRegion.id);
 
   // Check if layer with this dataset already exists
   const existingLayer = getDerivedRegionLayer(derivedRegion.id);
@@ -109,10 +103,8 @@ export function addDerivedRegionToMap(derivedRegion: DerivedRegion) {
 }
 
 export function hideDerivedRegionFromMap(derivedRegion: DerivedRegion) {
-  // Filter out region from selected
-  selectedDerivedRegionIds.value = selectedDerivedRegionIds.value.filter(
-    (id) => id !== derivedRegion.id
-  );
+  // Remove region id from selected regions
+  selectedDerivedRegionIds.delete(derivedRegion.id);
 
   // Filter out region layer from active map layers
   const layer = getDerivedRegionLayer(derivedRegion.id);
