@@ -1,13 +1,71 @@
+from celery import shared_task
+
+import json
+import large_image
+from django_large_image import tilesource
+from pathlib import Path
+
 import re
+import shapely
+import tempfile
 
 from uvdat.core.models import Dataset, SimulationResult
 from uvdat.core.serializers import DatasetSerializer, SimulationResultSerializer
 
 
-def flood_scenario_1(result, network_dataset, elevation_dataset, flood_dataset):
+def get_network_node_elevations(network_nodes, elevation_dataset):
+    with tempfile.TemporaryDirectory() as tmp:
+        raster_path = Path(tmp, 'raster')
+        with open(raster_path, 'wb') as raster_file:
+            raster_file.write(elevation_dataset.raster_file.read())
+        source = large_image.open(raster_path)
+        data, data_format = source.getRegion(format='numpy')
+        data = data[:, :, 0]
+        metadata = tilesource.get_metadata(source)
+        source_bounds = metadata.get('bounds')
+
+        elevations = {}
+        for network_node in network_nodes:
+            # same logic as client-side tooltip
+            location = network_node.location
+            x_proportion = (location[0] - source_bounds.get('xmin')) / (
+                source_bounds.get('xmax') - source_bounds.get('xmin')
+            )
+            y_proportion = (location[1] - source_bounds.get('ymin')) / (
+                source_bounds.get('ymax') - source_bounds.get('ymin')
+            )
+            x_index = int(x_proportion * len(data[0]))
+            y_index = int(y_proportion * len(data))
+            elevations[network_node.id] = data[y_index, x_index]
+        return elevations
+
+
+@shared_task
+def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, flood_dataset):
+    result = SimulationResult.objects.get(id=simulation_result_id)
+    try:
+        network_dataset = Dataset.objects.get(id=network_dataset)
+        elevation_dataset = Dataset.objects.get(id=elevation_dataset)
+        flood_dataset = Dataset.objects.get(id=flood_dataset)
+    except Dataset.DoesNotExist:
+        return []
+
     disabled_nodes = []
-    print(result, network_dataset, elevation_dataset, flood_dataset)
-    return disabled_nodes
+    network_nodes = network_dataset.network_nodes.all()
+    flood_geodata = json.loads(flood_dataset.geodata_file.open().read().decode())
+    flood_areas = [
+        shapely.geometry.shape(feature['geometry']) for feature in flood_geodata['features']
+    ]
+    for network_node in network_nodes:
+        node_point = shapely.geometry.Point(*network_node.location)
+        if any(flood_area.contains(node_point) for flood_area in flood_areas):
+            disabled_nodes.append(network_node)
+
+    node_elevations = get_network_node_elevations(network_nodes, elevation_dataset)
+    disabled_nodes.sort(key=lambda n: node_elevations[n.id])
+
+    result.output_data = [n.id for n in disabled_nodes]
+    result.save()
 
 
 AVAILABLE_SIMULATIONS = [
@@ -77,6 +135,6 @@ def run_simulation(simulation_id: int, **kwargs):
         sim_result.save()
 
         simulation = simulation_matches[0]
-        simulation['func'](sim_result, **kwargs)
+        simulation['func'].delay(sim_result.id, **kwargs)
         return SimulationResultSerializer(sim_result).data
     return f"No simulation found with id {simulation_id}."
