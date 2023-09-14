@@ -50,13 +50,6 @@ export const rasterColormaps = [
 
 var rasterTooltipDataCache = {};
 
-export function getMapLayerById(layerId) {
-  return map.value
-    .getLayers()
-    .getArray()
-    .find((layer) => getUid(layer) === layerId);
-}
-
 /** Returns if a layer should be enabled based on showMapBaseLayer, activeMapLayerIds, and networkVis */
 function getLayerEnabled(layer) {
   // Check if layer is map base layer

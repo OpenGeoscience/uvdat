@@ -7,10 +7,12 @@ import {
   toggleNodeActive,
   updateVisibleLayers,
 } from "../utils";
+
+import { MapDataSource } from "@/data";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
 import {
   currentCity,
-  currentDataset,
+  currentMapDataSource,
   pollForProcessingDataset,
   map,
   networkVis,
@@ -27,53 +29,50 @@ export default {
     const showConfirmConvert = ref(false);
 
     function collapseOptionsPanel() {
-      currentDataset.value = undefined;
+      currentMapDataSource.value = undefined;
     }
 
     function populateRefs() {
-      opacity.value = currentDataset.value?.style?.opacity || 1;
-      colormap.value = currentDataset.value?.style?.colormap || "terrain";
+      const dataset = currentMapDataSource.value?.dataset;
+
+      opacity.value = dataset?.style?.opacity || 1;
+      colormap.value = dataset?.style?.colormap || "terrain";
       datasetRange.value =
-        currentDataset.value?.style?.data_range?.map((v) => Math.round(v)) ||
-        undefined;
+        dataset?.style?.data_range?.map((v) => Math.round(v)) || undefined;
       colormapRange.value = datasetRange.value;
     }
 
     function updateLayerOpacity() {
-      if (currentDataset.value) {
-        map.value
-          .getLayers()
-          .getArray()
-          .forEach((layer) => {
-            const layerDatasetId = layer.getProperties().datasetId;
-            if (layerDatasetId === currentDataset.value.id) {
-              layer.setOpacity(opacity.value);
-            }
-          });
+      if (currentMapDataSource.value === undefined) {
+        return;
       }
+
+      const layer = currentMapDataSource.value.getLayer();
+      layer.setOpacity(opacity.value);
     }
 
     function updateCurrentDatasetLayer() {
-      if (currentDataset.value) {
-        currentDataset.value.style.opacity = opacity.value;
-        currentDataset.value.style.colormap = colormap.value;
-        currentDataset.value.style.colormap_range = colormapRange.value;
-        map.value
-          .getLayers()
-          .getArray()
-          .forEach((layer) => {
-            const layerDatasetId = layer.getProperties().datasetId;
-            const layerNetwork = layer.getProperties().network;
-            if (
-              layerDatasetId === currentDataset.value.id &&
-              (!networkVis.value ||
-                !layerNetwork ||
-                networkVis.value?.id === layerNetwork)
-            ) {
-              map.value.removeLayer(layer);
-              addDatasetLayerToMap(currentDataset.value, layer.getZIndex());
-            }
-          });
+      if (currentMapDataSource.value?.dataset === undefined) {
+        return;
+      }
+
+      currentMapDataSource.value.dataset.style.opacity = opacity.value;
+      currentMapDataSource.value.dataset.style.colormap = colormap.value;
+      currentMapDataSource.value.dataset.style.colormap_range =
+        colormapRange.value;
+
+      const layer = currentMapDataSource.value.getLayer();
+      const layerNetwork = layer.getProperties().network;
+      if (
+        !layerNetwork ||
+        !networkVis.value ||
+        networkVis.value?.id === layerNetwork
+      ) {
+        map.value.removeLayer(layer);
+        addDatasetLayerToMap(
+          currentMapDataSource.value.dataset,
+          layer.getZIndex()
+        );
       }
     }
 
@@ -88,28 +87,35 @@ export default {
     }
 
     function toggleNetworkVis() {
-      if (currentDataset.value) {
-        const updated = updateVisibleLayers();
-        if (
-          !updated.shown.some(
-            (l) => l.getProperties().datasetId === networkVis.value.id
-          )
-        ) {
-          // no existing one shown, create a new network layer
-          getDatasetNetwork(currentDataset.value.id).then((nodes) => {
-            if (nodes.length && networkVis.value) {
-              networkVis.value.nodes = nodes;
-              addNetworkLayerToMap(currentDataset.value, nodes);
-            }
-          });
-        }
+      if (currentMapDataSource.value?.dataset === undefined) {
+        return;
+      }
+
+      const { dataset } = currentMapDataSource.value;
+      const updated = updateVisibleLayers();
+      if (
+        !updated.shown.some(
+          (l) => l.getProperties().datasetId === networkVis.value.id
+        )
+      ) {
+        // no existing one shown, create a new network layer
+        getDatasetNetwork(dataset.id).then((nodes) => {
+          if (nodes.length && networkVis.value) {
+            networkVis.value.nodes = nodes;
+            addNetworkLayerToMap(dataset, nodes);
+          }
+        });
       }
     }
 
     function runConversion() {
+      if (currentMapDataSource.value?.dataset === undefined) {
+        return;
+      }
       showConfirmConvert.value = false;
-      convertDataset(currentDataset.value.id).then((dataset) => {
-        currentDataset.value = dataset;
+      const { dataset } = currentMapDataSource.value;
+      convertDataset(dataset.id).then((dataset) => {
+        currentMapDataSource.value = new MapDataSource({ dataset });
         currentCity.value.datasets = currentCity.value.datasets.map((d) =>
           d.id === dataset.id ? dataset : d
         );
@@ -118,14 +124,14 @@ export default {
     }
 
     onMounted(populateRefs);
-    watch(currentDataset, populateRefs);
+    watch(currentMapDataSource, populateRefs);
     watch(opacity, updateLayerOpacity);
     watch(colormap, updateCurrentDatasetLayer);
     watch(colormapRange, updateCurrentDatasetLayer);
 
     return {
       collapseOptionsPanel,
-      currentDataset,
+      currentMapDataSource,
       rasterColormaps,
       opacity,
       colormap,
@@ -146,13 +152,13 @@ export default {
 </script>
 
 <template>
-  <v-card class="fill-height" v-if="currentDataset">
+  <v-card class="fill-height" v-if="currentMapDataSource">
     <v-icon class="close-icon" @click="collapseOptionsPanel">
       mdi-close
     </v-icon>
     <v-card-title class="medium-title">Options</v-card-title>
     <v-card-subtitle class="wrap-subtitle">
-      {{ currentDataset.name }}
+      {{ currentMapDataSource.getName() }}
     </v-card-subtitle>
     <v-divider class="mb-2" />
 
@@ -166,7 +172,7 @@ export default {
         step="0.05"
       />
 
-      <div v-if="currentDataset.raster_file">
+      <div v-if="currentMapDataSource.dataset?.raster_file">
         <v-select
           v-model="colormap"
           dense
@@ -209,15 +215,15 @@ export default {
         </v-range-slider>
         <v-switch
           v-model="rasterTooltip"
-          :value="currentDataset.id"
+          :value="currentMapDataSource.dataset?.id"
           label="Show value tooltip"
         />
       </div>
 
-      <div v-if="currentDataset.network">
+      <div v-if="currentMapDataSource.dataset?.network">
         <v-switch
           v-model="networkVis"
-          :value="currentDataset"
+          :value="currentMapDataSource.dataset"
           label="Show as node network"
           @change="toggleNetworkVis"
         />

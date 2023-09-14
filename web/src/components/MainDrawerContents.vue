@@ -2,7 +2,7 @@
 import draggable from "vuedraggable";
 import {
   currentCity,
-  currentDataset,
+  currentMapDataSource,
   activeChart,
   availableCharts,
   activeSimulation,
@@ -13,11 +13,13 @@ import {
   activeMapLayerIds,
 } from "@/store";
 
+import { MapDataSource } from "@/data";
 import {
   addDatasetToMap,
   addDerivedRegionToMap,
   hideDatasetFromMap,
   hideDerivedRegionFromMap,
+  getMapLayerById,
 } from "@/layers";
 import { ref, computed, onMounted, watch } from "vue";
 import {
@@ -26,7 +28,7 @@ import {
   getCitySimulations,
   listDerivedRegions,
 } from "@/api/rest";
-import { updateVisibleLayers, getMapLayerById } from "../utils";
+import { updateVisibleLayers } from "../utils";
 
 export default {
   components: {
@@ -56,7 +58,6 @@ export default {
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function fetchDatasets() {
-      currentDataset.value = undefined;
       getCityDatasets(currentCity.value.id).then((datasets) => {
         currentCity.value.datasets = datasets;
       });
@@ -107,8 +108,38 @@ export default {
       updateVisibleLayers();
     }
 
-    function expandOptionsPanel(dataset) {
-      currentDataset.value = dataset;
+    function expandOptionsPanelFromDataset(dataset) {
+      currentMapDataSource.value = new MapDataSource({ dataset });
+    }
+
+    function expandOptionsPanelFromLayer(layerId) {
+      const layer = getMapLayerById(layerId);
+      const args = {};
+
+      // Add dataset if applicable
+      const datasetId = layer.get("datasetId");
+      if (datasetId !== undefined) {
+        const ds = currentCity.value.datasets.find((ds) => ds.id === datasetId);
+        if (ds === undefined) {
+          throw new Error("Dataset not found!");
+        }
+
+        args.dataset = ds;
+      }
+
+      // Add region if applicable
+      const regionId = layer.get("derivedRegionId");
+      if (regionId !== undefined) {
+        const region = availableDerivedRegions.value.find(
+          (r) => r.id === regionId
+        );
+        if (region === undefined) {
+          throw new Error("Region not found!");
+        }
+        args.derivedRegion = region;
+      }
+
+      currentMapDataSource.value = new MapDataSource(args);
     }
 
     function fetchCharts() {
@@ -150,7 +181,8 @@ export default {
       availableLayerTree,
       activeLayerTableHeaders,
       reorderLayers,
-      expandOptionsPanel,
+      expandOptionsPanelFromDataset,
+      expandOptionsPanelFromLayer,
       activeChart,
       availableCharts,
       fetchCharts,
@@ -208,7 +240,7 @@ export default {
                     v-show="selectedDatasetIds.has(dataset.id)"
                     size="small"
                     class="expand-icon ml-1"
-                    @click.prevent="expandOptionsPanel(dataset)"
+                    @click.prevent="expandOptionsPanelFromDataset(dataset)"
                   >
                     mdi-cog
                   </v-icon>
@@ -247,11 +279,7 @@ export default {
               <v-icon
                 size="small"
                 class="expand-icon"
-                @click="
-                  expandOptionsPanel(
-                    currentCity.datasets.find((d) => d.id === element)
-                  )
-                "
+                @click="expandOptionsPanelFromLayer(element)"
               >
                 mdi-cog
               </v-icon>

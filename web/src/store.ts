@@ -4,17 +4,18 @@ import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
 import { computed, reactive, ref, watch } from "vue";
-import { City, Dataset, DerivedRegion, Region } from "./types.js";
+import { City, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
 import { Layer } from "ol/layer.js";
 import { getUid } from "ol";
+import { MapDataSource } from "./data.js";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
 
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
-export const currentDataset = ref<Dataset>();
+export const currentMapDataSource = ref<MapDataSource>();
 export const selectedDatasetIds = reactive(new Set<number>());
 
 export const map = ref();
@@ -114,4 +115,4 @@ export function currentDatasetChanged() {
   rasterTooltip.value = undefined;
 }
 
-watch(currentDataset, currentDatasetChanged);
+watch(currentMapDataSource, currentDatasetChanged);

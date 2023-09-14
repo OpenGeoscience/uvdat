@@ -2,7 +2,7 @@
 import { defineComponent, ref, onMounted } from "vue";
 import {
   currentError,
-  currentDataset,
+  currentMapDataSource,
   currentCity,
   cities,
   loading,
@@ -30,12 +30,12 @@ export default defineComponent({
     const drawer = ref(true);
 
     onMounted(loadCities);
-    currentDataset.value = undefined;
+    currentMapDataSource.value = undefined;
 
     return {
       drawer,
       currentCity,
-      currentDataset,
+      currentMapDataSource,
       cities,
       loading,
       currentError,
@@ -92,7 +92,7 @@ export default defineComponent({
       <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
-      :model-value="currentDataset !== undefined"
+      :model-value="currentMapDataSource !== undefined"
       permanent
       width="250"
       location="right"
@@ -103,7 +103,7 @@ export default defineComponent({
     <div
       :class="
         drawer
-          ? currentDataset
+          ? currentMapDataSource
             ? 'main-area shifted-2'
             : 'main-area shifted-1'
           : 'main-area'

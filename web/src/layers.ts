@@ -1,5 +1,5 @@
 import {
-  currentDataset,
+  currentMapDataSource,
   selectedDatasetIds,
   selectedDerivedRegionIds,
   activeMapLayerIds,
@@ -18,11 +18,18 @@ import { getUid } from "ol/util";
 // Datasets
 ///////////
 
-function getDatasetLayer(datasetId: number): Layer | undefined {
+export function getDatasetLayer(datasetId: number): Layer | undefined {
   return map.value
     .getLayers()
     .getArray()
     .find((layer: Layer) => layer.get("datasetId") === datasetId);
+}
+
+export function getMapLayerById(layerId: string) {
+  return map.value
+    .getLayers()
+    .getArray()
+    .find((layer: Layer) => getUid(layer) === layerId);
 }
 
 export function addDatasetToMap(dataset: Dataset) {
@@ -63,9 +70,9 @@ export function hideDatasetFromMap(dataset: Dataset) {
   // Re-order layers
   updateVisibleLayers();
 
-  // If currentDataset was the de-selected dataset, un-set it
-  if (currentDataset.value?.id === dataset.id) {
-    currentDataset.value = undefined;
+  // If current data source was the de-selected dataset, un-set it
+  if (currentMapDataSource.value?.dataset?.id === dataset.id) {
+    currentMapDataSource.value = undefined;
   }
 }
 
@@ -73,7 +80,9 @@ export function hideDatasetFromMap(dataset: Dataset) {
 // Derived Regions
 //////////////////
 
-function getDerivedRegionLayer(derivedRegionId: number): Layer | undefined {
+export function getDerivedRegionLayer(
+  derivedRegionId: number
+): Layer | undefined {
   return map.value
     .getLayers()
     .getArray()
@@ -119,4 +128,9 @@ export function hideDerivedRegionFromMap(derivedRegion: DerivedRegion) {
 
   // Re-order layers
   updateVisibleLayers();
+
+  // If current data source was the de-selected dataset, un-set it
+  if (currentMapDataSource.value?.derivedRegion?.id === derivedRegion.id) {
+    currentMapDataSource.value = undefined;
+  }
 }
