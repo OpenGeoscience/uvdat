@@ -76,7 +76,13 @@ export default {
       }
     }
 
-    // TODO: Fix opening expansion panels when enabling layers
+    // If new derived regions added, open panel
+    watch(availableDerivedRegions, (availableRegs) => {
+      if (availableRegs.length && !openPanels.value.includes(1)) {
+        openPanels.value.push(1);
+      }
+    });
+
     function toggleDataset(dataset) {
       if (selectedDatasetIds.has(dataset.id)) {
         hideDatasetFromMap(dataset);

@@ -11,6 +11,7 @@ import {
   deactivatedNodes,
   networkVis,
   selectedDatasetIds,
+  availableDerivedRegions,
 } from "@/store";
 import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
@@ -18,7 +19,7 @@ import type { Layer } from "ol/layer";
 import Control from "ol/control/Control";
 import type { Region } from "@/types";
 
-import { postDerivedRegion } from "@/api/rest";
+import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
 
 // OpenLayers variables
 const tooltip = ref();
@@ -142,7 +143,7 @@ function removeRegionFromGrouping() {
   }
 }
 
-function createDerivedRegion() {
+async function createDerivedRegion() {
   if (selectedRegions.value.length === 0) {
     throw new Error("Cannot created derived region with no selected regions");
   }
@@ -151,12 +152,16 @@ function createDerivedRegion() {
   }
 
   const city = selectedRegions.value[0].city;
-  postDerivedRegion(
+  await postDerivedRegion(
     newRegionName.value,
     city,
     selectedRegions.value.map((reg) => reg.pk),
     regionGroupingType.value
   );
+
+  // Close dialog
+  cancelRegionGrouping();
+  availableDerivedRegions.value = await listDerivedRegions();
 }
 
 function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
