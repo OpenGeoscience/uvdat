@@ -261,9 +261,9 @@ export default {
   position: absolute;
   bottom: 10px;
   right: 10px;
-  width: 800px;
+  width: 600px;
   max-width: calc(100% - 20px);
-  max-height: 90%;
+  max-height: 50%;
   overflow: auto;
 }
 </style>

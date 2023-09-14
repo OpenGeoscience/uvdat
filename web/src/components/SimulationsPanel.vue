@@ -2,14 +2,19 @@
 import { ref, watch } from "vue";
 import { activeSimulation, currentCity, selectedDatasetIds } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
+import NodeFailureAnimation from "./NodeFailureAnimation.vue";
 
 export default {
+  components: {
+    NodeFailureAnimation,
+  },
   setup() {
     const tab = ref();
     const activeResult = ref();
     const inputForm = ref();
     const selectedInputs = ref({});
     const availableResults = ref([]);
+    const outputPoll = ref();
 
     function run() {
       inputForm.value.validate().then(({ valid }) => {
@@ -59,9 +64,31 @@ export default {
       selectedDatasetIds.value = [dataset.id, ...selectedDatasetIds.value];
     }
 
+    function pollForActiveDatasetOutput() {
+      if (!availableResults.value) {
+        clearInterval(outputPoll.value);
+        outputPoll.value = undefined;
+      }
+      const targetResult = availableResults.value.find(
+        (r) => r.id == activeResult.value
+      );
+      if (targetResult && !targetResult.output_data) {
+        fetchResults();
+      } else {
+        clearInterval(outputPoll.value);
+        outputPoll.value = undefined;
+      }
+    }
+
     watch(tab, () => {
       if (tab.value === "old") {
         fetchResults();
+      }
+    });
+
+    watch(activeResult, () => {
+      if (activeResult.value && !activeResult.value.output_data) {
+        outputPoll.value = setInterval(pollForActiveDatasetOutput, 3000);
       }
     });
 
@@ -72,6 +99,7 @@ export default {
       inputForm,
       selectedInputs,
       availableResults,
+      outputPoll,
       run,
       timestampToTitle,
       resultInputArgs,
@@ -120,13 +148,20 @@ export default {
             hide-details="auto"
             class="my-1"
           />
-          <v-btn @click="run" style="width: 100%" variant="tonal"
-            >Run Simulation</v-btn
-          >
+          <v-btn @click="run" style="width: 100%" variant="tonal">
+            Run Simulation
+          </v-btn>
         </v-form>
       </v-window-item>
       <v-window-item value="old">
-        <v-expansion-panels v-model="activeResult">
+        <div
+          v-if="availableResults.length === 0"
+          style="width: 100%; text-align: center"
+          class="pa-3"
+        >
+          No previous runs of this simulation type exist.
+        </div>
+        <v-expansion-panels v-else v-model="activeResult" variant="accordion">
           <v-expansion-panel
             v-for="result in availableResults"
             :key="result.id"
@@ -154,6 +189,34 @@ export default {
                   </tr>
                 </tbody>
               </v-table>
+              <div
+                v-if="!result.output_data && outputPoll"
+                style="width: 100%; text-align: center"
+              >
+                <v-progress-circular indeterminate />
+                Waiting for simulation to complete...
+              </div>
+              <div v-else>
+                <v-card-title>Results</v-card-title>
+                <div
+                  v-if="
+                    activeSimulation.output_type === 'node_failure_animation'
+                  "
+                  class="pa-5"
+                >
+                  <div v-if="result.output_data.length === 0">
+                    No nodes are affected in this scenario.
+                  </div>
+                  <node-failure-animation
+                    v-else
+                    :nodeFailures="result.output_data"
+                  />
+                </div>
+                <div v-else>
+                  Unknown simulation output type
+                  {{ activeSimulation.output_type }}
+                </div>
+              </div>
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
@@ -168,9 +231,9 @@ export default {
   position: absolute;
   top: 10px;
   right: 10px;
-  width: 800px;
+  width: 600px;
   max-width: calc(100% - 20px);
-  max-height: 90%;
+  max-height: 45%;
   overflow: auto;
 }
 </style>

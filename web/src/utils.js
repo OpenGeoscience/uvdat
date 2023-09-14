@@ -533,15 +533,7 @@ export function displayRasterTooltip(evt, tooltip, overlay) {
   }
 }
 
-export function toggleNodeActive(nodeId, button = null) {
-  if (deactivatedNodes.value.includes(nodeId)) {
-    deactivatedNodes.value = deactivatedNodes.value.filter((n) => n !== nodeId);
-    if (button) button.innerHTML = "Deactivate Node";
-  } else {
-    deactivatedNodes.value.push(nodeId);
-    if (button) button.innerHTML = "Activate Node";
-  }
-
+export function deactivatedNodesUpdated() {
   currentNetworkGCC.value = undefined;
   getNetworkGCC(networkVis.value.id, deactivatedNodes.value).then((gcc) => {
     currentNetworkGCC.value = gcc;
@@ -556,4 +548,15 @@ export function toggleNodeActive(nodeId, button = null) {
     });
   });
   updateNetworkStyle();
+}
+
+export function toggleNodeActive(nodeId, button = null) {
+  if (deactivatedNodes.value.includes(nodeId)) {
+    deactivatedNodes.value = deactivatedNodes.value.filter((n) => n !== nodeId);
+    if (button) button.innerHTML = "Deactivate Node";
+  } else {
+    deactivatedNodes.value.push(nodeId);
+    if (button) button.innerHTML = "Activate Node";
+  }
+  deactivatedNodesUpdated();
 }
