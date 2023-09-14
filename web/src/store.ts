@@ -3,9 +3,11 @@ import TileLayer from "ol/layer/Tile.js";
 import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
-import { ref, watch } from "vue";
-import { City, Dataset, Region } from "./types.js";
+import { computed, ref, watch } from "vue";
+import { City, Dataset, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
+import { Layer } from "ol/layer.js";
+import { getUid } from "ol";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
@@ -16,7 +18,15 @@ export const currentDataset = ref<Dataset>();
 export const selectedDatasetIds = ref<number[]>([]);
 
 export const map = ref();
-export const mapLayers = ref();
+export const activeMapLayerIds = ref<string[]>([]);
+export const activeMapLayers = computed<Layer[]>(() => {
+  const activeLayerIdSet = new Set(activeMapLayerIds.value);
+  return map.value
+    .getLayers()
+    .getArray()
+    .filter((layer: Layer) => activeLayerIdSet.has(getUid(layer)));
+});
+
 export const showMapBaseLayer = ref(true);
 export const rasterTooltip = ref();
 
@@ -31,6 +41,8 @@ export const regionGroupingType = ref<"intersection" | "union" | null>(null);
 export const regionIntersectionActive = ref(false);
 export const regionUnionActive = ref(false);
 export const selectedRegions = ref<Region[]>([]);
+export const availableDerivedRegions = ref<DerivedRegion[]>([]);
+export const selectedDerivedRegionIds = ref<number[]>([]);
 
 // Network
 export const networkVis = ref();
@@ -58,18 +70,20 @@ export function clearMap() {
   if (!currentCity.value || !map.value) {
     return;
   }
-  mapLayers.value = [];
   map.value.setView(
     new View({
       center: olProj.fromLonLat(currentCity.value.center),
       zoom: currentCity.value.default_zoom,
     })
   );
-  map.value.addLayer(
+  map.value.setLayers([
     new TileLayer({
       source: new OSM(),
-    })
-  );
+      properties: {
+        baseLayer: true,
+      },
+    }),
+  ]);
 }
 watch(currentCity, clearMap);
 

@@ -23,6 +23,15 @@ export interface Region {
   properties: { [key: string]: unknown };
 }
 
+export interface DerivedRegion {
+  id: number;
+  name: string;
+  city: number;
+  properties: { [key: string]: unknown };
+  source_operation: "UNION" | "INTERSECTION";
+  source_regions: number[];
+}
+
 export interface City {
   id: number;
   name: string;

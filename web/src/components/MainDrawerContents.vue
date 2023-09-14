@@ -8,11 +8,25 @@ import {
   activeSimulation,
   availableSimulations,
   selectedDatasetIds,
+  availableDerivedRegions,
+  selectedDerivedRegionIds,
+  activeMapLayerIds,
 } from "@/store";
+
+import {
+  addDatasetToMap,
+  addDerivedRegionToMap,
+  hideDatasetFromMap,
+  hideDerivedRegionFromMap,
+} from "@/layers";
 import { ref, computed, onMounted, watch } from "vue";
-import { addDatasetLayerToMap } from "@/utils.js";
-import { getCityDatasets, getCityCharts, getCitySimulations } from "@/api/rest";
-import { updateVisibleLayers } from "../utils";
+import {
+  getCityDatasets,
+  getCityCharts,
+  getCitySimulations,
+  listDerivedRegions,
+} from "@/api/rest";
+import { updateVisibleLayers, getMapLayerById } from "../utils";
 
 export default {
   components: {
@@ -52,34 +66,27 @@ export default {
       if (selectedDatasetIds.value.length) {
         openPanels.value = [0, 1];
       }
-      const updated = updateVisibleLayers();
-      selectedDatasetIds.value.forEach(async (datasetId, index) => {
-        if (
-          !updated.shown.some((l) => l.getProperties().datasetId === datasetId)
-        ) {
-          addDatasetLayerToMap(
-            currentCity.value.datasets.find((d) => d.id === datasetId),
-            selectedDatasetIds.value.length - index
-          );
-        }
-      });
     }
 
-    // function intersectRegions() {}
-
+    // TODO: Fix opening expansion panels when enabling layers
     function toggleDataset(dataset) {
-      const enable = !selectedDatasetIds.value.includes(dataset.id);
-      selectedDatasetIds.value = selectedDatasetIds.value.filter(
-        (id) => id !== dataset.id
-      );
-      if (enable) {
-        selectedDatasetIds.value = [dataset.id, ...selectedDatasetIds.value];
-      } else if (
-        currentDataset.value &&
-        dataset.id === currentDataset.value.id
-      ) {
-        currentDataset.value = undefined;
+      if (selectedDatasetIds.value.includes(dataset.id)) {
+        hideDatasetFromMap(dataset);
+      } else {
+        addDatasetToMap(dataset);
       }
+    }
+
+    function toggleDerivedRegion(region) {
+      if (selectedDerivedRegionIds.value.includes(region.id)) {
+        hideDerivedRegionFromMap(region);
+      } else {
+        addDerivedRegionToMap(region);
+      }
+    }
+
+    function getLayerName(layerId) {
+      return getMapLayerById(layerId).get("name");
     }
 
     function reorderLayers() {
@@ -114,6 +121,9 @@ export default {
 
     onMounted(fetchCharts);
     onMounted(fetchSimulations);
+    onMounted(async () => {
+      availableDerivedRegions.value = await listDerivedRegions();
+    });
     watch(selectedDatasetIds, updateActiveDatasets);
 
     return {
@@ -123,7 +133,6 @@ export default {
       openPanels,
       openCategories,
       toggleDataset,
-      updateActiveDatasets,
       availableLayerTree,
       activeLayerTableHeaders,
       reorderLayers,
@@ -136,6 +145,11 @@ export default {
       availableSimulations,
       fetchSimulations,
       activateSimulation,
+      availableDerivedRegions,
+      selectedDerivedRegionIds,
+      toggleDerivedRegion,
+      activeMapLayerIds,
+      getLayerName,
     };
   },
 };
@@ -143,44 +157,6 @@ export default {
 
 <template>
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
-    <v-expansion-panel title="Active Layers">
-      <v-expansion-panel-text>
-        <draggable
-          v-model="selectedDatasetIds"
-          @change="reorderLayers"
-          item-key="id"
-          item-value="id"
-        >
-          <template #item="{ element }">
-            <v-card class="px-3 py-1 d-flex">
-              <v-icon class="mr-3">mdi-drag-horizontal-variant</v-icon>
-              <div style="width: calc(100% - 70px)">
-                {{ currentCity.datasets.find((d) => d.id === element).name }}
-              </div>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="
-                  expandOptionsPanel(
-                    currentCity.datasets.find((d) => d.id === element)
-                  )
-                "
-              >
-                mdi-cog
-              </v-icon>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="toggleDataset({ id: element })"
-              >
-                mdi-close
-              </v-icon>
-            </v-card>
-          </template>
-        </draggable>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
     <v-expansion-panel>
       <v-expansion-panel-title>
         <v-icon @click.stop="fetchDatasets" class="mr-2">mdi-refresh</v-icon>
@@ -198,34 +174,6 @@ export default {
             :key="category.id"
           >
             <v-expansion-panel-text>
-              <!-- <div v-if="category.name === 'region'">
-                <v-tooltip text="Intersect datasets" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      class="mx-1"
-                      icon
-                      size="small"
-                      tooltip
-                      v-bind="props"
-                    >
-                      <v-icon>mdi-vector-intersection</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-                <v-tooltip text="Union datasets" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      class="mx-1"
-                      icon
-                      size="small"
-                      tooltip
-                      v-bind="props"
-                    >
-                      <v-icon>mdi-vector-union</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </div> -->
               <v-checkbox
                 v-for="dataset in category.children"
                 :model-value="selectedDatasetIds.includes(dataset.id)"
@@ -255,6 +203,48 @@ export default {
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel title="Derived Regions">
+      <v-expansion-panel-text>
+        <v-checkbox
+          v-for="region in availableDerivedRegions"
+          :key="region.id"
+          :label="region.name"
+          hide-details
+          density="compact"
+          @click="toggleDerivedRegion(region)"
+        />
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel title="Active Layers">
+      <v-expansion-panel-text>
+        <draggable
+          v-model="activeMapLayerIds"
+          @change="reorderLayers"
+          item-key="id"
+          item-value="id"
+        >
+          <template #item="{ element }">
+            <v-card class="px-3 py-1">
+              <v-icon>mdi-drag-horizontal-variant</v-icon>
+              <v-icon
+                size="small"
+                class="expand-icon"
+                @click="
+                  expandOptionsPanel(
+                    currentCity.datasets.find((d) => d.id === element)
+                  )
+                "
+              >
+                mdi-cog
+              </v-icon>
+              {{ getLayerName(element) }}
+            </v-card>
+          </template>
+        </draggable>
       </v-expansion-panel-text>
     </v-expansion-panel>
 

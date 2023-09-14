@@ -96,6 +96,11 @@ export async function listDerivedRegions() {
   return res.data.results;
 }
 
+export async function getDerivedRegion(regionId: number) {
+  const res = await apiClient.get(`derived_regions/${regionId}/`);
+  return res.data;
+}
+
 export async function postDerivedRegion(
   name: string,
   city: number,

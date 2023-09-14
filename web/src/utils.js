@@ -7,6 +7,7 @@ import VectorTileSource from "ol/source/VectorTile.js";
 import GeoJSON from "ol/format/GeoJSON.js";
 import { Fill, Stroke, Circle, Style } from "ol/style.js";
 import { Feature } from "ol";
+import { getUid } from "ol/util";
 import { LineString, Point } from "ol/geom";
 import { fromLonLat } from "ol/proj";
 
@@ -16,13 +17,13 @@ import {
   map,
   showMapBaseLayer,
   currentCity,
-  selectedDatasetIds,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
   currentNetworkGCC,
   availableCharts,
   activeChart,
+  activeMapLayerIds,
 } from "@/store";
 
 export const rasterColormaps = [
@@ -49,45 +50,68 @@ export const rasterColormaps = [
 
 var rasterTooltipDataCache = {};
 
+export function getMapLayerById(layerId) {
+  return map.value
+    .getLayers()
+    .getArray()
+    .find((layer) => getUid(layer) === layerId);
+}
+
+/** Returns if a layer should be enabled based on showMapBaseLayer, activeMapLayerIds, and networkVis */
+function getLayerEnabled(layer) {
+  // Check if layer is map base layer
+  if (layer.getProperties().baseLayer) {
+    return showMapBaseLayer.value;
+  }
+
+  // Check if layer is enabled
+  const layerId = getUid(layer);
+  let layerEnabled = activeMapLayerIds.value.includes(layerId);
+  if (networkVis.value) {
+    const layerDatasetId = layer.getProperties().datasetId;
+    if (layerDatasetId === networkVis.value.id) {
+      layerEnabled = layerEnabled && layer.getProperties().network;
+    }
+  }
+
+  return layerEnabled;
+}
+
+/**
+ * Shows/hides layers based on the getLayerEnabled function.
+ *
+ * Note: This only modifies layer visibility. It does not actually enable or disable any map layers directly.
+ * */
 export function updateVisibleLayers() {
   const layerState = {
     shown: [],
     hidden: [],
   };
   const allLayers = map.value?.getLayers()?.getArray();
-  if (allLayers) {
-    allLayers.forEach((layer) => {
-      const layerDatasetId = layer.getProperties().datasetId;
-      let layerEnabled = selectedDatasetIds.value.includes(layerDatasetId);
-
-      if (!layerDatasetId) {
-        // map base layer does not have dataset id
-        layerEnabled = showMapBaseLayer.value;
-      }
-
-      if (networkVis.value) {
-        if (layerDatasetId === networkVis.value.id) {
-          layerEnabled = layerEnabled && layer.getProperties().network;
-        }
-      } else if (layer.getProperties().network) {
-        layerEnabled = false;
-      }
-
-      if (layerEnabled) {
-        layer.setVisible(true);
-        layerState.shown.push(layer);
-        const layerIndex = selectedDatasetIds.value.findIndex(
-          (id) => id === layerDatasetId
-        );
-        layer.setZIndex(
-          layerDatasetId ? selectedDatasetIds.value.length - layerIndex : 0
-        );
-      } else {
-        layer.setVisible(false);
-        layerState.hidden.push(layer);
-      }
-    });
+  if (!allLayers) {
+    return layerState;
   }
+
+  allLayers.forEach((layer) => {
+    const layerEnabled = getLayerEnabled(layer);
+    if (!layerEnabled) {
+      layer.setVisible(false);
+      layerState.hidden.push(layer);
+      return;
+    }
+
+    // Set layer visible and z-index
+    layer.setVisible(true);
+    layerState.shown.push(layer);
+    const layerId = getUid(layer);
+    const layerIndex = activeMapLayerIds.value.findIndex(
+      (id) => id === layerId
+    );
+    layer.setZIndex(
+      layerIndex > -1 ? activeMapLayerIds.value.length - layerIndex : 0
+    );
+  });
+
   return layerState;
 }
 
@@ -145,11 +169,33 @@ function createStyle(args) {
   }
 }
 
+export function addDerivedRegionLayerToMap(region) {
+  const layer = new VectorLayer({
+    properties: {
+      derivedRegionId: region.id,
+      derivedRegion: region,
+      name: region.name,
+    },
+    style: (feature) =>
+      createStyle({
+        type: feature.getGeometry().getType(),
+      }),
+    source: new VectorSource({
+      format: new GeoJSON(),
+      url: `${baseURL}derived_regions/${region.id}/boundary/`,
+    }),
+  });
+
+  // Add to map
+  map.value.addLayer(layer);
+  return layer;
+}
+
 export function addDatasetLayerToMap(dataset, zIndex) {
   if (dataset.processing) {
     return;
   }
-  let layer = undefined;
+  let layer;
 
   // Add raster data
   if (dataset.raster_file) {
@@ -171,9 +217,9 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     const tileParamString = Object.keys(tileParams)
       .map((key) => key + "=" + tileParams[key])
       .join("&");
-
     layer = new TileLayer({
       properties: {
+        name: dataset.name,
         datasetId: dataset.id,
         dataset,
       },
@@ -183,33 +229,14 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       opacity: dataset.style?.opacity || 1,
       zIndex,
     });
+
     cacheRasterData(dataset.id);
-  }
-
-  // Use tiled GeoJSON if it exists
-  else if (dataset.vector_tiles_file) {
-    layer = new VectorTileLayer({
-      source: new VectorTileSource({
-        format: new GeoJSON(),
-        url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
-      }),
-      properties: {
-        datasetId: dataset.id,
-        dataset,
-      },
-      style: (feature) =>
-        createStyle({
-          type: feature.getGeometry().getType(),
-          colors: feature.get("colors"),
-        }),
-      opacity: dataset.style?.opacity || 1,
-      zIndex,
-    });
-
+  } else if (dataset.geodata_file) {
     // Use VectorLayer if dataset category is "region"
     if (dataset.category === "region") {
       layer = new VectorLayer({
         properties: {
+          name: dataset.name,
           datasetId: dataset.id,
           dataset,
         },
@@ -224,37 +251,32 @@ export function addDatasetLayerToMap(dataset, zIndex) {
           url: `${baseURL}datasets/${dataset.id}/regions`,
         }),
       });
-    }
-    // Add to map
-    map.value.addLayer(layer);
-  }
-
-  // Default to vector layer
-  else {
-    let dataURL = dataset.geodata_file;
-    if (dataset.category === "region") {
-      dataURL = `${baseURL}datasets/${dataset.id}/regions`;
-    }
-    layer = new VectorLayer({
-      properties: {
-        datasetId: dataset.id,
-        dataset,
-      },
-      zIndex,
-      style: (feature) =>
-        createStyle({
-          type: feature.getGeometry().getType(),
-          colors: feature.getProperties().colors,
+    } else {
+      // Use vector tiles
+      layer = new VectorTileLayer({
+        source: new VectorTileSource({
+          format: new GeoJSON(),
+          url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
         }),
-      source: new VectorSource({
-        format: new GeoJSON(),
-        url: dataURL,
-      }),
-    });
+        properties: {
+          name: dataset.name,
+          datasetId: dataset.id,
+          dataset,
+        },
+        style: (feature) =>
+          createStyle({
+            type: feature.getGeometry().getType(),
+            colors: feature.get("colors"),
+          }),
+        opacity: dataset.style?.opacity || 1,
+        zIndex,
+      });
+    }
   }
 
   // Add to map
   map.value.addLayer(layer);
+  return layer;
 }
 
 function getNetworkFeatureStyle(alpha = "ff", highlight = false) {

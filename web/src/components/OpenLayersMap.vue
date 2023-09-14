@@ -203,7 +203,6 @@ function createMap() {
   });
 
   // Add overlay to display contextual info
-  console.log(map.value.getView().getCenter());
   contextControl = new Control({ element: context.value });
   contextControl.setMap(map.value);
 
