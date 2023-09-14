@@ -62,6 +62,14 @@ export default {
       });
     }
 
+    // Ensure that if any layers are active, the "active layers" panel is open
+    // Since the "active layers" panel is the third panel, use index 2 to control it
+    watch(activeMapLayerIds, (activeLayerIds) => {
+      if (activeLayerIds.length && !openPanels.value.includes(2)) {
+        openPanels.value.push(2);
+      }
+    });
+
     function updateActiveDatasets() {
       if (selectedDatasetIds.value.length) {
         openPanels.value = [0, 1];
