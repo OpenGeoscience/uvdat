@@ -547,7 +547,6 @@ export function deactivatedNodesUpdated() {
       }
     });
   });
-  updateNetworkStyle();
 }
 
 export function toggleNodeActive(nodeId, button = null) {
