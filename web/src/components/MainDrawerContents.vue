@@ -11,14 +11,14 @@ import {
   availableDerivedRegions,
   selectedDerivedRegionIds,
   activeMapLayerIds,
+  availableMapDataSources,
+  selectedDataSourceIds,
 } from "@/store";
 
 import { MapDataSource } from "@/data";
 import {
-  addDatasetToMap,
-  addDerivedRegionToMap,
-  hideDatasetFromMap,
-  hideDerivedRegionFromMap,
+  addDataSourceToMap,
+  hideDataSourceFromMap,
   getMapLayerById,
 } from "@/layers";
 import { ref, computed, onMounted, watch } from "vue";
@@ -84,24 +84,28 @@ export default {
       }
     });
 
-    function toggleDataset(dataset) {
-      if (selectedDatasetIds.has(dataset.id)) {
-        hideDatasetFromMap(dataset);
+    function toggleDataSource(dataSource) {
+      if (selectedDataSourceIds.has(dataSource.getUid())) {
+        hideDataSourceFromMap(dataSource);
       } else {
-        addDatasetToMap(dataset);
+        addDataSourceToMap(dataSource);
       }
     }
 
-    function toggleDerivedRegion(region) {
-      if (selectedDerivedRegionIds.has(region.id)) {
-        hideDerivedRegionFromMap(region);
-      } else {
-        addDerivedRegionToMap(region);
-      }
+    function toggleDataset(dataset) {
+      toggleDataSource(new MapDataSource({ dataset }));
+    }
+
+    function toggleDerivedRegion(derivedRegion) {
+      toggleDataSource(new MapDataSource({ derivedRegion }));
     }
 
     function getLayerName(layerId) {
-      return getMapLayerById(layerId).get("name");
+      const layer = getMapLayerById(layerId);
+      const dataSource = availableMapDataSources.value.get(
+        layer.get("dataSourceId")
+      );
+      return dataSource.getName();
     }
 
     function reorderLayers() {
@@ -117,18 +121,23 @@ export default {
       const args = {};
 
       // Add dataset if applicable
-      const datasetId = layer.get("datasetId");
+      const dataSource = availableMapDataSources.value.get(
+        layer.get("dataSourceId")
+      );
+      const datasetId = dataSource.dataset?.id;
       if (datasetId !== undefined) {
-        const ds = currentCity.value.datasets.find((ds) => ds.id === datasetId);
-        if (ds === undefined) {
+        const dataset = currentCity.value.datasets.find(
+          (d) => d.id === datasetId
+        );
+        if (dataset === undefined) {
           throw new Error("Dataset not found!");
         }
 
-        args.dataset = ds;
+        args.dataset = dataset;
       }
 
       // Add region if applicable
-      const regionId = layer.get("derivedRegionId");
+      const regionId = dataSource.derivedRegion?.id;
       if (regionId !== undefined) {
         const region = availableDerivedRegions.value.find(
           (r) => r.id === regionId
@@ -196,6 +205,7 @@ export default {
       toggleDerivedRegion,
       activeMapLayerIds,
       getLayerName,
+      availableMapDataSources,
     };
   },
 };

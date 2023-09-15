@@ -2,12 +2,13 @@
 import { onMounted, ref, watch } from "vue";
 import {
   rasterColormaps,
-  addDatasetLayerToMap,
   addNetworkLayerToMap,
   toggleNodeActive,
   updateVisibleLayers,
 } from "../utils";
+import { getUid } from "ol/util";
 
+import { addDataSourceToMap, getMapLayerFromDataSource } from "@/layers";
 import { MapDataSource } from "@/data";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
 import {
@@ -18,6 +19,7 @@ import {
   networkVis,
   deactivatedNodes,
   rasterTooltip,
+  activeMapLayerIds,
 } from "../store";
 
 export default {
@@ -47,7 +49,7 @@ export default {
         return;
       }
 
-      const layer = currentMapDataSource.value.getLayer();
+      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
       layer.setOpacity(opacity.value);
     }
 
@@ -61,7 +63,7 @@ export default {
       currentMapDataSource.value.dataset.style.colormap_range =
         colormapRange.value;
 
-      const layer = currentMapDataSource.value.getLayer();
+      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
       const layerNetwork = layer.getProperties().network;
       if (
         !layerNetwork ||
@@ -69,10 +71,7 @@ export default {
         networkVis.value?.id === layerNetwork
       ) {
         map.value.removeLayer(layer);
-        addDatasetLayerToMap(
-          currentMapDataSource.value.dataset,
-          layer.getZIndex()
-        );
+        addDataSourceToMap(currentMapDataSource.value);
       }
     }
 
@@ -102,7 +101,19 @@ export default {
         getDatasetNetwork(dataset.id).then((nodes) => {
           if (nodes.length && networkVis.value) {
             networkVis.value.nodes = nodes;
-            addNetworkLayerToMap(dataset, nodes);
+            const layer = addNetworkLayerToMap(dataset, nodes);
+
+            // TODO: Integrate the below code into the normal flow
+
+            // Set layer properties and add to activeMapLayerIds
+            const dataSource = new MapDataSource({ dataset });
+            layer.setProperties({ dataSourceId: dataSource.getUid() });
+
+            // Put new dataset at front of list, so it shows up above any existing layers
+            activeMapLayerIds.value = [
+              getUid(layer),
+              ...activeMapLayerIds.value,
+            ];
           }
         });
       }

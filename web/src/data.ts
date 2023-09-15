@@ -1,5 +1,4 @@
 import { Dataset, DerivedRegion } from "./types";
-import { getDatasetLayer, getDerivedRegionLayer } from "@/layers";
 
 interface MapDataSourceArgs {
   dataset?: Dataset;
@@ -38,16 +37,5 @@ export class MapDataSource {
     }
 
     return name;
-  }
-
-  getLayer() {
-    if (this.dataset) {
-      return getDatasetLayer(this.dataset.id);
-    }
-    if (this.derivedRegion) {
-      return getDerivedRegionLayer(this.derivedRegion.id);
-    }
-
-    throw UnexpectedMapDataSourceError;
   }
 }

@@ -1,107 +1,41 @@
 import {
   currentMapDataSource,
-  selectedDatasetIds,
-  selectedDerivedRegionIds,
   activeMapLayerIds,
   map,
+  selectedDataSourceIds,
 } from "@/store";
-import {
-  addDatasetLayerToMap,
-  addDerivedRegionLayerToMap,
-  updateVisibleLayers,
-} from "./utils";
-import { Dataset, DerivedRegion } from "./types";
+import { updateVisibleLayers, addDataSourceLayerToMap } from "./utils";
 import { Layer } from "ol/layer";
 import { getUid } from "ol/util";
+import type { MapDataSource } from "./data";
 
-///////////
-// Datasets
-///////////
-
-export function getDatasetLayer(datasetId: number): Layer | undefined {
-  return map.value
-    .getLayers()
-    .getArray()
-    .find((layer: Layer) => layer.get("datasetId") === datasetId);
-}
-
-export function getMapLayerById(layerId: string) {
+export function getMapLayerById(layerId: string): Layer | undefined {
   return map.value
     .getLayers()
     .getArray()
     .find((layer: Layer) => getUid(layer) === layerId);
 }
 
-export function addDatasetToMap(dataset: Dataset) {
-  // Add dataset id to selected datasets
-  selectedDatasetIds.add(dataset.id);
-
-  // Check if layer with this dataset already exists
-  const existingLayer = getDatasetLayer(dataset.id);
-
-  // Get either existing layer or create a new one
-  const layer =
-    existingLayer || addDatasetLayerToMap(dataset, selectedDatasetIds.size - 1);
-
-  if (layer === undefined) {
-    throw new Error("No layer returned when adding dataset layer to map");
-  }
-
-  // Put new dataset at front of list, so it shows up above any existing layers
-  activeMapLayerIds.value = [getUid(layer), ...activeMapLayerIds.value];
-
-  // Re-order layers
-  updateVisibleLayers();
-}
-
-export function hideDatasetFromMap(dataset: Dataset) {
-  // Remove dataset id from selected datasets
-  selectedDatasetIds.delete(dataset.id);
-
-  // Filter out dataset layer from active map layers
-  const layer = getDatasetLayer(dataset.id);
-  if (layer === undefined) {
-    throw new Error(`Couldn't find layer for dataset ${dataset.id}`);
-  }
-  activeMapLayerIds.value = activeMapLayerIds.value.filter(
-    (layerId) => layerId !== getUid(layer)
-  );
-
-  // Re-order layers
-  updateVisibleLayers();
-
-  // If current data source was the de-selected dataset, un-set it
-  if (currentMapDataSource.value?.dataset?.id === dataset.id) {
-    currentMapDataSource.value = undefined;
-  }
-}
-
-//////////////////
-// Derived Regions
-//////////////////
-
-export function getDerivedRegionLayer(
-  derivedRegionId: number
+export function getMapLayerFromDataSource(
+  source: MapDataSource
 ): Layer | undefined {
   return map.value
     .getLayers()
     .getArray()
-    .find((layer: Layer) => layer.get("derivedRegionId") === derivedRegionId);
+    .find((layer: Layer) => layer.get("dataSourceId") === source.getUid());
 }
 
-export function addDerivedRegionToMap(derivedRegion: DerivedRegion) {
-  // Add derived region id to selected regions
-  selectedDerivedRegionIds.add(derivedRegion.id);
+export function addDataSourceToMap(dataSource: MapDataSource) {
+  // Add dataset id to selected datasets
+  selectedDataSourceIds.add(dataSource.getUid());
 
   // Check if layer with this dataset already exists
-  const existingLayer = getDerivedRegionLayer(derivedRegion.id);
+  const existingLayer = getMapLayerFromDataSource(dataSource);
 
   // Get either existing layer or create a new one
-  const layer = existingLayer || addDerivedRegionLayerToMap(derivedRegion);
+  const layer = existingLayer || addDataSourceLayerToMap(dataSource);
   if (layer === undefined) {
-    throw new Error(
-      "No layer returned when adding derived region layer to map"
-    );
+    throw new Error("No layer returned when adding data source to map");
   }
 
   // Put new dataset at front of list, so it shows up above any existing layers
@@ -111,16 +45,15 @@ export function addDerivedRegionToMap(derivedRegion: DerivedRegion) {
   updateVisibleLayers();
 }
 
-export function hideDerivedRegionFromMap(derivedRegion: DerivedRegion) {
-  // Remove region id from selected regions
-  selectedDerivedRegionIds.delete(derivedRegion.id);
+export function hideDataSourceFromMap(dataSource: MapDataSource) {
+  const dataSourceId = dataSource.getUid();
+  // Remove dataset id from selected datasets
+  selectedDataSourceIds.delete(dataSourceId);
 
-  // Filter out region layer from active map layers
-  const layer = getDerivedRegionLayer(derivedRegion.id);
+  // Filter out dataset layer from active map layers
+  const layer = getMapLayerFromDataSource(dataSource);
   if (layer === undefined) {
-    throw new Error(
-      `Couldn't find layer for derived region ${derivedRegion.id}`
-    );
+    throw new Error(`Couldn't find layer for data source ${dataSourceId}`);
   }
   activeMapLayerIds.value = activeMapLayerIds.value.filter(
     (layerId) => layerId !== getUid(layer)
@@ -130,7 +63,7 @@ export function hideDerivedRegionFromMap(derivedRegion: DerivedRegion) {
   updateVisibleLayers();
 
   // If current data source was the de-selected dataset, un-set it
-  if (currentMapDataSource.value?.derivedRegion?.id === derivedRegion.id) {
+  if (currentMapDataSource.value?.getUid() === dataSourceId) {
     currentMapDataSource.value = undefined;
   }
 }

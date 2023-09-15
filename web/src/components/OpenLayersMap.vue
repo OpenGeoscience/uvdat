@@ -12,6 +12,7 @@ import {
   networkVis,
   selectedDatasetIds,
   availableDerivedRegions,
+  availableMapDataSources,
 } from "@/store";
 import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
@@ -20,6 +21,7 @@ import Control from "ol/control/Control";
 import type { Region } from "@/types";
 
 import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
+import { MapDataSource } from "@/data";
 
 // OpenLayers variables
 const tooltip = ref();
@@ -29,9 +31,10 @@ let tooltipOverlay: Overlay;
 let contextControl: Control;
 
 // Features
-const selectedFeature = ref<Feature>();
 const selectedLayer = ref<Layer>();
-const selectedFeatureCategory = ref<string>("");
+const selectedDataSource = ref<MapDataSource>();
+const selectedDatasetCategory = ref<string>("");
+const selectedFeature = ref<Feature>();
 const selectedFeatureProperties = computed(() => {
   if (selectedFeature.value === undefined) {
     return [];
@@ -54,7 +57,7 @@ const selectedFeatureProperties = computed(() => {
 // Regions
 const newRegionName = ref("");
 const selectedRegion = computed(() => {
-  if (selectedFeatureCategory.value !== "region") {
+  if (selectedDatasetCategory.value !== "region") {
     return undefined;
   }
 
@@ -125,7 +128,7 @@ function deselectFeature() {
   showTooltip.value = false;
   selectedLayer.value = undefined;
   selectedFeature.value = undefined;
-  selectedFeatureCategory.value = "";
+  selectedDatasetCategory.value = "";
 }
 
 function removeRegionFromGrouping() {
@@ -175,15 +178,19 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
     return;
   }
 
-  // Get feature and layer, exit if dataset isn't provided through the layer
+  // Get feature and layer, exit if data source isn't provided through the layer
   const [feature, layer] = res;
-  const dataset = layer.get("dataset");
-  if (!dataset) {
+  const dataSource = availableMapDataSources.value.get(
+    layer.get("dataSourceId")
+  );
+  if (!dataSource) {
     return;
   }
+
+  selectedDataSource.value = dataSource;
   selectedLayer.value = layer;
   selectedFeature.value = feature;
-  selectedFeatureCategory.value = dataset.category;
+  selectedDatasetCategory.value = dataSource.dataset?.category || "";
 
   // Show tooltip and set position
   showTooltip.value = true;
@@ -275,7 +282,7 @@ onMounted(() => {
     </div>
     <div ref="tooltip" class="tooltip" v-show="showTooltip">
       <!-- Render for Regions -->
-      <div v-if="selectedFeature && selectedFeatureCategory === 'region'">
+      <div v-if="selectedFeature && selectedDatasetCategory === 'region'">
         <v-row no-gutters>ID: {{ selectedRegionID }}</v-row>
         <v-row no-gutters>Name: {{ selectedFeature.get("name") }}</v-row>
         <v-row>
@@ -359,7 +366,7 @@ onMounted(() => {
         </template>
       </div>
       <!-- Render for networks -->
-      <div v-else-if="selectedLayer?.get('dataset').network" class="pa-2">
+      <div v-else-if="selectedDataSource?.dataset?.network" class="pa-2">
         <v-row no-gutters v-for="(v, k) in selectedFeatureProperties" :key="k">
           {{ k }}: {{ v }}
         </v-row>

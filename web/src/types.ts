@@ -12,6 +12,7 @@ export interface Dataset {
   modified: string;
   style: object;
   processing: boolean;
+  network: boolean;
 }
 
 export interface Region {

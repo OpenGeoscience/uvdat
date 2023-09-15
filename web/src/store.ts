@@ -6,27 +6,38 @@ import * as olProj from "ol/proj";
 import { computed, reactive, ref, watch } from "vue";
 import { City, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
-import { Layer } from "ol/layer.js";
-import { getUid } from "ol";
-import { MapDataSource } from "./data.js";
+import { MapDataSource } from "@/data";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
 
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
-export const currentMapDataSource = ref<MapDataSource>();
-export const selectedDatasetIds = reactive(new Set<number>());
 
 export const map = ref();
 export const activeMapLayerIds = ref<string[]>([]);
-export const activeMapLayers = computed<Layer[]>(() => {
-  const activeLayerIdSet = new Set(activeMapLayerIds.value);
-  return map.value
-    .getLayers()
-    .getArray()
-    .filter((layer: Layer) => activeLayerIdSet.has(getUid(layer)));
+export const selectedDataSourceIds = reactive(new Set<string>());
+export const availableMapDataSources = computed(() => {
+  const datasets = currentCity.value?.datasets || [];
+  const mapDataSources = [
+    ...availableDerivedRegions.value.map(
+      (derivedRegion) => new MapDataSource({ derivedRegion })
+    ),
+    ...datasets.map((dataset) => new MapDataSource({ dataset })),
+  ];
+
+  // Map data source id to the object itself
+  const dsMap = new Map<string, MapDataSource>();
+  mapDataSources.forEach((ds) => {
+    dsMap.set(ds.getUid(), ds);
+  });
+
+  return dsMap;
 });
+export const currentMapDataSource = ref<MapDataSource>();
+
+// TODO: REPLACE THIS WITH selectedDataSourceIds
+export const selectedDatasetIds = reactive(new Set<number>());
 
 export const showMapBaseLayer = ref(true);
 export const rasterTooltip = ref();

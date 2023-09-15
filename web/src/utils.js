@@ -24,6 +24,7 @@ import {
   availableCharts,
   activeChart,
   activeMapLayerIds,
+  selectedDataSourceIds,
 } from "@/store";
 
 export const rasterColormaps = [
@@ -60,6 +61,7 @@ function getLayerEnabled(layer) {
   // Check if layer is enabled
   const layerId = getUid(layer);
   let layerEnabled = activeMapLayerIds.value.includes(layerId);
+  // TODO: Remove datasetId
   if (networkVis.value) {
     const layerDatasetId = layer.getProperties().datasetId;
     if (layerDatasetId === networkVis.value.id) {
@@ -164,11 +166,6 @@ function createStyle(args) {
 
 export function addDerivedRegionLayerToMap(region) {
   const layer = new VectorLayer({
-    properties: {
-      derivedRegionId: region.id,
-      derivedRegion: region,
-      name: region.name,
-    },
     style: (feature) =>
       createStyle({
         type: feature.getGeometry().getType(),
@@ -211,11 +208,6 @@ export function addDatasetLayerToMap(dataset, zIndex) {
       .map((key) => key + "=" + tileParams[key])
       .join("&");
     layer = new TileLayer({
-      properties: {
-        name: dataset.name,
-        datasetId: dataset.id,
-        dataset,
-      },
       source: new XYZSource({
         url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
       }),
@@ -228,11 +220,6 @@ export function addDatasetLayerToMap(dataset, zIndex) {
     // Use VectorLayer if dataset category is "region"
     if (dataset.category === "region") {
       layer = new VectorLayer({
-        properties: {
-          name: dataset.name,
-          datasetId: dataset.id,
-          dataset,
-        },
         zIndex,
         style: (feature) =>
           createStyle({
@@ -251,11 +238,6 @@ export function addDatasetLayerToMap(dataset, zIndex) {
           format: new GeoJSON(),
           url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
         }),
-        properties: {
-          name: dataset.name,
-          datasetId: dataset.id,
-          dataset,
-        },
         style: (feature) =>
           createStyle({
             type: feature.getGeometry().getType(),
@@ -269,6 +251,22 @@ export function addDatasetLayerToMap(dataset, zIndex) {
 
   // Add to map
   map.value.addLayer(layer);
+  return layer;
+}
+
+export function addDataSourceLayerToMap(dataSource) {
+  let layer;
+  if (dataSource.dataset) {
+    layer = addDatasetLayerToMap(
+      dataSource.dataset,
+      selectedDataSourceIds.size - 1
+    );
+  } else if (dataSource.derivedRegion) {
+    layer = addDerivedRegionLayerToMap(dataSource.derivedRegion);
+  }
+
+  // Add this to link layers to data sources
+  layer.setProperties({ dataSourceId: dataSource.getUid() });
   return layer;
 }
 
@@ -367,6 +365,7 @@ export function updateNetworkStyle() {
     });
 }
 
+// TODO: Roll into addDatasetLayerToMap
 export function addNetworkLayerToMap(dataset, nodes) {
   const source = new VectorSource();
   const features = [];
@@ -403,8 +402,6 @@ export function addNetworkLayerToMap(dataset, nodes) {
 
   const layer = new VectorLayer({
     properties: {
-      datasetId: dataset.id,
-      dataset,
       network: true,
     },
     zIndex: 99,
@@ -412,6 +409,7 @@ export function addNetworkLayerToMap(dataset, nodes) {
     source,
   });
   map.value.addLayer(layer);
+  return layer;
 }
 
 export function displayRasterTooltip(evt, tooltip, overlay) {
