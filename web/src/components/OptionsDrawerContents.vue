@@ -1,15 +1,14 @@
 <script>
 import { onMounted, ref, watch } from "vue";
-import {
-  rasterColormaps,
-  addNetworkLayerToMap,
-  toggleNodeActive,
-  updateVisibleLayers,
-} from "../utils";
+import { rasterColormaps, toggleNodeActive } from "../utils";
 import { getUid } from "ol/util";
 
-import { addDataSourceToMap, getMapLayerFromDataSource } from "@/layers";
-import { MapDataSource } from "@/data";
+import {
+  getMapLayerFromDataSource,
+  updateVisibleLayers,
+  addNetworkLayerToMap,
+} from "@/layers";
+import { MapDataSource, addDataSourceToMap } from "@/data";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
 import {
   currentCity,
@@ -91,6 +90,8 @@ export default {
       }
 
       const { dataset } = currentMapDataSource.value;
+
+      // TODO: Check active map layers
       const updated = updateVisibleLayers();
       if (
         !updated.shown.some(

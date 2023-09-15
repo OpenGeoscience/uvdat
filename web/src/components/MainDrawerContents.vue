@@ -15,12 +15,12 @@ import {
   selectedDataSourceIds,
 } from "@/store";
 
-import { MapDataSource } from "@/data";
 import {
+  MapDataSource,
   addDataSourceToMap,
   hideDataSourceFromMap,
-  getMapLayerById,
-} from "@/layers";
+} from "@/data";
+import { getMapLayerById, updateVisibleLayers } from "@/layers";
 import { ref, computed, onMounted, watch } from "vue";
 import {
   getCityDatasets,
@@ -28,7 +28,6 @@ import {
   getCitySimulations,
   listDerivedRegions,
 } from "@/api/rest";
-import { updateVisibleLayers } from "../utils";
 
 export default {
   components: {

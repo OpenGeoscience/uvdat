@@ -11,7 +11,7 @@ import {
   activeSimulation,
   showMapBaseLayer,
 } from "./store";
-import { updateVisibleLayers } from "./utils";
+import { updateVisibleLayers } from "@/layers";
 import OpenLayersMap from "./components/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";

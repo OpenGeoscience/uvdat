@@ -10,7 +10,8 @@ export interface Dataset {
   raster_file: string;
   created: string;
   modified: string;
-  style: object;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  style: { [key: string]: any };
   processing: boolean;
   network: boolean;
 }
