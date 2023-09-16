@@ -45,13 +45,17 @@ export const availableDataSourcesTable = computed(() => {
 
 // The currently selected data source (if any)
 export const currentMapDataSource = ref<MapDataSource>();
-export const selectedDataSourceIds = reactive(new Set<string>());
 
 /**
  * Keeps track of which data sources are being actively shown
  * Maps data source ID to the source itself
  */
 export const selectedDataSources = computed(() => {
+  const dsmap = new Map<string, MapDataSource>();
+  if (map.value === undefined) {
+    return dsmap;
+  }
+
   // Get list of active map layers
   const activeLayersIdSet = new Set(activeMapLayerIds.value);
   const allMapLayers: Layer[] = map.value.getLayers().getArray();
@@ -64,7 +68,6 @@ export const selectedDataSources = computed(() => {
   );
 
   // Filter available data sources to this list
-  const dsmap = new Map<string, MapDataSource>();
   availableMapDataSources.value
     .filter((ds) => activeDataSourceIds.has(ds.getUid()))
     .forEach((ds) => {

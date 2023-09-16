@@ -1,9 +1,5 @@
 import { Dataset, DerivedRegion } from "@/types";
-import {
-  currentMapDataSource,
-  activeMapLayerIds,
-  selectedDataSourceIds,
-} from "@/store";
+import { currentMapDataSource, activeMapLayerIds } from "@/store";
 import { getUid } from "ol/util";
 import {
   addDataSourceLayerToMap,
@@ -62,9 +58,6 @@ export class MapDataSource {
 }
 
 export function addDataSourceToMap(dataSource: MapDataSource) {
-  // Add dataset id to selected datasets
-  selectedDataSourceIds.add(dataSource.getUid());
-
   // Check if layer with this dataset already exists
   const existingLayer = getMapLayerFromDataSource(dataSource);
 
@@ -83,8 +76,6 @@ export function addDataSourceToMap(dataSource: MapDataSource) {
 
 export function hideDataSourceFromMap(dataSource: MapDataSource) {
   const dataSourceId = dataSource.getUid();
-  // Remove dataset id from selected datasets
-  selectedDataSourceIds.delete(dataSourceId);
 
   // Filter out dataset layer from active map layers
   const layer = getMapLayerFromDataSource(dataSource);

@@ -11,7 +11,8 @@ import {
   selectedDerivedRegionIds,
   activeMapLayerIds,
   availableMapDataSources,
-  selectedDataSourceIds,
+  availableDataSourcesTable,
+  selectedDataSources,
 } from "@/store";
 
 import {
@@ -77,7 +78,7 @@ export default {
     });
 
     function toggleDataSource(dataSource) {
-      if (selectedDataSourceIds.has(dataSource.getUid())) {
+      if (selectedDataSources.value.has(dataSource.getUid())) {
         hideDataSourceFromMap(dataSource);
       } else {
         addDataSourceToMap(dataSource);
@@ -105,7 +106,7 @@ export default {
 
     function getLayerName(layerId) {
       const layer = getMapLayerById(layerId);
-      const dataSource = availableMapDataSources.value.get(
+      const dataSource = availableDataSourcesTable.value.get(
         layer.get("dataSourceId")
       );
       return dataSource.getName();
@@ -124,7 +125,7 @@ export default {
       const args = {};
 
       // Add dataset if applicable
-      const dataSource = availableMapDataSources.value.get(
+      const dataSource = availableDataSourcesTable.value.get(
         layer.get("dataSourceId")
       );
       const datasetId = dataSource.dataset?.id;

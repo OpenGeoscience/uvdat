@@ -15,7 +15,6 @@ import {
   activeMapLayerIds,
   map,
   networkVis,
-  selectedDataSourceIds,
   showMapBaseLayer,
   availableDataSourcesTable,
 } from "@/store";
@@ -263,7 +262,7 @@ export function addDataSourceLayerToMap(dataSource: MapDataSource) {
   if (dataSource.dataset) {
     layer = addDatasetLayerToMap(
       dataSource.dataset,
-      selectedDataSourceIds.size - 1
+      activeMapLayerIds.value.length - 1
     );
   } else if (dataSource.derivedRegion) {
     layer = addDerivedRegionLayerToMap(dataSource.derivedRegion);

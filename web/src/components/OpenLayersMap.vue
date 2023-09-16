@@ -10,10 +10,10 @@ import {
   regionGroupingType,
   deactivatedNodes,
   networkVis,
-  selectedDataSourceIds,
   availableDerivedRegions,
   availableMapDataSources,
   availableDataSourcesTable,
+  selectedDataSources,
 } from "@/store";
 import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
@@ -76,7 +76,7 @@ const selectedRegionIsGrouped = computed(() => {
 
 // Ensure that if any regions of the currently selected datasets are
 // de-selected, their regions are removed from the selection
-watch(selectedDataSourceIds, (idSet) => {
+watch(selectedDataSources, (dsMap) => {
   // If the currently selected region was part of a data source that was removed, de-select it
   if (selectedRegion.value !== undefined) {
     const selectedRegionDataSource = availableMapDataSources.value.find(
@@ -84,15 +84,15 @@ watch(selectedDataSourceIds, (idSet) => {
     );
     if (
       selectedRegionDataSource === undefined ||
-      !idSet.has(selectedRegionDataSource.getUid())
+      !dsMap.has(selectedRegionDataSource.getUid())
     ) {
       deselectFeature();
     }
   }
 
-  // Filter selected regions list
+  // Filter out any regions from un-selected data sources
   selectedRegions.value = selectedRegions.value.filter((region) =>
-    idSet.has(getDatasetUid(region.dataset))
+    dsMap.has(getDatasetUid(region.dataset))
   );
 
   // Check if the list is now empty
