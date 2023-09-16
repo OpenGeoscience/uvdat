@@ -20,6 +20,16 @@ const UnexpectedMapDataSourceError = new Error(
   "Unexpected map data source type"
 );
 
+/** Return an ID that is unique across data source types */
+export function getDatasetUid(id: number) {
+  return `dataset-${id}`;
+}
+
+/** Return an ID that is unique across data source types */
+export function getDerivedRegionUid(id: number) {
+  return `dr-${id}`;
+}
+
 // A unified representation of any data source (datasets, derived regions, etc.)
 export class MapDataSource {
   dataset?: Dataset;
@@ -32,10 +42,10 @@ export class MapDataSource {
 
   getUid() {
     if (this.dataset) {
-      return `dataset-${this.dataset.id}`;
+      return getDatasetUid(this.dataset.id);
     }
     if (this.derivedRegion) {
-      return `dr-${this.derivedRegion.id}`;
+      return getDerivedRegionUid(this.derivedRegion.id);
     }
 
     throw UnexpectedMapDataSourceError;

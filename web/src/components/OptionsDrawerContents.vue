@@ -1,5 +1,5 @@
 <script>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, computed } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
 import { getUid } from "ol/util";
 
@@ -19,6 +19,7 @@ import {
   deactivatedNodes,
   rasterTooltip,
   activeMapLayerIds,
+  availableMapDataSources,
 } from "../store";
 
 export default {
@@ -92,6 +93,7 @@ export default {
       const { dataset } = currentMapDataSource.value;
 
       // TODO: Check active map layers
+      // Check if there is a visible layer that matches the networkvis dataset id
       const updated = updateVisibleLayers();
       if (
         !updated.shown.some(
@@ -135,6 +137,17 @@ export default {
       });
     }
 
+    const datasetIdToDataSource = computed(() => {
+      const map = new Map();
+      availableMapDataSources.value.forEach((ds) => {
+        if (ds.dataset !== undefined) {
+          map.set(ds, ds.dataset);
+        }
+      });
+
+      return map;
+    });
+
     onMounted(populateRefs);
     watch(currentMapDataSource, populateRefs);
     watch(opacity, updateLayerOpacity);
@@ -158,6 +171,7 @@ export default {
       deactivatedNodes,
       showConfirmConvert,
       runConversion,
+      datasetIdToDataSource,
     };
   },
 };

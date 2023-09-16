@@ -1,6 +1,12 @@
 <script>
 import { ref, watch } from "vue";
-import { activeSimulation, currentCity, selectedDatasetIds } from "@/store";
+import {
+  activeSimulation,
+  currentCity,
+  selectedDataSources,
+  availableDataSourcesTable,
+} from "@/store";
+import { MapDataSource, addDataSourceToMap, getDatasetUid } from "@/data";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 
@@ -53,6 +59,12 @@ export default {
           let selectedOption = simArg.options.find(
             (o) => o.id === v || o === v
           );
+          const dataSourceUid = getDatasetUid(selectedOption.id);
+          const dataSourceSelected =
+            selectedDataSources.value.has(dataSourceUid);
+          const dataSourceAvailable =
+            availableDataSourcesTable.value.has(dataSourceUid);
+
           if (selectedOption) {
             if (!selectedOption.name) {
               selectedOption = { name: selectedOption };
@@ -60,11 +72,7 @@ export default {
             args.push({
               key: k,
               value: selectedOption,
-              viewable:
-                !selectedDatasetIds.value.includes(selectedOption.id) &&
-                currentCity.value.datasets.some(
-                  (d) => d.id === selectedOption.id
-                ),
+              viewable: dataSourceAvailable && !dataSourceSelected,
             });
           }
         }
@@ -73,7 +81,7 @@ export default {
     }
 
     function showDataset(dataset) {
-      selectedDatasetIds.value = [dataset.id, ...selectedDatasetIds.value];
+      addDataSourceToMap(new MapDataSource({ dataset }));
     }
 
     function pollForActiveDatasetOutput() {

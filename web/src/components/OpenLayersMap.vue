@@ -10,9 +10,10 @@ import {
   regionGroupingType,
   deactivatedNodes,
   networkVis,
-  selectedDatasetIds,
+  selectedDataSourceIds,
   availableDerivedRegions,
   availableMapDataSources,
+  availableDataSourcesTable,
 } from "@/store";
 import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
@@ -21,7 +22,7 @@ import Control from "ol/control/Control";
 import type { Region } from "@/types";
 
 import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
-import { MapDataSource } from "@/data";
+import { MapDataSource, getDatasetUid } from "@/data";
 
 // OpenLayers variables
 const tooltip = ref();
@@ -75,18 +76,23 @@ const selectedRegionIsGrouped = computed(() => {
 
 // Ensure that if any regions of the currently selected datasets are
 // de-selected, their regions are removed from the selection
-watch(selectedDatasetIds, (idSet) => {
-  // If the currently selected region was part of a dataset that was removed, de-select it
-  if (
-    selectedRegion.value !== undefined &&
-    !idSet.has(selectedRegion.value.dataset)
-  ) {
-    deselectFeature();
+watch(selectedDataSourceIds, (idSet) => {
+  // If the currently selected region was part of a data source that was removed, de-select it
+  if (selectedRegion.value !== undefined) {
+    const selectedRegionDataSource = availableMapDataSources.value.find(
+      (ds) => ds.dataset?.id === selectedRegion.value?.dataset
+    );
+    if (
+      selectedRegionDataSource === undefined ||
+      !idSet.has(selectedRegionDataSource.getUid())
+    ) {
+      deselectFeature();
+    }
   }
 
   // Filter selected regions list
   selectedRegions.value = selectedRegions.value.filter((region) =>
-    idSet.has(region.dataset)
+    idSet.has(getDatasetUid(region.dataset))
   );
 
   // Check if the list is now empty
@@ -180,7 +186,7 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
 
   // Get feature and layer, exit if data source isn't provided through the layer
   const [feature, layer] = res;
-  const dataSource = availableMapDataSources.value.get(
+  const dataSource = availableDataSourcesTable.value.get(
     layer.get("dataSourceId")
   );
   if (!dataSource) {

@@ -4,9 +4,11 @@ import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
 import { computed, reactive, ref, watch } from "vue";
-import { City, DerivedRegion, Region } from "./types.js";
+import { City, Dataset, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
 import { MapDataSource } from "@/data";
+import { getUid } from "ol";
+import { Layer } from "ol/layer.js";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
@@ -15,29 +17,62 @@ export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
 
 export const map = ref();
+
+// Represents the number of layers active and their ordering
+// This is the sole source of truth regarding visible layers
 export const activeMapLayerIds = ref<string[]>([]);
-export const selectedDataSourceIds = reactive(new Set<string>());
+
+// All data sources combined into one list
 export const availableMapDataSources = computed(() => {
   const datasets = currentCity.value?.datasets || [];
-  const mapDataSources = [
+  return [
     ...availableDerivedRegions.value.map(
       (derivedRegion) => new MapDataSource({ derivedRegion })
     ),
     ...datasets.map((dataset) => new MapDataSource({ dataset })),
   ];
+});
 
-  // Map data source id to the object itself
+/** Maps  data source IDs to the sources themselves */
+export const availableDataSourcesTable = computed(() => {
   const dsMap = new Map<string, MapDataSource>();
-  mapDataSources.forEach((ds) => {
+  availableMapDataSources.value.forEach((ds) => {
     dsMap.set(ds.getUid(), ds);
   });
 
   return dsMap;
 });
-export const currentMapDataSource = ref<MapDataSource>();
 
-// TODO: REPLACE THIS WITH selectedDataSourceIds
-export const selectedDatasetIds = reactive(new Set<number>());
+// The currently selected data source (if any)
+export const currentMapDataSource = ref<MapDataSource>();
+export const selectedDataSourceIds = reactive(new Set<string>());
+
+/**
+ * Keeps track of which data sources are being actively shown
+ * Maps data source ID to the source itself
+ */
+export const selectedDataSources = computed(() => {
+  // Get list of active map layers
+  const activeLayersIdSet = new Set(activeMapLayerIds.value);
+  const allMapLayers: Layer[] = map.value.getLayers().getArray();
+
+  // Get all data source IDs which have an entry in activeMapLayerIds
+  const activeDataSourceIds = new Set<string>(
+    allMapLayers
+      .filter((layer) => activeLayersIdSet.has(getUid(layer)))
+      .map((layer) => layer.get("dataSourceId"))
+  );
+
+  // Filter available data sources to this list
+  const dsmap = new Map<string, MapDataSource>();
+  availableMapDataSources.value
+    .filter((ds) => activeDataSourceIds.has(ds.getUid()))
+    .forEach((ds) => {
+      dsmap.set(ds.getUid(), ds);
+    });
+
+  return dsmap;
+});
 
 export const showMapBaseLayer = ref(true);
 export const rasterTooltip = ref();
@@ -57,7 +92,7 @@ export const availableDerivedRegions = ref<DerivedRegion[]>([]);
 export const selectedDerivedRegionIds = reactive(new Set<number>());
 
 // Network
-export const networkVis = ref();
+export const networkVis = ref<Dataset>();
 export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 

@@ -7,7 +7,6 @@ import {
   availableCharts,
   activeSimulation,
   availableSimulations,
-  selectedDatasetIds,
   availableDerivedRegions,
   selectedDerivedRegionIds,
   activeMapLayerIds,
@@ -70,12 +69,6 @@ export default {
       }
     });
 
-    function updateActiveDatasets() {
-      if (selectedDatasetIds.value.length) {
-        openPanels.value = [0, 1];
-      }
-    }
-
     // If new derived regions added, open panel
     watch(availableDerivedRegions, (availableRegs) => {
       if (availableRegs.length && !openPanels.value.includes(1)) {
@@ -90,6 +83,17 @@ export default {
         addDataSourceToMap(dataSource);
       }
     }
+
+    const datasetIdToDataSource = computed(() => {
+      const map = new Map();
+      availableMapDataSources.value.forEach((ds) => {
+        if (ds.dataset !== undefined) {
+          map.set(ds, ds.dataset);
+        }
+      });
+
+      return map;
+    });
 
     function toggleDataset(dataset) {
       toggleDataSource(new MapDataSource({ dataset }));
@@ -177,10 +181,8 @@ export default {
     onMounted(async () => {
       availableDerivedRegions.value = await listDerivedRegions();
     });
-    watch(selectedDatasetIds, updateActiveDatasets);
 
     return {
-      selectedDatasetIds,
       currentCity,
       fetchDatasets,
       openPanels,
@@ -205,6 +207,7 @@ export default {
       activeMapLayerIds,
       getLayerName,
       availableMapDataSources,
+      datasetIdToDataSource,
     };
   },
 };
@@ -231,7 +234,7 @@ export default {
             <v-expansion-panel-text>
               <v-checkbox
                 v-for="dataset in category.children"
-                :model-value="selectedDatasetIds.has(dataset.id)"
+                :model-value="datasetIdToDataSource.has(dataset.id)"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -246,7 +249,7 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="selectedDatasetIds.has(dataset.id)"
+                    v-show="datasetIdToDataSource.has(dataset.id)"
                     size="small"
                     class="expand-icon ml-1"
                     @click.prevent="expandOptionsPanelFromDataset(dataset)"

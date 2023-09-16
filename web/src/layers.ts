@@ -17,6 +17,7 @@ import {
   networkVis,
   selectedDataSourceIds,
   showMapBaseLayer,
+  availableDataSourcesTable,
 } from "@/store";
 import { createStyle, cacheRasterData, getNetworkFeatureStyle } from "@/utils";
 import { baseURL } from "@/api/auth";
@@ -28,6 +29,18 @@ export function getMapLayerById(layerId: string): Layer | undefined {
     .getLayers()
     .getArray()
     .find((layer: Layer) => getUid(layer) === layerId);
+}
+
+export function getDataSourceFromLayerId(
+  layerId: string
+): MapDataSource | undefined {
+  const layer = getMapLayerById(layerId);
+  const dsId: string | undefined = layer?.get("dataSourceId");
+  if (dsId === undefined) {
+    throw new Error(`Data Source ID not present on layer ${layerId}`);
+  }
+
+  return availableDataSourcesTable.value.get(dsId);
 }
 
 export function getMapLayerFromDataSource(
