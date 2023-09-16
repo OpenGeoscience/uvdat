@@ -36,7 +36,7 @@ export class MapDataSource {
     this.derivedRegion = args.derivedRegion;
   }
 
-  getUid() {
+  get uid() {
     if (this.dataset) {
       return getDatasetUid(this.dataset.id);
     }
@@ -47,7 +47,7 @@ export class MapDataSource {
     throw UnexpectedMapDataSourceError;
   }
 
-  getName() {
+  get name() {
     const name = this.dataset?.name || this.derivedRegion?.name;
     if (name === undefined) {
       throw UnexpectedMapDataSourceError;
@@ -75,7 +75,7 @@ export function addDataSourceToMap(dataSource: MapDataSource) {
 }
 
 export function hideDataSourceFromMap(dataSource: MapDataSource) {
-  const dataSourceId = dataSource.getUid();
+  const dataSourceId = dataSource.uid;
 
   // Filter out dataset layer from active map layers
   const layer = getMapLayerFromDataSource(dataSource);
@@ -90,7 +90,7 @@ export function hideDataSourceFromMap(dataSource: MapDataSource) {
   updateVisibleLayers();
 
   // If current data source was the de-selected dataset, un-set it
-  if (currentMapDataSource.value?.getUid() === dataSourceId) {
+  if (currentMapDataSource.value?.uid === dataSourceId) {
     currentMapDataSource.value = undefined;
   }
 }

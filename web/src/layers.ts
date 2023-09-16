@@ -49,7 +49,7 @@ export function getMapLayerFromDataSource(
   return getMap()
     .getLayers()
     .getArray()
-    .find((layer) => layer.get("dataSourceId") === source.getUid());
+    .find((layer) => layer.get("dataSourceId") === source.uid);
 }
 
 /** Returns if a layer should be enabled based on showMapBaseLayer, activeMapLayerIds, and networkVis */
@@ -272,6 +272,6 @@ export function addDataSourceLayerToMap(dataSource: MapDataSource) {
   }
 
   // Add this to link layers to data sources
-  layer.setProperties({ dataSourceId: dataSource.getUid() });
+  layer.setProperties({ dataSourceId: dataSource.uid });
   return layer;
 }

@@ -110,7 +110,7 @@ export default {
 
             // Set layer properties and add to activeMapLayerIds
             const dataSource = new MapDataSource({ dataset });
-            layer.setProperties({ dataSourceId: dataSource.getUid() });
+            layer.setProperties({ dataSourceId: dataSource.uid });
 
             // Put new dataset at front of list, so it shows up above any existing layers
             activeMapLayerIds.value = [
@@ -184,7 +184,7 @@ export default {
     </v-icon>
     <v-card-title class="medium-title">Options</v-card-title>
     <v-card-subtitle class="wrap-subtitle">
-      {{ currentMapDataSource.getName() }}
+      {{ currentMapDataSource.name }}
     </v-card-subtitle>
     <v-divider class="mb-2" />
 

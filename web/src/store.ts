@@ -42,7 +42,7 @@ export const availableMapDataSources = computed(() => {
 export const availableDataSourcesTable = computed(() => {
   const dsMap = new Map<string, MapDataSource>();
   availableMapDataSources.value.forEach((ds) => {
-    dsMap.set(ds.getUid(), ds);
+    dsMap.set(ds.uid, ds);
   });
 
   return dsMap;
@@ -74,9 +74,9 @@ export const selectedDataSources = computed(() => {
 
   // Filter available data sources to this list
   availableMapDataSources.value
-    .filter((ds) => activeDataSourceIds.has(ds.getUid()))
+    .filter((ds) => activeDataSourceIds.has(ds.uid))
     .forEach((ds) => {
-      dsmap.set(ds.getUid(), ds);
+      dsmap.set(ds.uid, ds);
     });
 
   return dsmap;

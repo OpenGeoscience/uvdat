@@ -86,7 +86,7 @@ watch(selectedDataSources, (dsMap) => {
     );
     if (
       selectedRegionDataSource === undefined ||
-      !dsMap.has(selectedRegionDataSource.getUid())
+      !dsMap.has(selectedRegionDataSource.uid)
     ) {
       deselectFeature();
     }

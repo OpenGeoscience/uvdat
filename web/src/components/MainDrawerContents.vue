@@ -78,7 +78,7 @@ export default {
     });
 
     function toggleDataSource(dataSource) {
-      if (selectedDataSources.value.has(dataSource.getUid())) {
+      if (selectedDataSources.value.has(dataSource.uid)) {
         hideDataSourceFromMap(dataSource);
       } else {
         addDataSourceToMap(dataSource);
@@ -109,7 +109,7 @@ export default {
       const dataSource = availableDataSourcesTable.value.get(
         layer.get("dataSourceId")
       );
-      return dataSource.getName();
+      return dataSource.name;
     }
 
     function reorderLayers() {
