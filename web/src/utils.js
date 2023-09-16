@@ -2,7 +2,7 @@ import { Fill, Stroke, Circle, Style } from "ol/style.js";
 
 import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
-  map,
+  getMap,
   currentCity,
   rasterTooltip,
   networkVis,
@@ -128,7 +128,7 @@ function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
 }
 
 export function updateNetworkStyle() {
-  map.value
+  getMap()
     .getLayers()
     .getArray()
     .forEach((layer) => {

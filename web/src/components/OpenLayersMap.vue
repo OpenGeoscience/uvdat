@@ -5,6 +5,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import {
   clearMap,
   map,
+  getMap,
   selectedRegions,
   regionGroupingActive,
   regionGroupingType,
@@ -23,6 +24,7 @@ import type { Region } from "@/types";
 
 import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
 import { MapDataSource, getDatasetUid } from "@/data";
+import { SimpleGeometry } from "ol/geom";
 
 // OpenLayers variables
 const tooltip = ref();
@@ -102,9 +104,14 @@ watch(selectedDataSources, (dsMap) => {
 });
 
 function zoomToRegion() {
+  const geom = selectedFeature.value?.getGeometry() as SimpleGeometry;
+  if (geom === undefined) {
+    return;
+  }
   // Set map zoom to match bounding box of region
-  map.value.getView().fit(selectedFeature.value?.getGeometry(), {
-    size: map.value.getSize(),
+  const map = getMap();
+  map.getView().fit(geom, {
+    size: map.getSize(),
     duration: 300,
   });
 }
@@ -175,10 +182,10 @@ async function createDerivedRegion() {
 
 function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
   // Check if any features are clicked, exit if not
-  let res: [Feature, Layer] = map.value.forEachFeatureAtPixel(
-    e.pixel,
-    (feature: Feature, layer: Layer) => [feature, layer]
-  );
+  let res = getMap().forEachFeatureAtPixel(e.pixel, (feature, layer) => [
+    feature,
+    layer,
+  ]) as [Feature, Layer] | undefined;
   if (!res) {
     deselectFeature();
     return;
@@ -204,23 +211,17 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
 }
 
 function createMap() {
-  map.value = new Map({
+  const newMap = new Map({
     target: "mapContainer",
   });
-  map.value.on("loadstart", function () {
-    setTimeout(() => {
-      if (!map.value.loaded_) {
-        map.value.getTargetElement().classList.add("spinner");
-      }
-    }, 1000);
-  });
-  map.value.on("loadend", function () {
-    map.value.getTargetElement().classList.remove("spinner");
+  newMap.getTargetElement().classList.add("spinner");
+  newMap.on("loadend", function () {
+    getMap().getTargetElement().classList.remove("spinner");
   });
 
   // Add overlay to display contextual info
   contextControl = new Control({ element: context.value });
-  contextControl.setMap(map.value);
+  contextControl.setMap(newMap);
 
   // Add tooltip overlay
   tooltipOverlay = new Overlay({
@@ -228,13 +229,15 @@ function createMap() {
     offset: [10, 0],
     positioning: "bottom-left",
   });
-  tooltipOverlay.setMap(map.value);
+  tooltipOverlay.setMap(newMap);
 
   // Handle clicks and pointer moves
-  map.value.on("click", handleMapClick);
-  map.value.on("pointermove", (e: MouseEvent) =>
-    displayRasterTooltip(e, tooltip, tooltipOverlay)
-  );
+  newMap.on("click", handleMapClick);
+  newMap.on("pointermove", (e) => {
+    displayRasterTooltip(e, tooltip, tooltipOverlay);
+  });
+
+  map.value = newMap;
 }
 
 onMounted(() => {

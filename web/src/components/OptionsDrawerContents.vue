@@ -14,7 +14,7 @@ import {
   currentCity,
   currentMapDataSource,
   pollForProcessingDataset,
-  map,
+  getMap,
   networkVis,
   deactivatedNodes,
   rasterTooltip,
@@ -70,7 +70,7 @@ export default {
         !networkVis.value ||
         networkVis.value?.id === layerNetwork
       ) {
-        map.value.removeLayer(layer);
+        getMap().removeLayer(layer);
         addDataSourceToMap(currentMapDataSource.value);
       }
     }

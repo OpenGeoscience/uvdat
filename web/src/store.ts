@@ -7,8 +7,7 @@ import { computed, reactive, ref, watch } from "vue";
 import { City, Dataset, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
 import { MapDataSource } from "@/data";
-import { getUid } from "ol";
-import { Layer } from "ol/layer.js";
+import { Map as olMap, getUid } from "ol";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
@@ -16,7 +15,13 @@ export const currentError = ref<string>();
 export const cities = ref<City[]>([]);
 export const currentCity = ref<City>();
 
-export const map = ref();
+export const map = ref<olMap>();
+export function getMap() {
+  if (map.value === undefined) {
+    throw new Error("Map not yet initialized!");
+  }
+  return map.value;
+}
 
 // Represents the number of layers active and their ordering
 // This is the sole source of truth regarding visible layers
@@ -58,7 +63,7 @@ export const selectedDataSources = computed(() => {
 
   // Get list of active map layers
   const activeLayersIdSet = new Set(activeMapLayerIds.value);
-  const allMapLayers: Layer[] = map.value.getLayers().getArray();
+  const allMapLayers = getMap().getLayers().getArray();
 
   // Get all data source IDs which have an entry in activeMapLayerIds
   const activeDataSourceIds = new Set<string>(
@@ -117,16 +122,17 @@ export function loadCities() {
 }
 
 export function clearMap() {
-  if (!currentCity.value || !map.value) {
+  if (!currentCity.value) {
     return;
   }
-  map.value.setView(
+
+  getMap().setView(
     new View({
       center: olProj.fromLonLat(currentCity.value.center),
       zoom: currentCity.value.default_zoom,
     })
   );
-  map.value.setLayers([
+  getMap().setLayers([
     new TileLayer({
       source: new OSM(),
       properties: {

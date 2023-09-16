@@ -13,21 +13,22 @@ import { fromLonLat } from "ol/proj";
 
 import {
   activeMapLayerIds,
-  map,
   networkVis,
   showMapBaseLayer,
   availableDataSourcesTable,
+  getMap,
 } from "@/store";
 import { createStyle, cacheRasterData, getNetworkFeatureStyle } from "@/utils";
 import { baseURL } from "@/api/auth";
 import type { Dataset, DerivedRegion, NetworkNode } from "@/types";
 import type { MapDataSource } from "@/data";
+import BaseLayer from "ol/layer/Base";
 
-export function getMapLayerById(layerId: string): Layer | undefined {
-  return map.value
+export function getMapLayerById(layerId: string): BaseLayer | undefined {
+  return getMap()
     .getLayers()
     .getArray()
-    .find((layer: Layer) => getUid(layer) === layerId);
+    .find((layer) => getUid(layer) === layerId);
 }
 
 export function getDataSourceFromLayerId(
@@ -44,15 +45,15 @@ export function getDataSourceFromLayerId(
 
 export function getMapLayerFromDataSource(
   source: MapDataSource
-): Layer | undefined {
-  return map.value
+): BaseLayer | undefined {
+  return getMap()
     .getLayers()
     .getArray()
-    .find((layer: Layer) => layer.get("dataSourceId") === source.getUid());
+    .find((layer) => layer.get("dataSourceId") === source.getUid());
 }
 
 /** Returns if a layer should be enabled based on showMapBaseLayer, activeMapLayerIds, and networkVis */
-export function getLayerEnabled(layer: Layer) {
+export function getLayerEnabled(layer: BaseLayer) {
   // Check if layer is map base layer
   if (layer.getProperties().baseLayer) {
     return showMapBaseLayer.value;
@@ -79,15 +80,15 @@ export function getLayerEnabled(layer: Layer) {
  * */
 export function updateVisibleLayers() {
   const layerState = {
-    shown: [] as Layer[],
-    hidden: [] as Layer[],
+    shown: [] as BaseLayer[],
+    hidden: [] as BaseLayer[],
   };
-  const allLayers = map.value?.getLayers()?.getArray();
+  const allLayers = getMap().getLayers()?.getArray();
   if (!allLayers) {
     return layerState;
   }
 
-  allLayers.forEach((layer: Layer) => {
+  allLayers.forEach((layer) => {
     const layerEnabled = getLayerEnabled(layer);
     if (!layerEnabled) {
       layer.setVisible(false);
@@ -123,7 +124,7 @@ export function addDerivedRegionLayerToMap(region: DerivedRegion): Layer {
   });
 
   // Add to map
-  map.value.addLayer(layer);
+  getMap().addLayer(layer);
   return layer;
 }
 
@@ -202,7 +203,7 @@ export function addDatasetLayerToMap(dataset: Dataset, zIndex: number): Layer {
   }
 
   // Add to map
-  map.value.addLayer(layer);
+  getMap().addLayer(layer);
   return layer;
 }
 
@@ -253,7 +254,7 @@ export function addNetworkLayerToMap(dataset: Dataset, nodes: NetworkNode[]) {
     style: getNetworkFeatureStyle(),
     source,
   });
-  map.value.addLayer(layer);
+  getMap().addLayer(layer);
   return layer;
 }
 
