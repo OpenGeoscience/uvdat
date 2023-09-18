@@ -111,11 +111,23 @@ export function updateVisibleLayers() {
   return layerState;
 }
 
+function randomColor() {
+  return (
+    "#" +
+    Math.floor(Math.random() * 16777215)
+      .toString(16)
+      .padStart(6, "0")
+      .slice(0, 6)
+  );
+}
+
 export function addDerivedRegionLayerToMap(region: DerivedRegion): Layer {
+  const colors = `${randomColor()},#ffffff`;
   const layer = new VectorLayer({
     style: (feature) =>
       createStyle({
         type: feature.getGeometry()?.getType(),
+        colors,
       }),
     source: new VectorSource({
       format: new GeoJSON(),
