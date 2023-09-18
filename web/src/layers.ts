@@ -119,7 +119,7 @@ export function addDerivedRegionLayerToMap(region: DerivedRegion): Layer {
       }),
     source: new VectorSource({
       format: new GeoJSON(),
-      url: `${baseURL}derived_regions/${region.id}/boundary/`,
+      url: `${baseURL}derived_regions/${region.id}/as_feature/`,
     }),
   });
 
