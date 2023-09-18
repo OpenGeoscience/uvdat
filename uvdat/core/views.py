@@ -4,6 +4,7 @@ import tempfile
 from typing import Any
 
 from django.contrib.gis.db.models.aggregates import Union
+from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.serializers import geojson
 from django.db import transaction
 from django.http import HttpResponse
@@ -74,20 +75,27 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
                 f"Multiple cities included in source regions: {source_cities}", status=400
             )
 
-        # Calculate new polygons
+        # Only handle union operations for now
         source_operation = serializer.validated_data['operation']
-        if source_operation == DerivedRegion.VectorOperation.UNION:
-            # Simply include all multipolygons from all source regions
-            new_boundary = source_regions.aggregate(polys=Union('boundary'))['polys']
-        else:
+        if source_operation == DerivedRegion.VectorOperation.INTERSECTION:
             return HttpResponse("Intersection Operation not yet supported", status=400)
+
+        # Simply include all multipolygons from all source regions
+        # Convert Polygon to MultiPolygon if necessary
+        geojson = json.loads(source_regions.aggregate(polys=Union('boundary'))['polys'].geojson)
+        if geojson['type'] == 'Polygon':
+            geojson['type'] = 'MultiPolygon'
+            geojson['coordinates'] = [geojson['coordinates']]
+
+        # Form proper Geometry object
+        new_boundary = GEOSGeometry(json.dumps((geojson)))
 
         # Check for duplicate derived regions
         city = serializer.validated_data['city']
         existing = list(
-            DerivedRegion.objects.filter(city=city, boundary=new_boundary).values_list(
-                'id', flat=True
-            )
+            DerivedRegion.objects.filter(
+                city=city, boundary=GEOSGeometry(new_boundary)
+            ).values_list('id', flat=True)
         )
         if existing:
             return HttpResponse(
