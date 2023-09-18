@@ -5,13 +5,12 @@ import tempfile
 from django.core.serializers import serialize
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
-import ijson
 import large_image
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import Chart, City, Dataset, Region
+from uvdat.core.models import Chart, City, Dataset, Region, VectorTile
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
@@ -51,13 +50,11 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
     )
     def get_vector_tile(self, request, x: int, y: int, z: int, **kwargs):
         dataset = self.get_object()
-        with dataset.vector_tiles_file.open() as vector_tile_json:
-            # use ijson to fetch only needed key (much faster than json parse)
-            tile = ijson.items(vector_tile_json, f'{z}.{x}.{y}', use_float=True)
-            try:
-                return HttpResponse(json.dumps(tile.__next__()), status=200)
-            except StopIteration:
-                return HttpResponse(status=404)
+        vector_tile = VectorTile.objects.filter(dataset=dataset, z=z, x=x, y=y).first()
+        if vector_tile is None:
+            return Response(status=404)
+
+        return Response(vector_tile.data)
 
     @action(
         detail=True,
@@ -105,7 +102,6 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
     def spawn_conversion_task(self, request, **kwargs):
         dataset = self.get_object()
         dataset.geodata_file = None
-        dataset.vector_tiles_file = None
         dataset.raster_file = None
         dataset.processing = True
         dataset.save()

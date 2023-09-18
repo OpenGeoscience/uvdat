@@ -30,11 +30,25 @@ class Dataset(TimeStampedModel, models.Model):
     # GeoJSON file, containing geometries and other properties for features
     geodata_file = S3FileField(null=True, blank=True)
 
-    # JSON file, containing GeoJSON tiles, nested by z-x-y tile coordinates
-    vector_tiles_file = S3FileField(null=True, blank=True)
-
     # Raster file, containing a cloud-optimized geotiff
     raster_file = S3FileField(null=True, blank=True)
+
+
+class VectorTile(models.Model):
+    """The vector tile representation of a dataset's geodata."""
+
+    dataset = models.ForeignKey(Dataset, related_name='vector_tiles', on_delete=models.CASCADE)
+    data = models.JSONField()
+    z = models.PositiveIntegerField()
+    x = models.PositiveIntegerField()
+    y = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            # Ensure that a full index only ever resolves to one record
+            models.UniqueConstraint(name='unique-dataset-index', fields=['dataset', 'z', 'x', 'y'])
+        ]
+        indexes = [models.Index(fields=('z', 'x', 'y'), name='vectortile-coordinates-index')]
 
 
 class NetworkNode(models.Model):

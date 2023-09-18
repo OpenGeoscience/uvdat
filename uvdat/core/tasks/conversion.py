@@ -1,4 +1,3 @@
-import os
 import json
 from pathlib import Path
 import tempfile
@@ -14,7 +13,7 @@ import numpy
 import rasterio
 import shapefile
 
-from uvdat.core.models import Dataset, Region
+from uvdat.core.models import Dataset, Region, VectorTile
 from uvdat.core.tasks.networks import save_network_nodes
 from uvdat.core.utils import add_styling
 
@@ -129,45 +128,43 @@ def convert_geojson(dataset, geodata_path=None):
         with open(geodata_path, 'rb') as geodata_file:
             contents = geodata_file.read()
             dataset.geodata_file.save(geodata_path, ContentFile(contents))
-        geojson_size = os.path.getsize(geodata_path)
-        geojson_mb = geojson_size >> 20
-        if geojson_mb > 100:
-            print(
-                f'\t Found large GeoJSON data ({geojson_mb} MB). Creating tiled GeoJSON for rendering...'
-            )
-            tile_geojson(dataset, geodata_path)
+
+        tile_geojson(dataset, geodata_path)
 
 
 def tile_geojson(dataset, geodata_path=None):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        tiled_geo_path = Path(temp_dir, 'tiled_geo.json')
-        tiled_geo = {}
-        with open(geodata_path, 'rb') as geodata_file:
-            contents = geodata_file.read()
-            # convert to tiles and save to vector_tiles_file
-            tile_index = geojson2vt.geojson2vt(
-                json.loads(contents.decode()),
-                {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
-            )
-            for coord in tile_index.tile_coords:
-                tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
-                features = tile.get('features')
-                if features and len(features) > 0:
-                    if not coord['z'] in tiled_geo:
-                        tiled_geo[coord['z']] = {}
-                    if not coord['x'] in tiled_geo[coord['z']]:
-                        tiled_geo[coord['z']][coord['x']] = {}
+    vector_tiles = []
+    with open(geodata_path) as geodata_file:
+        # convert to tiles
+        tile_index = geojson2vt.geojson2vt(
+            json.load(geodata_file),
+            {
+                'indexMaxZoom': 16,
+                'maxZoom': 16,
+                'indexMaxPoints': 0,
+            },
+        )
 
-                    tiled_geo[coord['z']][coord['x']][coord['y']] = vt2geojson.vt2geojson(tile)
+    # Create all relevant vector tiles
+    for coord in tile_index.tile_coords:
+        tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
+        features = tile.get('features')
+        if not features:
+            continue
 
-        with open(tiled_geo_path, 'w') as tiled_geo_file:
-            json.dump(tiled_geo, tiled_geo_file)
-        with open(tiled_geo_path, 'rb') as tiled_geo_file:
-            dataset.vector_tiles_file.save(
-                tiled_geo_path,
-                ContentFile(tiled_geo_file.read()),
+        # Append to list of vector tiles to bulk create
+        vector_tiles.append(
+            VectorTile(
+                dataset=dataset,
+                data=vt2geojson.vt2geojson(tile),
+                z=coord['z'],
+                x=coord['x'],
+                y=coord['y'],
             )
-        print(f'\t GeoJSON to Tiles conversion complete for {dataset.name}.')
+        )
+
+    VectorTile.objects.bulk_create(vector_tiles)
+    print(f'\t GeoJSON to Tiles conversion complete for {dataset.name}.')
 
 
 def convert_shape_file_archive(dataset):
