@@ -62,12 +62,11 @@ export function getLayerEnabled(layer: BaseLayer) {
   // Check if layer is enabled
   const layerId = getUid(layer);
   let layerEnabled = activeMapLayerIds.value.includes(layerId);
-  // TODO: Remove datasetId
-  if (networkVis.value) {
-    const layerDatasetId = layer.getProperties().datasetId;
-    if (layerDatasetId === networkVis.value.id) {
-      layerEnabled = layerEnabled && layer.getProperties().network;
-    }
+
+  // Ensure that if networkVis is enabled, only the network layer is shown (not the original layer)
+  const layerDatasetId = getDataSourceFromLayerId(layerId)?.dataset?.id;
+  if (networkVis.value && networkVis.value.id === layerDatasetId) {
+    layerEnabled = layerEnabled && layer.get("network");
   }
 
   return layerEnabled;
@@ -225,16 +224,19 @@ export function addNetworkLayerToMap(dataset: Dataset, nodes: NetworkNode[]) {
   const features: Feature[] = [];
   const visitedNodes: number[] = [];
   nodes.forEach((node) => {
+    // Add point for each node
     features.push(
       new Feature(
         Object.assign(node.properties, {
           name: node.name,
           id: node.id,
           node: true,
-          geometry: new Point(fromLonLat(node.location.reverse())),
+          geometry: new Point(fromLonLat(node.location.slice().reverse())),
         })
       )
     );
+
+    // Add edges between adjacent nodes
     node.adjacent_nodes.forEach((adjId) => {
       if (!visitedNodes.includes(adjId)) {
         const adjNode = nodes.find((n) => n.id === adjId);
@@ -247,8 +249,8 @@ export function addNetworkLayerToMap(dataset: Dataset, nodes: NetworkNode[]) {
             connects: [node.id, adjId],
             edge: true,
             geometry: new LineString([
-              fromLonLat(node.location.reverse()),
-              fromLonLat(adjNode.location.reverse()),
+              fromLonLat(node.location.slice().reverse()),
+              fromLonLat(adjNode.location.slice().reverse()),
             ]),
           })
         );

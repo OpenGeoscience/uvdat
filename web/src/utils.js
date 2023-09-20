@@ -90,7 +90,7 @@ export function createStyle(args) {
   }
 }
 
-function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
+export function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
   const fill = new Fill({
     color: `#ffffff${alpha}`,
   });
