@@ -1,5 +1,5 @@
 <script>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { deactivatedNodes } from "@/store";
 import { deactivatedNodesUpdated } from "@/utils";
 import { networkVis } from "../store";
@@ -10,11 +10,27 @@ export default {
       required: true,
       type: Array,
     },
+    nodeRecoveries: {
+      required: true,
+      type: Array,
+    },
   },
   setup(props) {
     const currentTick = ref(0);
     const ticker = ref();
     const seconds = ref(1);
+
+    console.log(props);
+
+    const startState = computed(() => {
+      if (props.nodeRecoveries?.length) return props.nodeFailures;
+      else return [];
+    });
+
+    const nodeChanges = computed(() => {
+      if (props.nodeRecoveries?.length) return props.nodeRecoveries;
+      else return props.nodeFailures;
+    });
 
     function pause() {
       clearInterval(ticker.value);
@@ -24,7 +40,7 @@ export default {
     function play() {
       pause();
       ticker.value = setInterval(() => {
-        if (currentTick.value < props.nodeFailures.length) {
+        if (currentTick.value < nodeChanges.value.length) {
           currentTick.value += 1;
         } else {
           pause();
@@ -44,11 +60,20 @@ export default {
     }
 
     watch(currentTick, () => {
-      deactivatedNodes.value = props.nodeFailures.slice(0, currentTick.value);
+      const slice = nodeChanges.value.slice(0, currentTick.value);
+      if (props.nodeRecoveries) {
+        // recovery mode
+        deactivatedNodes.value = startState.value.filter(
+          (i) => !slice.includes(i)
+        );
+      } else {
+        deactivatedNodes.value = slice;
+      }
       deactivatedNodesUpdated();
     });
 
     return {
+      nodeChanges,
       networkVis,
       currentTick,
       seconds,
@@ -74,7 +99,7 @@ export default {
       tick-size="5"
       min="0"
       step="1"
-      :max="nodeFailures.length"
+      :max="nodeChanges.length"
       hide-details
     />
   </div>

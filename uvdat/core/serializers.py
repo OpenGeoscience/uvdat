@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from uvdat.core.models import Chart, City, Dataset, NetworkNode, SimulationResult
+from uvdat.core.tasks.simulations import AVAILABLE_SIMULATIONS
 
 
 class NetworkNodeSerializer(serializers.ModelSerializer):
@@ -45,6 +46,17 @@ class CitySerializer(serializers.ModelSerializer):
 
 
 class SimulationResultSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField('get_name')
+
+    def get_name(self, obj):
+        time = obj.modified.strftime('%Y-%m-%d %H:%M')
+        simulation_type_matches = [t for t in AVAILABLE_SIMULATIONS if t['id'] == obj.simulation_id]
+        if len(simulation_type_matches) == 0:
+            return f'Result {time}'
+        else:
+            simulation_type = simulation_type_matches[0]
+            return f"{simulation_type['name']} Result {time}"
+
     class Meta:
         model = SimulationResult
         fields = '__all__'
