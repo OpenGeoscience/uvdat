@@ -32,6 +32,8 @@ class UvdatMixin(ConfigMixin):
             's3_file_field',
         ]
 
+        configuration.MIDDLEWARE += ['allauth.account.middleware.AccountMiddleware']
+
         configuration.DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
