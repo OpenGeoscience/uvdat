@@ -72,3 +72,9 @@ class SimulationResult(TimeStampedModel):
     input_args = models.JSONField(blank=True, null=True)
     output_data = models.JSONField(blank=True, null=True)
     error_message = models.TextField(null=True, blank=True)
+
+    class Meta:
+        unique_together = (
+            'simulation_id',
+            'input_args',
+        )
