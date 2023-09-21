@@ -1,5 +1,6 @@
 import inspect
 import json
+import networkx as nx
 from pathlib import Path
 import random
 import re
@@ -12,6 +13,11 @@ import shapely
 
 from rest_framework.serializers import ModelSerializer
 from uvdat.core.models import City, Dataset, SimulationResult
+from uvdat.core.tasks.networks import (
+    NODE_RECOVERY_MODES,
+    construct_edge_list,
+    sort_graph_centrality,
+)
 import uvdat.core.serializers as serializers
 
 
@@ -92,22 +98,28 @@ def recovery_scenario(simulation_result_id, node_failure_simulation_result, reco
         result.error_message = 'Node failure simulation result not found.'
         result.save()
         return
-    if recovery_mode not in [
-        'random',
-        'degree',
-        'betweenness',
-        'closeness',
-        'eigenvector',
-    ]:
+    if recovery_mode not in NODE_RECOVERY_MODES:
         result.error_message = f'Invalid recovery mode {recovery_mode}.'
         result.save()
         return
 
     node_failures = node_failure_simulation_result.output_data['node_failures']
-    node_recoveries = []
+    node_recoveries = node_failures.copy()
     if recovery_mode == 'random':
-        node_recoveries = node_failures.copy()
         random.shuffle(node_recoveries)
+    else:
+        dataset_id = node_failure_simulation_result.input_args['network_dataset']
+        try:
+            dataset = Dataset.objects.get(id=dataset_id)
+        except Dataset.DoesNotExist:
+            result.error_message = 'Dataset not found.'
+            result.save()
+            return
+        edge_list = construct_edge_list(dataset)
+        int_edges = {int(k): v for k, v in edge_list.items()}
+        G = nx.from_dict_of_lists(int_edges)
+        nodes_sorted, edge_list = sort_graph_centrality(G, recovery_mode)
+        node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
 
     result.output_data = {
         'node_failures': node_failures,
@@ -164,13 +176,7 @@ AVAILABLE_SIMULATIONS = [
             {
                 'name': 'recovery_mode',
                 'type': str,
-                'options': [
-                    'random',
-                    'degree',
-                    'betweenness',
-                    'closeness',
-                    'eigenvector',
-                ],
+                'options': NODE_RECOVERY_MODES,
             },
         ],
     },
