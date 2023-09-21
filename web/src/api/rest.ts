@@ -70,6 +70,10 @@ export async function newChartLine(chartId: number) {
   await apiClient.post(`charts/${chartId}/new-line/`);
 }
 
+export async function renameChartLines(chartId: number, names: object) {
+  await apiClient.post(`charts/${chartId}/rename-lines/`, names);
+}
+
 export async function clearChart(chartId: number) {
   await apiClient.post(`charts/${chartId}/clear/`);
 }

@@ -1,5 +1,5 @@
 <script>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { activeChart, availableCharts, currentChartLineName } from "@/store";
 import { Line } from "vue-chartjs";
 import {
@@ -14,7 +14,12 @@ import {
   Legend,
 } from "chart.js";
 import RecursiveTable from "./RecursiveTable.vue";
-import { clearChart, getCityCharts, newChartLine } from "@/api/rest";
+import {
+  clearChart,
+  getCityCharts,
+  newChartLine,
+  renameChartLines,
+} from "@/api/rest";
 
 ChartJS.register(
   CategoryScale,
@@ -45,6 +50,8 @@ export default {
     const currentXStart = ref(0);
     const currentXRange = ref(500);
     const downloadButton = ref();
+    const editingLines = ref(false);
+    const newLineNameMap = ref({});
 
     const options = computed(() => {
       const customOptions = {
@@ -168,17 +175,40 @@ export default {
       currentChartLineName.value = legendItem.text;
     }
 
+    function editLineName(oldName, newName) {
+      newLineNameMap.value[oldName] = newName;
+    }
+
+    function refreshCharts(cb) {
+      getCityCharts(activeChart.value.city).then((charts) => {
+        availableCharts.value = charts;
+        if (activeChart) {
+          activeChart.value = charts.find((c) => c.id === activeChart.value.id);
+        }
+        if (cb) {
+          cb();
+        }
+      });
+    }
+
+    function saveLineNamesAndRefresh() {
+      if (Object.keys(newLineNameMap.value).length) {
+        renameChartLines(activeChart.value.id, newLineNameMap.value).then(
+          () => {
+            newLineNameMap.value = {};
+            editingLines.value = false;
+            refreshCharts(updateCurrentChartLineName);
+          }
+        );
+      } else {
+        editingLines.value = false;
+      }
+    }
+
     function newLineAndRefresh() {
       if (activeChart.value) {
         newChartLine(activeChart.value.id).then(() => {
-          getCityCharts(activeChart.value.city).then((charts) => {
-            availableCharts.value = charts;
-            if (activeChart) {
-              activeChart.value = charts.find(
-                (c) => c.id === activeChart.value.id
-              );
-            }
-          });
+          refreshCharts(updateCurrentChartLineName);
         });
       }
     }
@@ -186,14 +216,7 @@ export default {
     function clearAndRefresh() {
       if (activeChart.value) {
         clearChart(activeChart.value.id).then(() => {
-          getCityCharts(activeChart.value.city).then((charts) => {
-            availableCharts.value = charts;
-            if (activeChart) {
-              activeChart.value = charts.find(
-                (c) => c.id === activeChart.value.id
-              );
-            }
-          });
+          refreshCharts();
         });
       }
     }
@@ -208,7 +231,6 @@ export default {
     }
 
     onMounted(updateCurrentChartLineName);
-    watch(activeChart, updateCurrentChartLineName);
 
     return {
       activeChart,
@@ -220,6 +242,9 @@ export default {
       data,
       downloadButton,
       downloadReady,
+      editingLines,
+      editLineName,
+      saveLineNamesAndRefresh,
       newLineAndRefresh,
       clearAndRefresh,
     };
@@ -229,7 +254,7 @@ export default {
 
 <template>
   <v-card class="chart-card">
-    <div style="position: absolute; right: 0">
+    <div style="position: absolute; right: 5px">
       <v-tooltip text="Download" location="bottom">
         <template v-slot:activator="{ props }">
           <a ref="downloadButton">
@@ -253,15 +278,15 @@ export default {
         </template>
       </v-tooltip>
     </div>
-    <div style="position: absolute; right: 0; top: 30px">
-      <v-tooltip text="Create New Dataset" location="bottom">
+    <div style="position: absolute; right: 5px; top: 30px">
+      <v-tooltip text="Edit / Add Datasets" location="bottom">
         <template v-slot:activator="{ props }">
           <v-btn
             v-bind="props"
             icon="mdi-pencil-plus"
             variant="plain"
             v-show="activeChart.clearable"
-            @click="newLineAndRefresh"
+            @click="editingLines = true"
           />
         </template>
       </v-tooltip>
@@ -276,6 +301,34 @@ export default {
           />
         </template>
       </v-tooltip>
+    </div>
+    <div
+      v-if="editingLines"
+      class="d-flex pa-3"
+      style="width: 80%; flex-wrap: wrap"
+    >
+      <v-text-field
+        v-for="line in data.datasets"
+        :key="line.label"
+        :placeholder="line.label"
+        density="compact"
+        hide-details
+        class="pa-1"
+        style="min-width: 100px"
+        @input="(e) => editLineName(line.label, e.target.value)"
+      />
+      <v-tooltip text="Create New Dataset" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon="mdi-plus"
+            variant="plain"
+            v-show="activeChart.clearable"
+            @click="newLineAndRefresh"
+          />
+        </template>
+      </v-tooltip>
+      <v-btn style="width: 100%" @click="saveLineNamesAndRefresh">Done</v-btn>
     </div>
     <v-container>
       <v-row no-gutters>
