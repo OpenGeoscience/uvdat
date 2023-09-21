@@ -290,8 +290,23 @@ onMounted(() => {
       </v-card>
     </div>
     <div ref="tooltip" class="tooltip" v-show="showTooltip">
+      <!-- Render for Derived Regions -->
+      <div v-if="selectedFeature && selectedDataSource?.derivedRegion">
+        <v-row no-gutters>ID: {{ selectedDataSource.derivedRegion.id }}</v-row>
+        <v-row no-gutters>
+          Name: {{ selectedDataSource.derivedRegion.name }}
+        </v-row>
+        <v-row no-gutters>
+          Source Region IDs:
+          {{ selectedDataSource.derivedRegion.source_regions }}
+        </v-row>
+        <v-row no-gutters>
+          Creation Operation:
+          {{ selectedDataSource.derivedRegion.source_operation }}
+        </v-row>
+      </div>
       <!-- Render for Regions -->
-      <div v-if="selectedFeature && selectedDatasetCategory === 'region'">
+      <div v-else-if="selectedFeature && selectedDatasetCategory === 'region'">
         <v-row no-gutters>ID: {{ selectedRegionID }}</v-row>
         <v-row no-gutters>Name: {{ selectedFeature.get("name") }}</v-row>
         <v-row>
