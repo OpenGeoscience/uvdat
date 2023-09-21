@@ -14,7 +14,8 @@ NODE_RECOVERY_MODES = [
     'random',
     'betweenness',
     'degree',
-    'information',
+    # requires scipy
+    # 'information',
     'eigenvector',
     'load',
     'closeness',
