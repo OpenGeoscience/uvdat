@@ -104,6 +104,11 @@ export default {
           ),
         };
       }
+      if (activeChart.value?.clearable) {
+        customOptions.plugins.legend = {
+          onClick: legendClick,
+        };
+      }
       return Object.assign({}, defaultOptions, customOptions);
     });
 
@@ -158,6 +163,10 @@ export default {
       }
       return true;
     });
+
+    function legendClick(e, legendItem) {
+      currentChartLineName.value = legendItem.text;
+    }
 
     function newLineAndRefresh() {
       if (activeChart.value) {
