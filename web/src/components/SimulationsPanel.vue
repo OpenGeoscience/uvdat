@@ -19,18 +19,23 @@ export default {
     function run() {
       inputForm.value.validate().then(({ valid }) => {
         if (valid) {
-          runSimulation(activeSimulation.value.id, selectedInputs.value).then(
-            ({ result }) => {
-              tab.value = "old";
-              activeResult.value = result.id;
-            }
-          );
+          runSimulation(
+            activeSimulation.value.id,
+            currentCity.value.id,
+            selectedInputs.value
+          ).then(({ result }) => {
+            tab.value = "old";
+            activeResult.value = result.id;
+          });
         }
       });
     }
 
     function fetchResults() {
-      getSimulationResults(activeSimulation.value.id).then((results) => {
+      getSimulationResults(
+        activeSimulation.value.id,
+        currentCity.value.id
+      ).then((results) => {
         availableResults.value = results;
       });
     }

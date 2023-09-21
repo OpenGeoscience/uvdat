@@ -69,6 +69,7 @@ class Chart(models.Model):
 
 class SimulationResult(TimeStampedModel):
     simulation_id = models.IntegerField()
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='simulation_results')
     input_args = models.JSONField(blank=True, null=True)
     output_data = models.JSONField(blank=True, null=True)
     error_message = models.TextField(null=True, blank=True)
@@ -76,5 +77,6 @@ class SimulationResult(TimeStampedModel):
     class Meta:
         unique_together = (
             'simulation_id',
+            'city',
             'input_args',
         )

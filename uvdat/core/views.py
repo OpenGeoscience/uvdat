@@ -186,10 +186,9 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['get'],
-        url_path="available",
+        url_path=r'available/city/(?P<city_id>[\d*]+)',
     )
-    def list_available(self, request, **kwargs):
-        city_id = request.query_params.get('city')
+    def list_available(self, request, city_id: int, **kwargs):
         sims = get_available_simulations(city_id)
         return HttpResponse(
             json.dumps(sims),
@@ -199,14 +198,16 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['get'],
-        url_path=r'(?P<simulation_id>[\d*]+)/results',
+        url_path=r'(?P<simulation_id>[\d*]+)/city/(?P<city_id>[\d*]+)/results',
     )
-    def list_results(self, request, simulation_id: int, **kwargs):
+    def list_results(self, request, simulation_id: int, city_id: int, **kwargs):
         return HttpResponse(
             json.dumps(
                 list(
                     SimulationResultSerializer(s).data
-                    for s in SimulationResult.objects.filter(simulation_id=int(simulation_id)).all()
+                    for s in SimulationResult.objects.filter(
+                        simulation_id=int(simulation_id), city__id=city_id
+                    ).all()
                 )
             ),
             status=200,
@@ -215,10 +216,10 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['post'],
-        url_path=r'run/(?P<simulation_id>[\d*]+)',
+        url_path=r'run/(?P<simulation_id>[\d*]+)/city/(?P<city_id>[\d*]+)',
     )
-    def run(self, request, simulation_id: int, **kwargs):
-        result = run_simulation(int(simulation_id), **request.data)
+    def run(self, request, simulation_id: int, city_id: int, **kwargs):
+        result = run_simulation(int(simulation_id), int(city_id), **request.data)
         return HttpResponse(
             json.dumps({'result': result}),
             status=200,

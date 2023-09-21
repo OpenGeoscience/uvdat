@@ -36,7 +36,6 @@ class UvdatMixin(ConfigMixin):
         # TODO: configure authentication and remove this workaround
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
-        configuration.REST_FRAMEWORK['APPEND_SLASH'] = False
 
         configuration.DATABASES = {
             'default': {

@@ -8,7 +8,7 @@ from django_large_image import tilesource
 import large_image
 import shapely
 
-from uvdat.core.models import Dataset, SimulationResult
+from uvdat.core.models import City, Dataset, SimulationResult
 from uvdat.core.serializers import DatasetSerializer, SimulationResultSerializer
 
 
@@ -135,11 +135,14 @@ def get_available_simulations(city_id: int):
     return sims
 
 
-def run_simulation(simulation_id: int, **kwargs):
+def run_simulation(simulation_id: int, city_id: int, **kwargs):
+    city = City.objects.get(id=city_id)
     simulation_matches = [s for s in AVAILABLE_SIMULATIONS if s['id'] == simulation_id]
     if len(simulation_matches) > 0:
         sim_result, created = SimulationResult.objects.get_or_create(
-            simulation_id=simulation_id, input_args=kwargs
+            simulation_id=simulation_id,
+            input_args=kwargs,
+            city=city,
         )
         sim_result.output_data = None
         sim_result.save()

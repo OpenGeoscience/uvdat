@@ -23,7 +23,7 @@ export async function getCityCharts(cityId: number): Promise<Chart[]> {
 export async function getCitySimulations(
   cityId: number
 ): Promise<Simulation[]> {
-  return (await apiClient.get(`simulations/available?city=${cityId}`)).data;
+  return (await apiClient.get(`simulations/available/city/${cityId}`)).data;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
@@ -69,10 +69,24 @@ export async function clearChart(chartId: number) {
   await apiClient.post(`charts/${chartId}/clear/`);
 }
 
-export async function runSimulation(simulationId: number, args: object) {
-  return (await apiClient.post(`simulations/run/${simulationId}/`, args)).data;
+export async function runSimulation(
+  simulationId: number,
+  cityId: number,
+  args: object
+) {
+  return (
+    await apiClient.post(
+      `simulations/run/${simulationId}/city/${cityId}/`,
+      args
+    )
+  ).data;
 }
 
-export async function getSimulationResults(simulationId: number) {
-  return (await apiClient.get(`simulations/${simulationId}/results`)).data;
+export async function getSimulationResults(
+  simulationId: number,
+  cityId: number
+) {
+  return (
+    await apiClient.get(`simulations/${simulationId}/city/${cityId}/results/`)
+  ).data;
 }
