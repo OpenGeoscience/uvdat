@@ -5,11 +5,13 @@ import {
   currentDataset,
   activeChart,
   availableCharts,
+  activeSimulation,
+  availableSimulations,
   selectedDatasetIds,
 } from "@/store";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { addDatasetLayerToMap } from "@/utils.js";
-import { getCityCharts } from "@/api/rest";
+import { getCityDatasets, getCityCharts, getCitySimulations } from "@/api/rest";
 import { updateVisibleLayers } from "../utils";
 
 export default {
@@ -17,7 +19,7 @@ export default {
     draggable,
   },
   setup() {
-    const openPanels = ref([0]);
+    const openPanels = ref([1]);
     const openCategories = ref([0]);
     const availableLayerTree = computed(() => {
       const groupKey = "category";
@@ -38,6 +40,13 @@ export default {
         .sort((a, b) => a.name < b.name);
     });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
+
+    function fetchDatasets() {
+      currentDataset.value = undefined;
+      getCityDatasets(currentCity.value.id).then((datasets) => {
+        currentCity.value.datasets = datasets;
+      });
+    }
 
     function updateActiveDatasets() {
       if (selectedDatasetIds.value.length) {
@@ -69,7 +78,6 @@ export default {
       ) {
         currentDataset.value = undefined;
       }
-      updateActiveDatasets();
     }
 
     function reorderLayers() {
@@ -91,11 +99,25 @@ export default {
       activeChart.value = chart;
     }
 
+    function fetchSimulations() {
+      activeSimulation.value = undefined;
+      getCitySimulations(currentCity.value.id).then((sims) => {
+        availableSimulations.value = sims;
+      });
+    }
+
+    function activateSimulation(sim) {
+      activeSimulation.value = sim;
+    }
+
     onMounted(fetchCharts);
+    onMounted(fetchSimulations);
+    watch(selectedDatasetIds, updateActiveDatasets);
 
     return {
       selectedDatasetIds,
       currentCity,
+      fetchDatasets,
       openPanels,
       openCategories,
       toggleDataset,
@@ -108,6 +130,10 @@ export default {
       availableCharts,
       fetchCharts,
       activateChart,
+      activeSimulation,
+      availableSimulations,
+      fetchSimulations,
+      activateSimulation,
     };
   },
 };
@@ -115,7 +141,49 @@ export default {
 
 <template>
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
-    <v-expansion-panel title="Available Layers">
+    <v-expansion-panel title="Active Layers">
+      <v-expansion-panel-text>
+        <draggable
+          v-model="selectedDatasetIds"
+          @change="reorderLayers"
+          item-key="id"
+          item-value="id"
+        >
+          <template #item="{ element }">
+            <v-card class="px-3 py-1 d-flex">
+              <v-icon class="mr-3">mdi-drag-horizontal-variant</v-icon>
+              <div style="width: calc(100% - 70px)">
+                {{ currentCity.datasets.find((d) => d.id === element).name }}
+              </div>
+              <v-icon
+                size="small"
+                class="expand-icon"
+                @click="
+                  expandOptionsPanel(
+                    currentCity.datasets.find((d) => d.id === element)
+                  )
+                "
+              >
+                mdi-cog
+              </v-icon>
+              <v-icon
+                size="small"
+                class="expand-icon"
+                @click="toggleDataset({ id: element })"
+              >
+                mdi-close
+              </v-icon>
+            </v-card>
+          </template>
+        </draggable>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.stop="fetchDatasets" class="mr-2">mdi-refresh</v-icon>
+        Available Datasets
+      </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-expansion-panels
           multiple
@@ -147,7 +215,7 @@ export default {
                   <v-icon
                     v-show="selectedDatasetIds.includes(dataset.id)"
                     size="small"
-                    class="expand-icon"
+                    class="expand-icon ml-1"
                     @click.prevent="expandOptionsPanel(dataset)"
                   >
                     mdi-cog
@@ -157,35 +225,6 @@ export default {
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel title="Active Layers">
-      <v-expansion-panel-text>
-        <draggable
-          v-model="selectedDatasetIds"
-          @change="reorderLayers"
-          item-key="id"
-          item-value="id"
-        >
-          <template #item="{ element }">
-            <v-card class="px-3 py-1">
-              <v-icon>mdi-drag-horizontal-variant</v-icon>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="
-                  expandOptionsPanel(
-                    currentCity.datasets.find((d) => d.id === element)
-                  )
-                "
-              >
-                mdi-cog
-              </v-icon>
-              {{ currentCity.datasets.find((d) => d.id === element).name }}
-            </v-card>
-          </template>
-        </draggable>
       </v-expansion-panel-text>
     </v-expansion-panel>
 
@@ -207,6 +246,32 @@ export default {
             {{ chart.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
               {{ chart.description }}
+            </v-tooltip>
+          </v-list-item>
+        </v-list>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.stop="fetchSimulations" class="mr-2">mdi-refresh</v-icon>
+        Available Simulations
+      </v-expansion-panel-title>
+      <v-expansion-panel-text>
+        <span v-if="availableSimulations.length === 0"
+          >No simulations available.</span
+        >
+        <v-list>
+          <v-list-item
+            v-for="sim in availableSimulations"
+            :key="sim.id"
+            :value="sim.id"
+            :active="activeSimulation && sim.id === activeSimulation.id"
+            @click="activateSimulation(sim)"
+          >
+            {{ sim.name }}
+            <v-tooltip activator="parent" location="end" max-width="300">
+              {{ sim.description }}
             </v-tooltip>
           </v-list-item>
         </v-list>

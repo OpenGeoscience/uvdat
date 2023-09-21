@@ -32,6 +32,11 @@ class UvdatMixin(ConfigMixin):
             's3_file_field',
         ]
 
+        # Disable authentication requirements for REST
+        # TODO: configure authentication and remove this workaround
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
+        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
+
         configuration.DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',

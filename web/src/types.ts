@@ -67,3 +67,14 @@ export interface Chart {
     datasets: object[];
   };
 }
+
+export interface Simulation {
+  id: number;
+  name: string;
+  description: string;
+  output_type: string;
+  args: {
+    name: string;
+    options: object[];
+  }[];
+}

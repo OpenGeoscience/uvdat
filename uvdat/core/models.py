@@ -4,7 +4,7 @@ from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
 
-class City(TimeStampedModel, models.Model):
+class City(TimeStampedModel):
     name = models.CharField(max_length=255, unique=True)
     center = geo_models.PointField()
     default_zoom = models.IntegerField(default=10)
@@ -13,7 +13,7 @@ class City(TimeStampedModel, models.Model):
         verbose_name_plural = 'cities'
 
 
-class Dataset(TimeStampedModel, models.Model):
+class Dataset(TimeStampedModel):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='datasets')
@@ -65,3 +65,18 @@ class Chart(models.Model):
     metadata = models.JSONField(blank=True, null=True)
     style = models.JSONField(blank=True, null=True)
     clearable = models.BooleanField(default=False)
+
+
+class SimulationResult(TimeStampedModel):
+    simulation_id = models.IntegerField()
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='simulation_results')
+    input_args = models.JSONField(blank=True, null=True)
+    output_data = models.JSONField(blank=True, null=True)
+    error_message = models.TextField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['simulation_id', 'city', 'input_args'], name='unique_simulation_combination'
+            )
+        ]

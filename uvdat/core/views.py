@@ -11,16 +11,18 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import Chart, City, Dataset, Region
+from uvdat.core.models import Chart, City, Dataset, Region, SimulationResult
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
     DatasetSerializer,
     NetworkNodeSerializer,
+    SimulationResultSerializer,
 )
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc
+from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
 
 
 class CityViewSet(ModelViewSet):
@@ -29,9 +31,15 @@ class CityViewSet(ModelViewSet):
 
 
 class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
-    queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     FILE_FIELD_NAME = 'raster_file'
+
+    def get_queryset(self):
+        city_id = self.request.query_params.get('city')
+        if city_id:
+            return Dataset.objects.filter(city__id=city_id)
+        else:
+            return Dataset.objects.all()
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):
@@ -158,8 +166,7 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
             return Chart.objects.filter(city__id=city_id)
         return Chart.objects.all()
 
-    # TODO: This should be POST once rest authentication is implemented
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['post'])
     def clear(self, request, **kwargs):
         chart = self.get_object()
         if not chart.clearable:
@@ -169,3 +176,51 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
         chart.chart_data = {}
         chart.save()
         return HttpResponse(status=200)
+
+
+class SimulationViewSet(GenericViewSet):
+    # Not based on a database model;
+    # Available Simulations must be hard-coded
+    # and associated with a function
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path=r'available/city/(?P<city_id>[\d*]+)',
+    )
+    def list_available(self, request, city_id: int, **kwargs):
+        sims = get_available_simulations(city_id)
+        return HttpResponse(
+            json.dumps(sims),
+            status=200,
+        )
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path=r'(?P<simulation_id>[\d*]+)/city/(?P<city_id>[\d*]+)/results',
+    )
+    def list_results(self, request, simulation_id: int, city_id: int, **kwargs):
+        return HttpResponse(
+            json.dumps(
+                list(
+                    SimulationResultSerializer(s).data
+                    for s in SimulationResult.objects.filter(
+                        simulation_id=int(simulation_id), city__id=city_id
+                    ).all()
+                )
+            ),
+            status=200,
+        )
+
+    @action(
+        detail=False,
+        methods=['post'],
+        url_path=r'run/(?P<simulation_id>[\d*]+)/city/(?P<city_id>[\d*]+)',
+    )
+    def run(self, request, simulation_id: int, city_id: int, **kwargs):
+        result = run_simulation(int(simulation_id), int(city_id), **request.data)
+        return HttpResponse(
+            json.dumps({'result': result}),
+            status=200,
+        )
