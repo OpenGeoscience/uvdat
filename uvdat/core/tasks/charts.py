@@ -10,7 +10,6 @@ CHART_COLORS = [
     'blue',
     'red',
     'green',
-    'yellow',
     'purple',
     'orange',
     'black',
