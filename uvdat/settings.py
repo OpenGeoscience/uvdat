@@ -34,11 +34,9 @@ class UvdatMixin(ConfigMixin):
 
         # Disable authentication requirements for REST
         # TODO: configure authentication and remove this workaround
-        configuration.REST_FRAMEWORK = {
-            'DEFAULT_AUTHENTICATION_CLASSES': [],
-            'DEFAULT_PERMISSION_CLASSES': [],
-            'APPEND_SLASH': False,
-        }
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
+        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
+        configuration.REST_FRAMEWORK['APPEND_SLASH'] = False
 
         configuration.DATABASES = {
             'default': {
