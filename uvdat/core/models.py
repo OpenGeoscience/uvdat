@@ -75,8 +75,8 @@ class SimulationResult(TimeStampedModel):
     error_message = models.TextField(null=True, blank=True)
 
     class Meta:
-        unique_together = (
-            'simulation_id',
-            'city',
-            'input_args',
-        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=['simulation_id', 'city', 'input_args'], name='unique_simulation_combination'
+            )
+        ]
