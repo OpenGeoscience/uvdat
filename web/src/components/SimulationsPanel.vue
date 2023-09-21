@@ -46,15 +46,17 @@ export default {
         const simArg = activeSimulation.value.args.find((a) => a.name === k);
         if (simArg) {
           const selectedOption = simArg.options.find((o) => o.id === v);
-          args.push({
-            key: k,
-            value: selectedOption,
-            viewable:
-              !selectedDatasetIds.value.includes(selectedOption.id) &&
-              currentCity.value.datasets.some(
-                (d) => d.id === selectedOption.id
-              ),
-          });
+          if (selectedOption) {
+            args.push({
+              key: k,
+              value: selectedOption,
+              viewable:
+                !selectedDatasetIds.value.includes(selectedOption.id) &&
+                currentCity.value.datasets.some(
+                  (d) => d.id === selectedOption.id
+                ),
+            });
+          }
         }
       });
       return args;
@@ -72,7 +74,11 @@ export default {
       const targetResult = availableResults.value.find(
         (r) => r.id == activeResult.value
       );
-      if (targetResult && !targetResult.output_data) {
+      if (
+        targetResult &&
+        !targetResult.output_data &&
+        !targetResult.error_message
+      ) {
         fetchResults();
       } else {
         clearInterval(outputPoll.value);
@@ -190,13 +196,19 @@ export default {
                 </tbody>
               </v-table>
               <div
-                v-if="!result.output_data && outputPoll"
+                v-if="
+                  !result.output_data && !result.error_message && outputPoll
+                "
                 style="width: 100%; text-align: center"
               >
                 <v-progress-circular indeterminate />
                 Waiting for simulation to complete...
               </div>
-              <div v-else>
+              <div v-else-if="result.error_message">
+                Simulation failed with error:
+                {{ result.error_message }}
+              </div>
+              <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
                 <div
                   v-if="

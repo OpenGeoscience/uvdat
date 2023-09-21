@@ -1,13 +1,12 @@
-from celery import shared_task
-
 import json
-import large_image
-from django_large_image import tilesource
 from pathlib import Path
-
 import re
-import shapely
 import tempfile
+
+from celery import shared_task
+from django_large_image import tilesource
+import large_image
+import shapely
 
 from uvdat.core.models import Dataset, SimulationResult
 from uvdat.core.serializers import DatasetSerializer, SimulationResultSerializer
@@ -48,7 +47,18 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, f
         elevation_dataset = Dataset.objects.get(id=elevation_dataset)
         flood_dataset = Dataset.objects.get(id=flood_dataset)
     except Dataset.DoesNotExist:
-        return []
+        result.error_message = 'Dataset not found.'
+        result.save()
+        return None
+
+    if (
+        not network_dataset.network
+        or elevation_dataset.category != 'elevation'
+        or flood_dataset.category != 'flood'
+    ):
+        result.error_message = 'Invalid dataset selected.'
+        result.save()
+        return None
 
     disabled_nodes = []
     network_nodes = network_dataset.network_nodes.all()

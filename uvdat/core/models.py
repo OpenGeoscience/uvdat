@@ -71,3 +71,4 @@ class SimulationResult(TimeStampedModel):
     simulation_id = models.IntegerField()
     input_args = models.JSONField(blank=True, null=True)
     output_data = models.JSONField(blank=True, null=True)
+    error_message = models.TextField(null=True, blank=True)
