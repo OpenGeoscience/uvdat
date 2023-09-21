@@ -20,7 +20,7 @@ import {
 } from "@/store";
 import { createStyle, cacheRasterData, getNetworkFeatureStyle } from "@/utils";
 import { baseURL } from "@/api/auth";
-import type { Dataset, DerivedRegion, NetworkNode } from "@/types";
+import type { Dataset, NetworkNode } from "@/types";
 import type { MapDataSource } from "@/data";
 import BaseLayer from "ol/layer/Base";
 
@@ -120,102 +120,61 @@ function randomColor() {
   );
 }
 
-export function addDerivedRegionLayerToMap(region: DerivedRegion): Layer {
-  const colors = `${randomColor()},#ffffff`;
-  const layer = new VectorLayer({
+export function createVectorLayer(url: string): Layer {
+  const defaultColors = `${randomColor()},#ffffff`;
+  return new VectorLayer({
     style: (feature) =>
       createStyle({
         type: feature.getGeometry()?.getType(),
-        colors,
+        colors: feature.get("properties")?.colors || defaultColors,
       }),
     source: new VectorSource({
+      url,
       format: new GeoJSON(),
-      url: `${baseURL}derived_regions/${region.id}/as_feature/`,
     }),
   });
-
-  // Add to map
-  getMap().addLayer(layer);
-  return layer;
 }
 
-export function addDatasetLayerToMap(dataset: Dataset, zIndex: number): Layer {
-  if (dataset.processing) {
-    throw new Error("Cannot add un-processed dataset to map!");
-  }
-
-  let layer;
-
-  // Add raster data
-  if (dataset.raster_file) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const tileParams: Record<string, any> = {
-      projection: "EPSG:3857",
-      band: 1,
-      palette: dataset.style?.colormap || "terrain",
-    };
-    if (
-      !dataset.style?.colormap_range !== undefined &&
-      dataset.style?.colormap_range.length === 2
-    ) {
-      tileParams.min = dataset.style.colormap_range[0];
-      tileParams.max = dataset.style.colormap_range[1];
-    }
-    if (dataset.style?.options?.transparency_threshold !== undefined) {
-      tileParams.nodata = dataset.style.options.transparency_threshold;
-    }
-    const tileParamString = Object.keys(tileParams)
-      .map((key) => key + "=" + tileParams[key])
-      .join("&");
-    layer = new TileLayer({
-      source: new XYZSource({
-        url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
+export function createVectorTileLayer(dataset: Dataset): Layer {
+  return new VectorTileLayer({
+    source: new VectorTileSource({
+      format: new GeoJSON(),
+      url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
+    }),
+    style: (feature) =>
+      createStyle({
+        type: feature.getGeometry()?.getType(),
+        colors: feature.get("colors"),
       }),
-      opacity: dataset.style?.opacity || 1,
-      zIndex,
-    });
+    opacity: dataset.style?.opacity || 1,
+  });
+}
 
-    cacheRasterData(dataset.id);
-  } else if (dataset.geodata_file) {
-    // Use VectorLayer if dataset category is "region"
-    if (dataset.category === "region") {
-      layer = new VectorLayer({
-        zIndex,
-        style: (feature) =>
-          createStyle({
-            type: feature.getGeometry()?.getType(),
-            colors: feature.get("properties").colors,
-          }),
-        source: new VectorSource({
-          format: new GeoJSON(),
-          url: `${baseURL}datasets/${dataset.id}/regions`,
-        }),
-      });
-    } else {
-      // Use vector tiles
-      layer = new VectorTileLayer({
-        source: new VectorTileSource({
-          format: new GeoJSON(),
-          url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
-        }),
-        style: (feature) =>
-          createStyle({
-            type: feature.getGeometry()?.getType(),
-            colors: feature.get("colors"),
-          }),
-        opacity: dataset.style?.opacity || 1,
-        zIndex,
-      });
-    }
+export function createRasterLayer(dataset: Dataset): Layer {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const tileParams: Record<string, any> = {
+    projection: "EPSG:3857",
+    band: 1,
+    palette: dataset.style?.colormap || "terrain",
+  };
+  if (dataset.style?.colormap_range?.length === 2) {
+    tileParams.min = dataset.style.colormap_range[0];
+    tileParams.max = dataset.style.colormap_range[1];
   }
-
-  if (layer === undefined) {
-    throw new Error("layer was not set!");
+  if (dataset.style?.options?.transparency_threshold !== undefined) {
+    tileParams.nodata = dataset.style.options.transparency_threshold;
   }
+  const tileParamString = Object.keys(tileParams)
+    .map((key) => key + "=" + tileParams[key])
+    .join("&");
 
-  // Add to map
-  getMap().addLayer(layer);
-  return layer;
+  cacheRasterData(dataset.id);
+  return new TileLayer({
+    source: new XYZSource({
+      url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
+    }),
+    opacity: dataset.style?.opacity || 1,
+  });
 }
 
 // TODO: Roll into addDatasetLayerToMap
@@ -273,19 +232,30 @@ export function addNetworkLayerToMap(dataset: Dataset, nodes: NetworkNode[]) {
 }
 
 export function addDataSourceLayerToMap(dataSource: MapDataSource) {
-  let layer: Layer;
-  if (dataSource.dataset) {
-    layer = addDatasetLayerToMap(
-      dataSource.dataset,
-      activeMapLayerIds.value.length - 1
+  let layer: Layer | undefined;
+  const { dataset, derivedRegion } = dataSource;
+  if (derivedRegion) {
+    layer = createVectorLayer(
+      `${baseURL}derived_regions/${derivedRegion.id}/as_feature/`
     );
-  } else if (dataSource.derivedRegion) {
-    layer = addDerivedRegionLayerToMap(dataSource.derivedRegion);
-  } else {
+  } else if (dataset) {
+    if (dataset.category === "region") {
+      layer = createVectorLayer(
+        `${baseURL}datasets/${dataSource.dataset?.id}/regions`
+      );
+    } else if (dataset.geodata_file) {
+      layer = createVectorTileLayer(dataset);
+    } else if (dataset.raster_file) {
+      layer = createRasterLayer(dataset);
+    }
+  }
+
+  if (layer === undefined) {
     throw new Error("Could not add data source to map");
   }
 
   // Add this to link layers to data sources
   layer.setProperties({ dataSourceId: dataSource.uid });
+  getMap().addLayer(layer);
   return layer;
 }
