@@ -11,7 +11,7 @@ export default {
       type: Array,
     },
     nodeRecoveries: {
-      required: true,
+      required: false,
       type: Array,
     },
   },
@@ -19,8 +19,6 @@ export default {
     const currentTick = ref(0);
     const ticker = ref();
     const seconds = ref(1);
-
-    console.log(props);
 
     const startState = computed(() => {
       if (props.nodeRecoveries?.length) return props.nodeFailures;
