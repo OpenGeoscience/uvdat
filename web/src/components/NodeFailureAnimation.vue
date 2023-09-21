@@ -2,6 +2,7 @@
 import { ref, watch } from "vue";
 import { deactivatedNodes } from "@/store";
 import { deactivatedNodesUpdated } from "@/utils";
+import { networkVis } from "../store";
 
 export default {
   props: {
@@ -48,6 +49,7 @@ export default {
     });
 
     return {
+      networkVis,
       currentTick,
       seconds,
       play,
@@ -59,7 +61,10 @@ export default {
 </script>
 
 <template>
-  <div class="d-flex" style="align-items: center">
+  <div v-if="!networkVis">
+    Show network dataset and enable network mode visualization to begin.
+  </div>
+  <div v-else class="d-flex" style="align-items: center">
     <v-btn @click="play" icon="mdi-play" variant="text" />
     <v-btn @click="pause" icon="mdi-pause" variant="text" />
     <v-btn @click="rewind" icon="mdi-rewind" variant="text" />
