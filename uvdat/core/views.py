@@ -19,7 +19,7 @@ from uvdat.core.serializers import (
     NetworkNodeSerializer,
     SimulationResultSerializer,
 )
-from uvdat.core.tasks.charts import add_gcc_chart_datum
+from uvdat.core.tasks.charts import add_gcc_chart_datum, add_chart_line
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
@@ -143,7 +143,14 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
 
         edge_list = construct_edge_list(dataset)
         gcc = network_gcc(edge_list, exclude_nodes)
-        add_gcc_chart_datum(dataset, excluded_node_names, len(gcc))
+
+        line_name = request.query_params.get('line_name')
+        add_gcc_chart_datum(
+            dataset,
+            excluded_node_names,
+            len(gcc),
+            line_name=line_name,
+        )
         return Response(gcc, status=200)
 
 
@@ -156,6 +163,16 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
         if city_id:
             return Chart.objects.filter(city__id=city_id)
         return Chart.objects.all()
+
+    @action(detail=True, methods=['post'], url_path='new-line')
+    def new_line(self, request, **kwargs):
+        chart = self.get_object()
+        if not chart.clearable:
+            return HttpResponse('Not an editable chart.', status=400)
+
+        add_chart_line(chart)
+        chart.save()
+        return HttpResponse(status=200)
 
     @action(detail=True, methods=['post'])
     def clear(self, request, **kwargs):

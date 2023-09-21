@@ -6,6 +6,22 @@ from webcolors import name_to_hex
 from uvdat.core.models import Chart
 
 
+CHART_COLORS = [
+    'blue',
+    'red',
+    'green',
+    'yellow',
+    'purple',
+    'orange',
+    'black',
+    'lightblue',
+    'pink',
+    'lightgreen',
+    'lightpurple',
+    'gray',
+]
+
+
 def convert_chart_data(chart):
     options = chart.style.get('options')
     chart_options = options.get('chart')
@@ -38,6 +54,23 @@ def convert_chart_data(chart):
     print(f"Saved data for chart {chart.name}")
 
 
+def add_chart_line(chart, line_name=None):
+    line_index = len(chart.chart_data['datasets'])
+    if line_name is None:
+        line_name = f'Run {line_index + 1}'
+    line_color = CHART_COLORS[line_index % len(CHART_COLORS)]
+    chart.chart_data['datasets'].append(
+        {
+            'label': line_name,
+            'backgroundColor': name_to_hex(line_color),
+            'borderColor': name_to_hex(line_color),
+            'data': [],
+        },
+    )
+    chart.metadata[line_name] = []
+    return line_index
+
+
 def get_gcc_chart(dataset):
     chart_name = f'{dataset.name} Greatest Connected Component Sizes'
     try:
@@ -60,43 +93,49 @@ def get_gcc_chart(dataset):
                 'x_title': 'Step when Excluded Nodes Changed',
                 'y_title': 'Number of Nodes',
                 'y_range': [0, dataset.network_nodes.count()],
+                "tooltip": {
+                    "title": "(ctx) => `${ctx[0].raw.n} Nodes Excluded`",
+                    "label": "(ctx) => `GCC = ${ctx.raw.y}`",
+                },
             },
         )
         chart.save()
         return chart
 
 
-def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
+def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size, line_name=None):
+    if line_name is None:
+        line_name = 'Run 1'
+
     chart = get_gcc_chart(dataset)
     if len(chart.metadata) == 0:
         # no data exists, need to initialize data structures
-        chart.metadata = []
+        chart.metadata = {}
         chart.chart_data['labels'] = []
-        chart.chart_data['datasets'] = [
-            {
-                'label': 'GCC Size',
-                'backgroundColor': name_to_hex('blue'),
-                'borderColor': name_to_hex('blue'),
-                'data': [],
-            },
-            {
-                'label': 'N Nodes Excluded',
-                'backgroundColor': name_to_hex('red'),
-                'borderColor': name_to_hex('red'),
-                'data': [],
-            },
-        ]
+        chart.chart_data['datasets'] = []
+
+    line_index_matches = [
+        i for i, d in enumerate(chart.chart_data['datasets']) if d['label'] == line_name
+    ]
+    if len(line_index_matches) == 0:
+        line_index = add_chart_line(chart, line_name=line_name)
+    else:
+        line_index = line_index_matches[0]
+
+    labels = chart.chart_data['labels']
+    dataset = chart.chart_data['datasets'][line_index]
 
     # Append to chart_data
-    labels = chart.chart_data['labels']
-    datasets = chart.chart_data['datasets']
+    x = len(dataset['data']) + 1
+    y = gcc_size
+    n = len(excluded_node_names)
 
-    labels.append(len(labels) + 1)  # Add x-axis entry
-    datasets[0]['data'].append(gcc_size)  # Add gcc size point
-    datasets[1]['data'].append(len(excluded_node_names))  # Add n excluded point
+    if x not in labels:
+        labels.append(x)
+    dataset['data'].append({'x': x, 'y': y, 'n': n})
 
     chart.chart_data['labels'] = labels
-    chart.chart_data['datasets'] = datasets
+    chart.chart_data['datasets'][line_index] = dataset
 
     new_entry = {
         'run_time': datetime.now().strftime("%d/%m/%Y %H:%M"),
@@ -106,5 +145,5 @@ def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
     }
 
     # Append to metadata
-    chart.metadata.append(new_entry)
+    chart.metadata[line_name].append(new_entry)
     chart.save()
