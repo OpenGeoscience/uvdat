@@ -19,7 +19,7 @@ from uvdat.core.serializers import (
     NetworkNodeSerializer,
     SimulationResultSerializer,
 )
-from uvdat.core.tasks.charts import add_gcc_chart_datum, add_chart_line
+from uvdat.core.tasks.charts import add_gcc_chart_datum, add_chart_line, rename_chart_lines
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
@@ -171,6 +171,16 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
             return HttpResponse('Not an editable chart.', status=400)
 
         add_chart_line(chart)
+        chart.save()
+        return HttpResponse(status=200)
+
+    @action(detail=True, methods=['post'], url_path='rename-lines')
+    def rename_lines(self, request, **kwargs):
+        chart = self.get_object()
+        if not chart.clearable:
+            return HttpResponse('Not an editable chart.', status=400)
+
+        rename_chart_lines(chart, request.data)
         chart.save()
         return HttpResponse(status=200)
 

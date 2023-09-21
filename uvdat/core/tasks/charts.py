@@ -17,7 +17,7 @@ CHART_COLORS = [
     'lightblue',
     'pink',
     'lightgreen',
-    'lightpurple',
+    'mediumpurple',
     'gray',
 ]
 
@@ -69,6 +69,19 @@ def add_chart_line(chart, line_name=None):
     )
     chart.metadata[line_name] = []
     return line_index
+
+
+def rename_chart_lines(chart, names):
+    for old_name, new_name in names.items():
+        chart.metadata[new_name] = chart.metadata[old_name]
+        del chart.metadata[old_name]
+
+        dataset_matches = [
+            i for i, d in enumerate(chart.chart_data['datasets']) if d['label'] == old_name
+        ]
+        if len(dataset_matches) > 0:
+            dataset_index = dataset_matches[0]
+            chart.chart_data['datasets'][dataset_index]['label'] = new_name
 
 
 def get_gcc_chart(dataset):
