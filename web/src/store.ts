@@ -22,6 +22,7 @@ export const rasterTooltip = ref();
 
 export const activeChart = ref();
 export const availableCharts = ref([]);
+export const currentChartLineName = ref();
 export const activeSimulation = ref();
 export const availableSimulations = ref([]);
 

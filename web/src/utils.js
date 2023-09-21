@@ -23,6 +23,7 @@ import {
   currentNetworkGCC,
   availableCharts,
   activeChart,
+  currentChartLineName,
 } from "@/store";
 
 export const rasterColormaps = [
@@ -535,7 +536,11 @@ export function displayRasterTooltip(evt, tooltip, overlay) {
 
 export function deactivatedNodesUpdated() {
   currentNetworkGCC.value = undefined;
-  getNetworkGCC(networkVis.value.id, deactivatedNodes.value).then((gcc) => {
+  getNetworkGCC(
+    networkVis.value.id,
+    deactivatedNodes.value,
+    currentChartLineName.value
+  ).then((gcc) => {
     currentNetworkGCC.value = gcc;
     updateNetworkStyle();
 

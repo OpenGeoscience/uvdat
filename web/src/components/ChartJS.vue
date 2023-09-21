@@ -1,6 +1,6 @@
 <script>
-import { computed, ref } from "vue";
-import { activeChart, availableCharts } from "@/store";
+import { computed, onMounted, ref, watch } from "vue";
+import { activeChart, availableCharts, currentChartLineName } from "@/store";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -9,11 +9,12 @@ import {
   PointElement,
   LineElement,
   Title,
+  SubTitle,
   Tooltip,
   Legend,
 } from "chart.js";
 import RecursiveTable from "./RecursiveTable.vue";
-import { clearChart, getCityCharts } from "@/api/rest";
+import { clearChart, getCityCharts, newChartLine } from "@/api/rest";
 
 ChartJS.register(
   CategoryScale,
@@ -21,6 +22,7 @@ ChartJS.register(
   PointElement,
   LineElement,
   Title,
+  SubTitle,
   Tooltip,
   Legend
 );
@@ -46,7 +48,12 @@ export default {
 
     const options = computed(() => {
       const customOptions = {
-        plugins: {},
+        plugins: {
+          subtitle: {
+            display: currentChartLineName.value !== undefined,
+            text: `Currently adding to ${currentChartLineName.value}`,
+          },
+        },
         scales: {},
       };
       const savedOptions = activeChart.value.chart_options;
@@ -87,6 +94,15 @@ export default {
         }
         customOptions.scales.y.min = savedOptions.y_range[0];
         customOptions.scales.y.max = savedOptions.y_range[1];
+      }
+      if (savedOptions.tooltip) {
+        customOptions.plugins.tooltip = {
+          callbacks: Object.fromEntries(
+            Object.entries(savedOptions.tooltip)
+              .filter(([, v]) => v.includes("(ctx) => "))
+              .map(([k, v]) => [k, eval(v)])
+          ),
+        };
       }
       return Object.assign({}, defaultOptions, customOptions);
     });
@@ -143,6 +159,21 @@ export default {
       return true;
     });
 
+    function newLineAndRefresh() {
+      if (activeChart.value) {
+        newChartLine(activeChart.value.id).then(() => {
+          getCityCharts(activeChart.value.city).then((charts) => {
+            availableCharts.value = charts;
+            if (activeChart) {
+              activeChart.value = charts.find(
+                (c) => c.id === activeChart.value.id
+              );
+            }
+          });
+        });
+      }
+    }
+
     function clearAndRefresh() {
       if (activeChart.value) {
         clearChart(activeChart.value.id).then(() => {
@@ -158,6 +189,18 @@ export default {
       }
     }
 
+    function updateCurrentChartLineName() {
+      if (activeChart.value) {
+        const lineNames = Object.keys(activeChart.value?.metadata);
+        currentChartLineName.value = lineNames[lineNames.length - 1];
+      } else {
+        currentChartLineName.value = undefined;
+      }
+    }
+
+    onMounted(updateCurrentChartLineName);
+    watch(activeChart, updateCurrentChartLineName);
+
     return {
       activeChart,
       options,
@@ -168,6 +211,7 @@ export default {
       data,
       downloadButton,
       downloadReady,
+      newLineAndRefresh,
       clearAndRefresh,
     };
   },
@@ -177,17 +221,6 @@ export default {
 <template>
   <v-card class="chart-card">
     <div style="position: absolute; right: 0">
-      <v-tooltip text="Clear Chart Data" location="bottom">
-        <template v-slot:activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon="mdi-eraser-variant"
-            variant="plain"
-            v-show="activeChart.clearable"
-            @click="clearAndRefresh"
-          />
-        </template>
-      </v-tooltip>
       <v-tooltip text="Download" location="bottom">
         <template v-slot:activator="{ props }">
           <a ref="downloadButton">
@@ -207,6 +240,30 @@ export default {
             icon="mdi-close"
             variant="plain"
             @click="activeChart = undefined"
+          />
+        </template>
+      </v-tooltip>
+    </div>
+    <div style="position: absolute; right: 0; top: 30px">
+      <v-tooltip text="Create New Dataset" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon="mdi-pencil-plus"
+            variant="plain"
+            v-show="activeChart.clearable"
+            @click="newLineAndRefresh"
+          />
+        </template>
+      </v-tooltip>
+      <v-tooltip text="Clear Chart Data" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon="mdi-eraser-variant"
+            variant="plain"
+            v-show="activeChart.clearable"
+            @click="clearAndRefresh"
           />
         </template>
       </v-tooltip>

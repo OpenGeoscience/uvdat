@@ -42,13 +42,14 @@ export async function getDatasetNetwork(
 
 export async function getNetworkGCC(
   datasetId: number,
-  exclude_nodes: number[]
+  exclude_nodes: number[],
+  lineName: string | undefined
 ): Promise<NetworkNode[]> {
-  return (
-    await apiClient.get(
-      `datasets/${datasetId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
-    )
-  ).data;
+  let queryString = `datasets/${datasetId}/gcc?exclude_nodes=${exclude_nodes.toString()}`;
+  if (lineName) {
+    queryString += `&line_name=${lineName}`;
+  }
+  return (await apiClient.get(queryString)).data;
 }
 
 export async function getRasterData(datasetId: number): Promise<RasterData> {
@@ -63,6 +64,10 @@ export async function getRasterData(datasetId: number): Promise<RasterData> {
     data,
     sourceBounds,
   };
+}
+
+export async function newChartLine(chartId: number) {
+  await apiClient.post(`charts/${chartId}/new-line/`);
 }
 
 export async function clearChart(chartId: number) {
