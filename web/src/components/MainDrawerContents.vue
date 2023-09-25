@@ -89,12 +89,17 @@ export default {
       const map = new Map();
       availableMapDataSources.value.forEach((ds) => {
         if (ds.dataset !== undefined) {
-          map.set(ds, ds.dataset);
+          map.set(ds.dataset.id, ds);
         }
       });
 
       return map;
     });
+
+    function datasetSelected(datasetId) {
+      const uid = datasetIdToDataSource.value.get(datasetId)?.uid;
+      return uid && selectedDataSources.value.has(uid);
+    }
 
     function toggleDataset(dataset) {
       toggleDataSource(new MapDataSource({ dataset }));
@@ -209,6 +214,7 @@ export default {
       getLayerName,
       availableMapDataSources,
       datasetIdToDataSource,
+      datasetSelected,
     };
   },
 };
@@ -235,7 +241,7 @@ export default {
             <v-expansion-panel-text>
               <v-checkbox
                 v-for="dataset in category.children"
-                :model-value="datasetIdToDataSource.has(dataset.id)"
+                :model-value="datasetSelected(dataset.id)"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -250,7 +256,7 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="datasetIdToDataSource.has(dataset.id)"
+                    v-show="datasetSelected(dataset.id)"
                     size="small"
                     class="expand-icon ml-1"
                     @click.prevent="expandOptionsPanelFromDataset(dataset)"
