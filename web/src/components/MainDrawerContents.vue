@@ -34,7 +34,7 @@ export default {
     draggable,
   },
   setup() {
-    const openPanels = ref([1]);
+    const openPanels = ref([0]);
     const openCategories = ref([0]);
     const availableLayerTree = computed(() => {
       const groupKey = "category";
