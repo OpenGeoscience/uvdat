@@ -120,13 +120,29 @@ function randomColor() {
   );
 }
 
-export function createVectorLayer(url: string): Layer {
+function getObjectProperty(
+  object: Record<string, unknown>,
+  selector: string
+): unknown {
+  return selector
+    .split(".")
+    .filter((x) => x !== "")
+    .reduce((acc, cur) => acc && (acc[cur] as Record<string, unknown>), object);
+}
+
+type VectorLayerProps = { colors?: string };
+export function createVectorLayer(
+  url: string,
+  props?: VectorLayerProps
+): Layer {
   const defaultColors = `${randomColor()},#ffffff`;
   return new VectorLayer({
     style: (feature) =>
       createStyle({
         type: feature.getGeometry()?.getType(),
-        colors: feature.get("properties")?.colors || defaultColors,
+        colors: props?.colors
+          ? getObjectProperty(feature.getProperties(), props.colors)
+          : defaultColors,
       }),
     source: new VectorSource({
       url,
@@ -241,10 +257,13 @@ export function addDataSourceLayerToMap(dataSource: MapDataSource) {
   } else if (dataset) {
     if (dataset.category === "region") {
       layer = createVectorLayer(
-        `${baseURL}datasets/${dataSource.dataset?.id}/regions`
+        `${baseURL}datasets/${dataSource.dataset?.id}/regions`,
+        { colors: "properties.colors" }
       );
-    } else if (dataset.geodata_file) {
+    } else if (dataset.vector_tiles_file) {
       layer = createVectorTileLayer(dataset);
+    } else if (dataset.geodata_file) {
+      layer = createVectorLayer(dataset.geodata_file, { colors: "colors" });
     } else if (dataset.raster_file) {
       layer = createRasterLayer(dataset);
     }
