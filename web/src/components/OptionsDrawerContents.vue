@@ -1,5 +1,5 @@
 <script>
-import { onMounted, ref, watch, computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
 import { getUid } from "ol/util";
 
@@ -35,9 +35,20 @@ export default {
     }
 
     function populateRefs() {
+      if (currentMapDataSource.value === undefined) {
+        return;
+      }
+
+      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
       const dataset = currentMapDataSource.value?.dataset;
 
-      opacity.value = dataset?.style?.opacity || 1;
+      // Set opacity to layer value, update if it hasn't been changed
+      opacity.value = layer.getOpacity();
+      if (opacity.value === 1 && dataset?.style?.opacity) {
+        opacity.value = dataset.style.opacity;
+      }
+
+      // Update other values
       colormap.value = dataset?.style?.colormap || "terrain";
       datasetRange.value =
         dataset?.style?.data_range?.map((v) => Math.round(v)) || undefined;
@@ -148,7 +159,6 @@ export default {
       return map;
     });
 
-    onMounted(populateRefs);
     watch(currentMapDataSource, populateRefs);
     watch(opacity, updateLayerOpacity);
     watch(colormap, updateCurrentDatasetLayer);
