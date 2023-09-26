@@ -38,7 +38,7 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
     # Override this method to ensure the pk field is a number instead of a string
     def get_dump_object(self, obj: Any) -> Any:
         val = super().get_dump_object(obj)
-        val["properties"]["pk"] = int(val["properties"]["pk"])
+        val["properties"]["id"] = int(val["properties"].pop("pk"))
 
         return val
 

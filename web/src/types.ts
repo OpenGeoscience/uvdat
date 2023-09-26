@@ -17,8 +17,7 @@ export interface Dataset {
 }
 
 export interface Region {
-  pk: number;
-
+  id: number;
   name: string;
   city: number;
   dataset: number;

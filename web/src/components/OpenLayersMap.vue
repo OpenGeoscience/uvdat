@@ -66,14 +66,14 @@ const selectedRegion = computed(() => {
 
   return selectedFeature.value?.getProperties() as Region;
 });
-const selectedRegionID = computed(() => selectedRegion.value?.pk);
+const selectedRegionID = computed(() => selectedRegion.value?.id);
 const selectedRegionIsGrouped = computed(() => {
   if (selectedRegion.value === undefined) {
     return false;
   }
 
-  const { pk } = selectedRegion.value;
-  return selectedRegions.value.find((region) => region.pk === pk) !== undefined;
+  const { id } = selectedRegion.value;
+  return selectedRegions.value.find((region) => region.id === id) !== undefined;
 });
 
 // Ensure that if any regions of the currently selected datasets are
@@ -150,7 +150,7 @@ function removeRegionFromGrouping() {
   }
 
   selectedRegions.value = selectedRegions.value.filter(
-    (region) => region.pk !== selectedRegionID.value
+    (region) => region.id !== selectedRegionID.value
   );
 
   // Check if that element was the last removed
@@ -171,7 +171,7 @@ async function createDerivedRegion() {
   await postDerivedRegion(
     newRegionName.value,
     city,
-    selectedRegions.value.map((reg) => reg.pk),
+    selectedRegions.value.map((reg) => reg.id),
     regionGroupingType.value
   );
 
