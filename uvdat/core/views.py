@@ -2,9 +2,6 @@ import json
 from pathlib import Path
 import tempfile
 
-from django.contrib.gis.db.models.aggregates import Union
-from django.contrib.gis.geos import GEOSGeometry
-from django.db import transaction
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
 from drf_yasg.utils import swagger_auto_schema
@@ -30,6 +27,7 @@ from uvdat.core.serializers import (
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
+from uvdat.core.tasks.regions import DerivedRegionCreationException, create_derived_region
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
 
 
@@ -59,55 +57,16 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
         serializer = DerivedRegionCreationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Ensure at least two regions provided
-        source_regions = Region.objects.filter(pk__in=serializer.validated_data['regions'])
-        if source_regions.count() < 2:
-            return HttpResponse("Derived Regions must consist of multiple regions", status=400)
-
-        # Ensure all regions are from one city
-        source_cities = list((source_regions.values_list('city', flat=True).distinct()))
-        if len(source_cities) > 1:
-            return HttpResponse(
-                f"Multiple cities included in source regions: {source_cities}", status=400
+        try:
+            data = serializer.validated_data
+            derived_region = create_derived_region(
+                name=data['name'],
+                city_id=data['city'],
+                region_ids=data['regions'],
+                operation=data['operation'],
             )
-
-        # Only handle union operations for now
-        source_operation = serializer.validated_data['operation']
-        if source_operation == DerivedRegion.VectorOperation.INTERSECTION:
-            return HttpResponse("Intersection Operation not yet supported", status=400)
-
-        # Simply include all multipolygons from all source regions
-        # Convert Polygon to MultiPolygon if necessary
-        geojson = json.loads(source_regions.aggregate(polys=Union('boundary'))['polys'].geojson)
-        if geojson['type'] == 'Polygon':
-            geojson['type'] = 'MultiPolygon'
-            geojson['coordinates'] = [geojson['coordinates']]
-
-        # Form proper Geometry object
-        new_boundary = GEOSGeometry(json.dumps((geojson)))
-
-        # Check for duplicate derived regions
-        city = serializer.validated_data['city']
-        existing = list(
-            DerivedRegion.objects.filter(
-                city=city, boundary=GEOSGeometry(new_boundary)
-            ).values_list('id', flat=True)
-        )
-        if existing:
-            return HttpResponse(
-                f"Derived Regions with identical boundary already exist: {existing}", status=400
-            )
-
-        # Save and return
-        with transaction.atomic():
-            derived_region = DerivedRegion.objects.create(
-                name=serializer.validated_data['name'],
-                city=city,
-                properties={},
-                boundary=new_boundary,
-                source_operation=source_operation,
-            )
-            derived_region.source_regions.set(source_regions)
+        except DerivedRegionCreationException as e:
+            return Response(str(e), status=400)
 
         return Response(
             DerivedRegionDetailSerializer(instance=derived_region).data,
