@@ -7,7 +7,7 @@ import { computed, reactive, ref, watch } from "vue";
 import { City, Dataset, DerivedRegion, Region } from "./types.js";
 import { getCities, getDataset } from "@/api/rest";
 import { MapDataSource } from "@/data";
-import { Map as olMap, getUid } from "ol";
+import { Map as olMap, getUid, Feature } from "ol";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
@@ -22,6 +22,10 @@ export function getMap() {
   }
   return map.value;
 }
+
+export const showMapTooltip = ref(false);
+export const selectedFeature = ref<Feature>();
+export const selectedDataSource = ref<MapDataSource>();
 
 // Represents the number of layers active and their ordering
 // This is the sole source of truth regarding visible layers
@@ -93,9 +97,15 @@ export const availableSimulations = ref([]);
 // Regions
 export const regionGroupingActive = ref(false);
 export const regionGroupingType = ref<"intersection" | "union" | null>(null);
-export const regionIntersectionActive = ref(false);
-export const regionUnionActive = ref(false);
 export const selectedRegions = ref<Region[]>([]);
+export function cancelRegionGrouping() {
+  selectedRegions.value = [];
+  regionGroupingActive.value = false;
+  regionGroupingType.value = null;
+
+  showMapTooltip.value = false;
+}
+
 export const availableDerivedRegions = ref<DerivedRegion[]>([]);
 export const selectedDerivedRegionIds = reactive(new Set<number>());
 
