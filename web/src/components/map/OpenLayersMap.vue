@@ -196,6 +196,7 @@ function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
   const dataSource = availableDataSourcesTable.value.get(
     layer.get("dataSourceId")
   );
+
   if (!dataSource) {
     return;
   }

@@ -12,7 +12,7 @@ import {
   showMapBaseLayer,
 } from "./store";
 import { updateVisibleLayers } from "@/layers";
-import OpenLayersMap from "./components/OpenLayersMap.vue";
+import OpenLayersMap from "./components/map/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
