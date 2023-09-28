@@ -3,7 +3,7 @@ import { ref, watch } from "vue";
 import {
   activeSimulation,
   currentCity,
-  selectedDataSources,
+  activeDataSources,
   availableDataSourcesTable,
 } from "@/store";
 import { MapDataSource, addDataSourceToMap, getDatasetUid } from "@/data";
@@ -60,8 +60,7 @@ export default {
             (o) => o.id === v || o === v
           );
           const dataSourceUid = getDatasetUid(selectedOption.id);
-          const dataSourceSelected =
-            selectedDataSources.value.has(dataSourceUid);
+          const dataSourceSelected = activeDataSources.value.has(dataSourceUid);
           const dataSourceAvailable =
             availableDataSourcesTable.value.has(dataSourceUid);
 

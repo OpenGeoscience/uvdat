@@ -12,7 +12,7 @@ import {
   activeMapLayerIds,
   availableMapDataSources,
   availableDataSourcesTable,
-  selectedDataSources,
+  activeDataSources,
 } from "@/store";
 
 import {
@@ -78,7 +78,7 @@ export default {
     });
 
     function toggleDataSource(dataSource) {
-      if (selectedDataSources.value.has(dataSource.uid)) {
+      if (activeDataSources.value.has(dataSource.uid)) {
         hideDataSourceFromMap(dataSource);
       } else {
         addDataSourceToMap(dataSource);
@@ -98,7 +98,7 @@ export default {
 
     function datasetSelected(datasetId) {
       const uid = datasetIdToDataSource.value.get(datasetId)?.uid;
-      return uid && selectedDataSources.value.has(uid);
+      return uid && activeDataSources.value.has(uid);
     }
 
     function toggleDataset(dataset) {

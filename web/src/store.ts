@@ -55,7 +55,7 @@ export const currentMapDataSource = ref<MapDataSource>();
  * Keeps track of which data sources are being actively shown
  * Maps data source ID to the source itself
  */
-export const selectedDataSources = computed(() => {
+export const activeDataSources = computed(() => {
   const dsmap = new Map<string, MapDataSource>();
   if (map.value === undefined) {
     return dsmap;

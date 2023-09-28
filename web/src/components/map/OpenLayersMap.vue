@@ -14,7 +14,7 @@ import {
   availableDerivedRegions,
   availableMapDataSources,
   availableDataSourcesTable,
-  selectedDataSources,
+  activeDataSources,
 } from "@/store";
 import { displayRasterTooltip, toggleNodeActive } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
@@ -78,7 +78,7 @@ const selectedRegionIsGrouped = computed(() => {
 
 // Ensure that if any regions of the currently selected datasets are
 // de-selected, their regions are removed from the selection
-watch(selectedDataSources, (dsMap) => {
+watch(activeDataSources, (dsMap) => {
   // If the currently selected region was part of a data source that was removed, de-select it
   if (selectedRegion.value !== undefined) {
     const selectedRegionDataSource = availableMapDataSources.value.find(
