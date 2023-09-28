@@ -1,11 +1,9 @@
 import json
 from pathlib import Path
 import tempfile
-from typing import Any
 
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GEOSGeometry
-from django.contrib.gis.serializers import geojson
 from django.db import transaction
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
@@ -26,21 +24,13 @@ from uvdat.core.serializers import (
     DerivedRegionDetailSerializer,
     DerivedRegionListSerializer,
     NetworkNodeSerializer,
+    RegionFeatureCollectionSerializer,
     SimulationResultSerializer,
 )
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
-
-
-class RegionFeatureCollectionSerializer(geojson.Serializer):
-    # Override this method to ensure the pk field is a number instead of a string
-    def get_dump_object(self, obj: Any) -> Any:
-        val = super().get_dump_object(obj)
-        val["properties"]["id"] = int(val["properties"].pop("pk"))
-
-        return val
 
 
 class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):

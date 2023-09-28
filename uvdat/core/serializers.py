@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
 from uvdat.core.models import Chart, City, Dataset, DerivedRegion, NetworkNode, SimulationResult
@@ -61,6 +62,15 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SimulationResult
+
+
+class RegionFeatureCollectionSerializer(geojson.Serializer):
+    # Override this method to ensure the pk field is a number instead of a string
+    def get_dump_object(self, obj):
+        val = super().get_dump_object(obj)
+        val["properties"]["id"] = int(val["properties"].pop("pk"))
+
+        return val
 
 
 class DerivedRegionListSerializer(serializers.ModelSerializer):
