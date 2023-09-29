@@ -16,14 +16,15 @@ import type { MapBrowserEvent, Feature } from "ol";
 import type { Layer } from "ol/layer";
 import Control from "ol/control/Control";
 
-import MapControl from "./MapControl.vue";
+import RegionGrouping from "./RegionGrouping.vue";
+import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
 
-// OpenLayers variables
+// OpenLayers refs
 const tooltip = ref();
-const context = ref();
+const regiongrouping = ref();
+const activelayers = ref();
 let tooltipOverlay: Overlay;
-let contextControl: Control;
 
 function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
   // Retrieve first clicked feature, and its layer
@@ -66,9 +67,11 @@ function createMap() {
     getMap().getTargetElement().classList.remove("spinner");
   });
 
-  // Add overlay to display contextual info
-  contextControl = new Control({ element: context.value });
-  contextControl.setMap(newMap);
+  // Add overlay to display region grouping
+  newMap.addControl(new Control({ element: regiongrouping.value }));
+
+  // Add overlay to display active layers
+  newMap.addControl(new Control({ element: activelayers.value }));
 
   // Add tooltip overlay
   tooltipOverlay = new Overlay({
@@ -95,8 +98,11 @@ onMounted(() => {
 
 <template>
   <div id="mapContainer" class="map">
-    <div ref="context" class="context-control">
-      <MapControl />
+    <div ref="activelayers" class="active-layers-control">
+      <ActiveLayers />
+    </div>
+    <div ref="regiongrouping" class="region-grouping-control">
+      <RegionGrouping />
     </div>
     <div ref="tooltip" class="tooltip" v-show="showMapTooltip">
       <MapTooltip />
@@ -138,10 +144,16 @@ onMounted(() => {
   word-break: break-word;
 }
 
-.context-control {
+.active-layers-control {
   float: left;
   position: relative;
   top: 2%;
+  left: 3%;
+}
+.region-grouping-control {
+  float: left;
+  position: absolute;
+  bottom: 2%;
   left: 3%;
 }
 </style>

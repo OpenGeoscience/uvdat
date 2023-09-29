@@ -55,8 +55,16 @@ export default {
       });
     }
 
-    // If new derived regions added, open panel
-    watch(availableDerivedRegions, (availableRegs) => {
+    async function setDerivedRegions() {
+      availableDerivedRegions.value = await listDerivedRegions();
+    }
+
+    // If new derived region created, open panel
+    watch(availableDerivedRegions, (availableRegs, oldRegs) => {
+      if (!oldRegs.length || availableRegs.length === oldRegs.length) {
+        return;
+      }
+
       if (availableRegs.length && !openPanels.value.includes(1)) {
         openPanels.value.push(1);
       }
@@ -81,8 +89,24 @@ export default {
       return map;
     });
 
+    const derivedRegionIdToDataSource = computed(() => {
+      const map = new Map();
+      availableMapDataSources.value.forEach((ds) => {
+        if (ds.derivedRegion !== undefined) {
+          map.set(ds.derivedRegion.id, ds);
+        }
+      });
+
+      return map;
+    });
+
     function datasetSelected(datasetId) {
       const uid = datasetIdToDataSource.value.get(datasetId)?.uid;
+      return uid && activeDataSources.value.has(uid);
+    }
+
+    function derivedRegionSelected(derivedRegionId) {
+      const uid = derivedRegionIdToDataSource.value.get(derivedRegionId)?.uid;
       return uid && activeDataSources.value.has(uid);
     }
 
@@ -122,9 +146,7 @@ export default {
 
     onMounted(fetchCharts);
     onMounted(fetchSimulations);
-    onMounted(async () => {
-      availableDerivedRegions.value = await listDerivedRegions();
-    });
+    onMounted(setDerivedRegions);
 
     return {
       currentCity,
@@ -149,6 +171,8 @@ export default {
       availableMapDataSources,
       datasetIdToDataSource,
       datasetSelected,
+      derivedRegionSelected,
+      setDerivedRegions,
     };
   },
 };
@@ -205,10 +229,17 @@ export default {
       </v-expansion-panel-text>
     </v-expansion-panel>
 
-    <v-expansion-panel title="Derived Regions">
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.stop="setDerivedRegions" class="mr-2">
+          mdi-refresh
+        </v-icon>
+        Available Derived Regions
+      </v-expansion-panel-title>
       <v-expansion-panel-text>
         <v-checkbox
           v-for="region in availableDerivedRegions"
+          :model-value="derivedRegionSelected(region.id)"
           :key="region.id"
           :label="region.name"
           hide-details
