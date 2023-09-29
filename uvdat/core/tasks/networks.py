@@ -9,7 +9,6 @@ import shapely
 
 from uvdat.core.models import NetworkNode
 
-
 NODE_RECOVERY_MODES = [
     'random',
     'betweenness',
@@ -127,28 +126,32 @@ def save_network_nodes(dataset):
 
 
 def construct_edge_list(dataset):
-    edge_list = {}
-    visited_nodes = []
+    network_nodes = dataset.network_nodes.values_list('id', flat=True)
+    edges = NetworkNode.adjacent_nodes.through.objects.filter(
+        from_networknode_id__in=network_nodes, to_networknode_id__in=network_nodes
+    ).values_list('from_networknode_id', 'to_networknode_id')
 
-    for node in dataset.network_nodes.all():
-        adjacencies = [
-            adj_node.id
-            for adj_node in node.adjacent_nodes.all()
-            if adj_node.id not in visited_nodes
-        ]
-        if len(adjacencies) > 0:
-            edge_list[node.id] = sorted(adjacencies)
-        visited_nodes.append(node.id)
+    # Construct adj list
+    edge_list: dict[int, list[int]] = {}
+    for start, end in edges:
+        if start not in edge_list:
+            edge_list[start] = []
+
+        edge_list[start].append(end)
+
+    # Ensure that the type of all keys is an integer
+    assert all(isinstance(x, int) for x in edge_list.keys())
+
+    # Sort all node id lists
+    for start_node in edge_list.keys():
+        edge_list[start_node].sort()
 
     return edge_list
 
 
-def network_gcc(edges: dict[str, list[int]], exclude_nodes: list[int]) -> list[int]:
-    # Convert input keys to integer
-    int_edges = {int(k): v for k, v in edges.items()}
-
+def network_gcc(edges: dict[int, list[int]], exclude_nodes: list[int]) -> list[int]:
     # Create graph, remove nodes, get GCC
-    G = nx.from_dict_of_lists(int_edges)
+    G = nx.from_dict_of_lists(edges)
     G.remove_nodes_from(exclude_nodes)
     gcc = max(nx.connected_components(G), key=len)
 
