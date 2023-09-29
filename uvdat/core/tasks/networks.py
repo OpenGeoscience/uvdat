@@ -125,8 +125,8 @@ def save_network_nodes(dataset):
             node_object.save()
 
 
-def construct_edge_list(dataset):
-    network_nodes = dataset.network_nodes.values_list('id', flat=True)
+def construct_edge_list(dataset, exclude_nodes: list[int] = []):
+    network_nodes = dataset.network_nodes.exclude(id__in=exclude_nodes).values_list('id', flat=True)
     edges = NetworkNode.adjacent_nodes.through.objects.filter(
         from_networknode_id__in=network_nodes, to_networknode_id__in=network_nodes
     ).values_list('from_networknode_id', 'to_networknode_id')
@@ -149,10 +149,9 @@ def construct_edge_list(dataset):
     return edge_list
 
 
-def network_gcc(edges: dict[int, list[int]], exclude_nodes: list[int]) -> list[int]:
+def network_gcc(edges: dict[int, list[int]]) -> list[int]:
     # Create graph, remove nodes, get GCC
     G = nx.from_dict_of_lists(edges)
-    G.remove_nodes_from(exclude_nodes)
     gcc = max(nx.connected_components(G), key=len)
 
     # Return GCC's list of nodes
