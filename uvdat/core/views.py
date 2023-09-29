@@ -11,7 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import Chart, City, Dataset, Region, SimulationResult
+from uvdat.core.models import Chart, City, Dataset, NetworkNode, Region, SimulationResult
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
@@ -136,10 +136,9 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         exclude_nodes = exclude_nodes.split(',')
         exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
 
-        excluded_node_names = []
-        for node in dataset.network_nodes.all():
-            if node.id in exclude_nodes:
-                excluded_node_names.append(node.name)
+        excluded_node_names = list(
+            NetworkNode.objects.filter(id__in=exclude_nodes).values_list('name', flat=True)
+        )
 
         edge_list = construct_edge_list(dataset, exclude_nodes)
         gcc = network_gcc(edge_list)
