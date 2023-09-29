@@ -98,7 +98,7 @@ export default {
 
     watch(activeSimulation, () => {
       availableResults.value = [];
-      fetchResults();
+      if (activeSimulation.value) fetchResults();
     });
 
     watch(tab, () => {

@@ -1,5 +1,5 @@
 <script>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { activeChart, availableCharts, currentChartLineName } from "@/store";
 import { Line } from "vue-chartjs";
 import {
@@ -172,7 +172,11 @@ export default {
     });
 
     function legendClick(e, legendItem) {
-      currentChartLineName.value = legendItem.text;
+      if (legendItem.text === "No Data") {
+        currentChartLineName.value = "Run 1";
+      } else {
+        currentChartLineName.value = legendItem.text;
+      }
     }
 
     function editLineName(oldName, newName) {
@@ -222,7 +226,7 @@ export default {
     }
 
     function updateCurrentChartLineName() {
-      if (activeChart.value) {
+      if (activeChart.value?.clearable) {
         const lineNames = Object.keys(activeChart.value?.metadata);
         currentChartLineName.value = lineNames[lineNames.length - 1];
       } else {
@@ -231,6 +235,7 @@ export default {
     }
 
     onMounted(updateCurrentChartLineName);
+    watch(activeChart, updateCurrentChartLineName);
 
     return {
       activeChart,

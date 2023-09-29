@@ -284,6 +284,9 @@ export default {
 .v-expansion-panel-text__wrapper {
   padding: 8px 10px 16px !important;
 }
+.v-label {
+  width: 100% !important;
+}
 .expand-icon {
   float: right;
 }
