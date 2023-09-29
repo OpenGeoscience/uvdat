@@ -6,7 +6,6 @@ import {
   clearMap,
   map,
   getMap,
-  regionGroupingActive,
   availableDataSourcesTable,
   showMapTooltip,
   selectedFeature,
@@ -96,7 +95,7 @@ onMounted(() => {
 
 <template>
   <div id="mapContainer" class="map">
-    <div ref="context" class="context-control" v-show="regionGroupingActive">
+    <div ref="context" class="context-control">
       <MapControl />
     </div>
     <div ref="tooltip" class="tooltip" v-show="showMapTooltip">

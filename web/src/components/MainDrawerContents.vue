@@ -1,5 +1,4 @@
 <script>
-import draggable from "vuedraggable";
 import {
   currentCity,
   currentMapDataSource,
@@ -9,9 +8,7 @@ import {
   availableSimulations,
   availableDerivedRegions,
   selectedDerivedRegionIds,
-  activeMapLayerIds,
   availableMapDataSources,
-  availableDataSourcesTable,
   activeDataSources,
 } from "@/store";
 
@@ -20,7 +17,6 @@ import {
   addDataSourceToMap,
   hideDataSourceFromMap,
 } from "@/data";
-import { getMapLayerById, updateVisibleLayers } from "@/layers";
 import { ref, computed, onMounted, watch } from "vue";
 import {
   getCityDatasets,
@@ -30,9 +26,6 @@ import {
 } from "@/api/rest";
 
 export default {
-  components: {
-    draggable,
-  },
   setup() {
     const openPanels = ref([0]);
     const openCategories = ref([0]);
@@ -61,14 +54,6 @@ export default {
         currentCity.value.datasets = datasets;
       });
     }
-
-    // Ensure that if any layers are active, the "active layers" panel is open
-    // Since the "active layers" panel is the third panel, use index 2 to control it
-    watch(activeMapLayerIds, (activeLayerIds) => {
-      if (activeLayerIds.length && !openPanels.value.includes(2)) {
-        openPanels.value.push(2);
-      }
-    });
 
     // If new derived regions added, open panel
     watch(availableDerivedRegions, (availableRegs) => {
@@ -109,55 +94,8 @@ export default {
       toggleDataSource(new MapDataSource({ derivedRegion }));
     }
 
-    function getLayerName(layerId) {
-      const layer = getMapLayerById(layerId);
-      const dataSource = availableDataSourcesTable.value.get(
-        layer.get("dataSourceId")
-      );
-      return dataSource.name;
-    }
-
-    function reorderLayers() {
-      updateVisibleLayers();
-    }
-
     function expandOptionsPanelFromDataset(dataset) {
       currentMapDataSource.value = new MapDataSource({ dataset });
-    }
-
-    function expandOptionsPanelFromLayer(layerId) {
-      const layer = getMapLayerById(layerId);
-      const args = {};
-
-      // Add dataset if applicable
-      const dataSource = availableDataSourcesTable.value.get(
-        layer.get("dataSourceId")
-      );
-      const datasetId = dataSource.dataset?.id;
-      if (datasetId !== undefined) {
-        const dataset = currentCity.value.datasets.find(
-          (d) => d.id === datasetId
-        );
-        if (dataset === undefined) {
-          throw new Error("Dataset not found!");
-        }
-
-        args.dataset = dataset;
-      }
-
-      // Add region if applicable
-      const regionId = dataSource.derivedRegion?.id;
-      if (regionId !== undefined) {
-        const region = availableDerivedRegions.value.find(
-          (r) => r.id === regionId
-        );
-        if (region === undefined) {
-          throw new Error("Region not found!");
-        }
-        args.derivedRegion = region;
-      }
-
-      currentMapDataSource.value = new MapDataSource(args);
     }
 
     function fetchCharts() {
@@ -196,9 +134,7 @@ export default {
       toggleDataset,
       availableLayerTree,
       activeLayerTableHeaders,
-      reorderLayers,
       expandOptionsPanelFromDataset,
-      expandOptionsPanelFromLayer,
       activeChart,
       availableCharts,
       fetchCharts,
@@ -210,8 +146,6 @@ export default {
       availableDerivedRegions,
       selectedDerivedRegionIds,
       toggleDerivedRegion,
-      activeMapLayerIds,
-      getLayerName,
       availableMapDataSources,
       datasetIdToDataSource,
       datasetSelected,
@@ -281,31 +215,6 @@ export default {
           density="compact"
           @click="toggleDerivedRegion(region)"
         />
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel title="Active Layers">
-      <v-expansion-panel-text>
-        <draggable
-          v-model="activeMapLayerIds"
-          @change="reorderLayers"
-          item-key="id"
-          item-value="id"
-        >
-          <template #item="{ element }">
-            <v-card class="px-3 py-1">
-              <v-icon>mdi-drag-horizontal-variant</v-icon>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="expandOptionsPanelFromLayer(element)"
-              >
-                mdi-cog
-              </v-icon>
-              {{ getLayerName(element) }}
-            </v-card>
-          </template>
-        </draggable>
       </v-expansion-panel-text>
     </v-expansion-panel>
 

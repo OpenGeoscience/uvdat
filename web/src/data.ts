@@ -7,7 +7,7 @@ import {
   updateVisibleLayers,
 } from "@/layers";
 
-interface MapDataSourceArgs {
+export interface MapDataSourceArgs {
   dataset?: Dataset;
   derivedRegion?: DerivedRegion;
 }
