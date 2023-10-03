@@ -71,6 +71,7 @@ function setCurrentMapDataSource(layerId: string) {
   <v-menu
     v-model="layerMenuActive"
     persistent
+    attach
     no-click-animation
     :close-on-content-click="false"
     location="bottom"
