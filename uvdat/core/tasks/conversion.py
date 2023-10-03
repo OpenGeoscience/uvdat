@@ -1,12 +1,10 @@
 import json
 import os
 from pathlib import Path
-import secrets
 import tempfile
 import zipfile
 
 from celery import shared_task
-from django.contrib.gis.geos import GEOSGeometry
 from django.core.files.base import ContentFile
 from geojson2vt import geojson2vt, vt2geojson
 import geopandas
@@ -15,8 +13,9 @@ import numpy
 import rasterio
 import shapefile
 
-from uvdat.core.models import Dataset, Region
+from uvdat.core.models import Dataset
 from uvdat.core.tasks.networks import save_network_nodes
+from uvdat.core.tasks.regions import save_regions
 from uvdat.core.utils import add_styling
 
 
@@ -202,36 +201,3 @@ def convert_shape_file_archive(dataset):
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
 
         convert_geojson(dataset, geodata_path=geodata_path)
-
-
-def save_regions(dataset):
-    dataset.regions.all().delete()
-    property_map = dataset.style.get('property_map')
-    name_property = property_map.get('name') if property_map else None
-
-    geodata = json.loads(dataset.geodata_file.read().decode())
-    for feature in geodata['features']:
-        properties = feature['properties']
-        geometry = feature['geometry']
-
-        # Ensure a name field
-        name = secrets.token_hex(10)
-        if name_property and name_property in properties:
-            name = properties[name_property]
-
-        # Convert Polygon to MultiPolygon if necessary
-        if geometry['type'] == 'Polygon':
-            geometry['type'] = 'MultiPolygon'
-            geometry['coordinates'] = [geometry['coordinates']]
-
-        # Create region with properties and MultiPolygon
-        region = Region(
-            name=name,
-            boundary=GEOSGeometry(str(geometry)),
-            properties=properties,
-            dataset=dataset,
-            city=dataset.city,
-        )
-        region.save()
-
-    print(f"Saved regions for {dataset.name}")

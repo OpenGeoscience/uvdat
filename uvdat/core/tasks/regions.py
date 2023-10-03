@@ -1,4 +1,5 @@
 import json
+import secrets
 from typing import List
 
 from django.contrib.gis.db.models.aggregates import Union
@@ -62,3 +63,36 @@ def create_derived_region(name: str, city_id: int, region_ids: List[int], operat
         derived_region.source_regions.set(source_regions)
 
     return derived_region
+
+
+def save_regions(dataset):
+    dataset.regions.all().delete()
+    property_map = dataset.style.get('property_map')
+    name_property = property_map.get('name') if property_map else None
+
+    geodata = json.loads(dataset.geodata_file.read().decode())
+    for feature in geodata['features']:
+        properties = feature['properties']
+        geometry = feature['geometry']
+
+        # Ensure a name field
+        name = secrets.token_hex(10)
+        if name_property and name_property in properties:
+            name = properties[name_property]
+
+        # Convert Polygon to MultiPolygon if necessary
+        if geometry['type'] == 'Polygon':
+            geometry['type'] = 'MultiPolygon'
+            geometry['coordinates'] = [geometry['coordinates']]
+
+        # Create region with properties and MultiPolygon
+        region = Region(
+            name=name,
+            boundary=GEOSGeometry(str(geometry)),
+            properties=properties,
+            dataset=dataset,
+            city=dataset.city,
+        )
+        region.save()
+
+    print(f"Saved regions for {dataset.name}")
