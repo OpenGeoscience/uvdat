@@ -34,7 +34,7 @@ async function createDerivedRegion() {
 </script>
 
 <template>
-  <v-card v-if="regionGroupingActive">
+  <v-card v-if="regionGroupingActive" class="mx-2">
     <v-card-title class="text-capitalize pb-0">
       <v-icon size="small">mdi-vector-{{ regionGroupingType }}</v-icon>
       Performing {{ regionGroupingType }} Grouping
