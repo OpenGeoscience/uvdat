@@ -9,6 +9,17 @@ import shapely
 
 from uvdat.core.models import NetworkNode
 
+NODE_RECOVERY_MODES = [
+    'random',
+    'betweenness',
+    'degree',
+    'information',
+    'eigenvector',
+    'load',
+    'closeness',
+    'second order',
+]
+
 
 def save_network_nodes(dataset):
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -114,14 +125,68 @@ def save_network_nodes(dataset):
             node_object.save()
 
 
-def network_gcc(edges: dict[str, list[int]], exclude_nodes: list[int]) -> list[int]:
-    # Convert input keys to integer
-    int_edges = {int(k): v for k, v in edges.items()}
+def construct_edge_list(dataset):
+    network_nodes = dataset.network_nodes.values_list('id', flat=True)
+    edges = NetworkNode.adjacent_nodes.through.objects.filter(
+        from_networknode_id__in=network_nodes, to_networknode_id__in=network_nodes
+    ).values_list('from_networknode_id', 'to_networknode_id')
 
+    # Construct adj list
+    edge_list: dict[int, list[int]] = {}
+    for start, end in edges:
+        if start not in edge_list:
+            edge_list[start] = []
+
+        edge_list[start].append(end)
+
+    # Ensure that the type of all keys is an integer
+    assert all(isinstance(x, int) for x in edge_list.keys())
+
+    # Sort all node id lists
+    for start_node in edge_list.keys():
+        edge_list[start_node].sort()
+
+    return edge_list
+
+
+def network_gcc(edges: dict[int, list[int]], exclude_nodes: list[int]) -> list[int]:
     # Create graph, remove nodes, get GCC
-    G = nx.from_dict_of_lists(int_edges)
+    G = nx.from_dict_of_lists(edges)
     G.remove_nodes_from(exclude_nodes)
     gcc = max(nx.connected_components(G), key=len)
 
     # Return GCC's list of nodes
     return list(gcc)
+
+
+# Authored by Jack Watson
+# Takes in a second argument, measure, which is a string specifying the centrality
+# measure to calculate.
+def sort_graph_centrality(G, measure):
+    if measure == 'betweenness':
+        cent = nx.betweenness_centrality(G)  # get betweenness centrality
+    elif measure == 'degree':
+        cent = nx.degree_centrality(G)
+    elif measure == 'information':
+        cent = nx.current_flow_closeness_centrality(G)
+    elif measure == 'eigenvector':
+        cent = nx.eigenvector_centrality(G, 10000)
+    elif measure == 'load':
+        cent = nx.load_centrality(G)
+    elif measure == 'closeness':
+        cent = nx.closeness_centrality(G)
+    elif measure == 'second order':
+        cent = nx.second_order_centrality(G)
+    cent_list = list(cent.items())  # convert to np array
+    cent_arr = numpy.array(cent_list)
+    cent_idx = numpy.argsort(cent_arr, 0)  # sort array of tuples by betweenness
+    # cent_sorted = cent_arr[cent_idx[:, 1]]
+
+    node_list = list(G.nodes())
+    nodes_sorted = [node_list[i] for i in cent_idx[:, 1]]
+    edge_list = list(G.edges())
+
+    # Currently sorted from lowest to highest betweenness; let's reverse that
+    nodes_sorted.reverse()
+
+    return nodes_sorted, edge_list

@@ -1,5 +1,8 @@
+import inspect
 import json
+import networkx as nx
 from pathlib import Path
+import random
 import re
 import tempfile
 
@@ -8,8 +11,14 @@ from django_large_image import tilesource
 import large_image
 import shapely
 
+from rest_framework.serializers import ModelSerializer
 from uvdat.core.models import City, Dataset, SimulationResult
-from uvdat.core.serializers import DatasetSerializer, SimulationResultSerializer
+from uvdat.core.tasks.networks import (
+    NODE_RECOVERY_MODES,
+    construct_edge_list,
+    sort_graph_centrality,
+)
+import uvdat.core.serializers as serializers
 
 
 def get_network_node_elevations(network_nodes, elevation_dataset):
@@ -49,7 +58,7 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, f
     except Dataset.DoesNotExist:
         result.error_message = 'Dataset not found.'
         result.save()
-        return None
+        return
 
     if (
         not network_dataset.network
@@ -58,9 +67,9 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, f
     ):
         result.error_message = 'Invalid dataset selected.'
         result.save()
-        return None
+        return
 
-    disabled_nodes = []
+    node_failures = []
     network_nodes = network_dataset.network_nodes.all()
     flood_geodata = json.loads(flood_dataset.geodata_file.open().read().decode())
     flood_areas = [
@@ -69,12 +78,52 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, f
     for network_node in network_nodes:
         node_point = shapely.geometry.Point(*network_node.location)
         if any(flood_area.contains(node_point) for flood_area in flood_areas):
-            disabled_nodes.append(network_node)
+            node_failures.append(network_node)
 
     node_elevations = get_network_node_elevations(network_nodes, elevation_dataset)
-    disabled_nodes.sort(key=lambda n: node_elevations[n.id])
+    node_failures.sort(key=lambda n: node_elevations[n.id])
 
-    result.output_data = [n.id for n in disabled_nodes]
+    result.output_data = {'node_failures': [n.id for n in node_failures]}
+    result.save()
+
+
+@shared_task
+def recovery_scenario(simulation_result_id, node_failure_simulation_result, recovery_mode):
+    result = SimulationResult.objects.get(id=simulation_result_id)
+    try:
+        node_failure_simulation_result = SimulationResult.objects.get(
+            id=node_failure_simulation_result
+        )
+    except SimulationResult.DoesNotExist:
+        result.error_message = 'Node failure simulation result not found.'
+        result.save()
+        return
+    if recovery_mode not in NODE_RECOVERY_MODES:
+        result.error_message = f'Invalid recovery mode {recovery_mode}.'
+        result.save()
+        return
+
+    node_failures = node_failure_simulation_result.output_data['node_failures']
+    node_recoveries = node_failures.copy()
+    if recovery_mode == 'random':
+        random.shuffle(node_recoveries)
+    else:
+        dataset_id = node_failure_simulation_result.input_args['network_dataset']
+        try:
+            dataset = Dataset.objects.get(id=dataset_id)
+        except Dataset.DoesNotExist:
+            result.error_message = 'Dataset not found.'
+            result.save()
+            return
+        edge_list = construct_edge_list(dataset)
+        G = nx.from_dict_of_lists(edge_list)
+        nodes_sorted, edge_list = sort_graph_centrality(G, recovery_mode)
+        node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
+
+    result.output_data = {
+        'node_failures': node_failures,
+        'node_recoveries': node_recoveries,
+    }
     result.save()
 
 
@@ -87,7 +136,7 @@ AVAILABLE_SIMULATIONS = [
             to determine which network nodes go out of service
             when the target flood occurs.
         ''',
-        'output_type': 'node_failure_animation',
+        'output_type': 'node_animation',
         'func': flood_scenario_1,
         'args': [
             {
@@ -106,7 +155,30 @@ AVAILABLE_SIMULATIONS = [
                 'options_query': {'category': 'flood'},
             },
         ],
-    }
+    },
+    {
+        'id': 2,
+        'name': 'Recovery Scenario',
+        'description': '''
+            Provide the output of another simulation which returns a list of deactivated nodes,
+            and select a recovery mode to determine the order in which
+            nodes will come back online.
+        ''',
+        'output_type': 'node_animation',
+        'func': recovery_scenario,
+        'args': [
+            {
+                'name': 'node_failure_simulation_result',
+                'type': SimulationResult,
+                'options_query': {'simulation_id__in': [1]},
+            },
+            {
+                'name': 'recovery_mode',
+                'type': str,
+                'options': NODE_RECOVERY_MODES,
+            },
+        ],
+    },
 ]
 
 
@@ -115,21 +187,36 @@ def get_available_simulations(city_id: int):
     for available in AVAILABLE_SIMULATIONS:
         available = available.copy()
         available['description'] = re.sub(r'\n\s+', ' ', available['description'])
-        available['args'] = [
-            {
-                'name': a['name'],
-                'options': list(
-                    DatasetSerializer(d).data
-                    for d in a['type']
-                    .objects.filter(
-                        city__id=city_id,
-                        **a['options_query'],
+        args = []
+        for a in available['args']:
+            options = a.get('options')
+            if not options:
+                options_query = a.get('options_query')
+                options_type = a.get('type')
+                option_serializer_matches = [
+                    s
+                    for name, s in inspect.getmembers(serializers, inspect.isclass)
+                    if issubclass(s, ModelSerializer) and s.Meta.model == options_type
+                ]
+                if not options_query or not options_type or len(option_serializer_matches) == 0:
+                    options = []
+                else:
+                    option_serializer = option_serializer_matches[0]
+                    if hasattr(options_type, 'city'):
+                        options_query['city__id'] = city_id
+                    options = list(
+                        option_serializer(d).data
+                        for d in options_type.objects.filter(
+                            **options_query,
+                        ).all()
                     )
-                    .all()
-                ),
-            }
-            for a in available['args']
-        ]
+            args.append(
+                {
+                    'name': a['name'],
+                    'options': options,
+                }
+            )
+        available['args'] = args
         del available['func']
         sims.append(available)
     return sims
@@ -149,5 +236,5 @@ def run_simulation(simulation_id: int, city_id: int, **kwargs):
 
         simulation = simulation_matches[0]
         simulation['func'].delay(sim_result.id, **kwargs)
-        return SimulationResultSerializer(sim_result).data
+        return serializers.SimulationResultSerializer(sim_result).data
     return f"No simulation found with id {simulation_id}."

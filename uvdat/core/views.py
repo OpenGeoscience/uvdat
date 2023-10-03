@@ -21,7 +21,7 @@ from uvdat.core.serializers import (
 )
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
-from uvdat.core.tasks.networks import network_gcc
+from uvdat.core.tasks.networks import network_gcc, construct_edge_list
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
 
 
@@ -135,22 +135,13 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
         exclude_nodes = request.query_params.get('exclude_nodes')
         exclude_nodes = exclude_nodes.split(',')
         exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
-        edge_list = {}
-        visited_nodes = []
-        excluded_node_names = []
 
+        excluded_node_names = []
         for node in dataset.network_nodes.all():
-            adjacencies = [
-                adj_node.id
-                for adj_node in node.adjacent_nodes.all()
-                if adj_node.id not in visited_nodes
-            ]
-            if len(adjacencies) > 0:
-                edge_list[node.id] = sorted(adjacencies)
-            visited_nodes.append(node.id)
             if node.id in exclude_nodes:
                 excluded_node_names.append(node.name)
 
+        edge_list = construct_edge_list(dataset)
         gcc = network_gcc(edge_list, exclude_nodes)
         add_gcc_chart_datum(dataset, excluded_node_names, len(gcc))
         return Response(gcc, status=200)

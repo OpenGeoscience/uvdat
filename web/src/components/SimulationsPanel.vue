@@ -2,11 +2,11 @@
 import { ref, watch } from "vue";
 import { activeSimulation, currentCity, selectedDatasetIds } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
-import NodeFailureAnimation from "./NodeFailureAnimation.vue";
+import NodeAnimation from "./NodeAnimation.vue";
 
 export default {
   components: {
-    NodeFailureAnimation,
+    NodeAnimation,
   },
   setup() {
     const tab = ref();
@@ -50,8 +50,13 @@ export default {
       Object.entries(result.input_args).forEach(([k, v]) => {
         const simArg = activeSimulation.value.args.find((a) => a.name === k);
         if (simArg) {
-          const selectedOption = simArg.options.find((o) => o.id === v);
+          let selectedOption = simArg.options.find(
+            (o) => o.id === v || o === v
+          );
           if (selectedOption) {
+            if (!selectedOption.name) {
+              selectedOption = { name: selectedOption };
+            }
             args.push({
               key: k,
               value: selectedOption,
@@ -90,6 +95,11 @@ export default {
         outputPoll.value = undefined;
       }
     }
+
+    watch(activeSimulation, () => {
+      availableResults.value = [];
+      fetchResults();
+    });
 
     watch(tab, () => {
       if (tab.value === "old") {
@@ -216,17 +226,16 @@ export default {
               <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
                 <div
-                  v-if="
-                    activeSimulation.output_type === 'node_failure_animation'
-                  "
+                  v-if="activeSimulation.output_type == 'node_animation'"
                   class="pa-5"
                 >
                   <div v-if="result.output_data.length === 0">
                     No nodes are affected in this scenario.
                   </div>
-                  <node-failure-animation
+                  <node-animation
                     v-else
-                    :nodeFailures="result.output_data"
+                    :nodeFailures="result.output_data.node_failures"
+                    :nodeRecoveries="result.output_data.node_recoveries"
                   />
                 </div>
                 <div v-else>
