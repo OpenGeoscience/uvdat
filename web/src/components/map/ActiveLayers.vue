@@ -74,35 +74,65 @@ function setCurrentMapDataSource(layerId: string) {
     no-click-animation
     :close-on-content-click="false"
     location="bottom"
+    class="mx-2"
   >
     <template v-slot:activator="{ props }">
-      <v-btn icon v-bind="props">
+      <v-btn icon v-bind="props" class="mx-2">
         <v-icon>mdi-layers</v-icon>
       </v-btn>
     </template>
     <v-card rounded="lg" class="mt-2">
-      <v-card-title>
+      <v-card-title style="min-width: 250px">
         Active Layers
-        <v-icon @click="clearActiveLayers">mdi-playlist-remove</v-icon>
+        <v-tooltip
+          v-if="activeMapLayerIds.length"
+          text="Remove All Layers"
+          location="bottom"
+        >
+          <template v-slot:activator="{ props }">
+            <v-icon
+              v-bind="props"
+              @click="clearActiveLayers"
+              style="float: right"
+              >mdi-playlist-remove</v-icon
+            >
+          </template>
+        </v-tooltip>
       </v-card-title>
-      <draggable
-        v-model="activeMapLayerIds"
-        @change="updateVisibleLayers"
-        :item-key="(e: string) => e"
-      >
+      <div v-if="!activeMapLayerIds.length" class="pa-4">No layers active.</div>
+      <draggable v-model="activeMapLayerIds" @change="updateVisibleLayers">
         <template #item="{ element }">
           <v-card class="px-3 py-1">
-            <v-icon>mdi-drag-horizontal-variant</v-icon>
+            <v-tooltip
+              v-if="activeMapLayerIds.length"
+              text="Reorder Layers"
+              location="bottom"
+            >
+              <template v-slot:activator="{ props }">
+                <v-icon v-bind="props" @click="clearActiveLayers"
+                  >mdi-drag-horizontal-variant</v-icon
+                >
+              </template>
+            </v-tooltip>
 
             {{ getLayerName(element) }}
 
-            <v-icon
-              size="small"
-              class="expand-icon ml-2"
-              @click="setCurrentMapDataSource(element)"
+            <v-tooltip
+              v-if="activeMapLayerIds.length"
+              text="Open Layer Options"
+              location="bottom"
             >
-              mdi-cog
-            </v-icon>
+              <template v-slot:activator="{ props }">
+                <v-icon
+                  v-bind="props"
+                  size="small"
+                  class="expand-icon ml-2"
+                  @click="setCurrentMapDataSource(element)"
+                >
+                  mdi-cog
+                </v-icon>
+              </template>
+            </v-tooltip>
           </v-card>
         </template>
       </draggable>
