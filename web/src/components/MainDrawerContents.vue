@@ -1,25 +1,33 @@
 <script>
-import draggable from "vuedraggable";
 import {
   currentCity,
-  currentDataset,
+  currentMapDataSource,
   activeChart,
   availableCharts,
   activeSimulation,
   availableSimulations,
-  selectedDatasetIds,
+  availableDerivedRegions,
+  selectedDerivedRegionIds,
+  availableMapDataSources,
+  activeDataSources,
 } from "@/store";
+
+import {
+  MapDataSource,
+  addDataSourceToMap,
+  hideDataSourceFromMap,
+} from "@/data";
 import { ref, computed, onMounted, watch } from "vue";
-import { addDatasetLayerToMap } from "@/utils.js";
-import { getCityDatasets, getCityCharts, getCitySimulations } from "@/api/rest";
-import { updateVisibleLayers } from "../utils";
+import {
+  getCityDatasets,
+  getCityCharts,
+  getCitySimulations,
+  listDerivedRegions,
+} from "@/api/rest";
 
 export default {
-  components: {
-    draggable,
-  },
   setup() {
-    const openPanels = ref([1]);
+    const openPanels = ref([0]);
     const openCategories = ref([0]);
     const availableLayerTree = computed(() => {
       const groupKey = "category";
@@ -42,50 +50,76 @@ export default {
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function fetchDatasets() {
-      currentDataset.value = undefined;
       getCityDatasets(currentCity.value.id).then((datasets) => {
         currentCity.value.datasets = datasets;
       });
     }
 
-    function updateActiveDatasets() {
-      if (selectedDatasetIds.value.length) {
-        openPanels.value = [0, 1];
+    async function setDerivedRegions() {
+      availableDerivedRegions.value = await listDerivedRegions();
+    }
+
+    // If new derived region created, open panel
+    watch(availableDerivedRegions, (availableRegs, oldRegs) => {
+      if (!oldRegs.length || availableRegs.length === oldRegs.length) {
+        return;
       }
-      const updated = updateVisibleLayers();
-      selectedDatasetIds.value.forEach(async (datasetId, index) => {
-        if (
-          !updated.shown.some((l) => l.getProperties().datasetId === datasetId)
-        ) {
-          addDatasetLayerToMap(
-            currentCity.value.datasets.find((d) => d.id === datasetId),
-            selectedDatasetIds.value.length - index
-          );
+
+      if (availableRegs.length && !openPanels.value.includes(1)) {
+        openPanels.value.push(1);
+      }
+    });
+
+    function toggleDataSource(dataSource) {
+      if (activeDataSources.value.has(dataSource.uid)) {
+        hideDataSourceFromMap(dataSource);
+      } else {
+        addDataSourceToMap(dataSource);
+      }
+    }
+
+    const datasetIdToDataSource = computed(() => {
+      const map = new Map();
+      availableMapDataSources.value.forEach((ds) => {
+        if (ds.dataset !== undefined) {
+          map.set(ds.dataset.id, ds);
         }
       });
+
+      return map;
+    });
+
+    const derivedRegionIdToDataSource = computed(() => {
+      const map = new Map();
+      availableMapDataSources.value.forEach((ds) => {
+        if (ds.derivedRegion !== undefined) {
+          map.set(ds.derivedRegion.id, ds);
+        }
+      });
+
+      return map;
+    });
+
+    function datasetSelected(datasetId) {
+      const uid = datasetIdToDataSource.value.get(datasetId)?.uid;
+      return uid && activeDataSources.value.has(uid);
+    }
+
+    function derivedRegionSelected(derivedRegionId) {
+      const uid = derivedRegionIdToDataSource.value.get(derivedRegionId)?.uid;
+      return uid && activeDataSources.value.has(uid);
     }
 
     function toggleDataset(dataset) {
-      const enable = !selectedDatasetIds.value.includes(dataset.id);
-      selectedDatasetIds.value = selectedDatasetIds.value.filter(
-        (id) => id !== dataset.id
-      );
-      if (enable) {
-        selectedDatasetIds.value = [dataset.id, ...selectedDatasetIds.value];
-      } else if (
-        currentDataset.value &&
-        dataset.id === currentDataset.value.id
-      ) {
-        currentDataset.value = undefined;
-      }
+      toggleDataSource(new MapDataSource({ dataset }));
     }
 
-    function reorderLayers() {
-      updateVisibleLayers();
+    function toggleDerivedRegion(derivedRegion) {
+      toggleDataSource(new MapDataSource({ derivedRegion }));
     }
 
-    function expandOptionsPanel(dataset) {
-      currentDataset.value = dataset;
+    function expandOptionsPanelFromDataset(dataset) {
+      currentMapDataSource.value = new MapDataSource({ dataset });
     }
 
     function fetchCharts() {
@@ -112,20 +146,17 @@ export default {
 
     onMounted(fetchCharts);
     onMounted(fetchSimulations);
-    watch(selectedDatasetIds, updateActiveDatasets);
+    onMounted(setDerivedRegions);
 
     return {
-      selectedDatasetIds,
       currentCity,
       fetchDatasets,
       openPanels,
       openCategories,
       toggleDataset,
-      updateActiveDatasets,
       availableLayerTree,
       activeLayerTableHeaders,
-      reorderLayers,
-      expandOptionsPanel,
+      expandOptionsPanelFromDataset,
       activeChart,
       availableCharts,
       fetchCharts,
@@ -134,6 +165,14 @@ export default {
       availableSimulations,
       fetchSimulations,
       activateSimulation,
+      availableDerivedRegions,
+      selectedDerivedRegionIds,
+      toggleDerivedRegion,
+      availableMapDataSources,
+      datasetIdToDataSource,
+      datasetSelected,
+      derivedRegionSelected,
+      setDerivedRegions,
     };
   },
 };
@@ -141,44 +180,6 @@ export default {
 
 <template>
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
-    <v-expansion-panel title="Active Layers">
-      <v-expansion-panel-text>
-        <draggable
-          v-model="selectedDatasetIds"
-          @change="reorderLayers"
-          item-key="id"
-          item-value="id"
-        >
-          <template #item="{ element }">
-            <v-card class="px-3 py-1 d-flex">
-              <v-icon class="mr-3">mdi-drag-horizontal-variant</v-icon>
-              <div style="width: calc(100% - 70px)">
-                {{ currentCity.datasets.find((d) => d.id === element).name }}
-              </div>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="
-                  expandOptionsPanel(
-                    currentCity.datasets.find((d) => d.id === element)
-                  )
-                "
-              >
-                mdi-cog
-              </v-icon>
-              <v-icon
-                size="small"
-                class="expand-icon"
-                @click="toggleDataset({ id: element })"
-              >
-                mdi-close
-              </v-icon>
-            </v-card>
-          </template>
-        </draggable>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
     <v-expansion-panel>
       <v-expansion-panel-title>
         <v-icon @click.stop="fetchDatasets" class="mr-2">mdi-refresh</v-icon>
@@ -198,7 +199,7 @@ export default {
             <v-expansion-panel-text>
               <v-checkbox
                 v-for="dataset in category.children"
-                :model-value="selectedDatasetIds.includes(dataset.id)"
+                :model-value="datasetSelected(dataset.id)"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -213,10 +214,10 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="selectedDatasetIds.includes(dataset.id)"
+                    v-show="datasetSelected(dataset.id)"
                     size="small"
                     class="expand-icon ml-1"
-                    @click.prevent="expandOptionsPanel(dataset)"
+                    @click.prevent="expandOptionsPanelFromDataset(dataset)"
                   >
                     mdi-cog
                   </v-icon>
@@ -225,6 +226,26 @@ export default {
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
+      </v-expansion-panel-text>
+    </v-expansion-panel>
+
+    <v-expansion-panel>
+      <v-expansion-panel-title>
+        <v-icon @click.stop="setDerivedRegions" class="mr-2">
+          mdi-refresh
+        </v-icon>
+        Available Derived Regions
+      </v-expansion-panel-title>
+      <v-expansion-panel-text>
+        <v-checkbox
+          v-for="region in availableDerivedRegions"
+          :model-value="derivedRegionSelected(region.id)"
+          :key="region.id"
+          :label="region.name"
+          hide-details
+          density="compact"
+          @click="toggleDerivedRegion(region)"
+        />
       </v-expansion-panel-text>
     </v-expansion-panel>
 

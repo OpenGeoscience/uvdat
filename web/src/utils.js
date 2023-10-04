@@ -1,22 +1,9 @@
-import TileLayer from "ol/layer/Tile.js";
-import VectorLayer from "ol/layer/Vector";
-import VectorTileLayer from "ol/layer/VectorTile.js";
-import XYZSource from "ol/source/XYZ.js";
-import VectorSource from "ol/source/Vector";
-import VectorTileSource from "ol/source/VectorTile.js";
-import GeoJSON from "ol/format/GeoJSON.js";
 import { Fill, Stroke, Circle, Style } from "ol/style.js";
-import { Feature } from "ol";
-import { LineString, Point } from "ol/geom";
-import { fromLonLat } from "ol/proj";
 
-import { baseURL } from "@/api/auth";
 import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
 import {
-  map,
-  showMapBaseLayer,
+  getMap,
   currentCity,
-  selectedDatasetIds,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
@@ -49,48 +36,6 @@ export const rasterColormaps = [
 
 var rasterTooltipDataCache = {};
 
-export function updateVisibleLayers() {
-  const layerState = {
-    shown: [],
-    hidden: [],
-  };
-  const allLayers = map.value?.getLayers()?.getArray();
-  if (allLayers) {
-    allLayers.forEach((layer) => {
-      const layerDatasetId = layer.getProperties().datasetId;
-      let layerEnabled = selectedDatasetIds.value.includes(layerDatasetId);
-
-      if (!layerDatasetId) {
-        // map base layer does not have dataset id
-        layerEnabled = showMapBaseLayer.value;
-      }
-
-      if (networkVis.value) {
-        if (layerDatasetId === networkVis.value.id) {
-          layerEnabled = layerEnabled && layer.getProperties().network;
-        }
-      } else if (layer.getProperties().network) {
-        layerEnabled = false;
-      }
-
-      if (layerEnabled) {
-        layer.setVisible(true);
-        layerState.shown.push(layer);
-        const layerIndex = selectedDatasetIds.value.findIndex(
-          (id) => id === layerDatasetId
-        );
-        layer.setZIndex(
-          layerDatasetId ? selectedDatasetIds.value.length - layerIndex : 0
-        );
-      } else {
-        layer.setVisible(false);
-        layerState.hidden.push(layer);
-      }
-    });
-  }
-  return layerState;
-}
-
 export function cacheRasterData(datasetId) {
   if (!rasterTooltipDataCache[datasetId]) {
     rasterTooltipDataCache[datasetId] = {};
@@ -100,7 +45,7 @@ export function cacheRasterData(datasetId) {
   }
 }
 
-function createStyle(args) {
+export function createStyle(args) {
   let colors = ["#00000022"];
   if (args.colors) {
     colors = args.colors.split(",");
@@ -145,119 +90,7 @@ function createStyle(args) {
   }
 }
 
-export function addDatasetLayerToMap(dataset, zIndex) {
-  if (dataset.processing) {
-    return;
-  }
-  let layer = undefined;
-
-  // Add raster data
-  if (dataset.raster_file) {
-    const tileParams = {
-      projection: "EPSG:3857",
-      band: 1,
-      palette: dataset.style?.colormap || "terrain",
-    };
-    if (
-      dataset.style?.colormap_range !== undefined &&
-      dataset.style?.colormap_range.length === 2
-    ) {
-      tileParams.min = dataset.style.colormap_range[0];
-      tileParams.max = dataset.style.colormap_range[1];
-    }
-    if (dataset.style?.options?.transparency_threshold !== undefined) {
-      tileParams.nodata = dataset.style.options.transparency_threshold;
-    }
-    const tileParamString = Object.keys(tileParams)
-      .map((key) => key + "=" + tileParams[key])
-      .join("&");
-
-    layer = new TileLayer({
-      properties: {
-        datasetId: dataset.id,
-        dataset,
-      },
-      source: new XYZSource({
-        url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
-      }),
-      opacity: dataset.style?.opacity || 1,
-      zIndex,
-    });
-    cacheRasterData(dataset.id);
-  }
-
-  // Use tiled GeoJSON if it exists
-  else if (dataset.vector_tiles_file) {
-    layer = new VectorTileLayer({
-      source: new VectorTileSource({
-        format: new GeoJSON(),
-        url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
-      }),
-      properties: {
-        datasetId: dataset.id,
-        dataset,
-      },
-      style: (feature) =>
-        createStyle({
-          type: feature.getGeometry().getType(),
-          colors: feature.get("colors"),
-        }),
-      opacity: dataset.style?.opacity || 1,
-      zIndex,
-    });
-
-    // Use VectorLayer if dataset category is "region"
-    if (dataset.category === "region") {
-      layer = new VectorLayer({
-        properties: {
-          datasetId: dataset.id,
-          dataset,
-        },
-        zIndex,
-        style: (feature) =>
-          createStyle({
-            type: feature.getGeometry().getType(),
-            colors: feature.get("properties").colors,
-          }),
-        source: new VectorSource({
-          format: new GeoJSON(),
-          url: `${baseURL}datasets/${dataset.id}/regions`,
-        }),
-      });
-    }
-    // Add to map
-    map.value.addLayer(layer);
-  }
-
-  // Default to vector layer
-  else {
-    let dataURL = dataset.geodata_file;
-    if (dataset.category === "region") {
-      dataURL = `${baseURL}datasets/${dataset.id}/regions`;
-    }
-    layer = new VectorLayer({
-      properties: {
-        datasetId: dataset.id,
-        dataset,
-      },
-      zIndex,
-      style: (feature) =>
-        createStyle({
-          type: feature.getGeometry().getType(),
-          colors: feature.getProperties().colors,
-        }),
-      source: new VectorSource({
-        format: new GeoJSON(),
-        url: dataURL,
-      }),
-    });
-  }
-
-  // Add to map
-  map.value.addLayer(layer);
-}
-
-function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
+export function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
   const fill = new Fill({
     color: `#ffffff${alpha}`,
   });
@@ -295,7 +128,7 @@ function getNetworkFeatureStyle(alpha = "ff", highlight = false) {
 }
 
 export function updateNetworkStyle() {
-  map.value
+  getMap()
     .getLayers()
     .getArray()
     .forEach((layer) => {
@@ -350,149 +183,6 @@ export function updateNetworkStyle() {
         });
       }
     });
-}
-
-export function addNetworkLayerToMap(dataset, nodes) {
-  const source = new VectorSource();
-  const features = [];
-  const visitedNodes = [];
-  nodes.forEach((node) => {
-    features.push(
-      new Feature(
-        Object.assign(node.properties, {
-          name: node.name,
-          id: node.id,
-          node: true,
-          geometry: new Point(fromLonLat(node.location.toReversed())),
-        })
-      )
-    );
-    node.adjacent_nodes.forEach((adjId) => {
-      if (!visitedNodes.includes(adjId)) {
-        const adjNode = nodes.find((n) => n.id === adjId);
-        features.push(
-          new Feature({
-            connects: [node.id, adjId],
-            edge: true,
-            geometry: new LineString([
-              fromLonLat(node.location.toReversed()),
-              fromLonLat(adjNode.location.toReversed()),
-            ]),
-          })
-        );
-      }
-    });
-    visitedNodes.push(node.id);
-  });
-  source.addFeatures(features);
-
-  const layer = new VectorLayer({
-    properties: {
-      datasetId: dataset.id,
-      dataset,
-      network: true,
-    },
-    zIndex: 99,
-    style: getNetworkFeatureStyle(),
-    source,
-  });
-  map.value.addLayer(layer);
-}
-
-function renderRegionTooltip(tooltipDiv, feature) {
-  tooltipDiv.innerHTML = `
-    ID: ${feature.get("pk")}<br>
-    Name: ${feature.get("name")}<br>
-  `;
-
-  // Create button
-  const cropButton = document.createElement("BUTTON");
-  cropButton.classList = "v-btn v-btn--variant-outlined pa-2";
-  cropButton.appendChild(document.createTextNode("Zoom to Region"));
-  cropButton.onclick = () => {
-    // Set map zoom to match bounding box of region
-    map.value.getView().fit(feature.getGeometry(), {
-      size: map.value.getSize(),
-      duration: 300,
-    });
-  };
-
-  // Add button to tooltip
-  tooltipDiv.appendChild(cropButton);
-}
-
-function renderNetworkTooltip(tooltipDiv, feature) {
-  // Add data
-  const properties = Object.fromEntries(
-    Object.entries(feature.values_).filter(([k, v]) => k && v)
-  );
-  ["colors", "geometry", "type", "id", "node", "edge"].forEach(
-    (prop) => delete properties[prop]
-  );
-  let prettyString = JSON.stringify(properties)
-    .replaceAll('"', "")
-    .replaceAll("{", "")
-    .replaceAll("}", "")
-    .replaceAll(",", "<br>");
-  prettyString += "<br>";
-  tooltipDiv.innerHTML = prettyString;
-
-  // Add activation button
-  const nodeId = feature.get("id");
-  const deactivateButton = document.createElement("button");
-  if (deactivatedNodes.value.includes(nodeId)) {
-    deactivateButton.innerHTML = "Reactivate Node";
-  } else {
-    deactivateButton.innerHTML = "Deactivate Node";
-  }
-  deactivateButton.onclick = function () {
-    toggleNodeActive(nodeId, deactivateButton);
-  };
-  deactivateButton.classList = "v-btn v-btn--variant-outlined pa-2";
-  tooltipDiv.appendChild(deactivateButton);
-}
-
-export function displayFeatureTooltip(evt, tooltip, overlay) {
-  if (rasterTooltip.value) return;
-
-  // Clear tooltip values in event of no feature clicked
-  tooltip.value.innerHTML = "";
-  tooltip.value.style.display = "";
-
-  // Check if any features are clicked, exit if not
-  let res = map.value.forEachFeatureAtPixel(evt.pixel, (feature, layer) => [
-    feature,
-    layer,
-  ]);
-  if (!res) {
-    tooltip.value.style.display = "none";
-    return;
-  }
-
-  // Get feature and layer, exit if dataset isn't provided through the layer
-  const [feature, layer] = res;
-  const dataset = layer.get("dataset");
-  if (!dataset) {
-    return;
-  }
-
-  // Create div in which tooltip contents will live
-  const tooltipDiv = document.createElement("div");
-
-  // Handle region dataset
-  if (dataset.category === "region") {
-    renderRegionTooltip(tooltipDiv, feature);
-    // Handle network dataset
-  } else if (networkVis.value && dataset.network) {
-    renderNetworkTooltip(tooltipDiv, feature);
-  } else {
-    // No defined behavior, quit and render nothing
-    return;
-  }
-
-  // Set tooltip contents and position
-  tooltip.value.appendChild(tooltipDiv);
-  overlay.setPosition(evt.coordinate);
 }
 
 export function displayRasterTooltip(evt, tooltip, overlay) {

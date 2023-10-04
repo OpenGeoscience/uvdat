@@ -90,3 +90,30 @@ export async function getSimulationResults(
     await apiClient.get(`simulations/${simulationId}/city/${cityId}/results/`)
   ).data;
 }
+
+export async function listDerivedRegions() {
+  const res = await apiClient.get("derived_regions/");
+  return res.data.results;
+}
+
+export async function getDerivedRegion(regionId: number) {
+  const res = await apiClient.get(`derived_regions/${regionId}/`);
+  return res.data;
+}
+
+export async function postDerivedRegion(
+  name: string,
+  city: number,
+  regions: number[],
+  op: "union" | "intersection"
+) {
+  const operation = op.toUpperCase();
+  const res = await apiClient.post("derived_regions/", {
+    name,
+    city,
+    operation,
+    regions,
+  });
+
+  return res.data;
+}

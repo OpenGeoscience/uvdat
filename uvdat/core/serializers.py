@@ -1,6 +1,9 @@
+import json
+
+from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
-from uvdat.core.models import Chart, City, Dataset, NetworkNode, SimulationResult
+from uvdat.core.models import Chart, City, Dataset, DerivedRegion, NetworkNode, SimulationResult
 from uvdat.core.tasks.simulations import AVAILABLE_SIMULATIONS
 
 
@@ -59,4 +62,43 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SimulationResult
+
+
+class RegionFeatureCollectionSerializer(geojson.Serializer):
+    # Override this method to ensure the pk field is a number instead of a string
+    def get_dump_object(self, obj):
+        val = super().get_dump_object(obj)
+        val["properties"]["id"] = int(val["properties"].pop("pk"))
+
+        return val
+
+
+class DerivedRegionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DerivedRegion
+        fields = ['id', 'name', 'city', 'properties', 'source_regions', 'source_operation']
+
+
+class DerivedRegionDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DerivedRegion
         fields = '__all__'
+
+    boundary = serializers.SerializerMethodField()
+
+    def get_boundary(self, obj):
+        return json.loads(obj.boundary.geojson)
+
+
+class DerivedRegionCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DerivedRegion
+        fields = [
+            'name',
+            'city',
+            'regions',
+            'operation',
+        ]
+
+    regions = serializers.ListField(child=serializers.IntegerField())
+    operation = serializers.ChoiceField(choices=DerivedRegion.VectorOperation.choices)

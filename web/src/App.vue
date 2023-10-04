@@ -2,7 +2,7 @@
 import { defineComponent, ref, onMounted } from "vue";
 import {
   currentError,
-  currentDataset,
+  currentMapDataSource,
   currentCity,
   cities,
   loading,
@@ -11,8 +11,8 @@ import {
   activeSimulation,
   showMapBaseLayer,
 } from "./store";
-import { updateVisibleLayers } from "./utils";
-import OpenLayersMap from "./components/OpenLayersMap.vue";
+import { updateVisibleLayers } from "@/layers";
+import OpenLayersMap from "./components/map/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
@@ -30,12 +30,12 @@ export default defineComponent({
     const drawer = ref(true);
 
     onMounted(loadCities);
-    currentDataset.value = undefined;
+    currentMapDataSource.value = undefined;
 
     return {
       drawer,
       currentCity,
-      currentDataset,
+      currentMapDataSource,
       cities,
       loading,
       currentError,
@@ -86,13 +86,13 @@ export default defineComponent({
       v-if="currentCity"
       v-model="drawer"
       permanent
-      width="250"
+      width="300"
       class="main-area drawer"
     >
       <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
-      :model-value="currentDataset !== undefined"
+      :model-value="currentMapDataSource !== undefined"
       permanent
       width="250"
       location="right"
@@ -103,7 +103,7 @@ export default defineComponent({
     <div
       :class="
         drawer
-          ? currentDataset
+          ? currentMapDataSource
             ? 'main-area shifted-2'
             : 'main-area shifted-1'
           : 'main-area'

@@ -5,7 +5,6 @@ import tempfile
 import zipfile
 
 from celery import shared_task
-from django.contrib.gis.geos import MultiPolygon, Polygon
 from django.core.files.base import ContentFile
 from geojson2vt import geojson2vt, vt2geojson
 import geopandas
@@ -14,8 +13,9 @@ import numpy
 import rasterio
 import shapefile
 
-from uvdat.core.models import Dataset, Region
+from uvdat.core.models import Dataset
 from uvdat.core.tasks.networks import save_network_nodes
+from uvdat.core.tasks.regions import save_regions
 from uvdat.core.utils import add_styling
 
 
@@ -41,6 +41,7 @@ def convert_raw_data(dataset_id):
 
 
 def convert_cog(dataset):
+    """Saves the raster_file attribute of the dataset."""
     with tempfile.TemporaryDirectory() as temp_dir:
         raw_data_path = Path(temp_dir, 'raw_data.tiff')
         raster_path = Path(temp_dir, 'raster.tiff')
@@ -112,6 +113,7 @@ def convert_cog(dataset):
 
 
 def convert_geojson(dataset, geodata_path=None):
+    """Saves the vector_tiles_file and geodata_file attributes of the dataset."""
     with tempfile.TemporaryDirectory() as temp_dir:
         if geodata_path is None:
             geodata_path = Path(temp_dir, 'geo.json')
@@ -119,8 +121,9 @@ def convert_geojson(dataset, geodata_path=None):
                 original_data = dataset.raw_data_archive.open('rb').read()
                 original_data = json.loads(original_data)
                 original_data['features'] = add_styling(original_data['features'], dataset.style)
-                original_projection = original_data.get('crs').get('properties').get('name')
                 geodata_file.write(json.dumps(original_data).encode())
+
+            original_projection = original_data.get('crs', {}).get('properties', {}).get('name')
             if original_projection:
                 geodata = geopandas.read_file(geodata_path)
                 geodata = geodata.set_crs(original_projection, allow_override=True)
@@ -198,25 +201,3 @@ def convert_shape_file_archive(dataset):
         print(f'\t Shapefile to GeoJSON conversion complete for {dataset.name}.')
 
         convert_geojson(dataset, geodata_path=geodata_path)
-
-
-def save_regions(dataset):
-    dataset.regions.all().delete()
-    property_map = dataset.style.get('property_map')
-    name_property = property_map.get('name') if property_map else None
-
-    geodata = json.loads(dataset.geodata_file.read().decode())
-    for feature in geodata.get('features'):
-        geometry = feature.get('geometry')
-        properties = feature.get('properties')
-        polygons = [Polygon(p if len(p) != 1 else p[0]) for p in geometry.get('coordinates')]
-        region = Region(
-            name=properties.get(name_property) if name_property else "",
-            boundary=MultiPolygon(*polygons),
-            properties=properties,
-            dataset=dataset,
-            city=dataset.city,
-        )
-        region.save()
-
-    print(f"Saved regions for {dataset.name}")

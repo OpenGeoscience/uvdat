@@ -19,6 +19,7 @@ router.register(r'datasets', views.DatasetViewSet, basename='datasets')
 router.register(r'cities', views.CityViewSet, basename='cities')
 router.register(r'charts', views.ChartViewSet, basename='charts')
 router.register(r'simulations', views.SimulationViewSet, basename='simulations')
+router.register(r'derived_regions', views.DerivedRegionViewSet, basename='derived_regions')
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),

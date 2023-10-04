@@ -2,27 +2,76 @@ import json
 from pathlib import Path
 import tempfile
 
-from django.core.serializers import serialize
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
+from drf_yasg.utils import swagger_auto_schema
 import ijson
 import large_image
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet, mixins
 
-from uvdat.core.models import Chart, City, Dataset, Region, SimulationResult
+from uvdat.core.models import Chart, City, Dataset, DerivedRegion, Region, SimulationResult
 from uvdat.core.serializers import (
     ChartSerializer,
     CitySerializer,
     DatasetSerializer,
+    DerivedRegionCreationSerializer,
+    DerivedRegionDetailSerializer,
+    DerivedRegionListSerializer,
     NetworkNodeSerializer,
+    RegionFeatureCollectionSerializer,
     SimulationResultSerializer,
 )
 from uvdat.core.tasks.charts import add_gcc_chart_datum
 from uvdat.core.tasks.conversion import convert_raw_data
 from uvdat.core.tasks.networks import network_gcc, construct_edge_list
+from uvdat.core.tasks.regions import DerivedRegionCreationException, create_derived_region
 from uvdat.core.tasks.simulations import get_available_simulations, run_simulation
+
+
+class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+    queryset = DerivedRegion.objects.all()
+    serializer_class = DerivedRegionListSerializer
+
+    def get_serializer_class(self):
+        if self.detail:
+            return DerivedRegionDetailSerializer
+
+        return super().get_serializer_class()
+
+    @action(detail=True, methods=['GET'])
+    def as_feature(self, request, *args, **kwargs):
+        obj: DerivedRegion = self.get_object()
+        feature = {
+            "type": "Feature",
+            "geometry": json.loads(obj.boundary.geojson),
+            "properties": DerivedRegionListSerializer(instance=obj).data,
+        }
+
+        return HttpResponse(json.dumps(feature))
+
+    @swagger_auto_schema(request_body=DerivedRegionCreationSerializer)
+    def create(self, request, *args, **kwargs):
+        serializer = DerivedRegionCreationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            data = serializer.validated_data
+            derived_region = create_derived_region(
+                name=data['name'],
+                city_id=data['city'],
+                region_ids=data['regions'],
+                operation=data['operation'],
+            )
+        except DerivedRegionCreationException as e:
+            return Response(str(e), status=400)
+
+        return Response(
+            DerivedRegionDetailSerializer(instance=derived_region).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CityViewSet(ModelViewSet):
@@ -49,7 +98,8 @@ class DatasetViewSet(ModelViewSet, LargeImageFileDetailMixin):
 
         # Serialize all regions as a feature collection
         multipolygons = Region.objects.filter(dataset=dataset)
-        return HttpResponse(serialize('geojson', multipolygons, geometry_field='boundary'))
+        serializer = RegionFeatureCollectionSerializer()
+        return HttpResponse(serializer.serialize(multipolygons, geometry_field='boundary'))
 
     @action(
         detail=True,

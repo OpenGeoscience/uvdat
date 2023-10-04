@@ -10,8 +10,27 @@ export interface Dataset {
   raster_file: string;
   created: string;
   modified: string;
-  style: object;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  style: { [key: string]: any };
   processing: boolean;
+  network: boolean;
+}
+
+export interface Region {
+  id: number;
+  name: string;
+  city: number;
+  dataset: number;
+  properties: { [key: string]: unknown };
+}
+
+export interface DerivedRegion {
+  id: number;
+  name: string;
+  city: number;
+  properties: { [key: string]: unknown };
+  source_operation: "UNION" | "INTERSECTION";
+  source_regions: number[];
 }
 
 export interface City {
