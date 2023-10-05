@@ -40,7 +40,7 @@ setup(
         'django==4.1',
         # TODO: remove django version constraint
         # when girder4 becomes compatible with 4.2
-        'django-allauth',
+        'django-allauth<0.56.0',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
