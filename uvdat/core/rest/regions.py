@@ -1,0 +1,61 @@
+import json
+
+from django.http import HttpResponse
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import action
+from rest_framework.viewsets import GenericViewSet, mixins
+
+from uvdat.core.models import DerivedRegion, OriginalRegion
+from uvdat.core.tasks.regions import DerivedRegionCreationException, create_derived_region
+
+from .serializers import (
+    DerivedRegionCreationSerializer,
+    DerivedRegionDetailSerializer,
+    DerivedRegionListSerializer,
+    OriginalRegionSerializer,
+)
+
+
+class OriginalRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+    queryset = OriginalRegion.objects.all()
+    serializer_class = OriginalRegionSerializer
+
+
+class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+    queryset = DerivedRegion.objects.all()
+    serializer_class = DerivedRegionListSerializer
+
+    def get_serializer_class(self):
+        if self.detail:
+            return DerivedRegionDetailSerializer
+
+        return super().get_serializer_class()
+
+    @action(detail=True, methods=['GET'])
+    def as_feature(self, request, *args, **kwargs):
+        obj: DerivedRegion = self.get_object()
+        feature = {
+            "type": "Feature",
+            "geometry": json.loads(obj.boundary.geojson),
+            "properties": DerivedRegionListSerializer(instance=obj).data,
+        }
+
+        return HttpResponse(json.dumps(feature))
+
+    @swagger_auto_schema(request_body=DerivedRegionCreationSerializer)
+    def create(self, request, *args, **kwargs):
+        serializer = DerivedRegionCreationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            data = serializer.validated_data
+            derived_region = create_derived_region(
+                name=data['name'],
+                city_id=data['city'],
+                region_ids=data['regions'],
+                operation=data['operation'],
+            )
+        except DerivedRegionCreationException as e:
+            return HttpResponse(str(e), status=400)
+
+        return HttpResponse(DerivedRegionDetailSerializer(instance=derived_region).data, status=201)
