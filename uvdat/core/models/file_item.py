@@ -1,6 +1,6 @@
 from django.db import models
-from s3_file_field import S3FileField
 from django_extensions.db.models import TimeStampedModel
+from s3_file_field import S3FileField
 
 from .dataset import Dataset
 

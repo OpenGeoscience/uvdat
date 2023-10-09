@@ -1,9 +1,10 @@
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
+from uvdat.core.tasks import simulations as uvdat_simulations
+
 from .city import City
 from .dataset import Dataset
-from uvdat.core.tasks import simulations as uvdat_simulations
 
 
 class SimulationResult(TimeStampedModel):
@@ -23,7 +24,8 @@ class SimulationResult(TimeStampedModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['simulation_id', 'city', 'input_args'], name='unique_simulation_combination'
+                fields=['simulation_type', 'city', 'input_args'],
+                name='unique_simulation_combination',
             )
         ]
 

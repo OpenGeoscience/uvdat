@@ -1,9 +1,9 @@
 from .city import City
+from .data_sources import ChartDataSource, RasterDataSource, VectorDataSource, VectorTile
 from .dataset import DataCollection, Dataset
 from .file_item import FileItem
-from .data_sources import ChartDataSource, RasterDataSource, VectorDataSource, VectorTile
-from .regions import Region, DerivedRegion
 from .networks import NetworkEdge, NetworkNode
+from .regions import DerivedRegion, OriginalRegion
 from .simulations import SimulationResult
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
     RasterDataSource,
     VectorDataSource,
     VectorTile,
-    Region,
+    OriginalRegion,
     DerivedRegion,
     NetworkEdge,
     NetworkNode,
