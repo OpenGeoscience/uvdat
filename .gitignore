@@ -1,4 +1,7 @@
 .terraform/
+postgres/*
+minio/*
+rabbitmq/*
 .vscode/
 staticfiles/
 sample_data/**/*
