@@ -16,10 +16,6 @@ class City(models.Model):
         else:
             return [0, 0]
 
-    def get_datasets(self):
-        # TODO: get datasets
-        pass
-
     def get_regions(self):
         # TODO: get regions
         pass

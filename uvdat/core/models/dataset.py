@@ -25,10 +25,6 @@ class Dataset(models.Model):
         # TODO: spawn conversion task
         pass
 
-    def get_regions(self):
-        # TODO: get regions
-        pass
-
     def get_network(self):
         # TODO: get network
         pass

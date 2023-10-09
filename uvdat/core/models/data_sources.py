@@ -25,10 +25,6 @@ class AbstractDataSource(TimeStampedModel):
         # on failure raise forms.ValidationError('details')
         return cleaned_data
 
-    def rerun_conversion(self):
-        # TODO: rerun conversion
-        pass
-
 
 class ChartDataSource(AbstractDataSource):
     chart_data = models.JSONField(blank=True, null=True)

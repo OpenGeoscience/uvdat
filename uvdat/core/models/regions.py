@@ -5,7 +5,7 @@ from .city import City
 from .dataset import Dataset
 
 
-class Region(models.Model):
+class AbstractRegion(models.Model):
     name = models.CharField(max_length=255)
     city = models.ForeignKey(City, on_delete=models.CASCADE)
     metadata = models.JSONField(blank=True, null=True)
@@ -15,7 +15,7 @@ class Region(models.Model):
         abstract = True
 
 
-class OriginalRegion(Region):
+class OriginalRegion(AbstractRegion):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='regions')
 
     class Meta:
@@ -25,7 +25,7 @@ class OriginalRegion(Region):
         ]
 
 
-class DerivedRegion(Region):
+class DerivedRegion(AbstractRegion):
     class VectorOperation(models.TextChoices):
         UNION = 'UNION', 'Union'
         INTERSECTION = 'INTERSECTION', 'Intersection'

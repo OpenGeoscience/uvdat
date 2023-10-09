@@ -35,12 +35,6 @@ class DatasetViewSet(ModelViewSet):
         gcc = dataset.get_gcc(exclude_nodes)
         return HttpResponse(gcc, status=200)
 
-    @action(detail=True, methods=['get'])
-    def regions(self, request, **kwargs):
-        dataset = self.get_object()
-        regions = dataset.get_regions()
-        return HttpResponse(regions, status=200)
-
 
 class DataCollectionViewSet(ModelViewSet):
     queryset = DataCollection.objects.all()
