@@ -36,12 +36,3 @@ class Dataset(models.Model):
     def get_network_gcc(self, exclude_nodes):
         # TODO: get network gcc
         pass
-
-
-class DataCollection(TimeStampedModel):
-    # TODO: when auth is implemented, add a User pointer `curated_by`
-    name = models.CharField(max_length=255, unique=True)
-    datasets = models.ManyToManyField(Dataset)
-
-    def get_dataset_names(self):
-        return ', '.join(d.name for d in self.datasets.all())

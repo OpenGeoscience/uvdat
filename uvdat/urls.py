@@ -8,7 +8,6 @@ from rest_framework import permissions, routers
 from uvdat.core.rest import (
     ChartViewSet,
     CityViewSet,
-    DataCollectionViewSet,
     DatasetViewSet,
     DerivedRegionViewSet,
     OriginalRegionViewSet,
@@ -27,7 +26,6 @@ schema_view = get_schema_view(
 
 router.register(r'cities', CityViewSet, basename='cities')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
-router.register(r'collections', DataCollectionViewSet, basename='collections')
 router.register(r'charts', ChartViewSet, basename='charts')
 router.register(r'rasters', RasterDataSourceViewSet, basename='rasters')
 router.register(r'vectors', VectorDataSourceViewSet, basename='vectors')

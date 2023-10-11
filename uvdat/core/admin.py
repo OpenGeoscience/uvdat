@@ -3,7 +3,6 @@ from django.contrib import admin
 from uvdat.core.models import (
     ChartDataSource,
     City,
-    DataCollection,
     Dataset,
     DerivedRegion,
     FileItem,
@@ -18,10 +17,6 @@ from uvdat.core.models import (
 
 
 class CityAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name']
-
-
-class DataCollectionAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
 
 
@@ -112,7 +107,6 @@ class SimulationResultAdmin(admin.ModelAdmin):
 
 
 admin.site.register(City, CityAdmin)
-admin.site.register(DataCollection, DataCollectionAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(ChartDataSource, ChartDataSourceAdmin)

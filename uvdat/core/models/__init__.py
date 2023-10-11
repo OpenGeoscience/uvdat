@@ -1,6 +1,6 @@
 from .city import City
 from .data_sources import ChartDataSource, RasterDataSource, VectorDataSource, VectorTile
-from .dataset import DataCollection, Dataset
+from .dataset import Dataset
 from .file_item import FileItem
 from .networks import NetworkEdge, NetworkNode
 from .regions import DerivedRegion, OriginalRegion
@@ -8,7 +8,6 @@ from .simulations import SimulationResult
 
 __all__ = [
     City,
-    DataCollection,
     Dataset,
     FileItem,
     ChartDataSource,

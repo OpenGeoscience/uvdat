@@ -6,7 +6,6 @@ from rest_framework import serializers
 from uvdat.core.models import (
     ChartDataSource,
     City,
-    DataCollection,
     Dataset,
     DerivedRegion,
     FileItem,
@@ -27,12 +26,6 @@ class CitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = City
-        fields = '__all__'
-
-
-class DataCollectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DataCollection
         fields = '__all__'
 
 
