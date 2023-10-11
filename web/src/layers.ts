@@ -3,6 +3,7 @@ import { getUid } from "ol/util";
 import VectorLayer from "ol/layer/Vector";
 import TileLayer from "ol/layer/Tile";
 import VectorSource from "ol/source/Vector";
+import type UrlTileSource from "ol/source/UrlTile";
 import GeoJSON from "ol/format/GeoJSON.js";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
@@ -166,31 +167,90 @@ export function createVectorTileLayer(dataset: Dataset): Layer {
   });
 }
 
-export function createRasterLayer(dataset: Dataset): Layer {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tileParams: Record<string, any> = {
+interface RasterLayerOptions {
+  palette?: string;
+  min?: number;
+  max?: number;
+  nodata?: number;
+}
+interface TileParams extends RasterLayerOptions {
+  band: number;
+  projection: "EPSG:3857";
+}
+
+export function setRasterLayerStyle(
+  layer: Layer,
+  dataset: Dataset,
+  options: RasterLayerOptions
+) {
+  let tileParams: TileParams = {
     projection: "EPSG:3857",
     band: 1,
-    palette: dataset.style?.colormap || "terrain",
+    palette: "terrain",
   };
-  if (dataset.style?.colormap_range?.length === 2) {
-    tileParams.min = dataset.style.colormap_range[0];
-    tileParams.max = dataset.style.colormap_range[1];
+
+  // Prefill with existing source before setting new values
+  const currentSource = layer.getSource() as UrlTileSource | null;
+  if (currentSource === null) {
+    throw new Error(`No source found on layer ${getUid(layer)}`);
   }
-  if (dataset.style?.options?.transparency_threshold !== undefined) {
-    tileParams.nodata = dataset.style.options.transparency_threshold;
+
+  // Prefill options from existing sourceUrl, if it exists
+  const sourceUrl = currentSource.getUrls()?.[0];
+  if (sourceUrl) {
+    tileParams = {
+      ...tileParams,
+      ...Object.fromEntries(new URL(sourceUrl).searchParams.entries()),
+    };
   }
+
+  // Filter out undefined options
+  const optionKeys = Object.keys(options) as Array<keyof RasterLayerOptions>;
+  const filteredOptions: RasterLayerOptions = optionKeys
+    .filter((key) => options[key] !== undefined)
+    .reduce((acc, key) => ({ ...acc, [key]: options[key] }), {});
+
+  // Combine defaults and new options
+  tileParams = {
+    ...tileParams,
+    ...filteredOptions,
+  };
+
+  // Create query string from params object, removing any undefined values
   const tileParamString = Object.keys(tileParams)
-    .map((key) => key + "=" + tileParams[key])
+    .filter((key) => !!tileParams[key as keyof TileParams])
+    .map(
+      (key) =>
+        encodeURIComponent(key) +
+        "=" +
+        encodeURIComponent(
+          tileParams[key as keyof TileParams] as string | number
+        )
+    )
     .join("&");
 
+  // Set new source URL
+  currentSource.setUrl(
+    `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`
+  );
+}
+
+export function createRasterLayer(dataset: Dataset): Layer {
   cacheRasterData(dataset.id);
-  return new TileLayer({
-    source: new XYZSource({
-      url: `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
-    }),
+  const layer = new TileLayer({
+    source: new XYZSource(),
     opacity: dataset.style?.opacity || 1,
   });
+
+  // Set style
+  setRasterLayerStyle(layer, dataset, {
+    palette: dataset.style?.colormap,
+    min: dataset.style?.colormap_range?.[0],
+    max: dataset.style?.colormap_range?.[1],
+    nodata: dataset.style?.options?.transparency_threshold,
+  });
+
+  return layer;
 }
 
 // TODO: Roll into addDatasetLayerToMap
@@ -237,6 +297,7 @@ export function addNetworkLayerToMap(dataset: Dataset, nodes: NetworkNode[]) {
 
   const layer = new VectorLayer({
     properties: {
+      // This property only exists on the manually added node network layer
       network: true,
     },
     zIndex: 99,
@@ -277,4 +338,11 @@ export function addDataSourceLayerToMap(dataSource: MapDataSource) {
   layer.setProperties({ dataSourceId: dataSource.uid });
   getMap().addLayer(layer);
   return layer;
+}
+
+export function removeLayerFromMap(layer: BaseLayer) {
+  getMap().removeLayer(layer);
+  activeMapLayerIds.value = activeMapLayerIds.value.filter(
+    (layerId) => layerId !== getUid(layer)
+  );
 }
