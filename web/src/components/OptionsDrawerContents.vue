@@ -30,6 +30,10 @@ export default {
     const colormapRange = ref(undefined);
     const showConfirmConvert = ref(false);
 
+    // Use deep watcher to catch inputs from number fields alongside sliders
+    watch(colormapRange, updateColormap, { deep: true });
+    watch(colormap, updateColormap);
+
     function collapseOptionsPanel() {
       currentMapDataSource.value = undefined;
     }
@@ -64,18 +68,18 @@ export default {
       layer.setOpacity(opacity.value);
     }
 
-    function updateColormapMin(min) {
-      colormapRange.value[0] = min;
+    function updateColormap() {
+      if (colormapRange.value === undefined) {
+        return;
+      }
 
+      const [min, max] = colormapRange.value;
       const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      setRasterLayerStyle(layer, currentMapDataSource.value.dataset, { min });
-    }
-
-    function updateColormapMax(max) {
-      colormapRange.value[1] = max;
-
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      setRasterLayerStyle(layer, currentMapDataSource.value.dataset, { max });
+      setRasterLayerStyle(layer, currentMapDataSource.value.dataset, {
+        min,
+        max,
+        palette: colormap.value,
+      });
     }
 
     async function enableNodeNetworkVis() {
@@ -179,8 +183,7 @@ export default {
       colormap,
       datasetRange,
       colormapRange,
-      updateColormapMin,
-      updateColormapMax,
+      updateColormap,
       rasterTooltip,
       networkVis,
       toggleNetworkVis,
@@ -235,24 +238,26 @@ export default {
         >
           <template v-slot:prepend>
             <input
-              :value="colormapRange[0]"
+              v-model="colormapRange[0]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMin(e.target.value)"
+              :min="datasetRange[0]"
+              :max="datasetRange[1]"
             />
           </template>
           <template v-slot:append>
             <input
-              :value="colormapRange[1]"
+              v-model="colormapRange[1]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMax(e.target.value)"
+              :min="datasetRange[0]"
+              :max="datasetRange[1]"
             />
           </template>
         </v-range-slider>
