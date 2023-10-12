@@ -11,7 +11,7 @@ from .dataset import Dataset
 
 class AbstractDataSource(TimeStampedModel):
     # TODO: when auth is implemented, add a User pointer `uploaded_by`
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True)
     metadata = models.JSONField(blank=True, null=True)
     default_style = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)

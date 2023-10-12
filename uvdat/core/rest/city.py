@@ -1,6 +1,6 @@
 from django.http import HttpResponse
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
+from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import City
 from uvdat.core.rest.serializers import CitySerializer

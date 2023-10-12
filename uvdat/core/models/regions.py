@@ -2,8 +2,8 @@ from django.contrib.gis.db import models as geo_models
 from django.db import models
 
 from .city import City
-from .dataset import Dataset
 from .data_sources import VectorDataSource
+from .dataset import Dataset
 
 
 class OriginalRegion(models.Model):
