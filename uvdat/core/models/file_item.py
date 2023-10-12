@@ -14,7 +14,9 @@ class FileItem(TimeStampedModel):
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE, null=True)
     file = S3FileField()
     file_type = models.CharField(max_length=25)
+    file_size = models.IntegerField(null=True)
     metadata = models.JSONField(blank=True, null=True)
+    index = models.IntegerField(null=True)
 
     def download(self):
         # TODO: download

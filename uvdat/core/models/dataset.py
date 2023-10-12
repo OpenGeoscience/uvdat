@@ -7,7 +7,6 @@ class Dataset(models.Model):
     class DatasetType(models.TextChoices):
         VECTOR = 'VECTOR', 'Vector'
         RASTER = 'RASTER', 'Raster'
-        CHART = 'CHART', 'Chart'
 
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -20,8 +19,31 @@ class Dataset(models.Model):
         choices=DatasetType.choices,
     )
 
-    def spawn_conversion_task(self):
-        # TODO: spawn conversion task
+    def spawn_conversion_task(
+        self,
+        style_options=None,
+        network_options=None,
+        region_options=None,
+        asynchronous=True,
+    ):
+        from uvdat.core.tasks.dataset import convert_dataset
+
+        if asynchronous:
+            convert_dataset.delay(self.id, style_options, network_options, region_options)
+        else:
+            convert_dataset(self.id, style_options, network_options, region_options)
+
+    def get_size(self):
+        from uvdat.core.models import FileItem
+
+        size = 0
+        for file_item in FileItem.objects.filter(dataset=self):
+            if file_item.file_size is not None:
+                size += file_item.file_size
+        return size
+
+    def get_regions(self):
+        # TODO: get regions
         pass
 
     def get_network(self):

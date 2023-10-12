@@ -47,12 +47,19 @@ class VectorDataSource(AbstractDataSource):
     geojson_data = models.JSONField(blank=True, null=True)
 
     def get_available_tile_coords(self):
-        # TODO: get available tile coords
-        return []
+        tile_coords = []
+        for vector_tile in VectorTile.objects.filter(data_source=self):
+            tile_coords.append(
+                dict(
+                    x=vector_tile.x,
+                    y=vector_tile.y,
+                    z=vector_tile.z,
+                )
+            )
+        return tile_coords
 
     def get_vector_tile(self, x, y, z):
-        # TODO: get vector tile
-        pass
+        return VectorTile.objects.get(data_source=self, x=x, y=y, z=z)
 
 
 class VectorTile(models.Model):

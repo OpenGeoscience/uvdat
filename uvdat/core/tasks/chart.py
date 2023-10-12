@@ -1,27 +1,32 @@
-from datetime import datetime
-
 import pandas
+
+from celery import shared_task
+from datetime import datetime
 from webcolors import name_to_hex
 
 from uvdat.core.models import Chart
 
 
-def convert_chart_data(chart):
-    options = chart.style.get('options')
-    chart_options = options.get('chart')
-    label_column = chart_options.get('labels')
-    dataset_columns = chart_options.get('datasets')
-    palette_options = options.get('palette')
+@shared_task
+def convert_chart(chart_id, conversion_options):
+    chart = Chart.objects.get(id=chart_id)
+
+    label_column = conversion_options.get('labels')
+    dataset_columns = conversion_options.get('datasets')
+    palette_options = conversion_options.get('palette')
 
     chart_data = {
         'labels': [],
         'datasets': [],
     }
 
-    if chart.raw_data_type == 'csv':
-        raw_data = pandas.read_csv(chart.raw_data_file.open())
+    chart_file = chart.fileitem_set.first()
+    if chart_file.file_type == 'csv':
+        raw_data = pandas.read_csv(chart_file.file.open())
     else:
-        raise NotImplementedError(f'Convert chart data for raw data type {chart.raw_data_type}')
+        raise NotImplementedError(
+            f'Convert chart data for file type {chart_file.file_type}',
+        )
     chart_data['labels'] = raw_data[label_column].fillna(-1).tolist()
     chart_data['datasets'] = [
         {
@@ -35,7 +40,7 @@ def convert_chart_data(chart):
 
     chart.chart_data = chart_data
     chart.save()
-    print(f"Saved data for chart {chart.name}")
+    print(f"\t Saved converted data for chart {chart.name}.")
 
 
 def get_gcc_chart(dataset):
@@ -51,8 +56,7 @@ def get_gcc_chart(dataset):
                 showing GCC size by number of excluded nodes
             """,
             city=dataset.city,
-            category="gcc",
-            clearable=True,
+            editable=True,
             chart_data={},
             metadata=[],
             chart_options={

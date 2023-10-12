@@ -65,12 +65,11 @@ def create_derived_region(name: str, city_id: int, region_ids: List[int], operat
     return derived_region
 
 
-def save_regions(dataset):
-    dataset.regions.all().delete()
-    property_map = dataset.style.get('property_map')
-    name_property = property_map.get('name') if property_map else None
+def create_original_regions(vector_data_source, region_options):
+    name_property = region_options.get('name_property')
+    geodata = json.loads(vector_data_source.geojson_data)
 
-    geodata = json.loads(dataset.geodata_file.read().decode())
+    region_count = 0
     for feature in geodata['features']:
         properties = feature['properties']
         geometry = feature['geometry']
@@ -90,9 +89,10 @@ def save_regions(dataset):
             name=name,
             boundary=GEOSGeometry(str(geometry)),
             metadata=properties,
-            dataset=dataset,
-            city=dataset.city,
+            dataset=vector_data_source.dataset,
+            city=vector_data_source.dataset.city,
         )
         region.save()
+        region_count += 1
 
-    print(f"Saved regions for {dataset.name}")
+    print('\t', f"{region_count} regions created.")

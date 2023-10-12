@@ -13,6 +13,18 @@ class Chart(models.Model):
     chart_options = models.JSONField(blank=True, null=True)
     editable = models.BooleanField(default=False)
 
+    def spawn_conversion_task(
+        self,
+        conversion_options=None,
+        asynchronous=True,
+    ):
+        from uvdat.core.tasks.chart import convert_chart
+
+        if asynchronous:
+            convert_chart.delay(self.id, conversion_options)
+        else:
+            convert_chart(self.id, conversion_options)
+
     def new_line(self):
         # TODO: new line
         pass

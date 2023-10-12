@@ -28,10 +28,14 @@ class DatasetAdmin(admin.ModelAdmin):
 
 
 class FileItemAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name']
+    list_display = ['id', 'name', 'get_relationship']
 
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    def get_relationship(self, obj):
+        if obj.dataset is not None:
+            return obj.dataset.name
+        if obj.chart is not None:
+            return obj.chart.name
+        return 'None'
 
 
 class ChartAdmin(admin.ModelAdmin):
@@ -80,13 +84,10 @@ class DerivedRegionAdmin(admin.ModelAdmin):
 
 
 class NetworkEdgeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_dataset_name', 'get_connected_node_names']
+    list_display = ['id', 'name', 'get_dataset_name']
 
     def get_dataset_name(self, obj):
         return obj.dataset.name
-
-    def get_connected_node_names(self, obj):
-        return ', '.join(n.name for n in obj.connected_nodes.all())
 
 
 class NetworkNodeAdmin(admin.ModelAdmin):
