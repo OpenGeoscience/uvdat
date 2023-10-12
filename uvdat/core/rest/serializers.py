@@ -4,7 +4,7 @@ from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
 from uvdat.core.models import (
-    ChartDataSource,
+    Chart,
     City,
     Dataset,
     DerivedRegion,
@@ -41,9 +41,9 @@ class FileItemSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ChartDataSourceSerializer(serializers.ModelSerializer):
+class ChartSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ChartDataSource
+        model = Chart
         fields = '__all__'
 
 

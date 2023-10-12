@@ -26,24 +26,6 @@ class AbstractDataSource(TimeStampedModel):
         return cleaned_data
 
 
-class ChartDataSource(AbstractDataSource):
-    chart_data = models.JSONField(blank=True, null=True)
-    chart_options = models.JSONField(blank=True, null=True)
-    editable = models.BooleanField(default=False)
-
-    def new_line(self):
-        # TODO: new line
-        pass
-
-    def rename_lines(self, new_names):
-        # TODO: rename lines
-        pass
-
-    def clear(self):
-        # TODO: clear
-        pass
-
-
 class RasterDataSource(AbstractDataSource):
     cloud_optimized_geotiff = S3FileField()
 

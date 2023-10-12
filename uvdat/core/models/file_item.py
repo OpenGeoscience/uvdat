@@ -7,7 +7,10 @@ from .dataset import Dataset
 
 class FileItem(TimeStampedModel):
     name = models.CharField(max_length=50)
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='original_files')
+    dataset = models.ForeignKey(
+        Dataset, on_delete=models.CASCADE, related_name='original_files', null=True
+    )
+    chart = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True)
     file = S3FileField()
     file_type = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
