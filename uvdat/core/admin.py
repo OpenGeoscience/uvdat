@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from uvdat.core.models import (
-    ChartDataSource,
+    Chart,
     City,
     Dataset,
     DerivedRegion,
@@ -34,11 +34,8 @@ class FileItemAdmin(admin.ModelAdmin):
         return obj.dataset.name
 
 
-class ChartDataSourceAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name', 'editable', 'index']
-
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+class ChartAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'editable']
 
 
 class RasterDataSourceAdmin(admin.ModelAdmin):
@@ -109,7 +106,7 @@ class SimulationResultAdmin(admin.ModelAdmin):
 admin.site.register(City, CityAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileItem, FileItemAdmin)
-admin.site.register(ChartDataSource, ChartDataSourceAdmin)
+admin.site.register(Chart, ChartAdmin)
 admin.site.register(RasterDataSource, RasterDataSourceAdmin)
 admin.site.register(VectorDataSource, VectorDataSourceAdmin)
 admin.site.register(VectorTile, VectorTileAdmin)

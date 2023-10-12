@@ -3,6 +3,7 @@ from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
 from .dataset import Dataset
+from .chart import Chart
 
 
 class FileItem(TimeStampedModel):
@@ -10,7 +11,7 @@ class FileItem(TimeStampedModel):
     dataset = models.ForeignKey(
         Dataset, on_delete=models.CASCADE, related_name='original_files', null=True
     )
-    chart = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True)
+    chart = models.ForeignKey(Chart, on_delete=models.CASCADE, null=True)
     file = S3FileField()
     file_type = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
