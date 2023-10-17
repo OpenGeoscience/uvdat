@@ -5,8 +5,9 @@ import { getUid } from "ol/util";
 
 import {
   getMapLayerFromDataSource,
-  updateVisibleLayers,
   addNetworkLayerToMap,
+  setRasterLayerStyle,
+  removeLayerFromMap,
 } from "@/layers";
 import { MapDataSource, addDataSourceToMap } from "@/data";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
@@ -14,7 +15,6 @@ import {
   currentCity,
   currentMapDataSource,
   pollForProcessingDataset,
-  getMap,
   networkVis,
   deactivatedNodes,
   rasterTooltip,
@@ -29,6 +29,10 @@ export default {
     const datasetRange = ref(undefined);
     const colormapRange = ref(undefined);
     const showConfirmConvert = ref(false);
+
+    // Use deep watcher to catch inputs from number fields alongside sliders
+    watch(colormapRange, updateColormap, { deep: true });
+    watch(colormap, updateColormap);
 
     function collapseOptionsPanel() {
       currentMapDataSource.value = undefined;
@@ -64,72 +68,81 @@ export default {
       layer.setOpacity(opacity.value);
     }
 
-    function updateCurrentDatasetLayer() {
-      if (currentMapDataSource.value?.dataset === undefined) {
+    function updateColormap() {
+      if (colormapRange.value === undefined) {
         return;
       }
 
-      currentMapDataSource.value.dataset.style.opacity = opacity.value;
-      currentMapDataSource.value.dataset.style.colormap = colormap.value;
-      currentMapDataSource.value.dataset.style.colormap_range =
-        colormapRange.value;
-
+      const [min, max] = colormapRange.value;
       const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      const layerNetwork = layer.getProperties().network;
-      if (
-        !layerNetwork ||
-        !networkVis.value ||
-        networkVis.value?.id === layerNetwork
-      ) {
-        getMap().removeLayer(layer);
-        addDataSourceToMap(currentMapDataSource.value);
-      }
+      setRasterLayerStyle(layer, currentMapDataSource.value.dataset, {
+        min,
+        max,
+        palette: colormap.value,
+      });
     }
 
-    function updateColormapMin(min) {
-      colormapRange.value[0] = min;
-      updateCurrentDatasetLayer();
-    }
-
-    function updateColormapMax(max) {
-      colormapRange.value[1] = max;
-      updateCurrentDatasetLayer();
-    }
-
-    function toggleNetworkVis() {
+    async function enableNodeNetworkVis() {
       if (currentMapDataSource.value?.dataset === undefined) {
-        return;
+        throw new Error("No dataset defined on current map data source!");
       }
 
       const { dataset } = currentMapDataSource.value;
+      networkVis.value = dataset;
+      deactivatedNodes.value = [];
 
-      // TODO: Check active map layers
-      // Check if there is a visible layer that matches the networkvis dataset id
-      const updated = updateVisibleLayers();
-      if (
-        !updated.shown.some(
-          (l) => l.getProperties().datasetId === networkVis.value.id
-        )
-      ) {
-        // no existing one shown, create a new network layer
-        getDatasetNetwork(dataset.id).then((nodes) => {
-          if (nodes.length && networkVis.value) {
-            networkVis.value.nodes = nodes;
-            const layer = addNetworkLayerToMap(dataset, nodes);
+      // Ensure that only one layer exists for this dataset at a time
+      const existingLayer = getMapLayerFromDataSource(
+        currentMapDataSource.value
+      );
+      if (existingLayer) {
+        removeLayerFromMap(existingLayer);
 
-            // TODO: Integrate the below code into the normal flow
+        // Ensure it's truly removed from the map
+        const layer = getMapLayerFromDataSource(currentMapDataSource.value);
+        if (layer !== undefined) {
+          throw new Error(
+            `DataSource layer ${currentMapDataSource.value.uid} still found after removal`
+          );
+        }
+      }
 
-            // Set layer properties and add to activeMapLayerIds
-            const dataSource = new MapDataSource({ dataset });
-            layer.setProperties({ dataSourceId: dataSource.uid });
+      // Create a new network layer
+      const nodes = await getDatasetNetwork(dataset.id);
+      if (!nodes.length) {
+        throw new Error(`No nodes returned for dataset ${dataset.id}`);
+      }
 
-            // Put new dataset at front of list, so it shows up above any existing layers
-            activeMapLayerIds.value = [
-              getUid(layer),
-              ...activeMapLayerIds.value,
-            ];
-          }
-        });
+      // TODO: Integrate the below code into the normal flow
+      // Set nodes in networkVis and add new layer to map
+      networkVis.value.nodes = nodes;
+      const layer = addNetworkLayerToMap(dataset, nodes);
+      layer.setProperties({ dataSourceId: currentMapDataSource.value.uid });
+
+      // Put new dataset at front of list, so it shows up above any existing layers
+      activeMapLayerIds.value = [getUid(layer), ...activeMapLayerIds.value];
+    }
+
+    function disableNodeNetworkVis() {
+      networkVis.value = undefined;
+      deactivatedNodes.value = [];
+
+      if (currentMapDataSource.value?.dataset === undefined) {
+        throw new Error("No dataset defined on current map data source!");
+      }
+
+      // Remove existing layer
+      removeLayerFromMap(getMapLayerFromDataSource(currentMapDataSource.value));
+
+      // Add data source back normally
+      addDataSourceToMap(currentMapDataSource.value);
+    }
+
+    async function toggleNetworkVis() {
+      if (networkVis.value) {
+        disableNodeNetworkVis();
+      } else {
+        enableNodeNetworkVis();
       }
     }
 
@@ -161,8 +174,6 @@ export default {
 
     watch(currentMapDataSource, populateRefs);
     watch(opacity, updateLayerOpacity);
-    watch(colormap, updateCurrentDatasetLayer);
-    watch(colormapRange, updateCurrentDatasetLayer);
 
     return {
       collapseOptionsPanel,
@@ -172,8 +183,7 @@ export default {
       colormap,
       datasetRange,
       colormapRange,
-      updateColormapMin,
-      updateColormapMax,
+      updateColormap,
       rasterTooltip,
       networkVis,
       toggleNetworkVis,
@@ -228,24 +238,26 @@ export default {
         >
           <template v-slot:prepend>
             <input
-              :value="colormapRange[0]"
+              v-model="colormapRange[0]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMin(e.target.value)"
+              :min="datasetRange[0]"
+              :max="datasetRange[1]"
             />
           </template>
           <template v-slot:append>
             <input
-              :value="colormapRange[1]"
+              v-model="colormapRange[1]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMax(e.target.value)"
+              :min="datasetRange[0]"
+              :max="datasetRange[1]"
             />
           </template>
         </v-range-slider>
@@ -258,8 +270,7 @@ export default {
 
       <div v-if="currentMapDataSource.dataset?.network">
         <v-switch
-          v-model="networkVis"
-          :value="currentMapDataSource.dataset"
+          :model-value="networkVis !== undefined"
           label="Show as node network"
           @change="toggleNetworkVis"
         />
@@ -269,7 +280,7 @@ export default {
           :model-value="0"
           variant="accordion"
         >
-          <v-expansion-panel title="Deactivated Nodes">
+          <v-expansion-panel title="Deactivated Nodes" v-if="networkVis">
             <v-expansion-panel-text
               v-for="deactivated in deactivatedNodes"
               v-show="networkVis.nodes.map((n) => n.id).includes(deactivated)"

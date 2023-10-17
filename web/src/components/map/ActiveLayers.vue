@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, watch, ref } from "vue";
 import draggable from "vuedraggable";
+
 import {
   availableDerivedRegions,
   activeMapLayerIds,
@@ -8,7 +9,6 @@ import {
   currentMapDataSource,
 } from "@/store";
 import { getDataSourceFromLayerId, updateVisibleLayers } from "@/layers";
-import { watch } from "vue";
 import { MapDataSource, MapDataSourceArgs } from "@/data";
 
 // Layer Menu
@@ -18,6 +18,14 @@ watch(activeMapLayerIds, (val, oldVal) => {
   if (!oldVal.length && val.length) {
     layerMenuActive.value = true;
   }
+});
+
+// This wrapper is needed so that the draggable component can use `id` as the key
+const activeLayerObjects = computed({
+  get: () => activeMapLayerIds.value.map((id) => ({ id })),
+  set(val) {
+    activeMapLayerIds.value = val.map(({ id }) => id);
+  },
 });
 
 function clearActiveLayers() {
@@ -101,7 +109,11 @@ function setCurrentMapDataSource(layerId: string) {
         </v-tooltip>
       </v-card-title>
       <div v-if="!activeMapLayerIds.length" class="pa-4">No layers active.</div>
-      <draggable v-model="activeMapLayerIds" @change="updateVisibleLayers">
+      <draggable
+        v-model="activeLayerObjects"
+        @change="updateVisibleLayers"
+        item-key="id"
+      >
         <template #item="{ element }">
           <v-card class="px-3 py-1">
             <v-tooltip
@@ -116,7 +128,7 @@ function setCurrentMapDataSource(layerId: string) {
               </template>
             </v-tooltip>
 
-            {{ getLayerName(element) }}
+            {{ getLayerName(element.id) }}
 
             <v-tooltip
               v-if="activeMapLayerIds.length"
@@ -128,7 +140,7 @@ function setCurrentMapDataSource(layerId: string) {
                   v-bind="props"
                   size="small"
                   class="expand-icon ml-2"
-                  @click="setCurrentMapDataSource(element)"
+                  @click="setCurrentMapDataSource(element.id)"
                 >
                   mdi-cog
                 </v-icon>
