@@ -305,6 +305,9 @@ export default {
 .v-expansion-panel-text__wrapper {
   padding: 8px 10px 16px !important;
 }
+.v-checkbox {
+  max-width: 100%;
+}
 .expand-icon {
   float: right;
 }
