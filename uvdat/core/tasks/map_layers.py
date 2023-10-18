@@ -12,7 +12,7 @@ from geojson2vt import geojson2vt, vt2geojson
 from webcolors import name_to_hex
 from pathlib import Path
 
-from uvdat.core.models import RasterDataSource, VectorDataSource, VectorTile
+from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
 
 
 def add_styling(geojson_data, style_options):
@@ -46,11 +46,11 @@ def add_styling(geojson_data, style_options):
     return geopandas.GeoDataFrame.from_features(features)
 
 
-def create_raster_data_source(file_item, style_options):
-    """Saves a RasterDataSource from a FileItem's contents."""
+def create_raster_map_layer(file_item, style_options):
+    """Saves a RasterMapLayer from a FileItem's contents."""
 
-    new_data_source = RasterDataSource.objects.create(
-        dataset=file_item.dataset,
+    new_map_layer = RasterMapLayer.objects.create(
+        file_item=file_item,
         metadata={},
         default_style=style_options,
         index=file_item.index,
@@ -112,18 +112,18 @@ def create_raster_data_source(file_item, style_options):
             cog_raster_path = Path(temp_dir, 'cog_raster.tiff')
             large_image_converter.convert(str(raster_path), str(cog_raster_path))
             with open(cog_raster_path, 'rb') as cog_raster_file:
-                new_data_source.cloud_optimized_geotiff.save(
+                new_map_layer.cloud_optimized_geotiff.save(
                     cog_raster_path, ContentFile(cog_raster_file.read())
                 )
 
-    return new_data_source
+    return new_map_layer
 
 
-def create_vector_data_source(file_item, style_options):
-    """Saves a VectorDataSource from a FileItem's contents."""
+def create_vector_map_layer(file_item, style_options):
+    """Saves a VectorMapLayer from a FileItem's contents."""
 
-    new_data_source = VectorDataSource.objects.create(
-        dataset=file_item.dataset,
+    new_map_layer = VectorMapLayer.objects.create(
+        file_item=file_item,
         metadata={},
         default_style=style_options,
         index=file_item.index,
@@ -140,13 +140,13 @@ def create_vector_data_source(file_item, style_options):
             geojson_data = geojson_data.to_crs(4326)
 
     geojson_data = add_styling(geojson_data, style_options)
-    new_data_source.geojson_data = geojson_data.to_json()
-    new_data_source.save()
+    new_map_layer.geojson_data = geojson_data.to_json()
+    new_map_layer.save()
 
-    save_vector_tiles(new_data_source)
-    available_tile_coords = new_data_source.get_available_tile_coords()
+    save_vector_tiles(new_map_layer)
+    available_tile_coords = new_map_layer.get_available_tile_coords()
     print('\t', f'{len(available_tile_coords)} vector tiles created.')
-    return new_data_source
+    return new_map_layer
 
 
 def convert_zip_to_geojson(file_item):
@@ -170,9 +170,9 @@ def convert_zip_to_geojson(file_item):
         return geodata
 
 
-def save_vector_tiles(vector_data_source):
+def save_vector_tiles(vector_map_layer):
     tile_index = geojson2vt.geojson2vt(
-        json.loads(vector_data_source.geojson_data),
+        json.loads(vector_map_layer.geojson_data),
         {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
     )
     for coord in tile_index.tile_coords:
@@ -180,7 +180,7 @@ def save_vector_tiles(vector_data_source):
         features = tile.get('features')
         if features and len(features) > 0:
             VectorTile.objects.create(
-                data_source=vector_data_source,
+                map_layer=vector_map_layer,
                 geojson_data=vt2geojson.vt2geojson(tile),
                 x=coord['x'],
                 y=coord['y'],

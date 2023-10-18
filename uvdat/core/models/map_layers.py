@@ -6,12 +6,11 @@ from django_extensions.db.models import TimeStampedModel
 import large_image
 from s3_file_field import S3FileField
 
-from .dataset import Dataset
+from .file_item import FileItem
 
 
-class AbstractDataSource(TimeStampedModel):
-    # TODO: when auth is implemented, add a User pointer `uploaded_by`
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True)
+class AbstractMapLayer(TimeStampedModel):
+    file_item = models.ForeignKey(FileItem, on_delete=models.CASCADE, null=True)
     metadata = models.JSONField(blank=True, null=True)
     default_style = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
@@ -19,14 +18,8 @@ class AbstractDataSource(TimeStampedModel):
     class Meta:
         abstract = True
 
-    def clean(self):
-        cleaned_data = super().clean()
-        # TODO: validate fields (original_files, index)
-        # on failure raise forms.ValidationError('details')
-        return cleaned_data
 
-
-class RasterDataSource(AbstractDataSource):
+class RasterMapLayer(AbstractMapLayer):
     cloud_optimized_geotiff = S3FileField()
 
     def get_image_data(self, resolution: float = 1.0):
@@ -43,12 +36,12 @@ class RasterDataSource(AbstractDataSource):
             return data.tolist()
 
 
-class VectorDataSource(AbstractDataSource):
+class VectorMapLayer(AbstractMapLayer):
     geojson_data = models.JSONField(blank=True, null=True)
 
     def get_available_tile_coords(self):
         tile_coords = []
-        for vector_tile in VectorTile.objects.filter(data_source=self):
+        for vector_tile in VectorTile.objects.filter(map_layer=self):
             tile_coords.append(
                 dict(
                     x=vector_tile.x,
@@ -59,11 +52,11 @@ class VectorDataSource(AbstractDataSource):
         return tile_coords
 
     def get_vector_tile(self, x, y, z):
-        return VectorTile.objects.get(data_source=self, x=x, y=y, z=z)
+        return VectorTile.objects.get(map_layer=self, x=x, y=y, z=z)
 
 
 class VectorTile(models.Model):
-    data_source = models.ForeignKey(VectorDataSource, on_delete=models.CASCADE)
+    map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)
     geojson_data = models.JSONField(blank=True, null=True)
     x = models.IntegerField(default=0)
     y = models.IntegerField(default=0)

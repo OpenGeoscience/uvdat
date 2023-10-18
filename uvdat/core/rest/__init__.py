@@ -1,6 +1,6 @@
 from .chart import ChartViewSet
 from .city import CityViewSet
-from .data_sources import RasterDataSourceViewSet, VectorDataSourceViewSet
+from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .dataset import DatasetViewSet
 from .regions import DerivedRegionViewSet, OriginalRegionViewSet
 from .simulations import SimulationViewSet
@@ -8,8 +8,8 @@ from .simulations import SimulationViewSet
 __all__ = [
     CityViewSet,
     ChartViewSet,
-    RasterDataSourceViewSet,
-    VectorDataSourceViewSet,
+    RasterMapLayerViewSet,
+    VectorMapLayerViewSet,
     DatasetViewSet,
     OriginalRegionViewSet,
     DerivedRegionViewSet,

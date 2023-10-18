@@ -2,7 +2,7 @@ from django.contrib.gis.db import models as geo_models
 from django.db import models
 
 from .city import City
-from .data_sources import VectorDataSource
+from .map_layers import VectorMapLayer
 from .dataset import Dataset
 
 
@@ -39,7 +39,7 @@ class DerivedRegion(models.Model):
 
     # Since these regions are not associated with Datasets,
     # They need their own reference to a map representation
-    data_source = models.ForeignKey(VectorDataSource, on_delete=models.PROTECT)
+    map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.PROTECT)
 
     class Meta:
         constraints = [

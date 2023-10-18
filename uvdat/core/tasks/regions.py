@@ -65,9 +65,9 @@ def create_derived_region(name: str, city_id: int, region_ids: List[int], operat
     return derived_region
 
 
-def create_original_regions(vector_data_source, region_options):
+def create_original_regions(vector_map_layer, region_options):
     name_property = region_options.get('name_property')
-    geodata = json.loads(vector_data_source.geojson_data)
+    geodata = json.loads(vector_map_layer.geojson_data)
 
     region_count = 0
     for feature in geodata['features']:
@@ -89,8 +89,8 @@ def create_original_regions(vector_data_source, region_options):
             name=name,
             boundary=GEOSGeometry(str(geometry)),
             metadata=properties,
-            dataset=vector_data_source.dataset,
-            city=vector_data_source.dataset.city,
+            dataset=vector_map_layer.file_item.dataset,
+            city=vector_map_layer.file_item.dataset.city,
         )
         region.save()
         region_count += 1

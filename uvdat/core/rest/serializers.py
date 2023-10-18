@@ -12,9 +12,9 @@ from uvdat.core.models import (
     NetworkEdge,
     NetworkNode,
     OriginalRegion,
-    RasterDataSource,
+    RasterMapLayer,
     SimulationResult,
-    VectorDataSource,
+    VectorMapLayer,
 )
 
 
@@ -47,20 +47,20 @@ class ChartSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RasterDataSourceSerializer(serializers.ModelSerializer):
+class RasterMapLayerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = RasterDataSource
+        model = RasterMapLayer
         fields = '__all__'
 
 
-class VectorDataSourceSerializer(serializers.ModelSerializer):
+class VectorMapLayerSerializer(serializers.ModelSerializer):
     tile_coords = serializers.SerializerMethodField('get_tile_coords')
 
     def get_tile_coords(self, obj):
         return obj.get_available_tile_coords()
 
     class Meta:
-        model = VectorDataSource
+        model = VectorMapLayer
         fields = '__all__'
 
 

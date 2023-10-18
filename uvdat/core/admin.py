@@ -9,9 +9,9 @@ from uvdat.core.models import (
     NetworkEdge,
     NetworkNode,
     OriginalRegion,
-    RasterDataSource,
+    RasterMapLayer,
     SimulationResult,
-    VectorDataSource,
+    VectorMapLayer,
     VectorTile,
 )
 
@@ -42,28 +42,28 @@ class ChartAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'editable']
 
 
-class RasterDataSourceAdmin(admin.ModelAdmin):
+class RasterMapLayerAdmin(admin.ModelAdmin):
     list_display = ['id', 'get_dataset_name', 'index']
 
     def get_dataset_name(self, obj):
-        return obj.dataset.name
+        return obj.file_item.dataset.name
 
 
-class VectorDataSourceAdmin(admin.ModelAdmin):
+class VectorMapLayerAdmin(admin.ModelAdmin):
     list_display = ['id', 'get_dataset_name', 'index']
 
     def get_dataset_name(self, obj):
-        return obj.dataset.name
+        return obj.file_item.dataset.name
 
 
 class VectorTileAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name', 'get_data_source_index', 'x', 'y', 'z']
+    list_display = ['id', 'get_dataset_name', 'get_map_layer_index', 'x', 'y', 'z']
 
     def get_dataset_name(self, obj):
-        return obj.data_source.dataset.name
+        return obj.map_layer.dataset.name
 
-    def get_data_source_index(self, obj):
-        return obj.data_source.index
+    def get_map_layer_index(self, obj):
+        return obj.map_layer.index
 
 
 class OriginalRegionAdmin(admin.ModelAdmin):
@@ -108,8 +108,8 @@ admin.site.register(City, CityAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)
-admin.site.register(RasterDataSource, RasterDataSourceAdmin)
-admin.site.register(VectorDataSource, VectorDataSourceAdmin)
+admin.site.register(RasterMapLayer, RasterMapLayerAdmin)
+admin.site.register(VectorMapLayer, VectorMapLayerAdmin)
 admin.site.register(VectorTile, VectorTileAdmin)
 admin.site.register(OriginalRegion, OriginalRegionAdmin)
 admin.site.register(DerivedRegion, DerivedRegionAdmin)

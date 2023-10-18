@@ -11,9 +11,9 @@ from uvdat.core.rest import (
     DatasetViewSet,
     DerivedRegionViewSet,
     OriginalRegionViewSet,
-    RasterDataSourceViewSet,
+    RasterMapLayerViewSet,
     SimulationViewSet,
-    VectorDataSourceViewSet,
+    VectorMapLayerViewSet,
 )
 
 router = routers.SimpleRouter()
@@ -27,8 +27,8 @@ schema_view = get_schema_view(
 router.register(r'cities', CityViewSet, basename='cities')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'charts', ChartViewSet, basename='charts')
-router.register(r'rasters', RasterDataSourceViewSet, basename='rasters')
-router.register(r'vectors', VectorDataSourceViewSet, basename='vectors')
+router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')
+router.register(r'vectors', VectorMapLayerViewSet, basename='vectors')
 router.register(r'original-regions', OriginalRegionViewSet, basename='original-regions')
 router.register(r'derived-regions', DerivedRegionViewSet, basename='derived-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
