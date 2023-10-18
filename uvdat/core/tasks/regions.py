@@ -13,17 +13,17 @@ class DerivedRegionCreationException(Exception):
     pass
 
 
-def create_derived_region(name: str, city_id: int, region_ids: List[int], operation: str):
+def create_derived_region(name: str, context_id: int, region_ids: List[int], operation: str):
     # Ensure at least two regions provided
     source_regions = OriginalRegion.objects.filter(pk__in=region_ids)
     if source_regions.count() < 2:
         raise DerivedRegionCreationException("Derived Regions must consist of multiple regions")
 
-    # Ensure all regions are from one city
-    source_cities = list((source_regions.values_list('city', flat=True).distinct()))
-    if len(source_cities) > 1:
+    # Ensure all regions are from one context
+    source_contexts = list((source_regions.values_list('context', flat=True).distinct()))
+    if len(source_contexts) > 1:
         raise DerivedRegionCreationException(
-            f"Multiple cities included in source regions: {source_cities}"
+            f"Multiple contexts included in source regions: {source_contexts}"
         )
 
     # Only handle union operations for now
@@ -42,9 +42,9 @@ def create_derived_region(name: str, city_id: int, region_ids: List[int], operat
 
     # Check for duplicate derived regions
     existing = list(
-        DerivedRegion.objects.filter(city=city_id, boundary=GEOSGeometry(new_boundary)).values_list(
-            'id', flat=True
-        )
+        DerivedRegion.objects.filter(
+            context=context_id, boundary=GEOSGeometry(new_boundary)
+        ).values_list('id', flat=True)
     )
     if existing:
         raise DerivedRegionCreationException(
@@ -55,7 +55,7 @@ def create_derived_region(name: str, city_id: int, region_ids: List[int], operat
     with transaction.atomic():
         derived_region = DerivedRegion.objects.create(
             name=name,
-            city=city_id,
+            context=context_id,
             properties={},
             boundary=new_boundary,
             source_operation=operation,
@@ -90,7 +90,6 @@ def create_original_regions(vector_map_layer, region_options):
             boundary=GEOSGeometry(str(geometry)),
             metadata=properties,
             dataset=vector_map_layer.file_item.dataset,
-            city=vector_map_layer.file_item.dataset.city,
         )
         region.save()
         region_count += 1

@@ -11,9 +11,9 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
     serializer_class = ChartSerializer
 
     def get_queryset(self, **kwargs):
-        city_id = kwargs.get('city')
-        if city_id:
-            return Chart.objects.filter(city__id=city_id)
+        context_id = kwargs.get('context')
+        if context_id:
+            return Chart.objects.filter(context__id=context_id)
         return Chart.objects.all()
 
     def validate_editable(self, chart, func, *args, **kwargs):

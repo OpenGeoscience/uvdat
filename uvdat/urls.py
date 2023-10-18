@@ -7,7 +7,7 @@ from rest_framework import permissions, routers
 
 from uvdat.core.rest import (
     ChartViewSet,
-    CityViewSet,
+    ContextViewSet,
     DatasetViewSet,
     DerivedRegionViewSet,
     OriginalRegionViewSet,
@@ -24,7 +24,7 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-router.register(r'cities', CityViewSet, basename='cities')
+router.register(r'contexts', ContextViewSet, basename='contexts')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'charts', ChartViewSet, basename='charts')
 router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')

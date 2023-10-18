@@ -7,7 +7,7 @@ from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile
 import requests
 
-from uvdat.core.models import Chart, City, Dataset, FileItem
+from uvdat.core.models import Chart, Context, Dataset, FileItem
 
 
 def ingest_file(file_info, index=0, dataset=None, chart=None):
@@ -45,22 +45,23 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
             new_file_item.file.save(file_path, ContentFile(f.read()))
 
 
-def ingest_cities():
-    print('Creating City objects...')
-    with open('sample_data/cities.json') as cities_json:
-        data = json.load(cities_json)
-        for city in data:
-            print('\t- ', city['name'])
-            existing = City.objects.filter(name=city['name'])
-            if existing.count() == 0:
-                City.objects.create(
-                    name=city['name'],
-                    center=Point(
-                        x=city['latitude'],
-                        y=city['longitude'],
-                    ),
-                    default_zoom=city['default_zoom'],
+def ingest_contexts():
+    print('Creating Context objects...')
+    with open('sample_data/contexts.json') as contexts_json:
+        data = json.load(contexts_json)
+        for context in data:
+            print('\t- ', context['name'])
+            existing = Context.objects.filter(name=context['name'])
+            if existing.count():
+                context_for_setting = existing.first()
+            else:
+                context_for_setting = Context.objects.create(
+                    name=context['name'],
+                    default_map_center=Point(*context['default_map_center']),
+                    default_map_zoom=context['default_map_zoom'],
                 )
+
+            context_for_setting.datasets.set(Dataset.objects.filter(name__in=context['datasets']))
 
 
 def ingest_charts():
@@ -76,7 +77,7 @@ def ingest_charts():
                 new_chart = Chart.objects.create(
                     name=chart['name'],
                     description=chart['description'],
-                    city=City.objects.get(name=chart['city']),
+                    context=Context.objects.get(name=chart['context']),
                     chart_options=chart.get('chart_options'),
                     metadata=chart.get('metadata'),
                     editable=chart.get('editable', False),
@@ -109,7 +110,6 @@ def ingest_datasets(include_large=False):
                 new_dataset = Dataset.objects.create(
                     name=dataset['name'],
                     description=dataset['description'],
-                    city=City.objects.get(name=dataset['city']),
                     category=dataset['category'],
                     dataset_type=dataset.get('type', 'vector').upper(),
                     metadata=dataset.get('metadata', {}),

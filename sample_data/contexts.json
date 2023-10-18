@@ -1,0 +1,56 @@
+[
+    {
+        "name": "Boston Transportation",
+        "default_map_center": [
+            42.4,
+            -71.1
+        ],
+        "default_map_zoom": 11,
+        "datasets": [
+            "MBTA Rapid Transit",
+            "MBTA Commuter Rail",
+            "Massachusetts Elevation Data",
+            "Boston Hurricane Surge Inundation Zones",
+            "Bsoton FEMA National Flood Hazard",
+            "Boston Neighborhoods",
+            "Boston Census 2020 Block Groups",
+            "Boston Zip Codes",
+            "Boston Sea Level Rises",
+            "Boston 10-Year Flood Events",
+            "Boston 100-Year Flood Events"
+        ]
+    },
+    {
+        "name": "DC Transportation",
+        "default_map_center": [
+            38.9,
+            -77.1
+        ],
+        "default_map_zoom": 11,
+        "datasets": [
+            "DC Metro"
+        ]
+    },
+    {
+        "name": "Boston-Washington Transportation",
+        "default_map_center": [
+            40.5,
+            -74.5
+        ],
+        "default_map_zoom": 8,
+        "datasets": [
+            "MBTA Rapid Transit",
+            "MBTA Commuter Rail",
+            "Massachusetts Elevation Data",
+            "Boston Hurricane Surge Inundation Zones",
+            "Bsoton FEMA National Flood Hazard",
+            "Boston Neighborhoods",
+            "Boston Census 2020 Block Groups",
+            "Boston Zip Codes",
+            "Boston Sea Level Rises",
+            "Boston 10-Year Flood Events",
+            "Boston 100-Year Flood Events",
+            "DC Metro"
+        ]
+    }
+]

@@ -11,7 +11,7 @@ from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResul
 import uvdat.core.rest.serializers as uvdat_serializers
 
 
-def get_available_simulations(city_id: int):
+def get_available_simulations(context_id: int):
     sims = []
     for available in AVAILABLE_SIMULATIONS:
         available = available.copy()
@@ -31,8 +31,8 @@ def get_available_simulations(city_id: int):
                     options = []
                 else:
                     option_serializer = option_serializer_matches[0]
-                    if hasattr(options_type, 'city'):
-                        options_query['city__id'] = city_id
+                    if hasattr(options_type, 'context'):
+                        options_query['context__id'] = context_id
                     options = list(
                         option_serializer(d).data
                         for d in options_type.objects.filter(
@@ -55,10 +55,10 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['get'],
-        url_path=r'available/city/(?P<city_id>[\d*]+)',
+        url_path=r'available/context/(?P<context_id>[\d*]+)',
     )
-    def list_available(self, request, city_id: int, **kwargs):
-        sims = get_available_simulations(city_id)
+    def list_available(self, request, context_id: int, **kwargs):
+        sims = get_available_simulations(context_id)
         return HttpResponse(
             json.dumps(sims),
             status=200,
@@ -67,15 +67,15 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['get'],
-        url_path=r'(?P<simulation_id>[\d*]+)/city/(?P<city_id>[\d*]+)/results',
+        url_path=r'(?P<simulation_id>[\d*]+)/context/(?P<context_id>[\d*]+)/results',
     )
-    def list_results(self, request, simulation_id: int, city_id: int, **kwargs):
+    def list_results(self, request, simulation_id: int, context_id: int, **kwargs):
         return HttpResponse(
             json.dumps(
                 list(
                     uvdat_serializers.SimulationResultSerializer(s).data
                     for s in SimulationResult.objects.filter(
-                        simulation_id=int(simulation_id), city__id=city_id
+                        simulation_id=int(simulation_id), context__id=context_id
                     ).all()
                 )
             ),
@@ -85,13 +85,13 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['post'],
-        url_path=r'run/(?P<simulation_id>[\d*]+)/city/(?P<city_id>[\d*]+)',
+        url_path=r'run/(?P<simulation_id>[\d*]+)/context/(?P<context_id>[\d*]+)',
     )
-    def run(self, request, simulation_id: int, city_id: int, **kwargs):
-        sim_result, created = SimulationResult.objects.get_or_create(
+    def run(self, request, simulation_id: int, context_id: int, **kwargs):
+        sim_result = SimulationResult.objects.create(
             simulation_id=simulation_id,
             input_args=kwargs,
-            city__id=city_id,
+            context__id=context_id,
         )
         sim_result.run(**request.data)
         return HttpResponse(

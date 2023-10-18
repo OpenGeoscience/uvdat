@@ -2,7 +2,7 @@
     {
         "name": "Boston Harbor Daily Tide Levels",
         "description": "Raw data was obtained using the NOAA CO-OPS API for Data Retrieval and reformatted in tabular form",
-        "city": "Boston, MA",
+        "context": "Boston Transportation",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",

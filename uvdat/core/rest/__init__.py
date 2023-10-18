@@ -1,12 +1,12 @@
 from .chart import ChartViewSet
-from .city import CityViewSet
+from .context import ContextViewSet
 from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .dataset import DatasetViewSet
 from .regions import DerivedRegionViewSet, OriginalRegionViewSet
 from .simulations import SimulationViewSet
 
 __all__ = [
-    CityViewSet,
+    ContextViewSet,
     ChartViewSet,
     RasterMapLayerViewSet,
     VectorMapLayerViewSet,

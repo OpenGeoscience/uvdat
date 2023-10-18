@@ -1,12 +1,12 @@
 from django.db import models
 
-from .city import City
+from .context import Context
 
 
 class Chart(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='charts')
+    context = models.ForeignKey(Context, on_delete=models.CASCADE, related_name='charts')
     metadata = models.JSONField(blank=True, null=True)
 
     chart_data = models.JSONField(blank=True, null=True)

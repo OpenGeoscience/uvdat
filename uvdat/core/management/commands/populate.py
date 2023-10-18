@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from sample_data.ingest_sample_data import ingest_charts, ingest_cities, ingest_datasets
+from sample_data.ingest_sample_data import ingest_charts, ingest_contexts, ingest_datasets
 
 
 class Command(BaseCommand):
@@ -14,6 +14,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         print('Populating server with sample data...')
-        ingest_cities()
+        ingest_contexts()
         ingest_charts()
         ingest_datasets(include_large=kwargs['include_large'])

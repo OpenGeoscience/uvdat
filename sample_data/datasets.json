@@ -2,7 +2,6 @@
     {
         "name": "MBTA Rapid Transit",
         "description": "Boston Subway System Lines and Stops",
-        "city": "Boston, MA",
         "category": "transportation",
         "type": "vector",
         "files": [
@@ -25,7 +24,6 @@
     {
         "name": "MBTA Commuter Rail",
         "description": "Rail linework and station points for passenger, freight, and Amtrak and MBTA Commuter Rail trains.",
-        "city": "Boston, MA",
         "category": "transportation",
         "type": "vector",
         "files": [
@@ -45,9 +43,8 @@
         }
     },
     {
-        "name": "Hurricane Surge Inundation Zones",
+        "name": "Boston Hurricane Surge Inundation Zones",
         "description": "This layer represents worst-case Hurricane Surge Inundation areas for Category 1 through 4 hurricanes striking the coast of Massachusetts.",
-        "city": "Boston, MA",
         "category": "climate",
         "type": "vector",
         "files": [
@@ -68,9 +65,8 @@
         }
     },
     {
-        "name": "FEMA National Flood Hazard",
+        "name": "Boston FEMA National Flood Hazard",
         "description": "The National Flood Hazard Layer (NFHL) dataset represents the current effective flood risk data for those parts of the country where maps have been modernized by the Federal Emergency Management Agency (FEMA).",
-        "city": "Boston, MA",
         "category": "climate",
         "type": "vector",
         "files": [
@@ -95,7 +91,6 @@
     {
         "name": "Massachusetts Elevation Data",
         "description": "Low resolution sampling of land elevation in meters above sea level",
-        "city": "Boston, MA",
         "category": "elevation",
         "type": "raster",
         "files": [
@@ -112,7 +107,6 @@
     {
         "name": "Boston Neighborhoods",
         "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
-        "city": "Boston, MA",
         "category": "region",
         "type": "vector",
         "files": [
@@ -135,7 +129,6 @@
     {
         "name": "Boston Census 2020 Block Groups",
         "description": "Block groups (between 600 and 3,000 people per block) for Boston from the 2020 census",
-        "city": "Boston, MA",
         "category": "region",
         "type": "vector",
         "files": [
@@ -158,7 +151,6 @@
     {
         "name": "Boston Zip Codes",
         "description": "Zip codes 01001-02791",
-        "city": "Boston, MA",
         "category": "region",
         "type": "vector",
         "files": [
@@ -178,9 +170,8 @@
         }
     },
     {
-        "name": "Sea Level Rises",
+        "name": "Boston Sea Level Rises",
         "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch sea-level rise projections",
-        "city": "Boston, MA",
         "category": "flood",
         "type": "vector",
         "files": [
@@ -205,9 +196,8 @@
         }
     },
     {
-        "name": "10-Year Flood Events",
+        "name": "Boston 10-Year Flood Events",
         "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch 10-year flood projections",
-        "city": "Boston, MA",
         "category": "flood",
         "type": "vector",
         "files": [
@@ -232,9 +222,8 @@
         }
     },
     {
-        "name": "100-Year Flood Events",
+        "name": "Boston 100-Year Flood Events",
         "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch 100-year flood projections",
-        "city": "Boston, MA",
         "category": "flood",
         "type": "vector",
         "files": [
@@ -261,7 +250,6 @@
     {
         "name": "DC Metro",
         "description": "DC Metro Lines and Stations",
-        "city": "Washington, DC",
         "category": "transportation",
         "files": [
             {

@@ -3,7 +3,7 @@ from django_extensions.db.models import TimeStampedModel
 
 from uvdat.core.tasks import simulations as uvdat_simulations
 
-from .city import City
+from .context import Context
 from .dataset import Dataset
 
 
@@ -16,18 +16,12 @@ class SimulationResult(TimeStampedModel):
         max_length=max(len(choice[0]) for choice in SimulationType.choices),
         choices=SimulationType.choices,
     )
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='simulation_results')
+    context = models.ForeignKey(
+        Context, on_delete=models.CASCADE, related_name='simulation_results'
+    )
     input_args = models.JSONField(blank=True, null=True)
     output_data = models.JSONField(blank=True, null=True)
     error_message = models.TextField(null=True, blank=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['simulation_type', 'city', 'input_args'],
-                name='unique_simulation_combination',
-            )
-        ]
 
     def get_simulation_type(self):
         if not self.simulation_type or self.simulation_type not in AVAILABLE_SIMULATIONS:

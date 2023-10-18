@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from uvdat.core.models import (
     Chart,
-    City,
+    Context,
     Dataset,
     DerivedRegion,
     FileItem,
@@ -18,14 +18,15 @@ from uvdat.core.models import (
 )
 
 
-class CitySerializer(serializers.ModelSerializer):
-    center = serializers.SerializerMethodField('get_center')
+class ContextSerializer(serializers.ModelSerializer):
+    default_map_center = serializers.SerializerMethodField('get_center')
 
     def get_center(self, obj):
-        return obj.get_center()
+        if obj.default_map_center:
+            return [obj.default_map_center.x, obj.default_map_center.y]
 
     class Meta:
-        model = City
+        model = Context
         fields = '__all__'
 
 
@@ -82,7 +83,7 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
 class DerivedRegionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DerivedRegion
-        fields = ['id', 'name', 'city', 'properties', 'source_regions', 'source_operation']
+        fields = ['id', 'name', 'context', 'properties', 'source_regions', 'source_operation']
 
 
 class DerivedRegionDetailSerializer(serializers.ModelSerializer):
@@ -101,7 +102,7 @@ class DerivedRegionCreationSerializer(serializers.ModelSerializer):
         model = DerivedRegion
         fields = [
             'name',
-            'city',
+            'context',
             'regions',
             'operation',
         ]

@@ -43,7 +43,7 @@ def convert_chart(chart_id, conversion_options):
     print(f"\t Saved converted data for chart {chart.name}.")
 
 
-def get_gcc_chart(dataset):
+def get_gcc_chart(dataset, context):
     chart_name = f'{dataset.name} Greatest Connected Component Sizes'
     try:
         return Chart.objects.get(name=chart_name)
@@ -55,7 +55,7 @@ def get_gcc_chart(dataset):
                 for the network's greatest connected component (GCC),
                 showing GCC size by number of excluded nodes
             """,
-            city=dataset.city,
+            context=context,
             editable=True,
             chart_data={},
             metadata=[],
@@ -70,8 +70,8 @@ def get_gcc_chart(dataset):
         return chart
 
 
-def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
-    chart = get_gcc_chart(dataset)
+def add_gcc_chart_datum(dataset, context, excluded_node_names, gcc_size):
+    chart = get_gcc_chart(dataset, context)
     if len(chart.metadata) == 0:
         # no data exists, need to initialize data structures
         chart.metadata = []

@@ -1,7 +1,5 @@
 from django.db import models
 
-from .city import City
-
 
 class Dataset(models.Model):
     class DatasetType(models.TextChoices):
@@ -10,7 +8,6 @@ class Dataset(models.Model):
 
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='datasets')
     category = models.CharField(max_length=25)
     processing = models.BooleanField(default=False)
     metadata = models.JSONField(blank=True, null=True)

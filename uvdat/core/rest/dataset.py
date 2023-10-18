@@ -10,9 +10,9 @@ class DatasetViewSet(ModelViewSet):
     serializer_class = uvdat_serializers.DatasetSerializer
 
     def get_queryset(self):
-        city_id = self.request.query_params.get('city')
-        if city_id:
-            return Dataset.objects.filter(city__id=city_id)
+        context_id = self.request.query_params.get('context')
+        if context_id:
+            return Dataset.objects.filter(context__id=context_id)
         else:
             return Dataset.objects.all()
 

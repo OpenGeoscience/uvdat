@@ -1,5 +1,5 @@
 from .chart import Chart
-from .city import City
+from .context import Context
 from .map_layers import RasterMapLayer, VectorMapLayer, VectorTile
 from .dataset import Dataset
 from .file_item import FileItem
@@ -9,7 +9,7 @@ from .simulations import SimulationResult
 
 __all__ = [
     Chart,
-    City,
+    Context,
     Dataset,
     FileItem,
     RasterMapLayer,

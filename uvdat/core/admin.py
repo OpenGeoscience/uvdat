@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from uvdat.core.models import (
     Chart,
-    City,
+    Context,
     Dataset,
     DerivedRegion,
     FileItem,
@@ -16,15 +16,12 @@ from uvdat.core.models import (
 )
 
 
-class CityAdmin(admin.ModelAdmin):
+class ContextAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
 
 
 class DatasetAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'dataset_type', 'category', 'get_city_name']
-
-    def get_city_name(self, obj):
-        return obj.city.name
+    list_display = ['id', 'name', 'dataset_type', 'category']
 
 
 class FileItemAdmin(admin.ModelAdmin):
@@ -67,17 +64,17 @@ class VectorTileAdmin(admin.ModelAdmin):
 
 
 class OriginalRegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_city_name']
+    list_display = ['id', 'name', 'get_dataset_name']
 
-    def get_city_name(self, obj):
-        return obj.city.name
+    def get_dataset_name(self, obj):
+        return obj.dataset.name
 
 
 class DerivedRegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_city_name', 'operation', 'get_original_region_names']
+    list_display = ['id', 'name', 'get_context_name', 'operation', 'get_original_region_names']
 
-    def get_city_name(self, obj):
-        return obj.city.name
+    def get_context_name(self, obj):
+        return obj.context.name
 
     def get_original_region_names(self, obj):
         return ', '.join(r.name for r in obj.original_regions.all())
@@ -104,7 +101,7 @@ class SimulationResultAdmin(admin.ModelAdmin):
     list_display = ['id', 'simulation_type', 'input_args']
 
 
-admin.site.register(City, CityAdmin)
+admin.site.register(Context, ContextAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)
