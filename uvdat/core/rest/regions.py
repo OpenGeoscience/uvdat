@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import GenericViewSet, mixins
 
 from uvdat.core.models import DerivedRegion, SourceRegion
-from uvdat.core.tasks.regions import DerivedRegionCreationException, create_derived_region
+from uvdat.core.tasks.regions import DerivedRegionCreationError, create_derived_region
 
 from .serializers import (
     DerivedRegionCreationSerializer,
@@ -55,7 +55,7 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
                 region_ids=data['regions'],
                 operation=data['operation'],
             )
-        except DerivedRegionCreationException as e:
+        except DerivedRegionCreationError as e:
             return HttpResponse(str(e), status=400)
 
         return HttpResponse(DerivedRegionDetailSerializer(instance=derived_region).data, status=201)
