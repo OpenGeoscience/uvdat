@@ -43,11 +43,11 @@ class SimulationResult(TimeStampedModel):
 
 AVAILABLE_SIMULATIONS = {
     'FLOOD_1': {
-        'description': '''
+        'description': """
             Provide a network dataset, elevation dataset, and flood dataset
             to determine which network nodes go out of service
             when the target flood occurs.
-        ''',
+        """,
         'output_type': 'node_animation',
         'func': uvdat_simulations.flood_scenario_1,
         'args': [
@@ -69,11 +69,11 @@ AVAILABLE_SIMULATIONS = {
         ],
     },
     'RECOVERY': {
-        'description': '''
+        'description': """
             Provide the output of another simulation which returns a list of deactivated nodes,
             and select a recovery mode to determine the order in which
             nodes will come back online.
-        ''',
+        """,
         'output_type': 'node_animation',
         'func': uvdat_simulations.recovery_scenario,
         'args': [

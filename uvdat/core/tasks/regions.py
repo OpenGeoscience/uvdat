@@ -9,7 +9,7 @@ from django.db import transaction
 from uvdat.core.models import DerivedRegion, SourceRegion
 
 
-class DerivedRegionCreationException(Exception):
+class DerivedRegionCreationError(Exception):
     pass
 
 
@@ -17,18 +17,18 @@ def create_derived_region(name: str, context_id: int, region_ids: List[int], ope
     # Ensure at least two regions provided
     source_regions = SourceRegion.objects.filter(pk__in=region_ids)
     if source_regions.count() < 2:
-        raise DerivedRegionCreationException("Derived Regions must consist of multiple regions")
+        raise DerivedRegionCreationError('Derived Regions must consist of multiple regions')
 
     # Ensure all regions are from one context
     source_contexts = list((source_regions.values_list('context', flat=True).distinct()))
     if len(source_contexts) > 1:
-        raise DerivedRegionCreationException(
-            f"Multiple contexts included in source regions: {source_contexts}"
+        raise DerivedRegionCreationError(
+            f'Multiple contexts included in source regions: {source_contexts}'
         )
 
     # Only handle union operations for now
     if operation == DerivedRegion.VectorOperation.INTERSECTION:
-        raise DerivedRegionCreationException("Intersection Operation not yet supported")
+        raise DerivedRegionCreationError('Intersection Operation not yet supported')
 
     # Simply include all multipolygons from all source regions
     # Convert Polygon to MultiPolygon if necessary
@@ -47,8 +47,8 @@ def create_derived_region(name: str, context_id: int, region_ids: List[int], ope
         ).values_list('id', flat=True)
     )
     if existing:
-        raise DerivedRegionCreationException(
-            f"Derived Regions with identical boundary already exist: {existing}"
+        raise DerivedRegionCreationError(
+            f'Derived Regions with identical boundary already exist: {existing}'
         )
 
     # Save and return
@@ -94,4 +94,4 @@ def create_source_regions(vector_map_layer, region_options):
         region.save()
         region_count += 1
 
-    print('\t', f"{region_count} regions created.")
+    print('\t', f'{region_count} regions created.')

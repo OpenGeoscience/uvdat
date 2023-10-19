@@ -49,7 +49,8 @@ def create_network(vector_map_layer, network_options):
         nodes = nodes.to_crs(3857)
         route_points = route_points.to_crs(3857)
 
-        # along the points of the route, find the nodes that are nearest (in order of the route points)
+        # along the points of the route, find the nodes that are nearest
+        # (in order of the route points)
         route_points_nearest_nodes = route_points.sjoin_nearest(nodes, distance_col='distance')
 
         # find cutoff points where one edge geometry stops and another begins
@@ -201,9 +202,9 @@ def construct_edge_list(dataset):
 
 def network_gcc(edges: dict[int, list[int]], exclude_nodes: list[int]) -> list[int]:
     # Create graph, remove nodes, get GCC
-    G = nx.from_dict_of_lists(edges)
-    G.remove_nodes_from(exclude_nodes)
-    gcc = max(nx.connected_components(G), key=len)
+    g = nx.from_dict_of_lists(edges)
+    g.remove_nodes_from(exclude_nodes)
+    gcc = max(nx.connected_components(g), key=len)
 
     # Return GCC's list of nodes
     return list(gcc)
@@ -212,29 +213,29 @@ def network_gcc(edges: dict[int, list[int]], exclude_nodes: list[int]) -> list[i
 # Authored by Jack Watson
 # Takes in a second argument, measure, which is a string specifying the centrality
 # measure to calculate.
-def sort_graph_centrality(G, measure):
+def sort_graph_centrality(g, measure):
     if measure == 'betweenness':
-        cent = nx.betweenness_centrality(G)  # get betweenness centrality
+        cent = nx.betweenness_centrality(g)  # get betweenness centrality
     elif measure == 'degree':
-        cent = nx.degree_centrality(G)
+        cent = nx.degree_centrality(g)
     elif measure == 'information':
-        cent = nx.current_flow_closeness_centrality(G)
+        cent = nx.current_flow_closeness_centrality(g)
     elif measure == 'eigenvector':
-        cent = nx.eigenvector_centrality(G, 10000)
+        cent = nx.eigenvector_centrality(g, 10000)
     elif measure == 'load':
-        cent = nx.load_centrality(G)
+        cent = nx.load_centrality(g)
     elif measure == 'closeness':
-        cent = nx.closeness_centrality(G)
+        cent = nx.closeness_centrality(g)
     elif measure == 'second order':
-        cent = nx.second_order_centrality(G)
+        cent = nx.second_order_centrality(g)
     cent_list = list(cent.items())  # convert to np array
     cent_arr = numpy.array(cent_list)
     cent_idx = numpy.argsort(cent_arr, 0)  # sort array of tuples by betweenness
     # cent_sorted = cent_arr[cent_idx[:, 1]]
 
-    node_list = list(G.nodes())
+    node_list = list(g.nodes())
     nodes_sorted = [node_list[i] for i in cent_idx[:, 1]]
-    edge_list = list(G.edges())
+    edge_list = list(g.edges())
 
     # Currently sorted from lowest to highest betweenness; let's reverse that
     nodes_sorted.reverse()

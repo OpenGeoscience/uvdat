@@ -10,9 +10,9 @@ from uvdat.core.rest import (
     ContextViewSet,
     DatasetViewSet,
     DerivedRegionViewSet,
-    SourceRegionViewSet,
     RasterMapLayerViewSet,
     SimulationViewSet,
+    SourceRegionViewSet,
     VectorMapLayerViewSet,
 )
 

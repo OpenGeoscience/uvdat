@@ -40,7 +40,7 @@ def convert_chart(chart_id, conversion_options):
 
     chart.chart_data = chart_data
     chart.save()
-    print(f"\t Saved converted data for chart {chart.name}.")
+    print(f'\t Saved converted data for chart {chart.name}.')
 
 
 def get_gcc_chart(dataset, context):
@@ -104,7 +104,7 @@ def add_gcc_chart_datum(dataset, context, excluded_node_names, gcc_size):
     chart.chart_data['datasets'] = datasets
 
     new_entry = {
-        'run_time': datetime.now().strftime("%d/%m/%Y %H:%M"),
+        'run_time': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'n_excluded_nodes': len(excluded_node_names),
         'excluded_node_names': excluded_node_names,
         'gcc_size': gcc_size,

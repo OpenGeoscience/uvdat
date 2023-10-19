@@ -32,9 +32,9 @@ def add_styling(geojson_data, style_options):
             if color_value:
                 feature_colors += str(color_value).split(color_delimiter)
 
-        if type(palette) == dict:
+        if isinstance(palette, dict):
             feature_colors = [palette[c] for c in feature_colors if c in palette]
-        elif type(palette) == list:
+        elif isinstance(palette, list):
             feature_colors.append(palette[index % len(palette)])
 
         if outline:
@@ -47,8 +47,7 @@ def add_styling(geojson_data, style_options):
 
 
 def create_raster_map_layer(file_item, style_options):
-    """Saves a RasterMapLayer from a FileItem's contents."""
-
+    """Save a RasterMapLayer from a FileItem's contents."""
     new_map_layer = RasterMapLayer.objects.create(
         file_item=file_item,
         metadata={},
@@ -121,8 +120,7 @@ def create_raster_map_layer(file_item, style_options):
 
 
 def create_vector_map_layer(file_item, style_options):
-    """Saves a VectorMapLayer from a FileItem's contents."""
-
+    """Save a VectorMapLayer from a FileItem's contents."""
     new_map_layer = VectorMapLayer.objects.create(
         file_item=file_item,
         metadata={},

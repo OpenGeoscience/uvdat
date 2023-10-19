@@ -35,9 +35,9 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
     def as_feature(self, request, *args, **kwargs):
         obj: DerivedRegion = self.get_object()
         feature = {
-            "type": "Feature",
-            "geometry": json.loads(obj.boundary.geojson),
-            "properties": DerivedRegionListSerializer(instance=obj).data,
+            'type': 'Feature',
+            'geometry': json.loads(obj.boundary.geojson),
+            'properties': DerivedRegionListSerializer(instance=obj).data,
         }
 
         return HttpResponse(json.dumps(feature))

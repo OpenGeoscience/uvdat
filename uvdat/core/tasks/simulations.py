@@ -116,8 +116,8 @@ def recovery_scenario(simulation_result_id, node_failure_simulation_result, reco
             result.save()
             return
         edge_list = construct_edge_list(dataset)
-        G = nx.from_dict_of_lists(edge_list)
-        nodes_sorted, edge_list = sort_graph_centrality(G, recovery_mode)
+        g = nx.from_dict_of_lists(edge_list)
+        nodes_sorted, edge_list = sort_graph_centrality(g, recovery_mode)
         node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
 
     result.output_data = {

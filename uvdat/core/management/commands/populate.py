@@ -8,9 +8,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--include_large",
-            action="store_true",
-            help="Include conversion step for large datasets",
+            '--include_large',
+            action='store_true',
+            help='Include conversion step for large datasets',
         )
 
     def handle(self, *args, **kwargs):
