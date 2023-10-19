@@ -55,6 +55,7 @@ def create_raster_map_layer(file_item, style_options):
         default_style=style_options,
         index=file_item.index,
     )
+    print('\t', f'RasterMapLayer {new_map_layer.id} created.')
 
     with tempfile.TemporaryDirectory() as temp_dir:
         raw_data_path = Path(temp_dir, 'raw_data.tiff')
@@ -128,6 +129,7 @@ def create_vector_map_layer(file_item, style_options):
         default_style=style_options,
         index=file_item.index,
     )
+    print('\t', f'VectorMapLayer {new_map_layer.id} created.')
 
     if file_item.file_type == 'zip':
         geojson_data = convert_zip_to_geojson(file_item)
@@ -144,8 +146,6 @@ def create_vector_map_layer(file_item, style_options):
     new_map_layer.save()
 
     save_vector_tiles(new_map_layer)
-    available_tile_coords = new_map_layer.get_available_tile_coords()
-    print('\t', f'{len(available_tile_coords)} vector tiles created.')
     return new_map_layer
 
 
@@ -186,3 +186,5 @@ def save_vector_tiles(vector_map_layer):
                 y=coord['y'],
                 z=coord['z'],
             )
+    available_tile_coords = vector_map_layer.get_available_tile_coords()
+    print('\t', f'{len(available_tile_coords)} vector tiles created.')

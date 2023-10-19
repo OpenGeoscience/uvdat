@@ -41,6 +41,7 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
             ),
             index=index,
         )
+        print('\t', f'FileItem {new_file_item.name} created.')
         with file_location.open('rb') as f:
             new_file_item.file.save(file_path, ContentFile(f.read()))
 
@@ -60,6 +61,7 @@ def ingest_contexts():
                     default_map_center=Point(*context['default_map_center']),
                     default_map_zoom=context['default_map_zoom'],
                 )
+                print('\t', f'Context {context_for_setting.name} created.')
 
             context_for_setting.datasets.set(Dataset.objects.filter(name__in=context['datasets']))
 
@@ -82,6 +84,7 @@ def ingest_charts():
                     metadata=chart.get('metadata'),
                     editable=chart.get('editable', False),
                 )
+                print('\t', f'Chart {new_chart.name} created.')
                 for index, file_info in enumerate(chart.get('files', [])):
                     ingest_file(
                         file_info,
@@ -114,6 +117,7 @@ def ingest_datasets(include_large=False):
                     dataset_type=dataset.get('type', 'vector').upper(),
                     metadata=dataset.get('metadata', {}),
                 )
+                print('\t', f'Dataset {new_dataset.name} created.')
                 for index, file_info in enumerate(dataset.get('files', [])):
                     ingest_file(
                         file_info,

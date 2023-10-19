@@ -48,7 +48,7 @@ def get_gcc_chart(dataset, context):
     try:
         return Chart.objects.get(name=chart_name)
     except Chart.DoesNotExist:
-        chart = Chart(
+        chart = Chart.objects.create(
             name=chart_name,
             description="""
                 A set of previously-run calculations
@@ -66,6 +66,7 @@ def get_gcc_chart(dataset, context):
                 'y_range': [0, dataset.network_nodes.count()],
             },
         )
+        print('\t', f'Chart {chart.name} created.')
         chart.save()
         return chart
 
