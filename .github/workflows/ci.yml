@@ -40,11 +40,6 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
-    env:
-      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -53,6 +48,11 @@ jobs:
       - run: docker build -t test -f dev/django.Dockerfile .
       - name: Pytest
         run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e test
+        env:
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
 
   check-migrations:
     runs-on: ubuntu-latest
@@ -76,11 +76,6 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
-    env:
-      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -89,3 +84,8 @@ jobs:
       - run: docker build -t test -f dev/django.Dockerfile .
       - name: Check Migrations
         run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e check-migrations
+        env:
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
