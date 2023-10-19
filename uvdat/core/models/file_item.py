@@ -9,7 +9,7 @@ from .chart import Chart
 class FileItem(TimeStampedModel):
     name = models.CharField(max_length=50)
     dataset = models.ForeignKey(
-        Dataset, on_delete=models.CASCADE, related_name='original_files', null=True
+        Dataset, on_delete=models.CASCADE, related_name='source_files', null=True
     )
     chart = models.ForeignKey(Chart, on_delete=models.CASCADE, null=True)
     file = S3FileField()

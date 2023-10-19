@@ -132,15 +132,15 @@ def create_vector_map_layer(file_item, style_options):
     if file_item.file_type == 'zip':
         geojson_data = convert_zip_to_geojson(file_item)
     elif file_item.file_type == 'geojson' or file_item.file_type == 'json':
-        original_data = json.load(file_item.file.open())
-        original_projection = original_data.get('crs', {}).get('properties', {}).get('name')
-        geojson_data = geopandas.GeoDataFrame.from_features(original_data.get('features'))
-        if original_projection:
-            geojson_data = geojson_data.set_crs(original_projection)
+        source_data = json.load(file_item.file.open())
+        source_projection = source_data.get('crs', {}).get('properties', {}).get('name')
+        geojson_data = geopandas.GeoDataFrame.from_features(source_data.get('features'))
+        if source_projection:
+            geojson_data = geojson_data.set_crs(source_projection)
             geojson_data = geojson_data.to_crs(4326)
 
     geojson_data = add_styling(geojson_data, style_options)
-    new_map_layer.geojson_data = geojson_data.to_json()
+    new_map_layer.save_geojson_data(geojson_data)
     new_map_layer.save()
 
     save_vector_tiles(new_map_layer)
@@ -151,7 +151,7 @@ def create_vector_map_layer(file_item, style_options):
 
 def convert_zip_to_geojson(file_item):
     features = []
-    original_projection = None
+    source_projection = None
     with tempfile.TemporaryDirectory() as temp_dir:
         archive_path = Path(temp_dir, 'archive.zip')
         with open(archive_path, 'wb') as archive_file:
@@ -163,16 +163,16 @@ def convert_zip_to_geojson(file_item):
                         sf = shapefile.Reader(f'{archive_path}/{filename}')
                         features.extend(sf.__geo_interface__['features'])
                     if filename.endswith('.prj'):
-                        original_projection = zip_archive.open(filename).read().decode()
+                        source_projection = zip_archive.open(filename).read().decode()
         geodata = geopandas.GeoDataFrame.from_features(features)
-        geodata = geodata.set_crs(original_projection, allow_override=True)
+        geodata = geodata.set_crs(source_projection, allow_override=True)
         geodata = geodata.to_crs(4326)
         return geodata
 
 
 def save_vector_tiles(vector_map_layer):
     tile_index = geojson2vt.geojson2vt(
-        json.loads(vector_map_layer.geojson_data),
+        vector_map_layer.get_geojson_data(),
         {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
     )
     for coord in tile_index.tile_coords:

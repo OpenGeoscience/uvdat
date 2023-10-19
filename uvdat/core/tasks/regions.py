@@ -6,7 +6,7 @@ from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 
-from uvdat.core.models import DerivedRegion, OriginalRegion
+from uvdat.core.models import DerivedRegion, SourceRegion
 
 
 class DerivedRegionCreationException(Exception):
@@ -15,7 +15,7 @@ class DerivedRegionCreationException(Exception):
 
 def create_derived_region(name: str, context_id: int, region_ids: List[int], operation: str):
     # Ensure at least two regions provided
-    source_regions = OriginalRegion.objects.filter(pk__in=region_ids)
+    source_regions = SourceRegion.objects.filter(pk__in=region_ids)
     if source_regions.count() < 2:
         raise DerivedRegionCreationException("Derived Regions must consist of multiple regions")
 
@@ -65,9 +65,9 @@ def create_derived_region(name: str, context_id: int, region_ids: List[int], ope
     return derived_region
 
 
-def create_original_regions(vector_map_layer, region_options):
+def create_source_regions(vector_map_layer, region_options):
     name_property = region_options.get('name_property')
-    geodata = json.loads(vector_map_layer.geojson_data)
+    geodata = vector_map_layer.get_geojson_data()
 
     region_count = 0
     for feature in geodata['features']:
@@ -85,7 +85,7 @@ def create_original_regions(vector_map_layer, region_options):
             geometry['coordinates'] = [geometry['coordinates']]
 
         # Create region with properties and MultiPolygon
-        region = OriginalRegion(
+        region = SourceRegion(
             name=name,
             boundary=GEOSGeometry(str(geometry)),
             metadata=properties,

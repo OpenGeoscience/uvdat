@@ -5,20 +5,20 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.viewsets import GenericViewSet, mixins
 
-from uvdat.core.models import DerivedRegion, OriginalRegion
+from uvdat.core.models import DerivedRegion, SourceRegion
 from uvdat.core.tasks.regions import DerivedRegionCreationException, create_derived_region
 
 from .serializers import (
     DerivedRegionCreationSerializer,
     DerivedRegionDetailSerializer,
     DerivedRegionListSerializer,
-    OriginalRegionSerializer,
+    SourceRegionSerializer,
 )
 
 
-class OriginalRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
-    queryset = OriginalRegion.objects.all()
-    serializer_class = OriginalRegionSerializer
+class SourceRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+    queryset = SourceRegion.objects.all()
+    serializer_class = SourceRegionSerializer
 
 
 class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):

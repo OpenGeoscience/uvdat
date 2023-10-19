@@ -4,7 +4,7 @@ from .map_layers import RasterMapLayer, VectorMapLayer, VectorTile
 from .dataset import Dataset
 from .file_item import FileItem
 from .networks import NetworkEdge, NetworkNode
-from .regions import DerivedRegion, OriginalRegion
+from .regions import DerivedRegion, SourceRegion
 from .simulations import SimulationResult
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
     RasterMapLayer,
     VectorMapLayer,
     VectorTile,
-    OriginalRegion,
+    SourceRegion,
     DerivedRegion,
     NetworkEdge,
     NetworkNode,

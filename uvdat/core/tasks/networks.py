@@ -1,5 +1,4 @@
 import geopandas
-import json
 import networkx as nx
 import numpy
 import shapely
@@ -25,8 +24,8 @@ def create_network(vector_map_layer, network_options):
     connection_column_delimiter = network_options.get('connection_column_delimiter')
     node_id_column = network_options.get('node_id_column')
 
-    original_data = json.loads(vector_map_layer.geojson_data)
-    geodata = geopandas.GeoDataFrame.from_features(original_data.get('features')).set_crs(4326)
+    source_data = vector_map_layer.get_geojson_data()
+    geodata = geopandas.GeoDataFrame.from_features(source_data.get('features')).set_crs(4326)
     geodata[connection_column].fillna('', inplace=True)
     edge_set = geodata[geodata.geom_type != 'Point']
     node_set = geodata[geodata.geom_type == 'Point']
@@ -144,7 +143,7 @@ def create_network(vector_map_layer, network_options):
     total_nodes = 0
     total_edges = 0
     new_feature_set = []
-    # rewrite vector_map_layer.geojson_data with updated features
+    # rewrite vector_map_layer geojson_data with updated features
     for n in NetworkNode.objects.filter(dataset=vector_map_layer.file_item.dataset):
         node_as_feature = {
             'id': i,
@@ -172,7 +171,7 @@ def create_network(vector_map_layer, network_options):
         total_edges += 1
 
     new_geodata = geopandas.GeoDataFrame.from_features(new_feature_set)
-    vector_map_layer.geojson_data = new_geodata.to_json()
+    vector_map_layer.save_geojson_data(new_geodata)
     vector_map_layer.save()
     print('\t', f'{total_nodes} nodes and {total_edges} edges created.')
 

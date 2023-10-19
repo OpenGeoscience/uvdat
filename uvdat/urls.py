@@ -10,7 +10,7 @@ from uvdat.core.rest import (
     ContextViewSet,
     DatasetViewSet,
     DerivedRegionViewSet,
-    OriginalRegionViewSet,
+    SourceRegionViewSet,
     RasterMapLayerViewSet,
     SimulationViewSet,
     VectorMapLayerViewSet,
@@ -29,7 +29,7 @@ router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'charts', ChartViewSet, basename='charts')
 router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')
 router.register(r'vectors', VectorMapLayerViewSet, basename='vectors')
-router.register(r'original-regions', OriginalRegionViewSet, basename='original-regions')
+router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
 router.register(r'derived-regions', DerivedRegionViewSet, basename='derived-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
 

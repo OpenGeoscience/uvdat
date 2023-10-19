@@ -8,7 +8,7 @@ from uvdat.core.models import (
     FileItem,
     NetworkEdge,
     NetworkNode,
-    OriginalRegion,
+    SourceRegion,
     RasterMapLayer,
     SimulationResult,
     VectorMapLayer,
@@ -63,7 +63,7 @@ class VectorTileAdmin(admin.ModelAdmin):
         return obj.map_layer.index
 
 
-class OriginalRegionAdmin(admin.ModelAdmin):
+class SourceRegionAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_dataset_name']
 
     def get_dataset_name(self, obj):
@@ -71,13 +71,13 @@ class OriginalRegionAdmin(admin.ModelAdmin):
 
 
 class DerivedRegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_context_name', 'operation', 'get_original_region_names']
+    list_display = ['id', 'name', 'get_context_name', 'operation', 'get_source_region_names']
 
     def get_context_name(self, obj):
         return obj.context.name
 
-    def get_original_region_names(self, obj):
-        return ', '.join(r.name for r in obj.original_regions.all())
+    def get_source_region_names(self, obj):
+        return ', '.join(r.name for r in obj.source_regions.all())
 
 
 class NetworkEdgeAdmin(admin.ModelAdmin):
@@ -108,7 +108,7 @@ admin.site.register(Chart, ChartAdmin)
 admin.site.register(RasterMapLayer, RasterMapLayerAdmin)
 admin.site.register(VectorMapLayer, VectorMapLayerAdmin)
 admin.site.register(VectorTile, VectorTileAdmin)
-admin.site.register(OriginalRegion, OriginalRegionAdmin)
+admin.site.register(SourceRegion, SourceRegionAdmin)
 admin.site.register(DerivedRegion, DerivedRegionAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
 admin.site.register(NetworkEdge, NetworkEdgeAdmin)

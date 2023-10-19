@@ -2,7 +2,7 @@ from .chart import ChartViewSet
 from .context import ContextViewSet
 from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .dataset import DatasetViewSet
-from .regions import DerivedRegionViewSet, OriginalRegionViewSet
+from .regions import DerivedRegionViewSet, SourceRegionViewSet
 from .simulations import SimulationViewSet
 
 __all__ = [
@@ -11,7 +11,7 @@ __all__ = [
     RasterMapLayerViewSet,
     VectorMapLayerViewSet,
     DatasetViewSet,
-    OriginalRegionViewSet,
+    SourceRegionViewSet,
     DerivedRegionViewSet,
     SimulationViewSet,
 ]

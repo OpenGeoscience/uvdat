@@ -7,12 +7,12 @@ from uvdat.core.models import (
     RasterMapLayer,
     NetworkEdge,
     NetworkNode,
-    OriginalRegion,
+    SourceRegion,
 )
 
 from .map_layers import create_vector_map_layer, create_raster_map_layer
 from .networks import create_network
-from .regions import create_original_regions
+from .regions import create_source_regions
 
 
 @shared_task
@@ -40,7 +40,7 @@ def convert_dataset(
             NetworkNode.objects.filter(dataset=dataset).delete()
             NetworkEdge.objects.filter(dataset=dataset).delete()
         elif region_options:
-            OriginalRegion.objects.filter(dataset=dataset).delete()
+            SourceRegion.objects.filter(dataset=dataset).delete()
 
         for file_to_convert in FileItem.objects.filter(dataset=dataset):
             vector_map_layer = create_vector_map_layer(
@@ -50,7 +50,7 @@ def convert_dataset(
             if network_options:
                 create_network(vector_map_layer, network_options)
             elif region_options:
-                create_original_regions(vector_map_layer, region_options)
+                create_source_regions(vector_map_layer, region_options)
 
     dataset.processing = False
     dataset.save()
