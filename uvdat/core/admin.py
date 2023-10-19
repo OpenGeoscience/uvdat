@@ -8,9 +8,9 @@ from uvdat.core.models import (
     FileItem,
     NetworkEdge,
     NetworkNode,
-    SourceRegion,
     RasterMapLayer,
     SimulationResult,
+    SourceRegion,
     VectorMapLayer,
     VectorTile,
 )

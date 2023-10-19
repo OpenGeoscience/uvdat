@@ -1,7 +1,7 @@
 from .chart import ChartViewSet
 from .context import ContextViewSet
-from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .dataset import DatasetViewSet
+from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .regions import DerivedRegionViewSet, SourceRegionViewSet
 from .simulations import SimulationViewSet
 

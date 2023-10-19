@@ -6,10 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
-from uvdat.core.rest.serializers import (
-    RasterMapLayerSerializer,
-    VectorMapLayerSerializer,
-)
+from uvdat.core.rest.serializers import RasterMapLayerSerializer, VectorMapLayerSerializer
 
 
 class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):

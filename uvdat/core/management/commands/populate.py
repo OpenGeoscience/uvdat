@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+
 from sample_data.ingest_sample_data import ingest_charts, ingest_contexts, ingest_datasets
 
 

@@ -3,14 +3,14 @@ from celery import shared_task
 from uvdat.core.models import (
     Dataset,
     FileItem,
-    VectorMapLayer,
-    RasterMapLayer,
     NetworkEdge,
     NetworkNode,
+    RasterMapLayer,
     SourceRegion,
+    VectorMapLayer,
 )
 
-from .map_layers import create_vector_map_layer, create_raster_map_layer
+from .map_layers import create_raster_map_layer, create_vector_map_layer
 from .networks import create_network
 from .regions import create_source_regions
 

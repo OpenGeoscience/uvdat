@@ -2,8 +2,8 @@ from django.contrib.gis.db import models as geo_models
 from django.db import models
 
 from .context import Context
-from .map_layers import VectorMapLayer
 from .dataset import Dataset
+from .map_layers import VectorMapLayer
 
 
 class SourceRegion(models.Model):

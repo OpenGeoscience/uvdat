@@ -1,7 +1,7 @@
-import pandas
+from datetime import datetime
 
 from celery import shared_task
-from datetime import datetime
+import pandas
 from webcolors import name_to_hex
 
 from uvdat.core.models import Chart

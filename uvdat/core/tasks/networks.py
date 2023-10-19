@@ -1,11 +1,10 @@
+from django.contrib.gis.geos import LineString, Point
 import geopandas
 import networkx as nx
 import numpy
 import shapely
 
-from django.contrib.gis.geos import Point, LineString
-
-from uvdat.core.models import NetworkNode, NetworkEdge
+from uvdat.core.models import NetworkEdge, NetworkNode
 
 NODE_RECOVERY_MODES = [
     'random',

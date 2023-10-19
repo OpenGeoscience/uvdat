@@ -2,8 +2,8 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
-from .dataset import Dataset
 from .chart import Chart
+from .dataset import Dataset
 
 
 class FileItem(TimeStampedModel):
