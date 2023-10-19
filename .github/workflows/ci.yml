@@ -16,7 +16,11 @@ jobs:
           python-version: "3.10"
       - run: docker build -t test -f dev/django.Dockerfile .
       - name: Lint
-        run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e lint
+        run:  |
+          docker run \
+          -v .:/opt/django-container \
+          -w /opt/django-container \
+          test tox -e lint
 
   pytest:
     runs-on: ubuntu-latest
@@ -47,12 +51,12 @@ jobs:
           python-version: "3.10"
       - run: docker build -t test -f dev/django.Dockerfile .
       - name: Pytest
-        run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e test
-        env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+        run:  |
+          docker run \
+          -v .:/opt/django-container \
+          -w /opt/django-container \
+          --env-file dev/.env.docker-compose-native \
+          test tox -e test
 
   check-migrations:
     runs-on: ubuntu-latest
@@ -83,9 +87,9 @@ jobs:
           python-version: "3.10"
       - run: docker build -t test -f dev/django.Dockerfile .
       - name: Check Migrations
-        run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e check-migrations
-        env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+        run:  |
+          docker run \
+          -v .:/opt/django-container \
+          -w /opt/django-container \
+          --env-file dev/.env.docker-compose-native \
+          test tox -e check-migrations
