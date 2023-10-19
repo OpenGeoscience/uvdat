@@ -11,85 +11,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - run: docker build -t test -f dev/django.Dockerfile .
+      - run: pip install tox
       - name: Lint
-        run:  |
-          docker run \
-          -v .:/opt/django-container \
-          -w /opt/django-container \
-          test tox -e lint
+        run: tox -e lint
 
   pytest:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_DB: django
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-      rabbitmq:
-        image: rabbitmq:management
-        ports:
-          - 5672:5672
-      minio:
-        # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: minioAccessKey
-          MINIO_ROOT_PASSWORD: minioSecretKey
-        ports:
-          - 9000:9000
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: adambirds/docker-compose-action@v1.3.0
         with:
-          python-version: "3.10"
-      - run: docker build -t test -f dev/django.Dockerfile .
-      - name: Pytest
-        run:  |
-          docker run \
-          -v .:/opt/django-container \
-          -w /opt/django-container \
-          --env-file dev/.env.docker-compose-native \
-          test tox -e test
+          compose-file: |
+            docker-compose.yml
+            docker-compose.override.yml
+          services: |
+            django
+            celery
+            postgres
+            minio
+            rabbitmq
+          test-container: django
+          test-command: "tox -e test"
 
   check-migrations:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_DB: django
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-      rabbitmq:
-        image: rabbitmq:management
-        ports:
-          - 5672:5672
-      minio:
-        # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: minioAccessKey
-          MINIO_ROOT_PASSWORD: minioSecretKey
-        ports:
-          - 9000:9000
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: adambirds/docker-compose-action@v1.3.0
         with:
-          python-version: "3.10"
-      - run: docker build -t test -f dev/django.Dockerfile .
-      - name: Check Migrations
-        run:  |
-          docker run \
-          -v .:/opt/django-container \
-          -w /opt/django-container \
-          --env-file dev/.env.docker-compose-native \
-          test tox -e check-migrations
+          compose-file: |
+            docker-compose.yml
+            docker-compose.override.yml
+          services: |
+            django
+            celery
+            postgres
+            minio
+            rabbitmq
+          test-container: django
+          test-command: "tox -e check-migrations"
