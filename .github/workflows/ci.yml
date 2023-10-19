@@ -4,8 +4,21 @@ on:
   push:
     branches:
       - master
+
 jobs:
-  test:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: docker build -t test -f dev/django.Dockerfile .
+      - name: Lint
+        run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e lint
+
+  pytest:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -27,19 +40,52 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
+    env:
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-      - name: Build docker image
-        run: docker build -t test -f dev/django.Dockerfile .
-      - name: Run tests
-        run: |
-          docker run test tox
+      - run: docker build -t test -f dev/django.Dockerfile .
+      - name: Pytest
+        run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e test
+
+  check-migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
         env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
-          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+      rabbitmq:
+        image: rabbitmq:management
+        ports:
+          - 5672:5672
+      minio:
+        # This image does not require any command arguments (which GitHub Actions don't support)
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioAccessKey
+          MINIO_ROOT_PASSWORD: minioSecretKey
+        ports:
+          - 9000:9000
+    env:
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+      DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+      DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - run: docker build -t test -f dev/django.Dockerfile .
+      - name: Check Migrations
+        run: docker run -v .:/opt/django-container -w /opt/django-container test tox -e check-migrations
