@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
 import tempfile
 
 from django.db import models
+from django.core.files.base import ContentFile
 from django_extensions.db.models import TimeStampedModel
 import large_image
 from s3_file_field import S3FileField
@@ -38,6 +40,26 @@ class RasterMapLayer(AbstractMapLayer):
 
 class VectorMapLayer(AbstractMapLayer):
     geojson_data = models.JSONField(blank=True, null=True)
+    large_geojson_data = S3FileField(null=True)
+
+    def get_geojson_data(self):
+        if self.geojson_data:
+            return json.loads(self.geojson_data)
+        else:
+            return json.loads(json.load(self.large_geojson_data.open()))
+
+    def save_geojson_data(self, content):
+        geojson = content.to_json()
+        geojson_size = len(json.dumps(geojson).encode())
+
+        # JSONField limited to 268435455 bytes
+        if geojson_size < 268000000:
+            self.geojson_data = geojson
+        else:
+            self.large_geojson_data.save(
+                'vectordata.geojson',
+                ContentFile(json.dumps(geojson).encode()),
+            )
 
     def get_available_tile_coords(self):
         tile_coords = []
