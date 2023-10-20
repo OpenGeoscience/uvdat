@@ -3,7 +3,7 @@ FROM python:3.10-slim
 # * psycopg2
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-    libpq-dev libvips-dev gcc libc6-dev gdal-bin && \
+    libpq-dev libvips-dev gcc libc6-dev gdal-bin git && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONDONTWRITEBYTECODE 1
