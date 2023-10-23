@@ -1,14 +1,13 @@
 <script lang="ts">
 import {
   currentContext,
-  activeChart,
   availableCharts,
-  activeSimulation,
-  availableSimulations,
+  currentChart,
+  availableSimulationTypes,
+  currentSimulationType,
   availableDerivedRegions,
-  selectedDerivedRegionIds,
   availableMapLayers,
-  activeMapLayers,
+  // activeMapLayers,
 } from "@/store";
 
 import { MapLayer } from "@/data";
@@ -16,36 +15,37 @@ import { ref, computed, onMounted, watch } from "vue";
 import {
   getContextDatasets,
   getContextCharts,
-  getContextSimulations,
+  getContextSimulationTypes,
   listDerivedRegions,
 } from "@/api/rest";
-import { Chart, Dataset, DerivedRegion, Simulation } from "@/types";
+import { Dataset, DerivedRegion } from "@/types";
 
 export default {
   setup() {
     const openPanels = ref([0]);
     const openCategories = ref([0]);
-    const availableLayerTree = computed(() => {
+    const availableDatasetGroups = computed(() => {
       if (!currentContext.value) return [];
       const groupKey = "category";
-      return Object.entries(
-        currentContext.value.datasets.reduce(function (
-          rv: Record<string, Dataset[]>,
-          x
-        ) {
-          (rv[x[groupKey]] = rv[x[groupKey]] || []).push(x);
-          return rv;
-        },
-        {})
-      )
-        .map(([name, children], id) => {
-          return {
-            id,
-            name,
-            children,
-          };
-        })
-        .sort((a, b) => a.name.localeCompare(b.name));
+      const datasetGroups: Record<string, Dataset[]> = {};
+      currentContext.value.datasets.forEach((dataset: Dataset) => {
+        const currentGroup = dataset[groupKey];
+        if (!datasetGroups[currentGroup]) datasetGroups[currentGroup] = [];
+        datasetGroups[currentGroup].push(dataset);
+      });
+
+      const ret: {
+        id: number;
+        datasets: Dataset[];
+        name: string;
+      }[] = Object.entries(datasetGroups).map(([name, datasets], index) => ({
+        id: index,
+        datasets,
+        name,
+      }));
+
+      // .sort((a, b) => a.name.localeCompare(b.name));
+      return ret;
     });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
@@ -94,26 +94,27 @@ export default {
       return map;
     });
 
-    const derivedRegionIdToMapLayer = computed(() => {
-      const map = new Map();
-      availableMapLayers.value.forEach((ds) => {
-        if (ds.derivedRegion !== undefined) {
-          map.set(ds.derivedRegion.id, ds);
-        }
-      });
+    // const derivedRegionIdToMapLayer = computed(() => {
+    //   const map = new Map();
+    //   availableMapLayers.value.forEach((ds) => {
+    //     if (ds.derivedRegion !== undefined) {
+    //       map.set(ds.derivedRegion.id, ds);
+    //     }
+    //   });
 
-      return map;
-    });
+    //   return map;
+    // });
 
     function datasetSelected(datasetId: number) {
-      // TODO
-      const uid = datasetIdToMapLayer.value.get(datasetId)?.uid;
-      return uid && activeMapLayers.value.has(uid);
+      console.log("TODO: is dataset selected?", datasetId);
+      // const uid = datasetIdToMapLayer.value.get(datasetId)?.uid;
+      // return uid && activeMapLayers.value.has(uid);
     }
 
     function derivedRegionSelected(derivedRegionId: number) {
-      const uid = derivedRegionIdToMapLayer.value.get(derivedRegionId)?.uid;
-      return uid && activeMapLayers.value.has(uid);
+      console.log("TODO: is derived region selected?", derivedRegionId);
+      // const uid = derivedRegionIdToMapLayer.value.get(derivedRegionId)?.uid;
+      // return uid && activeMapLayers.value.has(uid);
     }
 
     function toggleDataset(dataset: Dataset) {
@@ -133,26 +134,18 @@ export default {
 
     function fetchCharts() {
       if (!currentContext.value) return;
-      activeChart.value = undefined;
+      currentChart.value = undefined;
       getContextCharts(currentContext.value.id).then((charts) => {
         availableCharts.value = charts;
       });
     }
 
-    function activateChart(chart: Chart) {
-      activeChart.value = chart;
-    }
-
     function fetchSimulations() {
       if (!currentContext.value) return;
-      activeSimulation.value = undefined;
-      getContextSimulations(currentContext.value.id).then((sims) => {
-        availableSimulations.value = sims;
+      currentSimulationType.value = undefined;
+      getContextSimulationTypes(currentContext.value.id).then((sims) => {
+        availableSimulationTypes.value = sims;
       });
-    }
-
-    function activateSimulation(sim: Simulation) {
-      activeSimulation.value = sim;
     }
 
     onMounted(fetchCharts);
@@ -163,23 +156,20 @@ export default {
       currentContext,
       openPanels,
       openCategories,
-      availableLayerTree,
+      availableDatasetGroups,
       activeLayerTableHeaders,
-      activeChart,
+      currentChart,
       availableCharts,
-      activeSimulation,
-      availableSimulations,
+      currentSimulationType,
+      availableSimulationTypes,
       availableDerivedRegions,
-      selectedDerivedRegionIds,
       availableMapLayers,
       datasetIdToMapLayer,
       fetchDatasets,
       toggleDataset,
       expandOptionsPanelFromDataset,
       fetchCharts,
-      activateChart,
       fetchSimulations,
-      activateSimulation,
       toggleDerivedRegion,
       datasetSelected,
       derivedRegionSelected,
@@ -203,13 +193,13 @@ export default {
           v-model="openCategories"
         >
           <v-expansion-panel
-            v-for="category in availableLayerTree"
-            :title="category.name"
-            :key="category.id"
+            v-for="group in availableDatasetGroups"
+            :title="group.name"
+            :key="group.id"
           >
             <v-expansion-panel-text>
               <v-checkbox
-                v-for="dataset in category.children"
+                v-for="dataset in group.datasets"
                 :model-value="datasetSelected(dataset.id)"
                 :key="dataset.name"
                 :label="dataset.name"
@@ -272,8 +262,8 @@ export default {
             v-for="chart in availableCharts"
             :key="chart.id"
             :value="chart.id"
-            :active="activeChart && chart.id === activeChart.id"
-            @click="activateChart(chart)"
+            :active="currentChart && chart.id === currentChart.id"
+            @click="currentChart = chart"
           >
             {{ chart.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
@@ -290,16 +280,18 @@ export default {
         Available Simulations
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <span v-if="availableSimulations.length === 0"
+        <span v-if="availableSimulationTypes.length === 0"
           >No simulations available.</span
         >
         <v-list>
           <v-list-item
-            v-for="sim in availableSimulations"
+            v-for="sim in availableSimulationTypes"
             :key="sim.id"
             :value="sim.id"
-            :active="activeSimulation && sim.id === activeSimulation.id"
-            @click="activateSimulation(sim)"
+            :active="
+              currentSimulationType && sim.id === currentSimulationType.id
+            "
+            @click="currentSimulationType = sim"
           >
             {{ sim.name }}
             <v-tooltip activator="parent" location="end" max-width="300">

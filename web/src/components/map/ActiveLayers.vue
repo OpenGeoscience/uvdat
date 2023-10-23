@@ -2,13 +2,13 @@
 import { ref } from "vue";
 import draggable from "vuedraggable";
 import {
-  availableDerivedRegions,
-  activeMapLayerIds,
-  currentContext,
+  // currentContext,
+  activeMapLayers,
   currentMapLayer,
+  // availableDerivedRegions,
 } from "@/store";
-import { getMapLayerFromLayerId, updateVisibleMapLayers } from "@/layers";
-import { watch } from "vue";
+import { updateVisibleMapLayers } from "@/layers";
+// import { watch } from "vue";
 import { MapLayer, MapLayerArgs } from "@/data";
 
 export default {
@@ -18,65 +18,68 @@ export default {
   setup() {
     // Layer Menu
     const layerMenuActive = ref(false);
-    watch(activeMapLayerIds, (val, oldVal) => {
-      // Open layer menu if the newly added layer is the first one added
-      if (!oldVal.length && val.length) {
-        layerMenuActive.value = true;
-      }
-    });
+    // watch(activeMapLayerIds, (val, oldVal) => {
+    //   // Open layer menu if the newly added layer is the first one added
+    //   if (!oldVal.length && val.length) {
+    //     layerMenuActive.value = true;
+    //   }
+    // });
 
     function clearActiveLayers() {
-      activeMapLayerIds.value = [];
-      updateVisibleMapLayers();
-      layerMenuActive.value = false;
+      console.log("TODO: clear active layers");
+      //   activeMapLayerIds.value = [];
+      //   updateVisibleMapLayers();
+      //   layerMenuActive.value = false;
     }
 
     function getLayerName(layerId: string) {
-      const mapLayer = getMapLayerFromLayerId(layerId);
-      if (mapLayer === undefined) {
-        throw new Error(`Could not get data source matching layer ${layerId}`);
-      }
-
-      return mapLayer.name;
+      console.log("TODO get layer name", layerId);
+      // const mapLayer = getMapLayerFromLayerId(layerId);
+      // if (mapLayer === undefined) {
+      //   throw new Error(`Could not get data source matching layer ${layerId}`);
+      // }
+      // return mapLayer.name;
     }
 
     function setCurrentMapLayer(layerId: string) {
-      const mapLayer = getMapLayerFromLayerId(layerId);
+      // TODO
+      const mapLayer: MapLayer | undefined = undefined;
+      // const mapLayer = getMapLayerFromLayerId(layerId);
       if (mapLayer === undefined) {
         throw new Error(`Could not get data source matching layer ${layerId}`);
       }
 
       // Add dataset if applicable
       const args: MapLayerArgs = {};
-      const datasetId = mapLayer.dataset?.id;
-      if (datasetId !== undefined) {
-        const dataset = currentContext.value?.datasets.find(
-          (d) => d.id === datasetId
-        );
-        if (dataset === undefined) {
-          throw new Error("Dataset not found!");
-        }
+      // const datasetId = mapLayer.dataset?.id;
+      // if (datasetId !== undefined) {
+      //   const dataset = currentContext.value?.datasets.find(
+      //     (d) => d.id === datasetId
+      //   );
+      //   if (dataset === undefined) {
+      //     throw new Error("Dataset not found!");
+      //   }
 
-        args.dataset = dataset;
-      }
+      //   args.dataset = dataset;
+      // }
 
       // Add region if applicable
-      const regionId = mapLayer.derivedRegion?.id;
-      if (regionId !== undefined) {
-        const region = availableDerivedRegions.value.find(
-          (r) => r.id === regionId
-        );
-        if (region === undefined) {
-          throw new Error("Region not found!");
-        }
-        args.derivedRegion = region;
-      }
+      // const regionId = mapLayer.derivedRegion?.id;
+      // if (regionId !== undefined) {
+      //   const region = availableDerivedRegions.value.find(
+      //     (r) => r.id === regionId
+      //   );
+      //   if (region === undefined) {
+      //     throw new Error("Region not found!");
+      //   }
+      //   args.derivedRegion = region;
+      // }
 
       currentMapLayer.value = new MapLayer(args);
     }
     return {
       layerMenuActive,
-      activeMapLayerIds,
+      activeMapLayers,
       clearActiveLayers,
       updateVisibleMapLayers,
       getLayerName,
@@ -105,7 +108,7 @@ export default {
       <v-card-title style="min-width: 250px">
         Active Layers
         <v-tooltip
-          v-if="activeMapLayerIds.length"
+          v-if="activeMapLayers.length"
           text="Remove All Layers"
           location="bottom"
         >
@@ -119,12 +122,12 @@ export default {
           </template>
         </v-tooltip>
       </v-card-title>
-      <div v-if="!activeMapLayerIds.length" class="pa-4">No layers active.</div>
-      <draggable v-model="activeMapLayerIds" @change="updateVisibleMapLayers">
+      <div v-if="!activeMapLayers.length" class="pa-4">No layers active.</div>
+      <draggable v-model="activeMapLayers" @change="updateVisibleMapLayers">
         <template #item="{ element }">
           <v-card class="px-3 py-1">
             <v-tooltip
-              v-if="activeMapLayerIds.length"
+              v-if="activeMapLayers.length"
               text="Reorder Layers"
               location="bottom"
             >
@@ -138,7 +141,7 @@ export default {
             {{ getLayerName(element) }}
 
             <v-tooltip
-              v-if="activeMapLayerIds.length"
+              v-if="activeMapLayers.length"
               text="Open Layer Options"
               location="bottom"
             >

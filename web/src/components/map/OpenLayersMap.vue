@@ -3,14 +3,13 @@ import Map from "ol/Map.js";
 import Overlay from "ol/Overlay";
 import { onMounted, ref } from "vue";
 import {
-  clearMap,
   map,
-  getMap,
-  availableMapLayersTable,
+  // availableMapLayers,
   showMapTooltip,
   selectedFeature,
-  selectedMapLayer,
+  clickedMapLayer,
 } from "@/store";
+import { getMap, clearMap } from "@/storeFunctions";
 import { displayRasterTooltip } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
 import type { Layer } from "ol/layer";
@@ -49,15 +48,18 @@ export default {
 
       // Get feature and layer, exit if data source isn't provided through the layer
       const [feature, layer] = res;
-      const mapLayer = availableMapLayersTable.value.get(
-        layer.get("mapLayerId")
-      );
+      // TODO
+      console.log("get maplayer object from ", layer);
+      const mapLayer = undefined;
+      // const mapLayer = availableMapLayers.value.get(
+      //   layer.get("mapLayerId")
+      // );
 
       if (!mapLayer) {
         return;
       }
 
-      selectedMapLayer.value = mapLayer;
+      clickedMapLayer.value = mapLayer;
       selectedFeature.value = feature;
 
       // Show tooltip and set position

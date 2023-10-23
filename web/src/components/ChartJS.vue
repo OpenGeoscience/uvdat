@@ -1,6 +1,6 @@
 <script lang="ts">
 import { computed, ref } from "vue";
-import { activeChart, availableCharts } from "@/store";
+import { currentChart, availableCharts } from "@/store";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -46,11 +46,15 @@ export default {
     const downloadButton = ref();
 
     const options = computed(() => {
+      if (!currentChart.value) {
+        return defaultOptions;
+      }
+
       const customOptions: ChartOptions = {
         plugins: {},
         scales: {},
       };
-      const savedOptions = activeChart.value.chart_options;
+      const savedOptions = currentChart.value.chart_options;
       if (savedOptions.chart_title) {
         customOptions.plugins.title = {
           display: true,
@@ -94,19 +98,19 @@ export default {
 
     const showXRange = computed(() => {
       return (
-        activeChart.value?.chart_data?.labels &&
-        activeChart.value.chart_data.labels.length > 500
+        currentChart.value?.chart_data?.labels &&
+        currentChart.value.chart_data.labels.length > 500
       );
     });
 
     const maxX = computed(() => {
-      return activeChart.value?.chart_data?.labels && showXRange.value
-        ? activeChart.value.chart_data.labels.length
+      return currentChart.value?.chart_data?.labels && showXRange.value
+        ? currentChart.value.chart_data.labels.length
         : 0;
     });
 
     const data = computed(() => {
-      let currentData = activeChart.value?.chart_data;
+      let currentData = currentChart.value?.chart_data;
 
       if (!currentData || Object.keys(currentData).length === 0) {
         currentData = defaultChartData;
@@ -120,7 +124,7 @@ export default {
         ];
         currentData = {
           labels: currentData.labels.slice(...slice),
-          datasets: currentData.datasets.map((d: { data: number[][] }) =>
+          datasets: currentData.datasets.map((d) =>
             Object.assign({}, d, {
               data: d.data.slice(...slice),
             })
@@ -131,8 +135,8 @@ export default {
     });
 
     const downloadReady = computed(() => {
-      if (downloadButton.value && activeChart.value) {
-        const filename = `${activeChart.value.name}.json`;
+      if (downloadButton.value && currentChart.value) {
+        const filename = `${currentChart.value.name}.json`;
         const contents = data.value;
         downloadButton.value.setAttribute(
           "href",
@@ -145,22 +149,20 @@ export default {
     });
 
     function clearAndRefresh() {
-      if (activeChart.value) {
-        clearChart(activeChart.value.id).then(() => {
-          getContextCharts(activeChart.value.context).then((charts) => {
-            availableCharts.value = charts;
-            if (activeChart) {
-              activeChart.value = charts.find(
-                (c) => c.id === activeChart.value.id
-              );
-            }
-          });
+      if (!currentChart.value) return;
+      clearChart(currentChart.value.id).then(() => {
+        if (!currentChart.value) return;
+        getContextCharts(currentChart.value.context).then((charts) => {
+          if (!currentChart.value) return;
+          availableCharts.value = charts;
+          const currentChartId = currentChart.value.id;
+          currentChart.value = charts.find((c) => c.id === currentChartId);
         });
-      }
+      });
     }
 
     return {
-      activeChart,
+      currentChart,
       options,
       currentXStart,
       currentXRange,
@@ -184,7 +186,7 @@ export default {
             v-bind="props"
             icon="mdi-eraser-variant"
             variant="plain"
-            v-show="activeChart.clearable"
+            v-show="currentChart?.editable"
             @click="clearAndRefresh"
           />
         </template>
@@ -207,7 +209,7 @@ export default {
             v-bind="props"
             icon="mdi-close"
             variant="plain"
-            @click="activeChart = undefined"
+            @click="currentChart = undefined"
           />
         </template>
       </v-tooltip>
@@ -241,12 +243,12 @@ export default {
           />
         </v-col>
       </v-row>
-      <v-row no-gutters v-if="activeChart?.metadata">
+      <v-row no-gutters v-if="currentChart?.metadata">
         <v-col cols="12">
           <v-expansion-panels>
             <v-expansion-panel title="Metadata">
               <v-expansion-panel-text>
-                <RecursiveTable :data="activeChart.metadata" />
+                <RecursiveTable :data="currentChart.metadata" />
               </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>

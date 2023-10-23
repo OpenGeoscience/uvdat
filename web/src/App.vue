@@ -4,13 +4,13 @@ import {
   currentError,
   currentMapLayer,
   currentContext,
-  contexts,
+  availableContexts,
   loading,
-  loadContexts,
-  activeChart,
-  activeSimulation,
+  currentChart,
+  currentSimulationType,
   showMapBaseLayer,
 } from "./store";
+import { loadContexts } from "./storeFunctions";
 import { updateVisibleMapLayers } from "@/layers";
 import OpenLayersMap from "./components/map/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
@@ -36,11 +36,11 @@ export default defineComponent({
       drawer,
       currentContext,
       currentMapLayer,
-      contexts,
+      availableContexts,
       loading,
       currentError,
-      activeChart,
-      activeSimulation,
+      currentChart,
+      currentSimulationType,
       showMapBaseLayer,
       updateVisibleMapLayers,
     };
@@ -66,7 +66,7 @@ export default defineComponent({
       <v-list-item prepend-icon="mdi-bookmark-box-outline">
         <v-select
           v-model="currentContext"
-          :items="contexts"
+          :items="availableContexts"
           item-title="name"
           density="compact"
           return-object
@@ -110,8 +110,8 @@ export default defineComponent({
       "
     >
       <OpenLayersMap />
-      <ChartJS v-if="activeChart" />
-      <SimulationsPanel v-if="activeSimulation" />
+      <ChartJS v-if="currentChart" />
+      <SimulationsPanel v-if="currentSimulationType" />
     </div>
   </v-app>
 </template>

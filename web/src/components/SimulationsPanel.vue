@@ -1,6 +1,6 @@
 <script lang="ts">
 import { ref, watch } from "vue";
-import { activeSimulation, currentContext } from "@/store";
+import { currentSimulationType, currentContext } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { SimulationResult } from "@/types";
@@ -23,9 +23,9 @@ export default {
 
     function run() {
       inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
-        if (valid && currentContext.value) {
+        if (valid && currentContext.value && currentSimulationType.value) {
           runSimulation(
-            activeSimulation.value.id,
+            currentSimulationType.value.id,
             currentContext.value.id,
             selectedInputs.value
           ).then(({ result }) => {
@@ -37,9 +37,9 @@ export default {
     }
 
     function fetchResults() {
-      if (!currentContext.value) return;
+      if (!currentContext.value || !currentSimulationType.value) return;
       getSimulationResults(
-        activeSimulation.value.id,
+        currentSimulationType.value.id,
         currentContext.value.id
       ).then((results) => {
         availableResults.value = results;
@@ -58,12 +58,13 @@ export default {
         value: { name: string };
       }[] = [];
       Object.entries(result.input_args).forEach(([k, v]) => {
-        const simArg = activeSimulation.value.args.find(
+        if (!currentSimulationType.value) return;
+        const simArg = currentSimulationType.value.args.find(
           (a: { name: string }) => a.name === k
         );
         if (simArg) {
           let selectedOption = simArg.options.find(
-            (o: { id: number }) => o.id === v || o === v
+            (o) => o.id === v || o === v
           );
           // const mapLayerUid = getDatasetUid(selectedOption.id);
           const mapLayerSelected = false;
@@ -72,9 +73,6 @@ export default {
           // availableMapLayersTable.value.has(mapLayerUid);
 
           if (selectedOption) {
-            if (!selectedOption.name) {
-              selectedOption = { name: selectedOption };
-            }
             args.push({
               key: k,
               value: selectedOption,
@@ -112,7 +110,7 @@ export default {
       }
     }
 
-    watch(activeSimulation, () => {
+    watch(currentSimulationType, () => {
       availableResults.value = [];
       fetchResults();
     });
@@ -130,7 +128,7 @@ export default {
     });
 
     return {
-      activeSimulation,
+      currentSimulationType,
       tab,
       activeResult,
       inputForm,
@@ -148,7 +146,7 @@ export default {
 </script>
 
 <template>
-  <v-card class="simulations-card">
+  <v-card class="simulations-card" v-if="currentSimulationType">
     <div style="position: absolute; right: 0">
       <v-tooltip text="Close" location="bottom">
         <template v-slot:activator="{ props }">
@@ -156,12 +154,12 @@ export default {
             v-bind="props"
             icon="mdi-close"
             variant="plain"
-            @click="activeSimulation = undefined"
+            @click="currentSimulationType = undefined"
           />
         </template>
       </v-tooltip>
     </div>
-    <v-card-title>{{ activeSimulation.name }}</v-card-title>
+    <v-card-title>{{ currentSimulationType.name }}</v-card-title>
 
     <v-tabs v-model="tab" align-tabs="center" fixed-tabs>
       <v-tab value="new">Run New</v-tab>
@@ -173,7 +171,7 @@ export default {
         <v-form class="pa-3" @submit.prevent ref="inputForm">
           <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
           <v-select
-            v-for="arg in activeSimulation.args"
+            v-for="arg in currentSimulationType.args"
             v-model="selectedInputs[arg.name]"
             v-bind="arg"
             :key="arg.name"
@@ -243,7 +241,7 @@ export default {
               <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
                 <div
-                  v-if="activeSimulation.output_type == 'node_animation'"
+                  v-if="currentSimulationType.output_type == 'node_animation'"
                   class="pa-5"
                 >
                   <div v-if="result.output_data.node_failures?.length === 0">
@@ -257,7 +255,7 @@ export default {
                 </div>
                 <div v-else>
                   Unknown simulation output type
-                  {{ activeSimulation.output_type }}
+                  {{ currentSimulationType.output_type }}
                 </div>
               </div>
             </v-expansion-panel-text>

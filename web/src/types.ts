@@ -115,9 +115,17 @@ export interface Chart {
   metadata: object;
   chart_data: {
     labels: string[];
-    datasets: object[];
+    datasets: {
+      data: number[];
+    }[];
   };
-  chart_options: object;
+  chart_options: {
+    chart_title: string;
+    x_title: string;
+    y_title: string;
+    x_range: number[];
+    y_range: number[];
+  };
   editable: boolean;
 }
 
@@ -145,14 +153,17 @@ export interface ChartOptions {
   };
 }
 
-export interface Simulation {
+export interface SimulationType {
   id: number;
   name: string;
   description: string;
   output_type: string;
   args: {
     name: string;
-    options: object[];
+    options: {
+      id: number;
+      name: string;
+    }[];
   }[];
 }
 

@@ -1,5 +1,5 @@
 import { Layer } from "ol/layer";
-import { getUid } from "ol/util";
+// import { getUid } from "ol/util";
 import VectorLayer from "ol/layer/Vector";
 // import TileLayer from "ol/layer/Tile";
 import VectorSource from "ol/source/Vector";
@@ -11,35 +11,30 @@ import GeoJSON from "ol/format/GeoJSON.js";
 // import { LineString, Point } from "ol/geom";
 // import { fromLonLat } from "ol/proj";
 
-import {
-  activeMapLayerIds,
-  networkVis,
-  showMapBaseLayer,
-  availableMapLayersTable,
-  getMap,
-} from "@/store";
+import { showMapBaseLayer } from "@/store";
+import { getMap } from "./storeFunctions";
 import { createStyle } from "@/utils";
 // import { baseURL } from "@/api/auth";
 // import type { Dataset, NetworkNode } from "@/types";
 import type { MapLayer } from "@/data";
 import BaseLayer from "ol/layer/Base";
 
-export function getMapLayerById(layerId: string): BaseLayer | undefined {
-  return getMap()
-    .getLayers()
-    .getArray()
-    .find((layer) => getUid(layer) === layerId);
-}
+// export function getMapLayerById(layerId: string): BaseLayer | undefined {
+//   return getMap()
+//     .getLayers()
+//     .getArray()
+//     .find((layer) => getUid(layer) === layerId);
+// }
 
-export function getMapLayerFromLayerId(layerId: string): MapLayer | undefined {
-  const layer = getMapLayerById(layerId);
-  const dsId: string | undefined = layer?.get("mapLayerId");
-  if (dsId === undefined) {
-    throw new Error(`Data Source ID not present on layer ${layerId}`);
-  }
+// export function getMapLayerFromLayerId(layerId: string): MapLayer | undefined {
+//   // const layer = getMapLayerById(layerId);
+//   // const dsId: string | undefined = layer?.get("mapLayerId");
+//   // if (dsId === undefined) {
+//   //   throw new Error(`Data Source ID not present on layer ${layerId}`);
+//   // }
 
-  return availableMapLayersTable.value.get(dsId);
-}
+//   // return availableMapLayersTable.value.get(dsId);
+// }
 
 export function getMapLayer(source: MapLayer): BaseLayer | undefined {
   return getMap()
@@ -56,16 +51,16 @@ export function getLayerEnabled(layer: BaseLayer) {
   }
 
   // Check if layer is enabled
-  const layerId = getUid(layer);
-  let layerEnabled = activeMapLayerIds.value.includes(layerId);
+  // const layerId = getUid(layer);
+  // let layerEnabled = activeMapLayerIds.value.includes(layerId);
 
   // Ensure that if networkVis is enabled, only the network layer is shown (not the original layer)
-  const layerDatasetId = getMapLayerFromLayerId(layerId)?.dataset?.id;
-  if (networkVis.value && networkVis.value.id === layerDatasetId) {
-    layerEnabled = layerEnabled && layer.get("network");
-  }
+  // const layerDatasetId = getMapLayerFromLayerId(layerId)?.dataset?.id;
+  // if (networkVis.value && networkVis.value.id === layerDatasetId) {
+  //   layerEnabled = layerEnabled && layer.get("network");
+  // }
 
-  return layerEnabled;
+  // return layerEnabled;
 }
 
 /**
@@ -94,13 +89,13 @@ export function updateVisibleMapLayers() {
     // Set layer visible and z-index
     layer.setVisible(true);
     layerState.shown.push(layer);
-    const layerId = getUid(layer);
-    const layerIndex = activeMapLayerIds.value.findIndex(
-      (id) => id === layerId
-    );
-    layer.setZIndex(
-      layerIndex > -1 ? activeMapLayerIds.value.length - layerIndex : 0
-    );
+    // const layerId = getUid(layer);
+    // const layerIndex = activeMapLayerIds.value.findIndex(
+    //   (id) => id === layerId
+    // );
+    // layer.setZIndex(
+    //   layerIndex > -1 ? activeMapLayerIds.value.length - layerIndex : 0
+    // );
   });
 
   return layerState;

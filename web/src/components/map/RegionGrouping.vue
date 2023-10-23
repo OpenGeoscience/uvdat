@@ -1,13 +1,13 @@
 <script lang="ts">
 import { ref } from "vue";
 import {
-  selectedRegions,
+  selectedSourceRegions,
   regionGroupingType,
   availableDerivedRegions,
-  cancelRegionGrouping,
   regionGroupingActive,
   currentContext,
 } from "@/store";
+import { cancelRegionGrouping } from "@/storeFunctions";
 import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
 
 export default {
@@ -15,7 +15,7 @@ export default {
     // Region Controls
     const newRegionName = ref("");
     async function createDerivedRegion() {
-      if (selectedRegions.value.length === 0) {
+      if (selectedSourceRegions.value.length === 0) {
         throw new Error(
           "Cannot created derived region with no selected regions"
         );
@@ -29,7 +29,7 @@ export default {
         await postDerivedRegion(
           newRegionName.value,
           context.id,
-          selectedRegions.value.map((reg) => reg.id),
+          selectedSourceRegions.value.map((reg) => reg.id),
           regionGroupingType.value
         );
       }
@@ -41,7 +41,7 @@ export default {
     return {
       regionGroupingActive,
       regionGroupingType,
-      selectedRegions,
+      selectedSourceRegions,
       newRegionName,
       createDerivedRegion,
       cancelRegionGrouping,
@@ -57,7 +57,7 @@ export default {
       Performing {{ regionGroupingType }} Grouping
     </v-card-title>
     <v-card-subtitle>
-      Grouping {{ selectedRegions.length }} Regions
+      Grouping {{ selectedSourceRegions.length }} Regions
     </v-card-subtitle>
 
     <v-row no-gutters class="px-2 mt-2">
@@ -82,7 +82,7 @@ export default {
           color="success"
           variant="flat"
           prepend-icon="mdi-check"
-          :disabled="selectedRegions.length < 2 || !newRegionName"
+          :disabled="selectedSourceRegions.length < 2 || !newRegionName"
           @click="createDerivedRegion"
         >
           Save

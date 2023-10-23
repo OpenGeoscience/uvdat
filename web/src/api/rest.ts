@@ -5,7 +5,7 @@ import {
   NetworkNode,
   RasterData,
   Chart,
-  Simulation,
+  SimulationType,
 } from "@/types";
 
 export async function getContexts(): Promise<Context[]> {
@@ -22,9 +22,9 @@ export async function getContextCharts(contextId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?context=${contextId}`)).data.results;
 }
 
-export async function getContextSimulations(
+export async function getContextSimulationTypes(
   contextId: number
-): Promise<Simulation[]> {
+): Promise<SimulationType[]> {
   return (await apiClient.get(`simulations/available/context/${contextId}`))
     .data;
 }

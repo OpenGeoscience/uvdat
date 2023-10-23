@@ -1,19 +1,18 @@
 <script lang="ts">
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import {
-  getMap,
-  selectedRegions,
-  regionGroupingActive,
-  regionGroupingType,
+  // availableMapLayers,
+  // activeMapLayers,
+  clickedMapLayer,
   deactivatedNodes,
   networkVis,
-  availableMapLayers,
-  activeMapLayers,
-  showMapTooltip,
+  regionGroupingActive,
+  regionGroupingType,
+  // showMapTooltip,
   selectedFeature,
-  selectedMapLayer,
-  cancelRegionGrouping,
+  selectedSourceRegions,
 } from "@/store";
+import { getMap, cancelRegionGrouping } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
 import type { SourceRegion } from "@/types";
 
@@ -23,7 +22,7 @@ import { SimpleGeometry } from "ol/geom";
 export default {
   setup() {
     const selectedDatasetCategory = computed(
-      () => selectedMapLayer.value?.dataset?.category || ""
+      () => clickedMapLayer.value?.dataset?.category || ""
     );
     const selectedFeatureProperties = computed(() => {
       if (selectedFeature.value === undefined) {
@@ -60,7 +59,8 @@ export default {
 
       const { id } = selectedRegion.value;
       return (
-        selectedRegions.value.find((region) => region.id === id) !== undefined
+        selectedSourceRegions.value.find((region) => region.id === id) !==
+        undefined
       );
     });
 
@@ -86,65 +86,66 @@ export default {
       regionGroupingType.value = groupingType;
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      selectedRegions.value = [selectedRegion.value];
+      selectedSourceRegions.value = [selectedRegion.value];
     }
 
-    function deselectFeature() {
-      showMapTooltip.value = false;
-      selectedFeature.value = undefined;
-    }
+    // function deselectFeature() {
+    //   showMapTooltip.value = false;
+    //   selectedFeature.value = undefined;
+    // }
 
+    // TODO
     // Ensure that if any regions of the currently selected datasets are
     // de-selected, their regions are removed from the selection
-    watch(activeMapLayers, (dsMap) => {
-      // If the currently selected region was part of a data source that was removed, de-select it
-      if (selectedRegion.value !== undefined) {
-        const selectedRegionMapLayer = availableMapLayers.value.find(
-          (ds) => ds.dataset?.id === selectedRegion.value?.dataset
-        );
-        if (
-          selectedRegionMapLayer === undefined ||
-          !dsMap.has(selectedRegionMapLayer.uid)
-        ) {
-          deselectFeature();
-        }
-      }
+    // watch(activeMapLayers, (dsMap) => {
+    //   // If the currently selected region was part of a data source that was removed, de-select it
+    //   if (selectedRegion.value !== undefined) {
+    //     const selectedRegionMapLayer = availableMapLayers.value.find(
+    //       (ds) => ds.dataset?.id === selectedRegion.value?.dataset
+    //     );
+    //     if (
+    //       selectedRegionMapLayer === undefined ||
+    //       !dsMap.has(selectedRegionMapLayer.uid)
+    //     ) {
+    //       deselectFeature();
+    //     }
+    //   }
 
-      // Filter out any regions from un-selected data sources
-      // selectedRegions.value = selectedRegions.value.filter((region) =>
-      //   dsMap.has(getDatasetUid(region.dataset))
-      // );
+    // Filter out any regions from un-selected data sources
+    // selectedRegions.value = selectedRegions.value.filter((region) =>
+    //   dsMap.has(getDatasetUid(region.dataset))
+    // );
 
-      // Check if the list is now empty
-      if (selectedRegions.value.length === 0) {
-        cancelRegionGrouping();
-      }
-    });
+    // Check if the list is now empty
+    //   if (selectedRegions.value.length === 0) {
+    //     cancelRegionGrouping();
+    //   }
+    // });
 
     function removeRegionFromGrouping() {
       if (selectedRegionID.value === undefined) {
         throw new Error("Tried to remove non-existent region from grouping");
       }
 
-      selectedRegions.value = selectedRegions.value.filter(
+      selectedSourceRegions.value = selectedSourceRegions.value.filter(
         (region) => region.id !== selectedRegionID.value
       );
 
       // Check if that element was the last removed
-      if (selectedRegions.value.length === 0) {
+      if (selectedSourceRegions.value.length === 0) {
         cancelRegionGrouping();
       }
     }
 
     return {
+      clickedMapLayer,
       regionGroupingActive,
       selectedFeature,
       selectedFeatureProperties,
-      selectedMapLayer,
       selectedDatasetCategory,
       selectedRegionID,
       selectedRegion,
-      selectedRegions,
+      selectedSourceRegions,
       selectedRegionIsGrouped,
       regionGroupingType,
       networkVis,
@@ -160,16 +161,16 @@ export default {
 
 <template>
   <!-- Render for Derived Regions -->
-  <div v-if="selectedFeature && selectedMapLayer?.derivedRegion">
-    <v-row no-gutters>ID: {{ selectedMapLayer.derivedRegion.id }}</v-row>
-    <v-row no-gutters> Name: {{ selectedMapLayer.derivedRegion.name }} </v-row>
+  <div v-if="selectedFeature && clickedMapLayer?.derivedRegion">
+    <v-row no-gutters>ID: {{ clickedMapLayer.derivedRegion.id }}</v-row>
+    <v-row no-gutters> Name: {{ clickedMapLayer.derivedRegion.name }} </v-row>
     <v-row no-gutters>
       Source Region IDs:
-      {{ selectedMapLayer.derivedRegion.source_regions }}
+      {{ clickedMapLayer.derivedRegion.source_regions }}
     </v-row>
     <v-row no-gutters>
       Creation Operation:
-      {{ selectedMapLayer.derivedRegion.operation }}
+      {{ clickedMapLayer.derivedRegion.operation }}
     </v-row>
   </div>
   <!-- Render for Regions -->
@@ -215,7 +216,7 @@ export default {
             variant="outlined"
             block
             class="my-1"
-            @click="selectedRegions.push(selectedRegion)"
+            @click="selectedSourceRegions.push(selectedRegion)"
           >
             <template v-slot:prepend>
               <v-icon>
@@ -257,7 +258,7 @@ export default {
     </template>
   </div>
   <!-- Render for networks -->
-  <div v-else-if="selectedMapLayer?.dataset?.network" class="pa-2">
+  <div v-else-if="clickedMapLayer?.dataset?.network" class="pa-2">
     <v-row no-gutters v-for="(v, k) in selectedFeatureProperties" :key="k">
       {{ k }}: {{ v }}
     </v-row>

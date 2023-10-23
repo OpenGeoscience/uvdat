@@ -1,6 +1,6 @@
 import { Dataset, DerivedRegion } from "@/types";
-import { currentMapLayer, activeMapLayerIds } from "@/store";
-import { getUid } from "ol/util";
+import { currentMapLayer } from "@/store";
+// import { getUid } from "ol/util";
 import { addLayerToMap, getMapLayer, updateVisibleMapLayers } from "@/layers";
 
 export interface MapLayerArgs {
@@ -63,7 +63,7 @@ export function addMapLayerToMap(mapLayer: MapLayer) {
   }
 
   // Put new dataset at front of list, so it shows up above any existing layers
-  activeMapLayerIds.value = [getUid(layer), ...activeMapLayerIds.value];
+  // activeMapLayerIds.value = [getUid(layer), ...activeMapLayerIds.value];
 
   // Re-order layers
   updateVisibleMapLayers();
@@ -77,9 +77,9 @@ export function hideMapLayerFromMap(mapLayer: MapLayer) {
   if (layer === undefined) {
     throw new Error(`Couldn't find layer for data source ${mapLayerId}`);
   }
-  activeMapLayerIds.value = activeMapLayerIds.value.filter(
-    (layerId) => layerId !== getUid(layer)
-  );
+  // activeMapLayerIds.value = activeMapLayerIds.value.filter(
+  //   (layerId) => layerId !== getUid(layer)
+  // );
 
   // Re-order layers
   updateVisibleMapLayers();

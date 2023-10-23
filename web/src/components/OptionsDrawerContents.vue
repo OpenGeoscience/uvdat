@@ -8,11 +8,11 @@ import { convertDataset } from "../api/rest";
 import {
   currentContext,
   currentMapLayer,
-  pollForProcessingDataset,
   deactivatedNodes,
   rasterTooltip,
   availableMapLayers,
 } from "../store";
+import { pollForProcessingDataset } from "@/storeFunctions";
 
 export default {
   setup() {
