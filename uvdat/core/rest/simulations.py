@@ -13,13 +13,14 @@ import uvdat.core.rest.serializers as uvdat_serializers
 
 def get_available_simulations(context_id: int):
     sims = []
-    for available in AVAILABLE_SIMULATIONS:
-        available = available.copy()
-        available['description'] = re.sub(r'\n\s+', ' ', available['description'])
+    for name, details in AVAILABLE_SIMULATIONS.items():
+        details = details.copy()
+        details['description'] = re.sub(r'\n\s+', ' ', details['description'])
         args = []
-        for a in available['args']:
+        for a in details['args']:
             options = a.get('options')
             if not options:
+                options_annotations = a.get('options_annotations')
                 options_query = a.get('options_query')
                 options_type = a.get('type')
                 option_serializer_matches = [
@@ -33,9 +34,12 @@ def get_available_simulations(context_id: int):
                     option_serializer = option_serializer_matches[0]
                     if hasattr(options_type, 'context'):
                         options_query['context__id'] = context_id
+                    option_objects = options_type.objects
+                    if options_annotations:
+                        option_objects = option_objects.annotate(**options_annotations)
                     options = list(
                         option_serializer(d).data
-                        for d in options_type.objects.filter(
+                        for d in option_objects.filter(
                             **options_query,
                         ).all()
                     )
@@ -45,9 +49,10 @@ def get_available_simulations(context_id: int):
                     'options': options,
                 }
             )
-        available['args'] = args
-        del available['func']
-        sims.append(available)
+        details['args'] = args
+        del details['func']
+        details['name'] = SimulationResult.SimulationType[name].label
+        sims.append(details)
     return sims
 
 

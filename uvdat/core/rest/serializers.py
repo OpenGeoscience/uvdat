@@ -22,8 +22,9 @@ class ContextSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
 
     def get_center(self, obj):
+        # Web client expects Lon, Lat
         if obj.default_map_center:
-            return [obj.default_map_center.x, obj.default_map_center.y]
+            return [obj.default_map_center.y, obj.default_map_center.x]
 
     class Meta:
         model = Context
@@ -62,7 +63,7 @@ class VectorMapLayerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VectorMapLayer
-        fields = '__all__'
+        exclude = ['geojson_data', 'large_geojson_data']
 
 
 class SourceRegionSerializer(serializers.ModelSerializer):

@@ -54,7 +54,14 @@ AVAILABLE_SIMULATIONS = {
             {
                 'name': 'network_dataset',
                 'type': Dataset,
-                'options_query': {'network': True},
+                'options_annotations': {
+                    'network_nodes_count': models.Count('network_nodes'),
+                    'network_edges_count': models.Count('network_edges'),
+                },
+                'options_query': {
+                    'network_nodes_count__gte': 1,
+                    'network_edges_count__gte': 1,
+                },
             },
             {
                 'name': 'elevation_dataset',
@@ -80,7 +87,12 @@ AVAILABLE_SIMULATIONS = {
             {
                 'name': 'node_failure_simulation_result',
                 'type': SimulationResult,
-                'options_query': {'simulation_id__in': [1]},
+                'options_query': {
+                    'simulation_type__in': [
+                        'Flood 1',
+                        # add other node failure simulation types here as created
+                    ]
+                },
             },
             {
                 'name': 'recovery_mode',
