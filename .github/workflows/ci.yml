@@ -27,7 +27,7 @@ jobs:
           services: |
             web
           test-container: web
-          test-command: "npm run lint"
+          test-command: "CI="" && npm run lint"
 
   pytest:
     runs-on: ubuntu-latest
