@@ -56,77 +56,18 @@ export default {
       if (layer) layer.setOpacity(opacity.value);
     }
 
-    function updateCurrentDatasetLayer() {
-      if (currentMapLayer.value?.dataset === undefined) {
+    function updateColormap() {
+      if (colormapRange.value === undefined) {
         return;
       }
-
-      // TODO
-      // currentMapLayer.value.dataset.style.opacity = opacity.value;
-      // currentMapLayer.value.dataset.style.colormap = colormap.value;
-      // currentMapLayer.value.dataset.style.colormap_range = colormapRange.value;
-
-      // const layer = getMapLayer(currentMapLayer.value);
-      // const layerNetwork = layer.getProperties().network;
-      // if (
-      //   !layerNetwork ||
-      //   !networkVis.value ||
-      //   networkVis.value?.id === layerNetwork
-      // ) {
-      //   getMap().removeLayer(layer);
-      //   addMapLayerToMap(currentMapLayer.value);
-      // }
-    }
-
-    function updateColorMapRangeValue(e: Event, key: "min" | "max") {
-      if (e.target) {
-        const target = e.target as HTMLInputElement;
-        const value = parseInt(target.value);
-        if (key === "min") {
-          colormapRange.value[0] = value;
-        } else if (key === "max") {
-          colormapRange.value[1] = value;
-        }
-        updateCurrentDatasetLayer();
-      }
-    }
-
-    function toggleNetworkVis() {
-      if (currentMapLayer.value?.dataset === undefined) {
-        return;
-      }
-
-      // TODO
-      // const { dataset } = currentMapLayer.value;
-
-      // TODO: Check active map layers
-      // Check if there is a visible layer that matches the networkvis dataset id
-      // const updated = updateVisibleMapLayers();
-      // if (
-      //   !updated.shown.some(
-      //     (l) => l.getProperties().datasetId === networkVis.value.id
-      //   )
-      // ) {
-      //   // no existing one shown, create a new network layer
-      //   getDatasetNetwork(dataset.id).then((nodes) => {
-      //     if (nodes.length && networkVis.value) {
-      //       networkVis.value.nodes = nodes;
-      //       const layer = addNetworkLayerToMap(dataset, nodes);
-
-      //       // TODO: Integrate the below code into the normal flow
-
-      //       // Set layer properties and add to activeMapLayerIds
-      //       const mapLayer = new MapLayer({ dataset });
-      //       layer.setProperties({ mapLayerId: mapLayer.uid });
-
-      //       // Put new dataset at front of list, so it shows up above any existing layers
-      //       activeMapLayerIds.value = [
-      //         getUid(layer),
-      //         ...activeMapLayerIds.value,
-      //       ];
-      //     }
-      //   });
-      // }
+      const [min, max] = colormapRange.value;
+      console.log("TODO: update colormap", min, max);
+      // const layer = getMapLayerFromDataSource(currentMapDataSource.value);
+      // setRasterLayerStyle(layer, currentMapDataSource.value.dataset, {
+      //   min,
+      //   max,
+      //   palette: colormap.value,
+      // });
     }
 
     function runConversion() {
@@ -158,8 +99,9 @@ export default {
 
     watch(currentMapLayer, populateRefs);
     watch(opacity, updateLayerOpacity);
-    watch(colormap, updateCurrentDatasetLayer);
-    watch(colormapRange, updateCurrentDatasetLayer);
+    // Use deep watcher to catch inputs from number fields alongside sliders
+    watch(colormapRange, updateColormap, { deep: true });
+    watch(colormap, updateColormap);
 
     return {
       currentMapLayer,
@@ -173,9 +115,7 @@ export default {
       showConfirmConvert,
       datasetIdToMapLayer,
       collapseOptionsPanel,
-      toggleNetworkVis,
       toggleNodeActive,
-      updateColorMapRangeValue,
       runConversion,
     };
   },
@@ -223,24 +163,26 @@ export default {
         >
           <template v-slot:prepend>
             <input
-              :value="colormapRange[0]"
+              :v-model="colormapRange[0]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColorMapRangeValue(e, 'min')"
+              :min="datasetRange[0]"
+              :max="datasetRange[1]"
             />
           </template>
           <template v-slot:append>
             <input
-              :value="colormapRange[1]"
+              :v-model="colormapRange[1]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColorMapRangeValue(e, 'max')"
+              :min="datasetRange[0]"
+              :max="datasetRange[1]"
             />
           </template>
         </v-range-slider>
@@ -252,12 +194,6 @@ export default {
       </div>
 
       <div v-if="currentMapLayer.dataset?.network">
-        <v-switch
-          :value="currentMapLayer.dataset"
-          label="Show as node network"
-          @change="toggleNetworkVis"
-        />
-
         <v-expansion-panels :model-value="0" variant="accordion">
           <v-expansion-panel title="Deactivated Nodes">
             <v-expansion-panel-text

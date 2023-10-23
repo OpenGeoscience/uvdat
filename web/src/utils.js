@@ -2,15 +2,15 @@ import { Fill, Stroke, Circle, Style } from "ol/style.js";
 
 import { getNetworkGCC, getContextCharts, getRasterData } from "@/api/rest";
 import {
-  getMap,
   currentContext,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
   currentNetworkGCC,
   availableCharts,
-  activeChart,
+  currentChart,
 } from "@/store";
+import { getMap } from "./storeFunctions.ts";
 
 export const rasterColormaps = [
   "terrain",
@@ -232,8 +232,8 @@ export function deactivatedNodesUpdated() {
     // update chart
     getContextCharts(currentContext.value.id).then((charts) => {
       availableCharts.value = charts;
-      if (activeChart.value) {
-        activeChart.value = charts.find((c) => c.id === activeChart.value.id);
+      if (currentChart.value) {
+        currentChart.value = charts.find((c) => c.id === currentChart.value.id);
       }
     });
   });

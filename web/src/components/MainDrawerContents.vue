@@ -23,7 +23,7 @@ import { Dataset, DerivedRegion } from "@/types";
 export default {
   setup() {
     const openPanels = ref([0]);
-    const openCategories = ref([0]);
+    const expandedDatasetGroups = ref([0]);
     const availableDatasetGroups = computed(() => {
       if (!currentContext.value) return [];
       const groupKey = "category";
@@ -155,7 +155,7 @@ export default {
     return {
       currentContext,
       openPanels,
-      openCategories,
+      expandedDatasetGroups,
       availableDatasetGroups,
       activeLayerTableHeaders,
       currentChart,
@@ -190,7 +190,8 @@ export default {
         <v-expansion-panels
           multiple
           variant="accordion"
-          v-model="openCategories"
+          v-model="expandedDatasetGroups"
+          v-if="currentContext?.datasets[0].id"
         >
           <v-expansion-panel
             v-for="group in availableDatasetGroups"
@@ -307,6 +308,9 @@ export default {
 <style>
 .v-expansion-panel-text__wrapper {
   padding: 8px 10px 16px !important;
+}
+.v-checkbox .v-selection-control {
+  max-width: 100%;
 }
 .expand-icon {
   float: right;
