@@ -1,9 +1,9 @@
 import { Fill, Stroke, Circle, Style } from "ol/style.js";
 
-import { getNetworkGCC, getCityCharts, getRasterData } from "@/api/rest";
+import { getNetworkGCC, getContextCharts, getRasterData } from "@/api/rest";
 import {
   getMap,
-  currentCity,
+  currentContext,
   rasterTooltip,
   networkVis,
   deactivatedNodes,
@@ -230,7 +230,7 @@ export function deactivatedNodesUpdated() {
     updateNetworkStyle();
 
     // update chart
-    getCityCharts(currentCity.value.id).then((charts) => {
+    getContextCharts(currentContext.value.id).then((charts) => {
       availableCharts.value = charts;
       if (activeChart.value) {
         activeChart.value = charts.find((c) => c.id === activeChart.value.id);

@@ -4,7 +4,7 @@ import draggable from "vuedraggable";
 import {
   availableDerivedRegions,
   activeMapLayerIds,
-  currentCity,
+  currentContext,
   currentMapDataSource,
 } from "@/store";
 import { getDataSourceFromLayerId, updateVisibleLayers } from "@/layers";
@@ -45,7 +45,9 @@ function setCurrentMapDataSource(layerId: string) {
   const args: MapDataSourceArgs = {};
   const datasetId = dataSource.dataset?.id;
   if (datasetId !== undefined) {
-    const dataset = currentCity.value?.datasets.find((d) => d.id === datasetId);
+    const dataset = currentContext.value?.datasets.find(
+      (d) => d.id === datasetId
+    );
     if (dataset === undefined) {
       throw new Error("Dataset not found!");
     }

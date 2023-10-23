@@ -11,7 +11,7 @@ import {
 import { MapDataSource, addDataSourceToMap } from "@/data";
 import { convertDataset, getDatasetNetwork } from "../api/rest";
 import {
-  currentCity,
+  currentContext,
   currentMapDataSource,
   pollForProcessingDataset,
   getMap,
@@ -141,7 +141,7 @@ export default {
       const { dataset } = currentMapDataSource.value;
       convertDataset(dataset.id).then((dataset) => {
         currentMapDataSource.value = new MapDataSource({ dataset });
-        currentCity.value.datasets = currentCity.value.datasets.map((d) =>
+        currentContext.value.datasets = currentContext.value.datasets.map((d) =>
           d.id === dataset.id ? dataset : d
         );
         pollForProcessingDataset(dataset.id);

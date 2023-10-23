@@ -19,10 +19,10 @@ async function createDerivedRegion() {
     throw new Error("Region grouping type is null");
   }
 
-  const city = selectedRegions.value[0].city;
+  const context = selectedRegions.value[0].context;
   await postDerivedRegion(
     newRegionName.value,
-    city,
+    context,
     selectedRegions.value.map((reg) => reg.id),
     regionGroupingType.value
   );

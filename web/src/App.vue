@@ -3,10 +3,10 @@ import { defineComponent, ref, onMounted } from "vue";
 import {
   currentError,
   currentMapDataSource,
-  currentCity,
-  cities,
+  currentContext,
+  contexts,
   loading,
-  loadCities,
+  loadContexts,
   activeChart,
   activeSimulation,
   showMapBaseLayer,
@@ -29,14 +29,14 @@ export default defineComponent({
   setup() {
     const drawer = ref(true);
 
-    onMounted(loadCities);
+    onMounted(loadContexts);
     currentMapDataSource.value = undefined;
 
     return {
       drawer,
-      currentCity,
+      currentContext,
       currentMapDataSource,
-      cities,
+      contexts,
       loading,
       currentError,
       activeChart,
@@ -63,10 +63,10 @@ export default defineComponent({
       <v-spacer />
       {{ currentError }}
       <v-spacer />
-      <v-list-item prepend-icon="mdi-city">
+      <v-list-item prepend-icon="mdi-context">
         <v-select
-          v-model="currentCity"
-          :items="cities"
+          v-model="currentContext"
+          :items="contexts"
           item-title="name"
           density="compact"
           return-object
@@ -83,7 +83,7 @@ export default defineComponent({
       />
     </v-app-bar>
     <v-navigation-drawer
-      v-if="currentCity"
+      v-if="currentContext"
       v-model="drawer"
       permanent
       width="300"

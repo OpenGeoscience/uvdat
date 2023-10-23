@@ -13,7 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import RecursiveTable from "./RecursiveTable.vue";
-import { clearChart, getCityCharts } from "@/api/rest";
+import { clearChart, getContextCharts } from "@/api/rest";
 
 ChartJS.register(
   CategoryScale,
@@ -146,7 +146,7 @@ export default {
     function clearAndRefresh() {
       if (activeChart.value) {
         clearChart(activeChart.value.id).then(() => {
-          getCityCharts(activeChart.value.city).then((charts) => {
+          getContextCharts(activeChart.value.context).then((charts) => {
             availableCharts.value = charts;
             if (activeChart) {
               activeChart.value = charts.find(

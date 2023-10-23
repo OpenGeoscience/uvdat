@@ -4,16 +4,16 @@ import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
 import { computed, reactive, ref, watch } from "vue";
-import { City, Dataset, DerivedRegion, Region } from "./types.js";
-import { getCities, getDataset } from "@/api/rest";
+import { Context, Dataset, DerivedRegion, Region } from "./types.js";
+import { getContexts, getDataset } from "@/api/rest";
 import { MapDataSource } from "@/data";
 import { Map as olMap, getUid, Feature } from "ol";
 
 export const loading = ref<boolean>(false);
 export const currentError = ref<string>();
 
-export const cities = ref<City[]>([]);
-export const currentCity = ref<City>();
+export const contexts = ref<Context[]>([]);
+export const currentContext = ref<Context>();
 
 export const map = ref<olMap>();
 export function getMap() {
@@ -33,7 +33,7 @@ export const activeMapLayerIds = ref<string[]>([]);
 
 // All data sources combined into one list
 export const availableMapDataSources = computed(() => {
-  const datasets = currentCity.value?.datasets || [];
+  const datasets = currentContext.value?.datasets || [];
   return [
     ...availableDerivedRegions.value.map(
       (derivedRegion) => new MapDataSource({ derivedRegion })
@@ -114,14 +114,14 @@ export const networkVis = ref<Dataset>();
 export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 
-export function loadCities() {
-  getCities().then((data) => {
-    cities.value = data;
+export function loadContexts() {
+  getContexts().then((data) => {
+    contexts.value = data;
     if (data.length) {
-      currentCity.value = data[0];
+      currentContext.value = data[0];
     }
-    if (currentCity.value?.datasets) {
-      currentCity.value?.datasets.forEach((d) => {
+    if (currentContext.value?.datasets) {
+      currentContext.value?.datasets.forEach((d) => {
         if (d.processing) {
           pollForProcessingDataset(d.id);
         }
@@ -132,14 +132,14 @@ export function loadCities() {
 }
 
 export function clearMap() {
-  if (!currentCity.value) {
+  if (!currentContext.value) {
     return;
   }
 
   getMap().setView(
     new View({
-      center: olProj.fromLonLat(currentCity.value.center),
-      zoom: currentCity.value.default_zoom,
+      center: olProj.fromLonLat(currentContext.value.center),
+      zoom: currentContext.value.default_zoom,
     })
   );
   getMap().setLayers([
@@ -151,21 +151,21 @@ export function clearMap() {
     }),
   ]);
 }
-watch(currentCity, clearMap);
+watch(currentContext, clearMap);
 
 const polls = ref<Record<number, number>>({});
 
 export function pollForProcessingDataset(datasetId: number) {
   // fetch dataset every 10 seconds until it is not in a processing state
   polls.value[datasetId] = setInterval(() => {
-    const currentVersion = currentCity.value?.datasets.find(
+    const currentVersion = currentContext.value?.datasets.find(
       (d) => d.id === datasetId
     );
-    if (currentCity.value && currentVersion?.processing) {
+    if (currentContext.value && currentVersion?.processing) {
       getDataset(datasetId).then((newVersion) => {
-        if (currentCity.value && !newVersion.processing) {
-          currentCity.value.datasets = currentCity.value.datasets.map((d) =>
-            d.id === datasetId ? newVersion : d
+        if (currentContext.value && !newVersion.processing) {
+          currentContext.value.datasets = currentContext.value.datasets.map(
+            (d) => (d.id === datasetId ? newVersion : d)
           );
         }
       });

@@ -83,7 +83,7 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
 class DerivedRegionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DerivedRegion
-        fields = ['id', 'name', 'context', 'properties', 'source_regions', 'source_operation']
+        fields = ['id', 'name', 'context', 'metadata', 'source_regions', 'operation']
 
 
 class DerivedRegionDetailSerializer(serializers.ModelSerializer):

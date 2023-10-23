@@ -2,7 +2,7 @@
 import { ref, watch } from "vue";
 import {
   activeSimulation,
-  currentCity,
+  currentContext,
   activeDataSources,
   availableDataSourcesTable,
 } from "@/store";
@@ -27,7 +27,7 @@ export default {
         if (valid) {
           runSimulation(
             activeSimulation.value.id,
-            currentCity.value.id,
+            currentContext.value.id,
             selectedInputs.value
           ).then(({ result }) => {
             tab.value = "old";
@@ -40,7 +40,7 @@ export default {
     function fetchResults() {
       getSimulationResults(
         activeSimulation.value.id,
-        currentCity.value.id
+        currentContext.value.id
       ).then((results) => {
         availableResults.value = results;
       });

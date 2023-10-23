@@ -1,6 +1,6 @@
 <script>
 import {
-  currentCity,
+  currentContext,
   currentMapDataSource,
   activeChart,
   availableCharts,
@@ -19,9 +19,9 @@ import {
 } from "@/data";
 import { ref, computed, onMounted, watch } from "vue";
 import {
-  getCityDatasets,
-  getCityCharts,
-  getCitySimulations,
+  getContextDatasets,
+  getContextCharts,
+  getContextSimulations,
   listDerivedRegions,
 } from "@/api/rest";
 
@@ -32,7 +32,7 @@ export default {
     const availableLayerTree = computed(() => {
       const groupKey = "category";
       return Object.entries(
-        currentCity.value.datasets.reduce(function (rv, x) {
+        currentContext.value.datasets.reduce(function (rv, x) {
           (rv[x[groupKey]] = rv[x[groupKey]] || []).push(x);
           return rv;
         }, {})
@@ -50,8 +50,8 @@ export default {
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function fetchDatasets() {
-      getCityDatasets(currentCity.value.id).then((datasets) => {
-        currentCity.value.datasets = datasets;
+      getContextDatasets(currentContext.value.id).then((datasets) => {
+        currentContext.value.datasets = datasets;
       });
     }
 
@@ -124,7 +124,7 @@ export default {
 
     function fetchCharts() {
       activeChart.value = undefined;
-      getCityCharts(currentCity.value.id).then((charts) => {
+      getContextCharts(currentContext.value.id).then((charts) => {
         availableCharts.value = charts;
       });
     }
@@ -135,7 +135,7 @@ export default {
 
     function fetchSimulations() {
       activeSimulation.value = undefined;
-      getCitySimulations(currentCity.value.id).then((sims) => {
+      getContextSimulations(currentContext.value.id).then((sims) => {
         availableSimulations.value = sims;
       });
     }
@@ -149,7 +149,7 @@ export default {
     onMounted(setDerivedRegions);
 
     return {
-      currentCity,
+      currentContext,
       fetchDatasets,
       openPanels,
       openCategories,

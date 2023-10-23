@@ -1,6 +1,6 @@
 import { apiClient } from "./auth";
 import {
-  City,
+  Context,
   Dataset,
   NetworkNode,
   RasterData,
@@ -8,22 +8,25 @@ import {
   Simulation,
 } from "@/types";
 
-export async function getCities(): Promise<City[]> {
-  return (await apiClient.get("cities")).data.results;
+export async function getContexts(): Promise<Context[]> {
+  return (await apiClient.get("contexts")).data.results;
 }
 
-export async function getCityDatasets(cityId: number): Promise<Dataset[]> {
-  return (await apiClient.get(`datasets?city=${cityId}`)).data.results;
+export async function getContextDatasets(
+  contextId: number
+): Promise<Dataset[]> {
+  return (await apiClient.get(`datasets?context=${contextId}`)).data.results;
 }
 
-export async function getCityCharts(cityId: number): Promise<Chart[]> {
-  return (await apiClient.get(`charts?city=${cityId}`)).data.results;
+export async function getContextCharts(contextId: number): Promise<Chart[]> {
+  return (await apiClient.get(`charts?context=${contextId}`)).data.results;
 }
 
-export async function getCitySimulations(
-  cityId: number
+export async function getContextSimulations(
+  contextId: number
 ): Promise<Simulation[]> {
-  return (await apiClient.get(`simulations/available/city/${cityId}`)).data;
+  return (await apiClient.get(`simulations/available/context/${contextId}`))
+    .data;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
@@ -71,12 +74,12 @@ export async function clearChart(chartId: number) {
 
 export async function runSimulation(
   simulationId: number,
-  cityId: number,
+  contextId: number,
   args: object
 ) {
   return (
     await apiClient.post(
-      `simulations/run/${simulationId}/city/${cityId}/`,
+      `simulations/run/${simulationId}/context/${contextId}/`,
       args
     )
   ).data;
@@ -84,10 +87,12 @@ export async function runSimulation(
 
 export async function getSimulationResults(
   simulationId: number,
-  cityId: number
+  contextId: number
 ) {
   return (
-    await apiClient.get(`simulations/${simulationId}/city/${cityId}/results/`)
+    await apiClient.get(
+      `simulations/${simulationId}/context/${contextId}/results/`
+    )
   ).data;
 }
 
@@ -103,14 +108,14 @@ export async function getDerivedRegion(regionId: number) {
 
 export async function postDerivedRegion(
   name: string,
-  city: number,
+  context: number,
   regions: number[],
   op: "union" | "intersection"
 ) {
   const operation = op.toUpperCase();
   const res = await apiClient.post("derived_regions/", {
     name,
-    city,
+    context,
     operation,
     regions,
   });

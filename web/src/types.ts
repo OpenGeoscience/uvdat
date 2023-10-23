@@ -19,7 +19,7 @@ export interface Dataset {
 export interface Region {
   id: number;
   name: string;
-  city: number;
+  context: number;
   dataset: number;
   properties: { [key: string]: unknown };
 }
@@ -27,13 +27,13 @@ export interface Region {
 export interface DerivedRegion {
   id: number;
   name: string;
-  city: number;
+  context: number;
   properties: { [key: string]: unknown };
   source_operation: "UNION" | "INTERSECTION";
   source_regions: number[];
 }
 
-export interface City {
+export interface Context {
   id: number;
   name: string;
   center: number[];
@@ -74,7 +74,7 @@ export interface RasterData {
 
 export interface Chart {
   name: string;
-  city: number;
+  context: number;
   description: string;
   category: string;
   raw_data_file: string;
