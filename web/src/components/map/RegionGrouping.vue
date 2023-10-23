@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts">
 import { ref } from "vue";
 import {
   selectedRegions,
@@ -9,28 +9,42 @@ import {
 } from "@/store";
 import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
 
-// Region Controls
-const newRegionName = ref("");
-async function createDerivedRegion() {
-  if (selectedRegions.value.length === 0) {
-    throw new Error("Cannot created derived region with no selected regions");
-  }
-  if (regionGroupingType.value === null) {
-    throw new Error("Region grouping type is null");
-  }
+export default {
+  setup() {
+    // Region Controls
+    const newRegionName = ref("");
+    async function createDerivedRegion() {
+      if (selectedRegions.value.length === 0) {
+        throw new Error(
+          "Cannot created derived region with no selected regions"
+        );
+      }
+      if (regionGroupingType.value === null) {
+        throw new Error("Region grouping type is null");
+      }
 
-  const context = selectedRegions.value[0].context;
-  await postDerivedRegion(
-    newRegionName.value,
-    context,
-    selectedRegions.value.map((reg) => reg.id),
-    regionGroupingType.value
-  );
+      const context = selectedRegions.value[0].context;
+      await postDerivedRegion(
+        newRegionName.value,
+        context,
+        selectedRegions.value.map((reg) => reg.id),
+        regionGroupingType.value
+      );
 
-  // Close dialog
-  cancelRegionGrouping();
-  availableDerivedRegions.value = await listDerivedRegions();
-}
+      // Close dialog
+      cancelRegionGrouping();
+      availableDerivedRegions.value = await listDerivedRegions();
+    }
+    return {
+      regionGroupingActive,
+      regionGroupingType,
+      selectedRegions,
+      newRegionName,
+      createDerivedRegion,
+      cancelRegionGrouping,
+    };
+  },
+};
 </script>
 
 <template>

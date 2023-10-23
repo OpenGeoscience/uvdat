@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts">
 import { ref } from "vue";
 import draggable from "vuedraggable";
 import {
@@ -11,62 +11,79 @@ import { getDataSourceFromLayerId, updateVisibleLayers } from "@/layers";
 import { watch } from "vue";
 import { MapDataSource, MapDataSourceArgs } from "@/data";
 
-// Layer Menu
-const layerMenuActive = ref(false);
-watch(activeMapLayerIds, (val, oldVal) => {
-  // Open layer menu if the newly added layer is the first one added
-  if (!oldVal.length && val.length) {
-    layerMenuActive.value = true;
-  }
-});
+export default {
+  components: {
+    draggable,
+  },
+  setup() {
+    // Layer Menu
+    const layerMenuActive = ref(false);
+    watch(activeMapLayerIds, (val, oldVal) => {
+      // Open layer menu if the newly added layer is the first one added
+      if (!oldVal.length && val.length) {
+        layerMenuActive.value = true;
+      }
+    });
 
-function clearActiveLayers() {
-  activeMapLayerIds.value = [];
-  updateVisibleLayers();
-  layerMenuActive.value = false;
-}
-
-function getLayerName(layerId: string) {
-  const dataSource = getDataSourceFromLayerId(layerId);
-  if (dataSource === undefined) {
-    throw new Error(`Could not get data source matching layer ${layerId}`);
-  }
-
-  return dataSource.name;
-}
-
-function setCurrentMapDataSource(layerId: string) {
-  const dataSource = getDataSourceFromLayerId(layerId);
-  if (dataSource === undefined) {
-    throw new Error(`Could not get data source matching layer ${layerId}`);
-  }
-
-  // Add dataset if applicable
-  const args: MapDataSourceArgs = {};
-  const datasetId = dataSource.dataset?.id;
-  if (datasetId !== undefined) {
-    const dataset = currentContext.value?.datasets.find(
-      (d) => d.id === datasetId
-    );
-    if (dataset === undefined) {
-      throw new Error("Dataset not found!");
+    function clearActiveLayers() {
+      activeMapLayerIds.value = [];
+      updateVisibleLayers();
+      layerMenuActive.value = false;
     }
 
-    args.dataset = dataset;
-  }
+    function getLayerName(layerId: string) {
+      const dataSource = getDataSourceFromLayerId(layerId);
+      if (dataSource === undefined) {
+        throw new Error(`Could not get data source matching layer ${layerId}`);
+      }
 
-  // Add region if applicable
-  const regionId = dataSource.derivedRegion?.id;
-  if (regionId !== undefined) {
-    const region = availableDerivedRegions.value.find((r) => r.id === regionId);
-    if (region === undefined) {
-      throw new Error("Region not found!");
+      return dataSource.name;
     }
-    args.derivedRegion = region;
-  }
 
-  currentMapDataSource.value = new MapDataSource(args);
-}
+    function setCurrentMapDataSource(layerId: string) {
+      const dataSource = getDataSourceFromLayerId(layerId);
+      if (dataSource === undefined) {
+        throw new Error(`Could not get data source matching layer ${layerId}`);
+      }
+
+      // Add dataset if applicable
+      const args: MapDataSourceArgs = {};
+      const datasetId = dataSource.dataset?.id;
+      if (datasetId !== undefined) {
+        const dataset = currentContext.value?.datasets.find(
+          (d) => d.id === datasetId
+        );
+        if (dataset === undefined) {
+          throw new Error("Dataset not found!");
+        }
+
+        args.dataset = dataset;
+      }
+
+      // Add region if applicable
+      const regionId = dataSource.derivedRegion?.id;
+      if (regionId !== undefined) {
+        const region = availableDerivedRegions.value.find(
+          (r) => r.id === regionId
+        );
+        if (region === undefined) {
+          throw new Error("Region not found!");
+        }
+        args.derivedRegion = region;
+      }
+
+      currentMapDataSource.value = new MapDataSource(args);
+    }
+    return {
+      layerMenuActive,
+      activeMapLayerIds,
+      clearActiveLayers,
+      updateVisibleLayers,
+      getLayerName,
+      setCurrentMapDataSource,
+    };
+  },
+};
 </script>
 
 <template>

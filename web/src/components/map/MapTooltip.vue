@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts">
 import { computed, watch } from "vue";
 import {
   getMap,
@@ -20,117 +20,142 @@ import type { Region } from "@/types";
 import { getDatasetUid } from "@/data";
 import { SimpleGeometry } from "ol/geom";
 
-const selectedDatasetCategory = computed(
-  () => selectedDataSource.value?.dataset?.category || ""
-);
-const selectedFeatureProperties = computed(() => {
-  if (selectedFeature.value === undefined) {
-    return [];
-  }
-  const unwantedKeys = new Set([
-    "colors",
-    "geometry",
-    "type",
-    "id",
-    "node",
-    "edge",
-  ]);
-  return Object.fromEntries(
-    Object.entries(selectedFeature.value.getProperties()).filter(
-      ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
-    )
-  );
-});
-
-// Regions
-const selectedRegion = computed(() => {
-  if (selectedDatasetCategory.value !== "region") {
-    return undefined;
-  }
-
-  return selectedFeature.value?.getProperties() as Region;
-});
-const selectedRegionID = computed(() => selectedRegion.value?.id);
-const selectedRegionIsGrouped = computed(() => {
-  if (selectedRegion.value === undefined) {
-    return false;
-  }
-
-  const { id } = selectedRegion.value;
-  return selectedRegions.value.find((region) => region.id === id) !== undefined;
-});
-
-function zoomToRegion() {
-  const geom = selectedFeature.value?.getGeometry() as SimpleGeometry;
-  if (geom === undefined) {
-    return;
-  }
-  // Set map zoom to match bounding box of region
-  const map = getMap();
-  map.getView().fit(geom, {
-    size: map.getSize(),
-    duration: 300,
-  });
-}
-
-function beginRegionGrouping(groupingType: "intersection" | "union") {
-  if (selectedRegion.value === undefined) {
-    throw new Error("Began region grouping with no selected region");
-  }
-
-  regionGroupingActive.value = true;
-  regionGroupingType.value = groupingType;
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  selectedRegions.value = [selectedRegion.value];
-}
-
-function deselectFeature() {
-  showMapTooltip.value = false;
-  selectedFeature.value = undefined;
-}
-
-// Ensure that if any regions of the currently selected datasets are
-// de-selected, their regions are removed from the selection
-watch(activeDataSources, (dsMap) => {
-  // If the currently selected region was part of a data source that was removed, de-select it
-  if (selectedRegion.value !== undefined) {
-    const selectedRegionDataSource = availableMapDataSources.value.find(
-      (ds) => ds.dataset?.id === selectedRegion.value?.dataset
+export default {
+  setup() {
+    const selectedDatasetCategory = computed(
+      () => selectedDataSource.value?.dataset?.category || ""
     );
-    if (
-      selectedRegionDataSource === undefined ||
-      !dsMap.has(selectedRegionDataSource.uid)
-    ) {
-      deselectFeature();
+    const selectedFeatureProperties = computed(() => {
+      if (selectedFeature.value === undefined) {
+        return [];
+      }
+      const unwantedKeys = new Set([
+        "colors",
+        "geometry",
+        "type",
+        "id",
+        "node",
+        "edge",
+      ]);
+      return Object.fromEntries(
+        Object.entries(selectedFeature.value.getProperties()).filter(
+          ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
+        )
+      );
+    });
+
+    // Regions
+    const selectedRegion = computed(() => {
+      if (selectedDatasetCategory.value !== "region") {
+        return undefined;
+      }
+
+      return selectedFeature.value?.getProperties() as Region;
+    });
+    const selectedRegionID = computed(() => selectedRegion.value?.id);
+    const selectedRegionIsGrouped = computed(() => {
+      if (selectedRegion.value === undefined) {
+        return false;
+      }
+
+      const { id } = selectedRegion.value;
+      return (
+        selectedRegions.value.find((region) => region.id === id) !== undefined
+      );
+    });
+
+    function zoomToRegion() {
+      const geom = selectedFeature.value?.getGeometry() as SimpleGeometry;
+      if (geom === undefined) {
+        return;
+      }
+      // Set map zoom to match bounding box of region
+      const map = getMap();
+      map.getView().fit(geom, {
+        size: map.getSize(),
+        duration: 300,
+      });
     }
-  }
 
-  // Filter out any regions from un-selected data sources
-  selectedRegions.value = selectedRegions.value.filter((region) =>
-    dsMap.has(getDatasetUid(region.dataset))
-  );
+    function beginRegionGrouping(groupingType: "intersection" | "union") {
+      if (selectedRegion.value === undefined) {
+        throw new Error("Began region grouping with no selected region");
+      }
 
-  // Check if the list is now empty
-  if (selectedRegions.value.length === 0) {
-    cancelRegionGrouping();
-  }
-});
+      regionGroupingActive.value = true;
+      regionGroupingType.value = groupingType;
 
-function removeRegionFromGrouping() {
-  if (selectedRegionID.value === undefined) {
-    throw new Error("Tried to remove non-existent region from grouping");
-  }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      selectedRegions.value = [selectedRegion.value];
+    }
 
-  selectedRegions.value = selectedRegions.value.filter(
-    (region) => region.id !== selectedRegionID.value
-  );
+    function deselectFeature() {
+      showMapTooltip.value = false;
+      selectedFeature.value = undefined;
+    }
 
-  // Check if that element was the last removed
-  if (selectedRegions.value.length === 0) {
-    cancelRegionGrouping();
-  }
-}
+    // Ensure that if any regions of the currently selected datasets are
+    // de-selected, their regions are removed from the selection
+    watch(activeDataSources, (dsMap) => {
+      // If the currently selected region was part of a data source that was removed, de-select it
+      if (selectedRegion.value !== undefined) {
+        const selectedRegionDataSource = availableMapDataSources.value.find(
+          (ds) => ds.dataset?.id === selectedRegion.value?.dataset
+        );
+        if (
+          selectedRegionDataSource === undefined ||
+          !dsMap.has(selectedRegionDataSource.uid)
+        ) {
+          deselectFeature();
+        }
+      }
+
+      // Filter out any regions from un-selected data sources
+      selectedRegions.value = selectedRegions.value.filter((region) =>
+        dsMap.has(getDatasetUid(region.dataset))
+      );
+
+      // Check if the list is now empty
+      if (selectedRegions.value.length === 0) {
+        cancelRegionGrouping();
+      }
+    });
+
+    function removeRegionFromGrouping() {
+      if (selectedRegionID.value === undefined) {
+        throw new Error("Tried to remove non-existent region from grouping");
+      }
+
+      selectedRegions.value = selectedRegions.value.filter(
+        (region) => region.id !== selectedRegionID.value
+      );
+
+      // Check if that element was the last removed
+      if (selectedRegions.value.length === 0) {
+        cancelRegionGrouping();
+      }
+    }
+
+    return {
+      regionGroupingActive,
+      selectedFeature,
+      selectedFeatureProperties,
+      selectedDataSource,
+      selectedDatasetCategory,
+      selectedRegionID,
+      selectedRegion,
+      selectedRegions,
+      selectedRegionIsGrouped,
+      regionGroupingType,
+      networkVis,
+      deactivatedNodes,
+      toggleNodeActive,
+      zoomToRegion,
+      removeRegionFromGrouping,
+      beginRegionGrouping,
+    };
+  },
+};
 </script>
 
 <template>
