@@ -6,10 +6,10 @@ import {
   clearMap,
   map,
   getMap,
-  availableDataSourcesTable,
+  availableMapLayersTable,
   showMapTooltip,
   selectedFeature,
-  selectedDataSource,
+  selectedMapLayer,
 } from "@/store";
 import { displayRasterTooltip } from "@/utils";
 import type { MapBrowserEvent, Feature } from "ol";
@@ -49,15 +49,15 @@ export default {
 
       // Get feature and layer, exit if data source isn't provided through the layer
       const [feature, layer] = res;
-      const dataSource = availableDataSourcesTable.value.get(
-        layer.get("dataSourceId")
+      const mapLayer = availableMapLayersTable.value.get(
+        layer.get("mapLayerId")
       );
 
-      if (!dataSource) {
+      if (!mapLayer) {
         return;
       }
 
-      selectedDataSource.value = dataSource;
+      selectedMapLayer.value = mapLayer;
       selectedFeature.value = feature;
 
       // Show tooltip and set position
@@ -74,20 +74,6 @@ export default {
         getMap().getTargetElement().classList.remove("spinner");
       });
 
-      // Add overlay to display region grouping
-      newMap.addControl(new Control({ element: regiongrouping.value }));
-
-      // Add overlay to display active layers
-      newMap.addControl(new Control({ element: activelayers.value }));
-
-      // Add tooltip overlay
-      tooltipOverlay = new Overlay({
-        element: tooltip.value,
-        offset: [10, 0],
-        positioning: "bottom-left",
-      });
-      tooltipOverlay.setMap(newMap);
-
       // Handle clicks and pointer moves
       newMap.on("click", handleMapClick);
       newMap.on("pointermove", (e) => {
@@ -95,6 +81,25 @@ export default {
       });
 
       map.value = newMap;
+      createMapControls();
+    }
+
+    function createMapControls() {
+      if (map.value) {
+        // Add overlay to display region grouping
+        map.value.addControl(new Control({ element: regiongrouping.value }));
+
+        // Add overlay to display active layers
+        map.value.addControl(new Control({ element: activelayers.value }));
+
+        // Add tooltip overlay
+        tooltipOverlay = new Overlay({
+          element: tooltip.value,
+          offset: [10, 0],
+          positioning: "bottom-left",
+        });
+        tooltipOverlay.setMap(map.value);
+      }
     }
 
     onMounted(() => {
@@ -103,6 +108,9 @@ export default {
     });
 
     return {
+      activelayers,
+      regiongrouping,
+      tooltip,
       showMapTooltip,
     };
   },

@@ -6,6 +6,7 @@ import {
   availableDerivedRegions,
   cancelRegionGrouping,
   regionGroupingActive,
+  currentContext,
 } from "@/store";
 import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
 
@@ -23,13 +24,15 @@ export default {
         throw new Error("Region grouping type is null");
       }
 
-      const context = selectedRegions.value[0].context;
-      await postDerivedRegion(
-        newRegionName.value,
-        context,
-        selectedRegions.value.map((reg) => reg.id),
-        regionGroupingType.value
-      );
+      const context = currentContext.value;
+      if (context) {
+        await postDerivedRegion(
+          newRegionName.value,
+          context.id,
+          selectedRegions.value.map((reg) => reg.id),
+          regionGroupingType.value
+        );
+      }
 
       // Close dialog
       cancelRegionGrouping();

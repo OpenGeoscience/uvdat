@@ -1,68 +1,63 @@
 import { Dataset, DerivedRegion } from "@/types";
-import { currentMapDataSource, activeMapLayerIds } from "@/store";
+import { currentMapLayer, activeMapLayerIds } from "@/store";
 import { getUid } from "ol/util";
-import {
-  addDataSourceLayerToMap,
-  getMapLayerFromDataSource,
-  updateVisibleLayers,
-} from "@/layers";
+import { addLayerToMap, getMapLayer, updateVisibleMapLayers } from "@/layers";
 
-export interface MapDataSourceArgs {
+export interface MapLayerArgs {
   dataset?: Dataset;
   derivedRegion?: DerivedRegion;
 }
 
-const UnexpectedMapDataSourceError = new Error(
-  "Unexpected map data source type"
-);
+const UnexpectedMapLayerError = new Error("Unexpected map layer type");
 
 /** Return an ID that is unique across data source types */
-export function getDatasetUid(id: number) {
-  return `dataset-${id}`;
-}
+// export function getDatasetUid(id: number) {
+//   return `dataset-${id}`;
+// }
 
 /** Return an ID that is unique across data source types */
-export function getDerivedRegionUid(id: number) {
-  return `dr-${id}`;
-}
+// export function getDerivedRegionUid(id: number) {
+//   return `dr-${id}`;
+// }
 
 // A unified representation of any data source (datasets, derived regions, etc.)
-export class MapDataSource {
+export class MapLayer {
   dataset?: Dataset;
   derivedRegion?: DerivedRegion;
 
-  constructor(args: MapDataSourceArgs) {
+  constructor(args: MapLayerArgs) {
     this.dataset = args.dataset;
     this.derivedRegion = args.derivedRegion;
   }
 
   get uid() {
-    if (this.dataset) {
-      return getDatasetUid(this.dataset.id);
-    }
-    if (this.derivedRegion) {
-      return getDerivedRegionUid(this.derivedRegion.id);
-    }
+    // if (this.dataset) {
+    //   return getDatasetUid(this.dataset.id);
+    // }
+    // if (this.derivedRegion) {
+    //   return getDerivedRegionUid(this.derivedRegion.id);
+    // }
+    return "TODO";
 
-    throw UnexpectedMapDataSourceError;
+    throw UnexpectedMapLayerError;
   }
 
   get name() {
     const name = this.dataset?.name || this.derivedRegion?.name;
     if (name === undefined) {
-      throw UnexpectedMapDataSourceError;
+      throw UnexpectedMapLayerError;
     }
 
     return name;
   }
 }
 
-export function addDataSourceToMap(dataSource: MapDataSource) {
+export function addMapLayerToMap(mapLayer: MapLayer) {
   // Check if layer with this dataset already exists
-  const existingLayer = getMapLayerFromDataSource(dataSource);
+  const existingLayer = getMapLayer(mapLayer);
 
   // Get either existing layer or create a new one
-  const layer = existingLayer || addDataSourceLayerToMap(dataSource);
+  const layer = existingLayer || addLayerToMap(mapLayer);
   if (layer === undefined) {
     throw new Error("No layer returned when adding data source to map");
   }
@@ -71,26 +66,26 @@ export function addDataSourceToMap(dataSource: MapDataSource) {
   activeMapLayerIds.value = [getUid(layer), ...activeMapLayerIds.value];
 
   // Re-order layers
-  updateVisibleLayers();
+  updateVisibleMapLayers();
 }
 
-export function hideDataSourceFromMap(dataSource: MapDataSource) {
-  const dataSourceId = dataSource.uid;
+export function hideMapLayerFromMap(mapLayer: MapLayer) {
+  const mapLayerId = mapLayer.uid;
 
   // Filter out dataset layer from active map layers
-  const layer = getMapLayerFromDataSource(dataSource);
+  const layer = getMapLayer(mapLayer);
   if (layer === undefined) {
-    throw new Error(`Couldn't find layer for data source ${dataSourceId}`);
+    throw new Error(`Couldn't find layer for data source ${mapLayerId}`);
   }
   activeMapLayerIds.value = activeMapLayerIds.value.filter(
     (layerId) => layerId !== getUid(layer)
   );
 
   // Re-order layers
-  updateVisibleLayers();
+  updateVisibleMapLayers();
 
   // If current data source was the de-selected dataset, un-set it
-  if (currentMapDataSource.value?.uid === dataSourceId) {
-    currentMapDataSource.value = undefined;
+  if (currentMapLayer.value?.uid === mapLayerId) {
+    currentMapLayer.value = undefined;
   }
 }

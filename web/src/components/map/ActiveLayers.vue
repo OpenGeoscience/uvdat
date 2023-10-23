@@ -5,11 +5,11 @@ import {
   availableDerivedRegions,
   activeMapLayerIds,
   currentContext,
-  currentMapDataSource,
+  currentMapLayer,
 } from "@/store";
-import { getDataSourceFromLayerId, updateVisibleLayers } from "@/layers";
+import { getMapLayerFromLayerId, updateVisibleMapLayers } from "@/layers";
 import { watch } from "vue";
-import { MapDataSource, MapDataSourceArgs } from "@/data";
+import { MapLayer, MapLayerArgs } from "@/data";
 
 export default {
   components: {
@@ -27,28 +27,28 @@ export default {
 
     function clearActiveLayers() {
       activeMapLayerIds.value = [];
-      updateVisibleLayers();
+      updateVisibleMapLayers();
       layerMenuActive.value = false;
     }
 
     function getLayerName(layerId: string) {
-      const dataSource = getDataSourceFromLayerId(layerId);
-      if (dataSource === undefined) {
+      const mapLayer = getMapLayerFromLayerId(layerId);
+      if (mapLayer === undefined) {
         throw new Error(`Could not get data source matching layer ${layerId}`);
       }
 
-      return dataSource.name;
+      return mapLayer.name;
     }
 
-    function setCurrentMapDataSource(layerId: string) {
-      const dataSource = getDataSourceFromLayerId(layerId);
-      if (dataSource === undefined) {
+    function setCurrentMapLayer(layerId: string) {
+      const mapLayer = getMapLayerFromLayerId(layerId);
+      if (mapLayer === undefined) {
         throw new Error(`Could not get data source matching layer ${layerId}`);
       }
 
       // Add dataset if applicable
-      const args: MapDataSourceArgs = {};
-      const datasetId = dataSource.dataset?.id;
+      const args: MapLayerArgs = {};
+      const datasetId = mapLayer.dataset?.id;
       if (datasetId !== undefined) {
         const dataset = currentContext.value?.datasets.find(
           (d) => d.id === datasetId
@@ -61,7 +61,7 @@ export default {
       }
 
       // Add region if applicable
-      const regionId = dataSource.derivedRegion?.id;
+      const regionId = mapLayer.derivedRegion?.id;
       if (regionId !== undefined) {
         const region = availableDerivedRegions.value.find(
           (r) => r.id === regionId
@@ -72,15 +72,15 @@ export default {
         args.derivedRegion = region;
       }
 
-      currentMapDataSource.value = new MapDataSource(args);
+      currentMapLayer.value = new MapLayer(args);
     }
     return {
       layerMenuActive,
       activeMapLayerIds,
       clearActiveLayers,
-      updateVisibleLayers,
+      updateVisibleMapLayers,
       getLayerName,
-      setCurrentMapDataSource,
+      setCurrentMapLayer,
     };
   },
 };
@@ -120,7 +120,7 @@ export default {
         </v-tooltip>
       </v-card-title>
       <div v-if="!activeMapLayerIds.length" class="pa-4">No layers active.</div>
-      <draggable v-model="activeMapLayerIds" @change="updateVisibleLayers">
+      <draggable v-model="activeMapLayerIds" @change="updateVisibleMapLayers">
         <template #item="{ element }">
           <v-card class="px-3 py-1">
             <v-tooltip
@@ -147,7 +147,7 @@ export default {
                   v-bind="props"
                   size="small"
                   class="expand-icon ml-2"
-                  @click="setCurrentMapDataSource(element)"
+                  @click="setCurrentMapLayer(element)"
                 >
                   mdi-cog
                 </v-icon>

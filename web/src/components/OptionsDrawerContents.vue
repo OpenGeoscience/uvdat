@@ -1,146 +1,143 @@
-<script>
+<script lang="ts">
 import { ref, watch, computed } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
-import { getUid } from "ol/util";
 
-import {
-  getMapLayerFromDataSource,
-  updateVisibleLayers,
-  addNetworkLayerToMap,
-} from "@/layers";
-import { MapDataSource, addDataSourceToMap } from "@/data";
-import { convertDataset, getDatasetNetwork } from "../api/rest";
+import { getMapLayer } from "@/layers";
+import { MapLayer } from "@/data";
+import { convertDataset } from "../api/rest";
 import {
   currentContext,
-  currentMapDataSource,
+  currentMapLayer,
   pollForProcessingDataset,
-  getMap,
-  networkVis,
   deactivatedNodes,
   rasterTooltip,
-  activeMapLayerIds,
-  availableMapDataSources,
+  availableMapLayers,
 } from "../store";
 
 export default {
   setup() {
     const opacity = ref(1);
     const colormap = ref("terrain");
-    const datasetRange = ref(undefined);
-    const colormapRange = ref(undefined);
+    const datasetRange = ref<number[]>([]);
+    const colormapRange = ref<number[]>([]);
     const showConfirmConvert = ref(false);
 
     function collapseOptionsPanel() {
-      currentMapDataSource.value = undefined;
+      currentMapLayer.value = undefined;
     }
 
     function populateRefs() {
-      if (currentMapDataSource.value === undefined) {
+      if (currentMapLayer.value === undefined) {
         return;
       }
-
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      const dataset = currentMapDataSource.value?.dataset;
+      // TODO
+      // const layer = getMapLayer(currentMapLayer.value);
+      // const dataset = currentMapLayer.value?.dataset;
 
       // Set opacity to layer value, update if it hasn't been changed
-      opacity.value = layer.getOpacity();
-      if (opacity.value === 1 && dataset?.style?.opacity) {
-        opacity.value = dataset.style.opacity;
-      }
+      // opacity.value = layer.getOpacity();
+      // if (opacity.value === 1 && dataset?.style?.opacity) {
+      //   opacity.value = dataset.style.opacity;
+      // }
 
       // Update other values
-      colormap.value = dataset?.style?.colormap || "terrain";
-      datasetRange.value =
-        dataset?.style?.data_range?.map((v) => Math.round(v)) || undefined;
-      colormapRange.value = datasetRange.value;
+      // colormap.value = dataset?.style?.colormap || "terrain";
+      // datasetRange.value =
+      //   dataset?.style?.data_range?.map((v) => Math.round(v)) || undefined;
+      // colormapRange.value = datasetRange.value;
     }
 
     function updateLayerOpacity() {
-      if (currentMapDataSource.value === undefined) {
+      if (currentMapLayer.value === undefined) {
         return;
       }
 
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      layer.setOpacity(opacity.value);
+      const layer = getMapLayer(currentMapLayer.value);
+      if (layer) layer.setOpacity(opacity.value);
     }
 
     function updateCurrentDatasetLayer() {
-      if (currentMapDataSource.value?.dataset === undefined) {
+      if (currentMapLayer.value?.dataset === undefined) {
         return;
       }
 
-      currentMapDataSource.value.dataset.style.opacity = opacity.value;
-      currentMapDataSource.value.dataset.style.colormap = colormap.value;
-      currentMapDataSource.value.dataset.style.colormap_range =
-        colormapRange.value;
+      // TODO
+      // currentMapLayer.value.dataset.style.opacity = opacity.value;
+      // currentMapLayer.value.dataset.style.colormap = colormap.value;
+      // currentMapLayer.value.dataset.style.colormap_range = colormapRange.value;
 
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      const layerNetwork = layer.getProperties().network;
-      if (
-        !layerNetwork ||
-        !networkVis.value ||
-        networkVis.value?.id === layerNetwork
-      ) {
-        getMap().removeLayer(layer);
-        addDataSourceToMap(currentMapDataSource.value);
+      // const layer = getMapLayer(currentMapLayer.value);
+      // const layerNetwork = layer.getProperties().network;
+      // if (
+      //   !layerNetwork ||
+      //   !networkVis.value ||
+      //   networkVis.value?.id === layerNetwork
+      // ) {
+      //   getMap().removeLayer(layer);
+      //   addMapLayerToMap(currentMapLayer.value);
+      // }
+    }
+
+    function updateColorMapRangeValue(e: Event, key: "min" | "max") {
+      if (e.target) {
+        const target = e.target as HTMLInputElement;
+        const value = parseInt(target.value);
+        if (key === "min") {
+          colormapRange.value[0] = value;
+        } else if (key === "max") {
+          colormapRange.value[1] = value;
+        }
+        updateCurrentDatasetLayer();
       }
-    }
-
-    function updateColormapMin(min) {
-      colormapRange.value[0] = min;
-      updateCurrentDatasetLayer();
-    }
-
-    function updateColormapMax(max) {
-      colormapRange.value[1] = max;
-      updateCurrentDatasetLayer();
     }
 
     function toggleNetworkVis() {
-      if (currentMapDataSource.value?.dataset === undefined) {
+      if (currentMapLayer.value?.dataset === undefined) {
         return;
       }
 
-      const { dataset } = currentMapDataSource.value;
+      // TODO
+      // const { dataset } = currentMapLayer.value;
 
       // TODO: Check active map layers
       // Check if there is a visible layer that matches the networkvis dataset id
-      const updated = updateVisibleLayers();
-      if (
-        !updated.shown.some(
-          (l) => l.getProperties().datasetId === networkVis.value.id
-        )
-      ) {
-        // no existing one shown, create a new network layer
-        getDatasetNetwork(dataset.id).then((nodes) => {
-          if (nodes.length && networkVis.value) {
-            networkVis.value.nodes = nodes;
-            const layer = addNetworkLayerToMap(dataset, nodes);
+      // const updated = updateVisibleMapLayers();
+      // if (
+      //   !updated.shown.some(
+      //     (l) => l.getProperties().datasetId === networkVis.value.id
+      //   )
+      // ) {
+      //   // no existing one shown, create a new network layer
+      //   getDatasetNetwork(dataset.id).then((nodes) => {
+      //     if (nodes.length && networkVis.value) {
+      //       networkVis.value.nodes = nodes;
+      //       const layer = addNetworkLayerToMap(dataset, nodes);
 
-            // TODO: Integrate the below code into the normal flow
+      //       // TODO: Integrate the below code into the normal flow
 
-            // Set layer properties and add to activeMapLayerIds
-            const dataSource = new MapDataSource({ dataset });
-            layer.setProperties({ dataSourceId: dataSource.uid });
+      //       // Set layer properties and add to activeMapLayerIds
+      //       const mapLayer = new MapLayer({ dataset });
+      //       layer.setProperties({ mapLayerId: mapLayer.uid });
 
-            // Put new dataset at front of list, so it shows up above any existing layers
-            activeMapLayerIds.value = [
-              getUid(layer),
-              ...activeMapLayerIds.value,
-            ];
-          }
-        });
-      }
+      //       // Put new dataset at front of list, so it shows up above any existing layers
+      //       activeMapLayerIds.value = [
+      //         getUid(layer),
+      //         ...activeMapLayerIds.value,
+      //       ];
+      //     }
+      //   });
+      // }
     }
 
     function runConversion() {
-      if (currentMapDataSource.value?.dataset === undefined) {
+      if (currentMapLayer.value?.dataset === undefined) {
         return;
       }
       showConfirmConvert.value = false;
-      const { dataset } = currentMapDataSource.value;
+      const { dataset } = currentMapLayer.value;
       convertDataset(dataset.id).then((dataset) => {
-        currentMapDataSource.value = new MapDataSource({ dataset });
+        if (!currentContext.value) return;
+        currentMapLayer.value = new MapLayer({ dataset });
         currentContext.value.datasets = currentContext.value.datasets.map((d) =>
           d.id === dataset.id ? dataset : d
         );
@@ -148,9 +145,9 @@ export default {
       });
     }
 
-    const datasetIdToDataSource = computed(() => {
+    const datasetIdToMapLayer = computed(() => {
       const map = new Map();
-      availableMapDataSources.value.forEach((ds) => {
+      availableMapLayers.value.forEach((ds) => {
         if (ds.dataset !== undefined) {
           map.set(ds, ds.dataset);
         }
@@ -159,42 +156,40 @@ export default {
       return map;
     });
 
-    watch(currentMapDataSource, populateRefs);
+    watch(currentMapLayer, populateRefs);
     watch(opacity, updateLayerOpacity);
     watch(colormap, updateCurrentDatasetLayer);
     watch(colormapRange, updateCurrentDatasetLayer);
 
     return {
-      collapseOptionsPanel,
-      currentMapDataSource,
+      currentMapLayer,
       rasterColormaps,
       opacity,
       colormap,
       datasetRange,
       colormapRange,
-      updateColormapMin,
-      updateColormapMax,
       rasterTooltip,
-      networkVis,
-      toggleNetworkVis,
-      toggleNodeActive,
       deactivatedNodes,
       showConfirmConvert,
+      datasetIdToMapLayer,
+      collapseOptionsPanel,
+      toggleNetworkVis,
+      toggleNodeActive,
+      updateColorMapRangeValue,
       runConversion,
-      datasetIdToDataSource,
     };
   },
 };
 </script>
 
 <template>
-  <v-card class="fill-height" v-if="currentMapDataSource">
+  <v-card class="fill-height" v-if="currentMapLayer">
     <v-icon class="close-icon" @click="collapseOptionsPanel">
       mdi-close
     </v-icon>
     <v-card-title class="medium-title">Options</v-card-title>
     <v-card-subtitle class="wrap-subtitle">
-      {{ currentMapDataSource.name }}
+      {{ currentMapLayer.name }}
     </v-card-subtitle>
     <v-divider class="mb-2" />
 
@@ -208,7 +203,7 @@ export default {
         step="0.05"
       />
 
-      <div v-if="currentMapDataSource.dataset?.raster_file">
+      <div v-if="currentMapLayer">
         <v-select
           v-model="colormap"
           dense
@@ -234,7 +229,7 @@ export default {
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMin(e.target.value)"
+              @change="(e) => updateColorMapRangeValue(e, 'min')"
             />
           </template>
           <template v-slot:append>
@@ -245,41 +240,35 @@ export default {
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMax(e.target.value)"
+              @change="(e) => updateColorMapRangeValue(e, 'max')"
             />
           </template>
         </v-range-slider>
         <v-switch
           v-model="rasterTooltip"
-          :value="currentMapDataSource.dataset?.id"
+          :value="currentMapLayer.dataset?.id"
           label="Show value tooltip"
         />
       </div>
 
-      <div v-if="currentMapDataSource.dataset?.network">
+      <div v-if="currentMapLayer.dataset?.network">
         <v-switch
-          v-model="networkVis"
-          :value="currentMapDataSource.dataset"
+          :value="currentMapLayer.dataset"
           label="Show as node network"
           @change="toggleNetworkVis"
         />
 
-        <v-expansion-panels
-          v-show="networkVis"
-          :model-value="0"
-          variant="accordion"
-        >
+        <v-expansion-panels :model-value="0" variant="accordion">
           <v-expansion-panel title="Deactivated Nodes">
             <v-expansion-panel-text
               v-for="deactivated in deactivatedNodes"
-              v-show="networkVis.nodes.map((n) => n.id).includes(deactivated)"
               :key="deactivated"
             >
-              {{ networkVis.nodes.find((n) => n.id === deactivated)?.name }}
+              TODO: node name
               <v-btn
                 size="small"
                 style="float: right"
-                @click="(e) => toggleNodeActive(deactivated)"
+                @click="() => toggleNodeActive(deactivated)"
               >
                 Activate
               </v-btn>

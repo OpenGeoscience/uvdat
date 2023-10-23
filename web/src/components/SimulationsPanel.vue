@@ -1,14 +1,9 @@
-<script>
+<script lang="ts">
 import { ref, watch } from "vue";
-import {
-  activeSimulation,
-  currentContext,
-  activeDataSources,
-  availableDataSourcesTable,
-} from "@/store";
-import { MapDataSource, addDataSourceToMap, getDatasetUid } from "@/data";
+import { activeSimulation, currentContext } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
+import { SimulationResult } from "@/types";
 
 export default {
   components: {
@@ -16,15 +11,19 @@ export default {
   },
   setup() {
     const tab = ref();
-    const activeResult = ref();
+    const activeResult = ref<SimulationResult>();
+    const availableResults = ref<SimulationResult[]>([]);
     const inputForm = ref();
-    const selectedInputs = ref({});
-    const availableResults = ref([]);
+    const selectedInputs = ref<Record<string, object[]>>({});
     const outputPoll = ref();
+    const inputSelectionRules = [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (v: any) => (v ? true : "Selection required."),
+    ];
 
     function run() {
-      inputForm.value.validate().then(({ valid }) => {
-        if (valid) {
+      inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
+        if (valid && currentContext.value) {
           runSimulation(
             activeSimulation.value.id,
             currentContext.value.id,
@@ -38,6 +37,7 @@ export default {
     }
 
     function fetchResults() {
+      if (!currentContext.value) return;
       getSimulationResults(
         activeSimulation.value.id,
         currentContext.value.id
@@ -46,23 +46,30 @@ export default {
       });
     }
 
-    function timestampToTitle(timestamp) {
+    function timestampToTitle(timestamp: string) {
       const date = new Date(Date.parse(timestamp));
       return date.toUTCString();
     }
 
-    function resultInputArgs(result) {
-      let args = [];
+    function resultInputArgs(result: SimulationResult) {
+      let args: {
+        key: string;
+        viewable: boolean;
+        value: { name: string };
+      }[] = [];
       Object.entries(result.input_args).forEach(([k, v]) => {
-        const simArg = activeSimulation.value.args.find((a) => a.name === k);
+        const simArg = activeSimulation.value.args.find(
+          (a: { name: string }) => a.name === k
+        );
         if (simArg) {
           let selectedOption = simArg.options.find(
-            (o) => o.id === v || o === v
+            (o: { id: number }) => o.id === v || o === v
           );
-          const dataSourceUid = getDatasetUid(selectedOption.id);
-          const dataSourceSelected = activeDataSources.value.has(dataSourceUid);
-          const dataSourceAvailable =
-            availableDataSourcesTable.value.has(dataSourceUid);
+          // const mapLayerUid = getDatasetUid(selectedOption.id);
+          const mapLayerSelected = false;
+          // activeMapLayers.value.has(mapLayerUid);
+          const mapLayerAvailable = true;
+          // availableMapLayersTable.value.has(mapLayerUid);
 
           if (selectedOption) {
             if (!selectedOption.name) {
@@ -71,7 +78,7 @@ export default {
             args.push({
               key: k,
               value: selectedOption,
-              viewable: dataSourceAvailable && !dataSourceSelected,
+              viewable: mapLayerAvailable && !mapLayerSelected,
             });
           }
         }
@@ -79,8 +86,9 @@ export default {
       return args;
     }
 
-    function showDataset(dataset) {
-      addDataSourceToMap(new MapDataSource({ dataset }));
+    function showDataset(dataset: object) {
+      console.log("TODO: show dataset", dataset);
+      // addMapLayerToMap(new MapLayer({ dataset }));
     }
 
     function pollForActiveDatasetOutput() {
@@ -88,9 +96,10 @@ export default {
         clearInterval(outputPoll.value);
         outputPoll.value = undefined;
       }
-      const targetResult = availableResults.value.find(
-        (r) => r.id == activeResult.value
-      );
+      const targetResult: SimulationResult | undefined =
+        availableResults.value.find(
+          (r: { id: number }) => r.id == activeResult.value?.id
+        );
       if (
         targetResult &&
         !targetResult.output_data &&
@@ -128,6 +137,7 @@ export default {
       selectedInputs,
       availableResults,
       outputPoll,
+      inputSelectionRules,
       run,
       timestampToTitle,
       resultInputArgs,
@@ -168,7 +178,7 @@ export default {
             v-bind="arg"
             :key="arg.name"
             :label="arg.name.replaceAll('_', ' ')"
-            :rules="[(v) => (v ? true : 'Selection required.')]"
+            :rules="inputSelectionRules"
             :items="arg.options"
             item-value="id"
             item-title="name"
@@ -236,7 +246,7 @@ export default {
                   v-if="activeSimulation.output_type == 'node_animation'"
                   class="pa-5"
                 >
-                  <div v-if="result.output_data.length === 0">
+                  <div v-if="result.output_data.node_failures?.length === 0">
                     No nodes are affected in this scenario.
                   </div>
                   <node-animation

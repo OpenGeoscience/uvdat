@@ -4,9 +4,16 @@ import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
 
 import { computed, reactive, ref, watch } from "vue";
-import { Context, Dataset, DerivedRegion, Region } from "./types.js";
+import {
+  Context,
+  Chart,
+  Dataset,
+  DerivedRegion,
+  SourceRegion,
+  Simulation,
+} from "./types.js";
 import { getContexts, getDataset } from "@/api/rest";
-import { MapDataSource } from "@/data";
+import { MapLayer } from "@/data";
 import { Map as olMap, getUid, Feature } from "ol";
 
 export const loading = ref<boolean>(false);
@@ -25,27 +32,27 @@ export function getMap() {
 
 export const showMapTooltip = ref(false);
 export const selectedFeature = ref<Feature>();
-export const selectedDataSource = ref<MapDataSource>();
+export const selectedMapLayer = ref<MapLayer>();
 
 // Represents the number of layers active and their ordering
 // This is the sole source of truth regarding visible layers
 export const activeMapLayerIds = ref<string[]>([]);
 
 // All data sources combined into one list
-export const availableMapDataSources = computed(() => {
+export const availableMapLayers = computed(() => {
   const datasets = currentContext.value?.datasets || [];
   return [
     ...availableDerivedRegions.value.map(
-      (derivedRegion) => new MapDataSource({ derivedRegion })
+      (derivedRegion) => new MapLayer({ derivedRegion })
     ),
-    ...datasets.map((dataset) => new MapDataSource({ dataset })),
+    ...datasets.map((dataset) => new MapLayer({ dataset })),
   ];
 });
 
 /** Maps  data source IDs to the sources themselves */
-export const availableDataSourcesTable = computed(() => {
-  const dsMap = new Map<string, MapDataSource>();
-  availableMapDataSources.value.forEach((ds) => {
+export const availableMapLayersTable = computed(() => {
+  const dsMap = new Map<string, MapLayer>();
+  availableMapLayers.value.forEach((ds) => {
     dsMap.set(ds.uid, ds);
   });
 
@@ -53,14 +60,14 @@ export const availableDataSourcesTable = computed(() => {
 });
 
 // The currently selected data source (if any)
-export const currentMapDataSource = ref<MapDataSource>();
+export const currentMapLayer = ref<MapLayer>();
 
 /**
  * Keeps track of which data sources are being actively shown
  * Maps data source ID to the source itself
  */
-export const activeDataSources = computed(() => {
-  const dsmap = new Map<string, MapDataSource>();
+export const activeMapLayers = computed(() => {
+  const dsmap = new Map<string, MapLayer>();
   if (map.value === undefined) {
     return dsmap;
   }
@@ -70,15 +77,15 @@ export const activeDataSources = computed(() => {
   const allMapLayers = getMap().getLayers().getArray();
 
   // Get all data source IDs which have an entry in activeMapLayerIds
-  const activeDataSourceIds = new Set<string>(
+  const activeLayerIds = new Set<string>(
     allMapLayers
       .filter((layer) => activeLayersIdSet.has(getUid(layer)))
-      .map((layer) => layer.get("dataSourceId"))
+      .map((layer) => layer.get("mapLayerId"))
   );
 
   // Filter available data sources to this list
-  availableMapDataSources.value
-    .filter((ds) => activeDataSourceIds.has(ds.uid))
+  availableMapLayers.value
+    .filter((ds) => activeLayerIds.has(ds.uid))
     .forEach((ds) => {
       dsmap.set(ds.uid, ds);
     });
@@ -90,14 +97,14 @@ export const showMapBaseLayer = ref(true);
 export const rasterTooltip = ref();
 
 export const activeChart = ref();
-export const availableCharts = ref([]);
+export const availableCharts = ref<Chart[]>([]);
 export const activeSimulation = ref();
-export const availableSimulations = ref([]);
+export const availableSimulations = ref<Simulation[]>([]);
 
 // Regions
 export const regionGroupingActive = ref(false);
 export const regionGroupingType = ref<"intersection" | "union" | null>(null);
-export const selectedRegions = ref<Region[]>([]);
+export const selectedRegions = ref<SourceRegion[]>([]);
 export function cancelRegionGrouping() {
   selectedRegions.value = [];
   regionGroupingActive.value = false;
@@ -116,6 +123,7 @@ export const currentNetworkGCC = ref();
 
 export function loadContexts() {
   getContexts().then((data) => {
+    console.log(data);
     contexts.value = data;
     if (data.length) {
       currentContext.value = data[0];
@@ -128,6 +136,7 @@ export function loadContexts() {
       });
     }
     clearMap();
+    console.log(contexts.value, currentContext.value);
   });
 }
 
@@ -136,10 +145,11 @@ export function clearMap() {
     return;
   }
 
+  console.log(currentContext.value.default_map_center);
   getMap().setView(
     new View({
-      center: olProj.fromLonLat(currentContext.value.center),
-      zoom: currentContext.value.default_zoom,
+      center: olProj.fromLonLat(currentContext.value.default_map_center),
+      zoom: currentContext.value.default_map_zoom,
     })
   );
   getMap().setLayers([
@@ -180,4 +190,4 @@ export function currentDatasetChanged() {
   rasterTooltip.value = undefined;
 }
 
-watch(currentMapDataSource, currentDatasetChanged);
+watch(currentMapLayer, currentDatasetChanged);

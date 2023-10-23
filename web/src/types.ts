@@ -3,41 +3,37 @@ export interface Dataset {
   name: string;
   description: string;
   category: string;
-  raw_data_archive: string;
-  raw_data_type: string;
-  geodata_file: string;
-  vector_tiles_file: string;
-  raster_file: string;
   created: string;
   modified: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  style: { [key: string]: any };
   processing: boolean;
-  network: boolean;
+  metadata: object;
+  dataset_type: string;
+  network: object;
 }
 
-export interface Region {
+export interface SourceRegion {
   id: number;
   name: string;
-  context: number;
   dataset: number;
-  properties: { [key: string]: unknown };
+  metadata: object;
+  boundary: object;
 }
 
 export interface DerivedRegion {
   id: number;
   name: string;
   context: number;
-  properties: { [key: string]: unknown };
-  source_operation: "UNION" | "INTERSECTION";
+  metadata: object;
+  boundary: object;
   source_regions: number[];
+  operation: "UNION" | "INTERSECTION";
 }
 
 export interface Context {
   id: number;
   name: string;
-  center: number[];
-  default_zoom: number;
+  default_map_center: number[];
+  default_map_zoom: number;
   datasets: Dataset[];
   created: string;
   modified: string;
@@ -55,11 +51,32 @@ export interface Feature {
 
 export interface NetworkNode {
   id: number;
-  location: number[];
   name: string;
-  properties: object;
   dataset: number;
-  adjacent_nodes: number[];
+  metadata: object;
+  capacity: number | null;
+  location: number[];
+}
+
+export interface NetworkEdge {
+  id: number;
+  name: string;
+  dataset: number;
+  metadata: object;
+  capacity: number | null;
+  line_geopmetry: object;
+  directed: boolean;
+  from_node: number;
+  to_node: number;
+}
+
+export interface RasterMapLayer {
+  id: number;
+  file_item: number;
+  metadata: object;
+  default_style: object;
+  index: number;
+  cloud_optimized_geotiff: string;
 }
 
 export interface RasterData {
@@ -72,18 +89,59 @@ export interface RasterData {
   data: number[][];
 }
 
+export interface VectorMapLayer {
+  id: number;
+  file_item: number;
+  metadata: object;
+  default_style: object;
+  index: number;
+  tile_coords: object[];
+}
+
+export interface VectorTile {
+  id: number;
+  map_layer: number;
+  geojson_data: object;
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface Chart {
+  id: number;
   name: string;
-  context: number;
   description: string;
-  category: string;
-  raw_data_file: string;
-  raw_data_type: string;
-  style: object;
-  clearable: boolean;
+  context: number;
+  metadata: object;
   chart_data: {
     labels: string[];
     datasets: object[];
+  };
+  chart_options: object;
+  editable: boolean;
+}
+
+export interface ChartOptions {
+  plugins: {
+    title?: object;
+  };
+  scales: {
+    x?: {
+      min?: number;
+      max?: number;
+      title?: {
+        display?: boolean;
+        text: string;
+      };
+    };
+    y?: {
+      min?: number;
+      max?: number;
+      title?: {
+        display?: boolean;
+        text: string;
+      };
+    };
   };
 }
 
@@ -96,4 +154,19 @@ export interface Simulation {
     name: string;
     options: object[];
   }[];
+}
+
+export interface SimulationResult {
+  id: number;
+  name: string;
+  simulation_type: string;
+  context: number;
+  input_args: object;
+  output_data: {
+    node_failures: [];
+    node_recoveries: [];
+  };
+  error_message: string;
+  created: string;
+  modified: string;
 }

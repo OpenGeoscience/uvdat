@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { ref, watch, computed } from "vue";
 import { deactivatedNodes } from "@/store";
 import { deactivatedNodesUpdated } from "@/utils";
@@ -8,11 +8,11 @@ export default {
   props: {
     nodeFailures: {
       required: true,
-      type: Array,
+      type: Array<number>,
     },
     nodeRecoveries: {
       required: false,
-      type: Array,
+      type: Array<number>,
     },
   },
   setup(props) {
@@ -58,7 +58,7 @@ export default {
     }
 
     watch(currentTick, () => {
-      const slice = nodeChanges.value.slice(0, currentTick.value);
+      const slice: number[] = nodeChanges.value.slice(0, currentTick.value);
       if (props.nodeRecoveries) {
         // recovery mode
         deactivatedNodes.value = startState.value.filter(

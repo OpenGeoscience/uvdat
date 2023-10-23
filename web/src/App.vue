@@ -2,7 +2,7 @@
 import { defineComponent, ref, onMounted } from "vue";
 import {
   currentError,
-  currentMapDataSource,
+  currentMapLayer,
   currentContext,
   contexts,
   loading,
@@ -11,7 +11,7 @@ import {
   activeSimulation,
   showMapBaseLayer,
 } from "./store";
-import { updateVisibleLayers } from "@/layers";
+import { updateVisibleMapLayers } from "@/layers";
 import OpenLayersMap from "./components/map/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
@@ -30,19 +30,19 @@ export default defineComponent({
     const drawer = ref(true);
 
     onMounted(loadContexts);
-    currentMapDataSource.value = undefined;
+    currentMapLayer.value = undefined;
 
     return {
       drawer,
       currentContext,
-      currentMapDataSource,
+      currentMapLayer,
       contexts,
       loading,
       currentError,
       activeChart,
       activeSimulation,
       showMapBaseLayer,
-      updateVisibleLayers,
+      updateVisibleMapLayers,
     };
   },
 });
@@ -63,7 +63,7 @@ export default defineComponent({
       <v-spacer />
       {{ currentError }}
       <v-spacer />
-      <v-list-item prepend-icon="mdi-context">
+      <v-list-item prepend-icon="mdi-bookmark-box-outline">
         <v-select
           v-model="currentContext"
           :items="contexts"
@@ -75,7 +75,7 @@ export default defineComponent({
       </v-list-item>
       <v-checkbox
         v-model="showMapBaseLayer"
-        @change="updateVisibleLayers"
+        @change="updateVisibleMapLayers"
         true-icon="mdi-map-check"
         false-icon="mdi-map-outline"
         style="max-width: 50px"
@@ -92,7 +92,7 @@ export default defineComponent({
       <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
-      :model-value="currentMapDataSource !== undefined"
+      :model-value="currentMapLayer !== undefined"
       permanent
       width="250"
       location="right"
@@ -103,7 +103,7 @@ export default defineComponent({
     <div
       :class="
         drawer
-          ? currentMapDataSource
+          ? currentMapLayer
             ? 'main-area shifted-2'
             : 'main-area shifted-1'
           : 'main-area'
@@ -127,12 +127,12 @@ export default defineComponent({
   left: 250px;
 }
 .shifted-1 {
-  left: 250px;
-  width: calc(100% - 250px);
+  left: 300px;
+  width: calc(100% - 300px);
 }
 .shifted-2 {
-  left: 250px;
-  right: 250px;
-  width: calc(100% - 500px);
+  left: 300px;
+  right: 300px;
+  width: calc(100% - 600px);
 }
 </style>

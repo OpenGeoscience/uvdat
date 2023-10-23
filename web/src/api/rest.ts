@@ -97,12 +97,12 @@ export async function getSimulationResults(
 }
 
 export async function listDerivedRegions() {
-  const res = await apiClient.get("derived_regions/");
+  const res = await apiClient.get("derived-regions/");
   return res.data.results;
 }
 
 export async function getDerivedRegion(regionId: number) {
-  const res = await apiClient.get(`derived_regions/${regionId}/`);
+  const res = await apiClient.get(`derived-regions/${regionId}/`);
   return res.data;
 }
 
@@ -113,7 +113,7 @@ export async function postDerivedRegion(
   op: "union" | "intersection"
 ) {
   const operation = op.toUpperCase();
-  const res = await apiClient.post("derived_regions/", {
+  const res = await apiClient.post("derived-regions/", {
     name,
     context,
     operation,

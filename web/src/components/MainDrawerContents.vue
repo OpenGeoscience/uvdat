@@ -1,22 +1,17 @@
-<script>
+<script lang="ts">
 import {
   currentContext,
-  currentMapDataSource,
   activeChart,
   availableCharts,
   activeSimulation,
   availableSimulations,
   availableDerivedRegions,
   selectedDerivedRegionIds,
-  availableMapDataSources,
-  activeDataSources,
+  availableMapLayers,
+  activeMapLayers,
 } from "@/store";
 
-import {
-  MapDataSource,
-  addDataSourceToMap,
-  hideDataSourceFromMap,
-} from "@/data";
+import { MapLayer } from "@/data";
 import { ref, computed, onMounted, watch } from "vue";
 import {
   getContextDatasets,
@@ -24,18 +19,24 @@ import {
   getContextSimulations,
   listDerivedRegions,
 } from "@/api/rest";
+import { Chart, Dataset, DerivedRegion, Simulation } from "@/types";
 
 export default {
   setup() {
     const openPanels = ref([0]);
     const openCategories = ref([0]);
     const availableLayerTree = computed(() => {
+      if (!currentContext.value) return [];
       const groupKey = "category";
       return Object.entries(
-        currentContext.value.datasets.reduce(function (rv, x) {
+        currentContext.value.datasets.reduce(function (
+          rv: Record<string, Dataset[]>,
+          x
+        ) {
           (rv[x[groupKey]] = rv[x[groupKey]] || []).push(x);
           return rv;
-        }, {})
+        },
+        {})
       )
         .map(([name, children], id) => {
           return {
@@ -44,13 +45,14 @@ export default {
             children,
           };
         })
-        .filter((group) => group.name != "chart")
-        .sort((a, b) => a.name < b.name);
+        .sort((a, b) => a.name.localeCompare(b.name));
     });
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     function fetchDatasets() {
+      if (!currentContext.value) return;
       getContextDatasets(currentContext.value.id).then((datasets) => {
+        if (!currentContext.value) return;
         currentContext.value.datasets = datasets;
       });
     }
@@ -70,28 +72,31 @@ export default {
       }
     });
 
-    function toggleDataSource(dataSource) {
-      if (activeDataSources.value.has(dataSource.uid)) {
-        hideDataSourceFromMap(dataSource);
-      } else {
-        addDataSourceToMap(dataSource);
-      }
-    }
+    // function toggleMapLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+    //   console.log("TODO: toggle map layer", mapLayer);
 
-    const datasetIdToDataSource = computed(() => {
+    // if (activeMapLayers.value.has(mapLayer.uid)) {
+    //   hideMapLayerFromMap(mapLayer);
+    // } else {
+    //   addMapLayerToMap(mapLayer);
+    // }
+    // }
+
+    const datasetIdToMapLayer = computed(() => {
       const map = new Map();
-      availableMapDataSources.value.forEach((ds) => {
+      availableMapLayers.value.forEach((ds) => {
         if (ds.dataset !== undefined) {
           map.set(ds.dataset.id, ds);
         }
       });
+      MapLayer;
 
       return map;
     });
 
-    const derivedRegionIdToDataSource = computed(() => {
+    const derivedRegionIdToMapLayer = computed(() => {
       const map = new Map();
-      availableMapDataSources.value.forEach((ds) => {
+      availableMapLayers.value.forEach((ds) => {
         if (ds.derivedRegion !== undefined) {
           map.set(ds.derivedRegion.id, ds);
         }
@@ -100,47 +105,53 @@ export default {
       return map;
     });
 
-    function datasetSelected(datasetId) {
-      const uid = datasetIdToDataSource.value.get(datasetId)?.uid;
-      return uid && activeDataSources.value.has(uid);
+    function datasetSelected(datasetId: number) {
+      // TODO
+      const uid = datasetIdToMapLayer.value.get(datasetId)?.uid;
+      return uid && activeMapLayers.value.has(uid);
     }
 
-    function derivedRegionSelected(derivedRegionId) {
-      const uid = derivedRegionIdToDataSource.value.get(derivedRegionId)?.uid;
-      return uid && activeDataSources.value.has(uid);
+    function derivedRegionSelected(derivedRegionId: number) {
+      const uid = derivedRegionIdToMapLayer.value.get(derivedRegionId)?.uid;
+      return uid && activeMapLayers.value.has(uid);
     }
 
-    function toggleDataset(dataset) {
-      toggleDataSource(new MapDataSource({ dataset }));
+    function toggleDataset(dataset: Dataset) {
+      console.log("TODO: toggle dataset", dataset);
+      // toggleMapLayer(new MapLayer({ dataset }));
     }
 
-    function toggleDerivedRegion(derivedRegion) {
-      toggleDataSource(new MapDataSource({ derivedRegion }));
+    function toggleDerivedRegion(derivedRegion: DerivedRegion) {
+      console.log("TODO: toggle derived region", derivedRegion);
+      // toggleMapLayer(new MapLayer({ derivedRegion }));
     }
 
-    function expandOptionsPanelFromDataset(dataset) {
-      currentMapDataSource.value = new MapDataSource({ dataset });
+    function expandOptionsPanelFromDataset(dataset: Dataset) {
+      console.log("TODO: expand options panel", dataset);
+      // currentMapLayer.value = new MapLayer({ dataset });
     }
 
     function fetchCharts() {
+      if (!currentContext.value) return;
       activeChart.value = undefined;
       getContextCharts(currentContext.value.id).then((charts) => {
         availableCharts.value = charts;
       });
     }
 
-    function activateChart(chart) {
+    function activateChart(chart: Chart) {
       activeChart.value = chart;
     }
 
     function fetchSimulations() {
+      if (!currentContext.value) return;
       activeSimulation.value = undefined;
       getContextSimulations(currentContext.value.id).then((sims) => {
         availableSimulations.value = sims;
       });
     }
 
-    function activateSimulation(sim) {
+    function activateSimulation(sim: Simulation) {
       activeSimulation.value = sim;
     }
 
@@ -150,26 +161,26 @@ export default {
 
     return {
       currentContext,
-      fetchDatasets,
       openPanels,
       openCategories,
-      toggleDataset,
       availableLayerTree,
       activeLayerTableHeaders,
-      expandOptionsPanelFromDataset,
       activeChart,
       availableCharts,
-      fetchCharts,
-      activateChart,
       activeSimulation,
       availableSimulations,
-      fetchSimulations,
-      activateSimulation,
       availableDerivedRegions,
       selectedDerivedRegionIds,
+      availableMapLayers,
+      datasetIdToMapLayer,
+      fetchDatasets,
+      toggleDataset,
+      expandOptionsPanelFromDataset,
+      fetchCharts,
+      activateChart,
+      fetchSimulations,
+      activateSimulation,
       toggleDerivedRegion,
-      availableMapDataSources,
-      datasetIdToDataSource,
       datasetSelected,
       derivedRegionSelected,
       setDerivedRegions,

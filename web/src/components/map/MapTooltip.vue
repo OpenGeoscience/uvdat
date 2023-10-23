@@ -7,23 +7,23 @@ import {
   regionGroupingType,
   deactivatedNodes,
   networkVis,
-  availableMapDataSources,
-  activeDataSources,
+  availableMapLayers,
+  activeMapLayers,
   showMapTooltip,
   selectedFeature,
-  selectedDataSource,
+  selectedMapLayer,
   cancelRegionGrouping,
 } from "@/store";
 import { toggleNodeActive } from "@/utils";
-import type { Region } from "@/types";
+import type { SourceRegion } from "@/types";
 
-import { getDatasetUid } from "@/data";
+// import { getDatasetUid } from "@/data";
 import { SimpleGeometry } from "ol/geom";
 
 export default {
   setup() {
     const selectedDatasetCategory = computed(
-      () => selectedDataSource.value?.dataset?.category || ""
+      () => selectedMapLayer.value?.dataset?.category || ""
     );
     const selectedFeatureProperties = computed(() => {
       if (selectedFeature.value === undefined) {
@@ -50,7 +50,7 @@ export default {
         return undefined;
       }
 
-      return selectedFeature.value?.getProperties() as Region;
+      return selectedFeature.value?.getProperties() as SourceRegion;
     });
     const selectedRegionID = computed(() => selectedRegion.value?.id);
     const selectedRegionIsGrouped = computed(() => {
@@ -96,24 +96,24 @@ export default {
 
     // Ensure that if any regions of the currently selected datasets are
     // de-selected, their regions are removed from the selection
-    watch(activeDataSources, (dsMap) => {
+    watch(activeMapLayers, (dsMap) => {
       // If the currently selected region was part of a data source that was removed, de-select it
       if (selectedRegion.value !== undefined) {
-        const selectedRegionDataSource = availableMapDataSources.value.find(
+        const selectedRegionMapLayer = availableMapLayers.value.find(
           (ds) => ds.dataset?.id === selectedRegion.value?.dataset
         );
         if (
-          selectedRegionDataSource === undefined ||
-          !dsMap.has(selectedRegionDataSource.uid)
+          selectedRegionMapLayer === undefined ||
+          !dsMap.has(selectedRegionMapLayer.uid)
         ) {
           deselectFeature();
         }
       }
 
       // Filter out any regions from un-selected data sources
-      selectedRegions.value = selectedRegions.value.filter((region) =>
-        dsMap.has(getDatasetUid(region.dataset))
-      );
+      // selectedRegions.value = selectedRegions.value.filter((region) =>
+      //   dsMap.has(getDatasetUid(region.dataset))
+      // );
 
       // Check if the list is now empty
       if (selectedRegions.value.length === 0) {
@@ -140,7 +140,7 @@ export default {
       regionGroupingActive,
       selectedFeature,
       selectedFeatureProperties,
-      selectedDataSource,
+      selectedMapLayer,
       selectedDatasetCategory,
       selectedRegionID,
       selectedRegion,
@@ -160,18 +160,16 @@ export default {
 
 <template>
   <!-- Render for Derived Regions -->
-  <div v-if="selectedFeature && selectedDataSource?.derivedRegion">
-    <v-row no-gutters>ID: {{ selectedDataSource.derivedRegion.id }}</v-row>
-    <v-row no-gutters>
-      Name: {{ selectedDataSource.derivedRegion.name }}
-    </v-row>
+  <div v-if="selectedFeature && selectedMapLayer?.derivedRegion">
+    <v-row no-gutters>ID: {{ selectedMapLayer.derivedRegion.id }}</v-row>
+    <v-row no-gutters> Name: {{ selectedMapLayer.derivedRegion.name }} </v-row>
     <v-row no-gutters>
       Source Region IDs:
-      {{ selectedDataSource.derivedRegion.source_regions }}
+      {{ selectedMapLayer.derivedRegion.source_regions }}
     </v-row>
     <v-row no-gutters>
       Creation Operation:
-      {{ selectedDataSource.derivedRegion.source_operation }}
+      {{ selectedMapLayer.derivedRegion.operation }}
     </v-row>
   </div>
   <!-- Render for Regions -->
@@ -259,7 +257,7 @@ export default {
     </template>
   </div>
   <!-- Render for networks -->
-  <div v-else-if="selectedDataSource?.dataset?.network" class="pa-2">
+  <div v-else-if="selectedMapLayer?.dataset?.network" class="pa-2">
     <v-row no-gutters v-for="(v, k) in selectedFeatureProperties" :key="k">
       {{ k }}: {{ v }}
     </v-row>

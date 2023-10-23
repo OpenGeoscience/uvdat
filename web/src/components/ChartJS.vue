@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { computed, ref } from "vue";
 import { activeChart, availableCharts } from "@/store";
 import { Line } from "vue-chartjs";
@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import RecursiveTable from "./RecursiveTable.vue";
 import { clearChart, getContextCharts } from "@/api/rest";
+import { ChartOptions } from "@/types";
 
 ChartJS.register(
   CategoryScale,
@@ -45,7 +46,7 @@ export default {
     const downloadButton = ref();
 
     const options = computed(() => {
-      const customOptions = {
+      const customOptions: ChartOptions = {
         plugins: {},
         scales: {},
       };
@@ -114,12 +115,12 @@ export default {
       // clip to current x range
       if (showXRange.value) {
         const slice = [
-          parseInt(currentXStart.value),
-          parseInt(currentXStart.value) + parseInt(currentXRange.value),
+          currentXStart.value,
+          currentXStart.value + currentXRange.value,
         ];
         currentData = {
           labels: currentData.labels.slice(...slice),
-          datasets: currentData.datasets.map((d) =>
+          datasets: currentData.datasets.map((d: { data: number[][] }) =>
             Object.assign({}, d, {
               data: d.data.slice(...slice),
             })
