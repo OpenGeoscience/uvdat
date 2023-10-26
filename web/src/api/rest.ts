@@ -55,11 +55,12 @@ export async function getDatasetNetwork(
 
 export async function getNetworkGCC(
   datasetId: number,
+  contextId: number,
   exclude_nodes: number[]
 ): Promise<NetworkNode[]> {
   return (
     await apiClient.get(
-      `datasets/${datasetId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
+      `datasets/${datasetId}/gcc?context=${contextId}&exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
 }

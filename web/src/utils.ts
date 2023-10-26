@@ -165,30 +165,32 @@ export function createStyle(args: {
 }
 
 export function deactivatedNodesUpdated() {
-  if (currentNetworkDataset.value) {
+  if (currentContext.value && currentNetworkDataset.value) {
     currentNetworkGCC.value = undefined;
-    getNetworkGCC(currentNetworkDataset.value.id, deactivatedNodes.value).then(
-      (gcc) => {
-        if (!currentContext.value) return;
-        currentNetworkGCC.value = gcc;
-        if (currentNetworkMapLayer.value) {
-          styleVectorOpenLayer(currentNetworkMapLayer.value, {
-            showGCC: true,
-            translucency: "55",
-          });
-        }
-
-        // update chart
-        getContextCharts(currentContext.value.id).then((charts) => {
-          availableCharts.value = charts;
-          if (currentChart.value) {
-            currentChart.value = charts.find(
-              (c) => c.id === currentChart.value?.id
-            );
-          }
+    getNetworkGCC(
+      currentNetworkDataset.value.id,
+      currentContext.value.id,
+      deactivatedNodes.value
+    ).then((gcc) => {
+      if (!currentContext.value) return;
+      currentNetworkGCC.value = gcc;
+      if (currentNetworkMapLayer.value) {
+        styleVectorOpenLayer(currentNetworkMapLayer.value, {
+          showGCC: true,
+          translucency: "55",
         });
       }
-    );
+
+      // update chart
+      getContextCharts(currentContext.value.id).then((charts) => {
+        availableCharts.value = charts;
+        if (currentChart.value) {
+          currentChart.value = charts.find(
+            (c) => c.id === currentChart.value?.id
+          );
+        }
+      });
+    });
   }
 }
 
