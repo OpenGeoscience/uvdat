@@ -2,28 +2,25 @@
 import { ref, watch, computed } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
 import {
-  getMapLayerDataObject,
+  getMapLayerForDataObject,
   getOrCreateLayerFromID,
   styleRasterOpenLayer,
+  toggleMapLayer,
 } from "@/layers";
-import { currentMapLayer, deactivatedNodes, rasterTooltip } from "../store";
-import { NetworkNode } from "@/types";
+import { currentDataset, deactivatedNodes, rasterTooltip } from "@/store";
+import { NetworkNode, RasterMapLayer, VectorMapLayer } from "@/types";
 
 export default {
   setup() {
+    const currentMapLayer = ref<VectorMapLayer | RasterMapLayer | undefined>();
     const opacity = ref(1);
     const colormap = ref("terrain");
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
 
-    const currentDataObject = computed(() => {
-      // Can be either a Dataset or a DerivedRegion
-      return getMapLayerDataObject(currentMapLayer.value);
+    const currentFileItemName = computed(() => {
+      return currentMapLayer.value?.file_item?.name;
     });
-
-    function collapseOptionsPanel() {
-      currentMapLayer.value = undefined;
-    }
 
     async function populateRefs() {
       opacity.value = 1;
@@ -53,6 +50,18 @@ export default {
       }
     }
 
+    async function updateLayerShown(layerIndex: number) {
+      console.log(layerIndex);
+      const targetLayerInfo = currentDataset.value?.map_layers[layerIndex];
+      const targetLayer = await getOrCreateLayerFromID(
+        targetLayerInfo?.id,
+        targetLayerInfo?.type
+      );
+      toggleMapLayer(currentMapLayer.value);
+      currentMapLayer.value = targetLayer;
+      toggleMapLayer(currentMapLayer.value);
+    }
+
     function updateLayerOpacity() {
       if (currentMapLayer.value?.openlayer === undefined) return;
       currentMapLayer.value?.openlayer.setOpacity(opacity.value);
@@ -73,8 +82,8 @@ export default {
     }
 
     function getNetworkNodeName(nodeId: number) {
-      if (!currentDataObject.value) return "";
-      return currentDataObject.value.network?.nodes?.find(
+      if (!currentDataset.value) return "";
+      return currentDataset.value.network?.nodes?.find(
         (n: NetworkNode) => n.id === nodeId
       )?.name;
     }
@@ -85,9 +94,21 @@ export default {
     watch(colormapRange, updateColormap, { deep: true });
     watch(colormap, updateColormap);
 
+    watch(currentDataset, () => {
+      if (currentDataset.value) {
+        getMapLayerForDataObject(
+          currentDataset.value,
+          currentDataset.value?.current_layer_index
+        ).then((mapLayer) => (currentMapLayer.value = mapLayer));
+      } else {
+        currentMapLayer.value = undefined;
+      }
+    });
+
     return {
       currentMapLayer,
-      currentDataObject,
+      currentDataset,
+      currentFileItemName,
       rasterColormaps,
       opacity,
       colormap,
@@ -95,24 +116,42 @@ export default {
       colormapRange,
       rasterTooltip,
       deactivatedNodes,
-      collapseOptionsPanel,
       toggleNodeActive,
       getNetworkNodeName,
+      updateLayerShown,
     };
   },
 };
 </script>
 
 <template>
-  <v-card class="fill-height" v-if="currentMapLayer">
-    <v-icon class="close-icon" @click="collapseOptionsPanel">
+  <v-card class="fill-height" v-if="currentDataset">
+    <v-icon class="close-icon" @click="currentDataset = undefined">
       mdi-close
     </v-icon>
     <v-card-title class="medium-title">Options</v-card-title>
     <v-card-subtitle class="wrap-subtitle">
-      {{ currentDataObject?.name || "Untitled" }}
+      {{ currentDataset?.name }}
     </v-card-subtitle>
     <v-divider class="mb-2" />
+
+    <div
+      class="pa-2"
+      v-if="currentDataset?.map_layers && currentDataset?.map_layers.length > 1"
+    >
+      <v-slider
+        v-model="currentDataset.current_layer_index"
+        label="Current Layer"
+        dense
+        min="0"
+        step="1"
+        :max="currentDataset?.map_layers.length - 1"
+        @update:modelValue="updateLayerShown"
+      />
+      <v-card-subtitle class="wrap-subtitle">
+        {{ currentFileItemName || "Untitled" }}
+      </v-card-subtitle>
+    </div>
 
     <div class="pa-2">
       <v-slider
@@ -124,7 +163,7 @@ export default {
         step="0.05"
       />
 
-      <div v-if="currentMapLayer.type === 'raster'">
+      <div v-if="currentMapLayer?.type === 'raster'">
         <v-select
           v-model="colormap"
           dense
@@ -174,7 +213,7 @@ export default {
         />
       </div>
 
-      <div v-if="currentDataObject && currentDataObject.network">
+      <div v-if="currentDataset && currentDataset.network">
         <v-expansion-panels :model-value="0" variant="accordion">
           <v-expansion-panel title="Deactivated Nodes">
             <v-expansion-panel-text
@@ -189,7 +228,7 @@ export default {
                   () =>
                     toggleNodeActive(
                       deactivated,
-                      currentDataObject,
+                      currentDataset,
                       currentMapLayer
                     )
                 "

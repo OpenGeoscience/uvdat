@@ -2,8 +2,8 @@
 import { defineComponent, ref, onMounted } from "vue";
 import {
   currentError,
-  currentMapLayer,
   currentContext,
+  currentDataset,
   availableContexts,
   loading,
   currentChart,
@@ -30,12 +30,11 @@ export default defineComponent({
     const drawer = ref(true);
 
     onMounted(loadContexts);
-    currentMapLayer.value = undefined;
 
     return {
       drawer,
       currentContext,
-      currentMapLayer,
+      currentDataset,
       availableContexts,
       loading,
       currentError,
@@ -92,7 +91,7 @@ export default defineComponent({
       <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
-      :model-value="currentMapLayer !== undefined"
+      :model-value="currentDataset !== undefined"
       permanent
       width="300"
       location="right"
@@ -103,7 +102,7 @@ export default defineComponent({
     <div
       :class="
         drawer
-          ? currentMapLayer
+          ? currentDataset
             ? 'main-area shifted-2'
             : 'main-area shifted-1'
           : 'main-area'

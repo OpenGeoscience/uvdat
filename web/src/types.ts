@@ -13,6 +13,7 @@ export interface Dataset {
     index: number;
     type: string;
   }[];
+  current_layer_index: number;
   network: {
     nodes: NetworkNode[];
     edges: NetworkEdge[];
@@ -40,8 +41,6 @@ export interface DerivedRegion {
     index: number;
     type: string;
   }[];
-  network: null;
-  category: null;
 }
 
 export interface Context {
@@ -87,7 +86,10 @@ export interface NetworkEdge {
 
 export interface RasterMapLayer {
   id: number;
-  file_item?: number;
+  file_item?: {
+    id: number;
+    name: string;
+  };
   metadata?: {
     network?: boolean;
   };
@@ -113,7 +115,10 @@ export interface RasterData {
 
 export interface VectorMapLayer {
   id: number;
-  file_item?: number;
+  file_item?: {
+    id: number;
+    name: string;
+  };
   metadata?: {
     network?: boolean;
   };

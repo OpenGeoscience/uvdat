@@ -9,7 +9,7 @@ import {
   currentSimulationType,
   availableDerivedRegions,
   availableMapLayers,
-  currentMapLayer,
+  currentDataset,
 } from "@/store";
 import {
   loadDatasets,
@@ -19,7 +19,7 @@ import {
 } from "../storeFunctions";
 import { Dataset, DerivedRegion } from "@/types";
 import {
-  getDataObjectMapLayer,
+  getMapLayerForDataObject,
   isMapLayerVisible,
   toggleMapLayer,
 } from "@/layers";
@@ -31,6 +31,7 @@ export default {
     const expandedDatasetGroups = ref<string[]>([]);
 
     const availableDatasetGroups = computed(() => {
+      if (!availableDatasets.value) return [];
       const groupKey = "category";
       const datasetGroups: Record<string, Dataset[]> = {};
       availableDatasets.value.forEach((dataset: Dataset) => {
@@ -57,33 +58,29 @@ export default {
 
     async function derivedRegionSelected(derivedRegion: DerivedRegion) {
       console.log("is derived region selected?", derivedRegion);
-      const mapLayer = await getDataObjectMapLayer(derivedRegion);
+      const mapLayer = await getMapLayerForDataObject(derivedRegion);
       return isMapLayerVisible(mapLayer);
     }
 
     async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
       console.log("toggling derived region", derivedRegion);
-      const mapLayer = await getDataObjectMapLayer(derivedRegion);
+      const mapLayer = await getMapLayerForDataObject(derivedRegion);
       toggleMapLayer(mapLayer);
     }
 
     async function toggleDataset(dataset: Dataset) {
-      if (selectedDatasets.value?.includes(dataset)) {
-        selectedDatasets.value = selectedDatasets.value.filter(
-          (d) => d.id !== dataset.id
-        );
-      } else {
-        selectedDatasets.value?.push(dataset);
+      if (
+        !selectedDatasets.value.map((d) => d.id).includes(dataset.id) &&
+        currentDataset.value?.id === dataset.id
+      ) {
+        currentDataset.value = undefined;
       }
-
-      // Find first related MapLayer
-      const mapLayer = await getDataObjectMapLayer(dataset);
+      // Find related MapLayer at current index
+      const mapLayer = await getMapLayerForDataObject(
+        dataset,
+        dataset.current_layer_index
+      );
       toggleMapLayer(mapLayer);
-    }
-
-    async function expandOptionsPanelFromDataset(dataset: Dataset) {
-      const mapLayer = await getDataObjectMapLayer(dataset);
-      currentMapLayer.value = mapLayer;
     }
 
     // If new derived region created, open panel
@@ -105,6 +102,7 @@ export default {
 
     return {
       availableDatasets,
+      currentDataset,
       selectedDatasets,
       openPanels,
       expandedDatasetGroups,
@@ -116,10 +114,8 @@ export default {
       availableSimulationTypes,
       availableDerivedRegions,
       availableMapLayers,
-      currentMapLayer,
       loadDatasets,
       toggleDataset,
-      expandOptionsPanelFromDataset,
       toggleDerivedRegion,
       derivedRegionSelected,
       loadCharts,
@@ -138,11 +134,23 @@ export default {
         Available Datasets
       </v-expansion-panel-title>
       <v-expansion-panel-text>
+        <div v-if="!availableDatasets" style="text-align: center; width: 100%">
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle
+          v-if="availableDatasets && availableDatasets.length === 0"
+        >
+          No Available Datasets.
+        </v-card-subtitle>
         <v-expansion-panels
           multiple
           variant="accordion"
           v-model="expandedDatasetGroups"
-          v-if="availableDatasets.length && availableDatasets[0].id"
+          v-if="
+            availableDatasets &&
+            availableDatasets.length &&
+            availableDatasets[0].id
+          "
         >
           <v-expansion-panel
             v-for="group in availableDatasetGroups"
@@ -174,7 +182,7 @@ export default {
                     "
                     size="small"
                     class="expand-icon ml-1"
-                    @click.prevent="expandOptionsPanelFromDataset(dataset)"
+                    @click.prevent="currentDataset = dataset"
                   >
                     mdi-cog
                   </v-icon>

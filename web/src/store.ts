@@ -17,14 +17,14 @@ export const availableContexts = ref<Context[]>([]);
 export const currentContext = ref<Context>();
 
 // Datasets
-export const availableDatasets = ref<Dataset[]>([]);
+export const availableDatasets = ref<Dataset[]>();
 export const selectedDatasets = ref<Dataset[]>([]);
+export const currentDataset = ref<Dataset>();
 
 // Map
 export const map = ref<olMap>();
 export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
-export const currentMapLayer = ref<VectorMapLayer | RasterMapLayer>();
 export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);

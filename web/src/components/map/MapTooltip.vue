@@ -14,13 +14,13 @@ import { getMap, cancelRegionGrouping } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
 import type { DerivedRegion, SourceRegion } from "@/types";
 import { SimpleGeometry } from "ol/geom";
-import { getMapLayerDataObject } from "@/layers";
+import { getDataObjectForMapLayer } from "@/layers";
 
 export default {
   setup() {
     const dataObjectForClickedMapLayer = computed(() => {
       if (!clickedMapLayer.value) return undefined;
-      return getMapLayerDataObject(clickedMapLayer.value) as DerivedRegion;
+      return getDataObjectForMapLayer(clickedMapLayer.value) as DerivedRegion;
     });
 
     const clickedFeatureProperties = computed(() => {

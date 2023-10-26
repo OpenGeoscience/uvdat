@@ -31,9 +31,9 @@ const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
 export async function getOrCreateLayerFromID(
   mapLayerId: number | undefined,
-  mapLayerType: string
+  mapLayerType: string | undefined
 ): Promise<VectorMapLayer | RasterMapLayer | undefined> {
-  if (mapLayerId === undefined) {
+  if (mapLayerId === undefined || mapLayerType === undefined) {
     throw new Error(`Could not get or create openLayer for undefined layer`);
   }
 
@@ -227,7 +227,7 @@ export function toggleMapLayer(
   updateVisibleMapLayers();
 }
 
-export function getMapLayerDataObject(
+export function getDataObjectForMapLayer(
   mapLayer: VectorMapLayer | RasterMapLayer | undefined
 ): Dataset | DerivedRegion | undefined {
   // Data Object refers to the original object for which this map layer was created.
@@ -241,12 +241,12 @@ export function getMapLayerDataObject(
       (r) => r.id === mapLayer.derived_region_id
     );
   } else if (mapLayer.dataset_id) {
-    return availableDatasets.value.find((d) => d.id === mapLayer.dataset_id);
+    return availableDatasets.value?.find((d) => d.id === mapLayer.dataset_id);
   }
   return undefined;
 }
 
-export async function getDataObjectMapLayer(
+export async function getMapLayerForDataObject(
   dataObject: Dataset | DerivedRegion | undefined,
   index = 0
 ): Promise<VectorMapLayer | RasterMapLayer | undefined> {
@@ -273,9 +273,15 @@ export function updateVisibleMapLayers() {
   selectedMapLayers.value.sort(
     (a, b) => b.openlayer.getZIndex() - a.openlayer.getZIndex()
   );
-  selectedDatasets.value = availableDatasets.value.filter((d) => {
-    return selectedMapLayers.value.some((l) => getMapLayerDataObject(l) === d);
-  });
+  if (!availableDatasets.value) {
+    selectedDatasets.value = [];
+  } else {
+    selectedDatasets.value = availableDatasets.value.filter((d) => {
+      return selectedMapLayers.value.some(
+        (l) => getDataObjectForMapLayer(l) === d
+      );
+    });
+  }
 }
 
 export function clearMapLayers() {

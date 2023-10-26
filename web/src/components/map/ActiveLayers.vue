@@ -1,14 +1,10 @@
 <script lang="ts">
 import { ref, watch } from "vue";
 import draggable from "vuedraggable";
-import { selectedMapLayers, currentMapLayer } from "@/store";
-import {
-  updateVisibleMapLayers,
-  clearMapLayers,
-  getOrCreateLayerFromID,
-} from "@/layers";
-import { RasterMapLayer, VectorMapLayer } from "@/types";
-import { getMapLayerDataObject } from "@/layers";
+import { currentDataset, selectedMapLayers } from "@/store";
+import { updateVisibleMapLayers, clearMapLayers } from "@/layers";
+import { RasterMapLayer, VectorMapLayer, Dataset } from "@/types";
+import { getDataObjectForMapLayer } from "@/layers";
 
 export default {
   components: {
@@ -17,11 +13,8 @@ export default {
   setup() {
     const layerMenuActive = ref(false);
 
-    async function setCurrentMapLayer(layer: VectorMapLayer | RasterMapLayer) {
-      currentMapLayer.value = await getOrCreateLayerFromID(
-        layer.id,
-        layer.type
-      );
+    async function setCurrentDataset(layer: VectorMapLayer | RasterMapLayer) {
+      currentDataset.value = getDataObjectForMapLayer(layer) as Dataset;
     }
 
     watch(selectedMapLayers, () => {
@@ -33,8 +26,8 @@ export default {
       selectedMapLayers,
       clearMapLayers,
       updateVisibleMapLayers,
-      setCurrentMapLayer,
-      getMapLayerDataObject,
+      setCurrentDataset,
+      getDataObjectForMapLayer,
     };
   },
 };
@@ -88,7 +81,7 @@ export default {
               </template>
             </v-tooltip>
 
-            {{ getMapLayerDataObject(element)?.name }}
+            {{ getDataObjectForMapLayer(element)?.name }}
 
             <v-tooltip
               v-if="selectedMapLayers.length"
@@ -100,7 +93,7 @@ export default {
                   v-bind="props"
                   size="small"
                   class="expand-icon ml-2"
-                  @click="setCurrentMapLayer(element)"
+                  @click="setCurrentDataset(element)"
                 >
                   mdi-cog
                 </v-icon>

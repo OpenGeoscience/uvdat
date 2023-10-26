@@ -56,11 +56,20 @@ class ChartSerializer(serializers.ModelSerializer):
 
 class RasterMapLayerSerializer(serializers.ModelSerializer):
     dataset_id = serializers.SerializerMethodField('get_dataset_id')
+    file_item = serializers.SerializerMethodField('get_file_item')
 
     def get_dataset_id(self, obj):
         if obj.file_item and obj.file_item.dataset:
             return obj.file_item.dataset.id
         return None
+
+    def get_file_item(self, obj):
+        if obj.file_item is None:
+            return None
+        return {
+            'id': obj.file_item.id,
+            'name': obj.file_item.name,
+        }
 
     class Meta:
         model = RasterMapLayer
@@ -69,6 +78,7 @@ class RasterMapLayerSerializer(serializers.ModelSerializer):
 
 class VectorMapLayerSerializer(serializers.ModelSerializer):
     dataset_id = serializers.SerializerMethodField('get_dataset_id')
+    file_item = serializers.SerializerMethodField('get_file_item')
     derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
     tile_coords = serializers.SerializerMethodField('get_tile_coords')
 
@@ -76,6 +86,14 @@ class VectorMapLayerSerializer(serializers.ModelSerializer):
         if obj.file_item and obj.file_item.dataset:
             return obj.file_item.dataset.id
         return None
+
+    def get_file_item(self, obj):
+        if obj.file_item is None:
+            return None
+        return {
+            'id': obj.file_item.id,
+            'name': obj.file_item.name,
+        }
 
     def get_derived_region_id(self, obj):
         matches = DerivedRegion.objects.filter(map_layer=obj)

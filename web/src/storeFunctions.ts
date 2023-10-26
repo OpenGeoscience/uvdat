@@ -8,13 +8,13 @@ import {
   availableContexts,
   currentContext,
   availableDatasets,
+  currentDataset,
   map,
   showMapTooltip,
   selectedSourceRegions,
   regionGroupingActive,
   regionGroupingType,
   rasterTooltip,
-  currentMapLayer,
   polls,
   availableCharts,
   currentChart,
@@ -62,6 +62,7 @@ export function loadContexts() {
 
 export function loadDatasets() {
   if (!currentContext.value) return;
+  availableDatasets.value = undefined;
   getContextDatasets(currentContext.value.id).then((data: Dataset[]) => {
     availableDatasets.value = data;
   });
@@ -140,6 +141,6 @@ export function pollForProcessingDataset(datasetId: number) {
 }
 
 watch(currentContext, clearMap);
-watch(currentMapLayer, () => {
+watch(currentDataset, () => {
   rasterTooltip.value = undefined;
 });
