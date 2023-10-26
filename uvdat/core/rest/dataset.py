@@ -1,3 +1,4 @@
+import json
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
@@ -26,11 +27,28 @@ class DatasetViewSet(ModelViewSet):
     def network(self, request, **kwargs):
         dataset = self.get_object()
         network = dataset.get_network()
-        return HttpResponse(network, status=200)
+        return HttpResponse(
+            json.dumps(
+                {
+                    'nodes': [
+                        uvdat_serializers.NetworkNodeSerializer(n).data
+                        for n in network.get('nodes')
+                    ],
+                    'edges': [
+                        uvdat_serializers.NetworkEdgeSerializer(e).data
+                        for e in network.get('edges')
+                    ],
+                }
+            ),
+            status=200,
+        )
 
     @action(detail=True, methods=['get'])
     def gcc(self, request, **kwargs):
         dataset = self.get_object()
-        exclude_nodes = request.query_params.get('exclude_nodes')
-        gcc = dataset.get_gcc(exclude_nodes)
-        return HttpResponse(gcc, status=200)
+        exclude_nodes = request.query_params.get('exclude_nodes', [])
+        exclude_nodes = exclude_nodes.split(',')
+        exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
+
+        gcc = dataset.get_network_gcc(exclude_nodes)
+        return HttpResponse(json.dumps(gcc), status=200)

@@ -13,7 +13,7 @@ import uvdat.core.rest.serializers as uvdat_serializers
 
 def get_available_simulations(context_id: int):
     sims = []
-    for name, details in AVAILABLE_SIMULATIONS.items():
+    for index, (name, details) in enumerate(AVAILABLE_SIMULATIONS.items()):
         details = details.copy()
         details['description'] = re.sub(r'\n\s+', ' ', details['description'])
         args = []
@@ -51,6 +51,7 @@ def get_available_simulations(context_id: int):
             )
         details['args'] = args
         del details['func']
+        details['id'] = index
         details['name'] = SimulationResult.SimulationType[name].label
         sims.append(details)
     return sims
@@ -72,15 +73,16 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['get'],
-        url_path=r'(?P<simulation_id>[\d*]+)/context/(?P<context_id>[\d*]+)/results',
+        url_path=r'(?P<simulation_index>[\d*]+)/context/(?P<context_id>[\d*]+)/results',
     )
-    def list_results(self, request, simulation_id: int, context_id: int, **kwargs):
+    def list_results(self, request, simulation_index: int, context_id: int, **kwargs):
+        simulation_type = list(AVAILABLE_SIMULATIONS.keys())[int(simulation_index)]
         return HttpResponse(
             json.dumps(
                 list(
                     uvdat_serializers.SimulationResultSerializer(s).data
                     for s in SimulationResult.objects.filter(
-                        simulation_id=int(simulation_id), context__id=context_id
+                        simulation_type=simulation_type, context__id=context_id
                     ).all()
                 )
             ),

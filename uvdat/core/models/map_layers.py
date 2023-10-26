@@ -62,6 +62,8 @@ class VectorMapLayer(AbstractMapLayer):
             )
 
     def get_available_tile_coords(self):
+        # TODO: compute this once and save it on the object;
+        # Query can take a while, and this is called on the RasterMapLayerSerializer
         tile_coords = []
         for vector_tile in VectorTile.objects.filter(map_layer=self):
             tile_coords.append(

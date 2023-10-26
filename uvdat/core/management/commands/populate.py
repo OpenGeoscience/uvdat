@@ -18,7 +18,7 @@ class Command(BaseCommand):
         print('Populating server with sample data...')
         include_large = kwargs['include_large']
         dataset_indexes = kwargs['dataset_indexes']
-        if len(dataset_indexes) == 0:
+        if dataset_indexes is None or len(dataset_indexes) == 0:
             dataset_indexes = None
 
         ingest_contexts()

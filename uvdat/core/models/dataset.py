@@ -40,17 +40,46 @@ class Dataset(models.Model):
         return size
 
     def get_regions(self):
-        # TODO: get regions
-        pass
+        from uvdat.core.models import SourceRegion
+
+        return SourceRegion.objects.filter(dataset=self)
 
     def get_network(self):
-        # TODO: get network
-        pass
+        from uvdat.core.models import NetworkEdge, NetworkNode
+
+        return {
+            'nodes': NetworkNode.objects.filter(dataset=self),
+            'edges': NetworkEdge.objects.filter(dataset=self),
+        }
 
     def get_network_graph(self):
-        # TODO: get network graph
-        pass
+        from uvdat.core.tasks.networks import get_dataset_network_graph
+
+        return get_dataset_network_graph(self)
 
     def get_network_gcc(self, exclude_nodes):
-        # TODO: get network gcc
-        pass
+        from uvdat.core.tasks.networks import get_dataset_network_gcc
+
+        return get_dataset_network_gcc(self, exclude_nodes)
+
+    def get_map_layers(self):
+        from uvdat.core.models import VectorMapLayer, RasterMapLayer
+
+        ret = []
+        for vector_map_layer in VectorMapLayer.objects.filter(file_item__dataset=self):
+            ret.append(
+                {
+                    'id': vector_map_layer.id,
+                    'index': vector_map_layer.index,
+                    'type': 'vector',
+                }
+            )
+        for raster_map_layer in RasterMapLayer.objects.filter(file_item__dataset=self):
+            ret.append(
+                {
+                    'id': raster_map_layer.id,
+                    'index': raster_map_layer.index,
+                    'type': 'raster',
+                }
+            )
+        return ret

@@ -32,6 +32,11 @@ class ContextSerializer(serializers.ModelSerializer):
 
 
 class DatasetSerializer(serializers.ModelSerializer):
+    map_layers = serializers.SerializerMethodField('get_map_layers')
+
+    def get_map_layers(self, obj):
+        return obj.get_map_layers()
+
     class Meta:
         model = Dataset
         fields = '__all__'
@@ -50,13 +55,33 @@ class ChartSerializer(serializers.ModelSerializer):
 
 
 class RasterMapLayerSerializer(serializers.ModelSerializer):
+    dataset_id = serializers.SerializerMethodField('get_dataset_id')
+
+    def get_dataset_id(self, obj):
+        if obj.file_item and obj.file_item.dataset:
+            return obj.file_item.dataset.id
+        return None
+
     class Meta:
         model = RasterMapLayer
         fields = '__all__'
 
 
 class VectorMapLayerSerializer(serializers.ModelSerializer):
+    dataset_id = serializers.SerializerMethodField('get_dataset_id')
+    derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
     tile_coords = serializers.SerializerMethodField('get_tile_coords')
+
+    def get_dataset_id(self, obj):
+        if obj.file_item and obj.file_item.dataset:
+            return obj.file_item.dataset.id
+        return None
+
+    def get_derived_region_id(self, obj):
+        matches = DerivedRegion.objects.filter(map_layer=obj)
+        if matches.count == 1:
+            return matches.first()
+        return None
 
     def get_tile_coords(self, obj):
         return obj.get_available_tile_coords()
