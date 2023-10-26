@@ -63,7 +63,7 @@ class Dataset(models.Model):
         return get_dataset_network_gcc(self, exclude_nodes)
 
     def get_map_layers(self):
-        from uvdat.core.models import VectorMapLayer, RasterMapLayer
+        from uvdat.core.models import RasterMapLayer, VectorMapLayer
 
         ret = []
         for vector_map_layer in VectorMapLayer.objects.filter(file_item__dataset=self):

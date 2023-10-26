@@ -1,4 +1,3 @@
-import geopandas
 import json
 import secrets
 from typing import List
@@ -6,6 +5,7 @@ from typing import List
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
+import geopandas
 
 from uvdat.core.models import DerivedRegion, SourceRegion
 

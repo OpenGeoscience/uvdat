@@ -1,6 +1,7 @@
+import json
+
 from django.contrib.gis.geos import LineString, Point
 import geopandas
-import json
 import networkx as nx
 import numpy
 import shapely
@@ -147,7 +148,7 @@ def create_network(vector_map_layer, network_options):
                             edge_set.loc[edge_set[connection_column] == unique_route]
                             .loc[:, edge_set.columns != 'geometry']
                             .iloc[0]
-                            .fillna("")
+                            .fillna('')
                             .to_dict()
                         )
                     )
