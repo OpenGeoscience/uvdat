@@ -19,15 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: adambirds/docker-compose-action@v1.3.0
-        with:
-          compose-file: |
-            docker-compose.yml
-            docker-compose.override.yml
-          services: |
-            web
-          test-container: web
-          test-command: "CI=false && npm run lint"
+      - uses: actions/setup-node@v3
+      - run: cd web && npm i && npm run lint
 
   pytest:
     runs-on: ubuntu-latest
