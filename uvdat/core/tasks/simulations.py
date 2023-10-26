@@ -6,13 +6,12 @@ import tempfile
 from celery import shared_task
 from django_large_image import tilesource
 import large_image
-import networkx as nx
 import shapely
 
 from uvdat.core.models import Dataset
 from uvdat.core.tasks.networks import (
     NODE_RECOVERY_MODES,
-    construct_edge_list,
+    get_dataset_network_gcc,
     sort_graph_centrality,
 )
 
@@ -115,9 +114,8 @@ def recovery_scenario(simulation_result_id, node_failure_simulation_result, reco
             result.error_message = 'Dataset not found.'
             result.save()
             return
-        edge_list = construct_edge_list(dataset)
-        g = nx.from_dict_of_lists(edge_list)
-        nodes_sorted, edge_list = sort_graph_centrality(g, recovery_mode)
+        graph = get_dataset_network_gcc(dataset)
+        nodes_sorted, edge_list = sort_graph_centrality(graph, recovery_mode)
         node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
 
     result.output_data = {

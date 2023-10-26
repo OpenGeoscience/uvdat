@@ -104,7 +104,7 @@ def create_raster_map_layer(file_item, style_options):
                 band[band < transparency_threshold] = transparency_threshold
 
             band_range = [float(band.min()), float(band.max())]
-            file_item.dataset.metadata['data_range'] = band_range
+            new_map_layer.default_style['data_range'] = band_range
 
             output_data.write(band, 1)
             output_data.close()
@@ -143,7 +143,8 @@ def create_vector_map_layer(file_item, style_options):
     new_map_layer.save_geojson_data(geojson_data)
     new_map_layer.save()
 
-    save_vector_tiles(new_map_layer)
+    # save_vector_tiles(vector_map_layer=new_map_layer)
+
     return new_map_layer
 
 

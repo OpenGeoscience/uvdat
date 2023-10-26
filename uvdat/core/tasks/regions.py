@@ -1,3 +1,4 @@
+import geopandas
 import json
 import secrets
 from typing import List
@@ -70,6 +71,7 @@ def create_source_regions(vector_map_layer, region_options):
     geodata = vector_map_layer.get_geojson_data()
 
     region_count = 0
+    new_feature_set = []
     for feature in geodata['features']:
         properties = feature['properties']
         geometry = feature['geometry']
@@ -94,4 +96,21 @@ def create_source_regions(vector_map_layer, region_options):
         region.save()
         region_count += 1
 
+        properties['region_id'] = region.id
+        properties['region_name'] = region.name
+        properties['dataset_id'] = region.dataset.id
+        new_feature_set.append(
+            {
+                'id': region.id,
+                'type': 'Feature',
+                'geometry': geometry,
+                'properties': properties,
+            }
+        )
+
+    # Save updated features to layer
+    new_geodata = geopandas.GeoDataFrame.from_features(new_feature_set).set_crs(3857)
+    new_geodata.to_crs(4326)
+    vector_map_layer.save_geojson_data(new_geodata)
+    vector_map_layer.save()
     print('\t', f'{region_count} regions created.')
