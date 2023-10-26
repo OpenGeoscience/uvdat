@@ -2,12 +2,12 @@ import View from "ol/View.js";
 import TileLayer from "ol/layer/Tile.js";
 import OSM from "ol/source/OSM.js";
 import * as olProj from "ol/proj";
-
 import { watch } from "vue";
-import { availableContexts, currentContext } from "./store";
-import { getContextDatasets, getContexts, getDataset } from "@/api/rest";
 
 import {
+  availableContexts,
+  currentContext,
+  availableDatasets,
   map,
   showMapTooltip,
   selectedSourceRegions,
@@ -16,8 +16,21 @@ import {
   rasterTooltip,
   currentMapLayer,
   polls,
+  availableCharts,
+  currentChart,
+  availableSimulationTypes,
+  currentSimulationType,
+  availableDerivedRegions,
 } from "./store";
 import { Dataset } from "./types";
+import {
+  getContextDatasets,
+  getContexts,
+  getDataset,
+  getContextCharts,
+  getContextSimulationTypes,
+  getContextDerivedRegions,
+} from "@/api/rest";
 
 export function getMap() {
   if (map.value === undefined) {
@@ -41,14 +54,39 @@ export function loadContexts() {
     }
     clearMap();
     loadDatasets();
+    loadCharts();
+    loadSimulationTypes();
+    loadDerivedRegions();
   });
 }
 
 export function loadDatasets() {
   if (!currentContext.value) return;
   getContextDatasets(currentContext.value.id).then((data: Dataset[]) => {
-    if (!currentContext.value) return;
-    currentContext.value.datasets = data;
+    availableDatasets.value = data;
+  });
+}
+
+export function loadCharts() {
+  if (!currentContext.value) return;
+  currentChart.value = undefined;
+  getContextCharts(currentContext.value.id).then((charts) => {
+    availableCharts.value = charts;
+  });
+}
+
+export function loadSimulationTypes() {
+  if (!currentContext.value) return;
+  currentSimulationType.value = undefined;
+  getContextSimulationTypes(currentContext.value.id).then((sims) => {
+    availableSimulationTypes.value = sims;
+  });
+}
+
+export function loadDerivedRegions() {
+  if (!currentContext.value) return;
+  getContextDerivedRegions(currentContext.value.id).then((ders) => {
+    availableDerivedRegions.value = ders;
   });
 }
 

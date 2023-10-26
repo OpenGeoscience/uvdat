@@ -1,8 +1,11 @@
 <script lang="ts">
 import { ref, watch, computed } from "vue";
-import { deactivatedNodes } from "@/store";
+import {
+  currentNetworkDataset,
+  deactivatedNodes,
+  selectedDatasets,
+} from "@/store";
 import { deactivatedNodesUpdated } from "@/utils";
-import { networkVis } from "../store";
 
 export default {
   props: {
@@ -15,7 +18,8 @@ export default {
       type: Array<number>,
     },
   },
-  setup(props) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setup(props: any) {
     const currentTick = ref(0);
     const ticker = ref();
     const seconds = ref(1);
@@ -62,7 +66,7 @@ export default {
       if (props.nodeRecoveries) {
         // recovery mode
         deactivatedNodes.value = startState.value.filter(
-          (i) => !slice.includes(i)
+          (i: number) => !slice.includes(i)
         );
       } else {
         deactivatedNodes.value = slice;
@@ -71,8 +75,9 @@ export default {
     });
 
     return {
+      currentNetworkDataset,
+      selectedDatasets,
       nodeChanges,
-      networkVis,
       currentTick,
       seconds,
       play,
@@ -84,7 +89,12 @@ export default {
 </script>
 
 <template>
-  <div v-if="!networkVis">
+  <div
+    v-if="
+      !currentNetworkDataset ||
+      !selectedDatasets.includes(currentNetworkDataset)
+    "
+  >
     Show network dataset and enable network mode visualization to begin.
   </div>
   <div v-else class="d-flex" style="align-items: center">

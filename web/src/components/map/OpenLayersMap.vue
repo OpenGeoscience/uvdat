@@ -1,13 +1,13 @@
 <script lang="ts">
 import Map from "ol/Map.js";
 import Overlay from "ol/Overlay";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import {
   map,
-  // availableMapLayers,
   showMapTooltip,
-  selectedFeature,
+  clickedFeature,
   clickedMapLayer,
+  rasterTooltip,
 } from "@/store";
 import { getMap, clearMap } from "@/storeFunctions";
 import { displayRasterTooltip } from "@/utils";
@@ -18,6 +18,7 @@ import Control from "ol/control/Control";
 import RegionGrouping from "./RegionGrouping.vue";
 import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
+import { getOrCreateLayerFromID } from "@/layers";
 
 export default {
   components: {
@@ -32,7 +33,7 @@ export default {
     const activelayers = ref();
     let tooltipOverlay: Overlay;
 
-    function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
+    async function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
       // Retrieve first clicked feature, and its layer
       let res = getMap().forEachFeatureAtPixel(e.pixel, (feature, layer) => [
         feature,
@@ -42,29 +43,22 @@ export default {
       // If nothing clicked, reset values and return
       if (!res) {
         showMapTooltip.value = false;
-        selectedFeature.value = undefined;
-        return;
+        clickedMapLayer.value = undefined;
+        clickedFeature.value = undefined;
+      } else {
+        const [feature, openlayer] = res;
+        const props = openlayer.getProperties();
+        const mapLayer = await getOrCreateLayerFromID(props.id, props.type);
+
+        if (mapLayer) {
+          clickedMapLayer.value = mapLayer;
+          clickedFeature.value = feature;
+          // Show tooltip and set position
+          showMapTooltip.value = true;
+          tooltipOverlay.setPosition(e.coordinate);
+          tooltip.value.style.display = "";
+        }
       }
-
-      // Get feature and layer, exit if data source isn't provided through the layer
-      const [feature, layer] = res;
-      // TODO
-      console.log("get maplayer object from ", layer);
-      const mapLayer = undefined;
-      // const mapLayer = availableMapLayers.value.get(
-      //   layer.get("mapLayerId")
-      // );
-
-      if (!mapLayer) {
-        return;
-      }
-
-      clickedMapLayer.value = mapLayer;
-      selectedFeature.value = feature;
-
-      // Show tooltip and set position
-      showMapTooltip.value = true;
-      tooltipOverlay.setPosition(e.coordinate);
     }
 
     function createMap() {
@@ -103,6 +97,10 @@ export default {
         tooltipOverlay.setMap(map.value);
       }
     }
+    watch(rasterTooltip, () => {
+      tooltip.value.innerHTML = "";
+      tooltip.value.style.display = "none";
+    });
 
     onMounted(() => {
       createMap();

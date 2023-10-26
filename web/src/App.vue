@@ -94,7 +94,7 @@ export default defineComponent({
     <v-navigation-drawer
       :model-value="currentMapLayer !== undefined"
       permanent
-      width="250"
+      width="300"
       location="right"
       class="main-area drawer"
     >

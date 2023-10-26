@@ -6,6 +6,9 @@ import {
   RasterData,
   Chart,
   SimulationType,
+  DerivedRegion,
+  VectorMapLayer,
+  RasterMapLayer,
 } from "@/types";
 
 export async function getContexts(): Promise<Context[]> {
@@ -20,6 +23,13 @@ export async function getContextDatasets(
 
 export async function getContextCharts(contextId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?context=${contextId}`)).data.results;
+}
+
+export async function getContextDerivedRegions(
+  contextId: number
+): Promise<DerivedRegion[]> {
+  return (await apiClient.get(`derived-regions?context=${contextId}`)).data
+    .results;
 }
 
 export async function getContextSimulationTypes(
@@ -54,13 +64,23 @@ export async function getNetworkGCC(
   ).data;
 }
 
-export async function getRasterData(datasetId: number): Promise<RasterData> {
+export async function getMapLayer(
+  mapLayerId: number,
+  mapLayerType: string
+): Promise<VectorMapLayer | RasterMapLayer> {
+  return Object.assign(
+    { type: mapLayerType },
+    (await apiClient.get(`${mapLayerType}s/${mapLayerId}`)).data
+  );
+}
+
+export async function getRasterData(layerId: number): Promise<RasterData> {
   const resolution = 0.1;
   const data = (
-    await apiClient.get(`datasets/${datasetId}/raster-data/${resolution}`)
+    await apiClient.get(`rasters/${layerId}/raster-data/${resolution}`)
   ).data;
   const { sourceBounds } = (
-    await apiClient.get(`datasets/${datasetId}/info/metadata`)
+    await apiClient.get(`rasters/${layerId}/info/metadata`)
   ).data;
   return {
     data,
@@ -94,11 +114,6 @@ export async function getSimulationResults(
       `simulations/${simulationId}/context/${contextId}/results/`
     )
   ).data;
-}
-
-export async function listDerivedRegions() {
-  const res = await apiClient.get("derived-regions/");
-  return res.data.results;
 }
 
 export async function getDerivedRegion(regionId: number) {

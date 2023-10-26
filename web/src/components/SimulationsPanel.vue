@@ -68,7 +68,7 @@ export default {
           );
           // const mapLayerUid = getDatasetUid(selectedOption.id);
           const mapLayerSelected = false;
-          // activeMapLayers.value.has(mapLayerUid);
+          // selectedMapLayers.value.has(mapLayerUid);
           const mapLayerAvailable = true;
           // availableMapLayersTable.value.has(mapLayerUid);
 
@@ -191,7 +191,7 @@ export default {
       </v-window-item>
       <v-window-item value="old">
         <div
-          v-if="availableResults.length === 0"
+          v-if="availableResults && availableResults.length === 0"
           style="width: 100%; text-align: center"
           class="pa-3"
         >

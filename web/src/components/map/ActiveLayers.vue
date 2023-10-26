@@ -1,89 +1,40 @@
 <script lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import draggable from "vuedraggable";
+import { selectedMapLayers, currentMapLayer } from "@/store";
 import {
-  // currentContext,
-  activeMapLayers,
-  currentMapLayer,
-  // availableDerivedRegions,
-} from "@/store";
-import { updateVisibleMapLayers } from "@/layers";
-// import { watch } from "vue";
-import { MapLayer, MapLayerArgs } from "@/data";
+  updateVisibleMapLayers,
+  clearMapLayers,
+  getOrCreateLayerFromID,
+} from "@/layers";
+import { RasterMapLayer, VectorMapLayer } from "@/types";
+import { getMapLayerDataObject } from "@/layers";
 
 export default {
   components: {
     draggable,
   },
   setup() {
-    // Layer Menu
     const layerMenuActive = ref(false);
-    // watch(activeMapLayerIds, (val, oldVal) => {
-    //   // Open layer menu if the newly added layer is the first one added
-    //   if (!oldVal.length && val.length) {
-    //     layerMenuActive.value = true;
-    //   }
-    // });
 
-    function clearActiveLayers() {
-      console.log("TODO: clear active layers");
-      //   activeMapLayerIds.value = [];
-      //   updateVisibleMapLayers();
-      //   layerMenuActive.value = false;
+    async function setCurrentMapLayer(layer: VectorMapLayer | RasterMapLayer) {
+      currentMapLayer.value = await getOrCreateLayerFromID(
+        layer.id,
+        layer.type
+      );
     }
 
-    function getLayerName(layerId: string) {
-      console.log("TODO get layer name", layerId);
-      // const mapLayer = getMapLayerFromLayerId(layerId);
-      // if (mapLayer === undefined) {
-      //   throw new Error(`Could not get data source matching layer ${layerId}`);
-      // }
-      // return mapLayer.name;
-    }
+    watch(selectedMapLayers, () => {
+      layerMenuActive.value = !!selectedMapLayers.value.length;
+    });
 
-    function setCurrentMapLayer(layerId: string) {
-      // TODO
-      const mapLayer: MapLayer | undefined = undefined;
-      // const mapLayer = getMapLayerFromLayerId(layerId);
-      if (mapLayer === undefined) {
-        throw new Error(`Could not get data source matching layer ${layerId}`);
-      }
-
-      // Add dataset if applicable
-      const args: MapLayerArgs = {};
-      // const datasetId = mapLayer.dataset?.id;
-      // if (datasetId !== undefined) {
-      //   const dataset = currentContext.value?.datasets.find(
-      //     (d) => d.id === datasetId
-      //   );
-      //   if (dataset === undefined) {
-      //     throw new Error("Dataset not found!");
-      //   }
-
-      //   args.dataset = dataset;
-      // }
-
-      // Add region if applicable
-      // const regionId = mapLayer.derivedRegion?.id;
-      // if (regionId !== undefined) {
-      //   const region = availableDerivedRegions.value.find(
-      //     (r) => r.id === regionId
-      //   );
-      //   if (region === undefined) {
-      //     throw new Error("Region not found!");
-      //   }
-      //   args.derivedRegion = region;
-      // }
-
-      currentMapLayer.value = new MapLayer(args);
-    }
     return {
       layerMenuActive,
-      activeMapLayers,
-      clearActiveLayers,
+      selectedMapLayers,
+      clearMapLayers,
       updateVisibleMapLayers,
-      getLayerName,
       setCurrentMapLayer,
+      getMapLayerDataObject,
     };
   },
 };
@@ -108,40 +59,39 @@ export default {
       <v-card-title style="min-width: 250px">
         Active Layers
         <v-tooltip
-          v-if="activeMapLayers.length"
+          v-if="selectedMapLayers.length"
           text="Remove All Layers"
           location="bottom"
         >
           <template v-slot:activator="{ props }">
-            <v-icon
-              v-bind="props"
-              @click="clearActiveLayers"
-              style="float: right"
+            <v-icon v-bind="props" @click="clearMapLayers" style="float: right"
               >mdi-playlist-remove</v-icon
             >
           </template>
         </v-tooltip>
       </v-card-title>
-      <div v-if="!activeMapLayers.length" class="pa-4">No layers active.</div>
-      <draggable v-model="activeMapLayers" @change="updateVisibleMapLayers">
+      <div v-if="!selectedMapLayers.length" class="pa-4">No layers active.</div>
+      <draggable
+        v-model="selectedMapLayers"
+        @change="updateVisibleMapLayers"
+        item-key="id"
+      >
         <template #item="{ element }">
           <v-card class="px-3 py-1">
             <v-tooltip
-              v-if="activeMapLayers.length"
+              v-if="selectedMapLayers.length"
               text="Reorder Layers"
               location="bottom"
             >
               <template v-slot:activator="{ props }">
-                <v-icon v-bind="props" @click="clearActiveLayers"
-                  >mdi-drag-horizontal-variant</v-icon
-                >
+                <v-icon v-bind="props">mdi-drag-horizontal-variant</v-icon>
               </template>
             </v-tooltip>
 
-            {{ getLayerName(element) }}
+            {{ getMapLayerDataObject(element)?.name }}
 
             <v-tooltip
-              v-if="activeMapLayers.length"
+              v-if="selectedMapLayers.length"
               text="Open Layer Options"
               location="bottom"
             >

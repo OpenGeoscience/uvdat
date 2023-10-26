@@ -1,71 +1,77 @@
 <script lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import {
-  // availableMapLayers,
-  // activeMapLayers,
   clickedMapLayer,
   deactivatedNodes,
-  networkVis,
   regionGroupingActive,
   regionGroupingType,
-  // showMapTooltip,
-  selectedFeature,
+  clickedFeature,
   selectedSourceRegions,
+  selectedMapLayers,
+  selectedDatasets,
 } from "@/store";
 import { getMap, cancelRegionGrouping } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
-import type { SourceRegion } from "@/types";
-
-// import { getDatasetUid } from "@/data";
+import type { DerivedRegion, SourceRegion } from "@/types";
 import { SimpleGeometry } from "ol/geom";
+import { getMapLayerDataObject } from "@/layers";
 
 export default {
   setup() {
-    const selectedDatasetCategory = computed(
-      () => clickedMapLayer.value?.dataset?.category || ""
-    );
-    const selectedFeatureProperties = computed(() => {
-      if (selectedFeature.value === undefined) {
-        return [];
+    const dataObjectForClickedMapLayer = computed(() => {
+      if (!clickedMapLayer.value) return undefined;
+      return getMapLayerDataObject(clickedMapLayer.value) as DerivedRegion;
+    });
+
+    const clickedFeatureProperties = computed(() => {
+      if (clickedFeature.value === undefined) {
+        return {};
       }
       const unwantedKeys = new Set([
         "colors",
         "geometry",
         "type",
         "id",
-        "node",
-        "edge",
+        "node_id",
+        "edge_id",
       ]);
       return Object.fromEntries(
-        Object.entries(selectedFeature.value.getProperties()).filter(
+        Object.entries(clickedFeature.value.getProperties()).filter(
           ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
         )
       );
     });
 
-    // Regions
-    const selectedRegion = computed(() => {
-      if (selectedDatasetCategory.value !== "region") {
-        return undefined;
+    const clickedRegion = computed(() => {
+      const props = clickedFeature.value?.getProperties();
+      const regionId = props?.region_id;
+      const regionName = props?.region_name;
+      const regionDatasetId = props?.dataset_id;
+      if (regionId) {
+        const sourceRegion: SourceRegion = {
+          id: regionId,
+          name: regionName,
+          dataset_id: regionDatasetId,
+        };
+        return sourceRegion;
       }
-
-      return selectedFeature.value?.getProperties() as SourceRegion;
+      return undefined;
     });
-    const selectedRegionID = computed(() => selectedRegion.value?.id);
-    const selectedRegionIsGrouped = computed(() => {
-      if (selectedRegion.value === undefined) {
+
+    const clickedRegionIsGrouped = computed(() => {
+      if (clickedRegion.value === undefined) {
         return false;
       }
 
-      const { id } = selectedRegion.value;
       return (
-        selectedSourceRegions.value.find((region) => region.id === id) !==
-        undefined
+        selectedSourceRegions.value.find(
+          (region) => region.id === clickedRegion.value?.id
+        ) !== undefined
       );
     });
 
     function zoomToRegion() {
-      const geom = selectedFeature.value?.getGeometry() as SimpleGeometry;
+      const geom = clickedFeature.value?.getGeometry() as SimpleGeometry;
       if (geom === undefined) {
         return;
       }
@@ -78,7 +84,7 @@ export default {
     }
 
     function beginRegionGrouping(groupingType: "intersection" | "union") {
-      if (selectedRegion.value === undefined) {
+      if (clickedRegion.value === undefined) {
         throw new Error("Began region grouping with no selected region");
       }
 
@@ -86,49 +92,32 @@ export default {
       regionGroupingType.value = groupingType;
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      selectedSourceRegions.value = [selectedRegion.value];
+      selectedSourceRegions.value = [clickedRegion.value];
     }
-
-    // function deselectFeature() {
-    //   showMapTooltip.value = false;
-    //   selectedFeature.value = undefined;
-    // }
 
     // TODO
     // Ensure that if any regions of the currently selected datasets are
     // de-selected, their regions are removed from the selection
-    // watch(activeMapLayers, (dsMap) => {
-    //   // If the currently selected region was part of a data source that was removed, de-select it
-    //   if (selectedRegion.value !== undefined) {
-    //     const selectedRegionMapLayer = availableMapLayers.value.find(
-    //       (ds) => ds.dataset?.id === selectedRegion.value?.dataset
-    //     );
-    //     if (
-    //       selectedRegionMapLayer === undefined ||
-    //       !dsMap.has(selectedRegionMapLayer.uid)
-    //     ) {
-    //       deselectFeature();
-    //     }
-    //   }
-
-    // Filter out any regions from un-selected data sources
-    // selectedRegions.value = selectedRegions.value.filter((region) =>
-    //   dsMap.has(getDatasetUid(region.dataset))
-    // );
-
-    // Check if the list is now empty
-    //   if (selectedRegions.value.length === 0) {
-    //     cancelRegionGrouping();
-    //   }
-    // });
+    watch(selectedMapLayers, () => {
+      // Filter out any regions from un-selected data sources
+      selectedSourceRegions.value = selectedSourceRegions.value.filter(
+        (region) =>
+          region.dataset_id &&
+          selectedDatasets.value.map((d) => d.id).includes(region.dataset_id)
+      );
+      // Check if the list is now empty
+      if (selectedSourceRegions.value.length === 0) {
+        cancelRegionGrouping();
+      }
+    });
 
     function removeRegionFromGrouping() {
-      if (selectedRegionID.value === undefined) {
+      if (clickedRegion.value?.id === undefined) {
         throw new Error("Tried to remove non-existent region from grouping");
       }
 
       selectedSourceRegions.value = selectedSourceRegions.value.filter(
-        (region) => region.id !== selectedRegionID.value
+        (region) => region.id !== clickedRegion.value?.id
       );
 
       // Check if that element was the last removed
@@ -138,17 +127,15 @@ export default {
     }
 
     return {
+      dataObjectForClickedMapLayer,
       clickedMapLayer,
       regionGroupingActive,
-      selectedFeature,
-      selectedFeatureProperties,
-      selectedDatasetCategory,
-      selectedRegionID,
-      selectedRegion,
+      clickedFeature,
+      clickedFeatureProperties,
+      clickedRegion,
       selectedSourceRegions,
-      selectedRegionIsGrouped,
+      clickedRegionIsGrouped,
       regionGroupingType,
-      networkVis,
       deactivatedNodes,
       toggleNodeActive,
       zoomToRegion,
@@ -160,55 +147,76 @@ export default {
 </script>
 
 <template>
-  <!-- Render for Derived Regions -->
-  <div v-if="selectedFeature && clickedMapLayer?.derivedRegion">
-    <v-row no-gutters>ID: {{ clickedMapLayer.derivedRegion.id }}</v-row>
-    <v-row no-gutters> Name: {{ clickedMapLayer.derivedRegion.name }} </v-row>
-    <v-row no-gutters>
-      Source Region IDs:
-      {{ clickedMapLayer.derivedRegion.source_regions }}
-    </v-row>
-    <v-row no-gutters>
-      Creation Operation:
-      {{ clickedMapLayer.derivedRegion.operation }}
-    </v-row>
-  </div>
-  <!-- Render for Regions -->
-  <div v-else-if="selectedFeature && selectedDatasetCategory === 'region'">
-    <v-row no-gutters>ID: {{ selectedRegionID }}</v-row>
-    <v-row no-gutters>Name: {{ selectedFeature.get("name") }}</v-row>
-    <v-row>
-      <v-btn
-        class="my-1"
-        variant="outlined"
-        block
-        prepend-icon="mdi-vector-square"
-        @click="zoomToRegion"
-        >Zoom To Region</v-btn
-      >
-    </v-row>
+  <div v-if="dataObjectForClickedMapLayer && clickedFeature">
+    <!-- Render for Derived Regions -->
+    <div v-if="dataObjectForClickedMapLayer.source_regions">
+      <v-row no-gutters>ID: {{ dataObjectForClickedMapLayer.id }} </v-row>
+      <v-row no-gutters> Name: {{ dataObjectForClickedMapLayer.name }} </v-row>
+      <v-row no-gutters>
+        Source Region IDs: {{ dataObjectForClickedMapLayer.source_regions }}
+      </v-row>
+      <v-row no-gutters>
+        Creation Operation: {{ dataObjectForClickedMapLayer.operation }}
+      </v-row>
+    </div>
+    <!-- Render for Source Regions -->
+    <div v-else-if="clickedRegion">
+      <v-row no-gutters>ID: {{ clickedRegion.id }}</v-row>
+      <v-row no-gutters>Name: {{ clickedRegion.name }}</v-row>
+      <v-row>
+        <v-btn
+          class="my-1"
+          variant="outlined"
+          block
+          prepend-icon="mdi-vector-square"
+          @click="zoomToRegion"
+          >Zoom To Region</v-btn
+        >
+      </v-row>
 
-    <template v-if="regionGroupingActive && selectedRegion">
-      <template v-if="selectedRegionIsGrouped">
-        <v-row>
-          <v-btn
-            variant="outlined"
-            block
-            class="my-1"
-            @click="removeRegionFromGrouping"
-          >
-            <template v-slot:prepend>
-              <v-icon>
-                {{
-                  regionGroupingType === "intersection"
-                    ? "mdi-vector-intersection"
-                    : "mdi-vector-union"
-                }}
-              </v-icon>
-            </template>
-            Ungroup Region
-          </v-btn>
-        </v-row>
+      <template v-if="regionGroupingActive && clickedRegion">
+        <template v-if="clickedRegionIsGrouped">
+          <v-row>
+            <v-btn
+              variant="outlined"
+              block
+              class="my-1"
+              @click="removeRegionFromGrouping"
+            >
+              <template v-slot:prepend>
+                <v-icon>
+                  {{
+                    regionGroupingType === "intersection"
+                      ? "mdi-vector-intersection"
+                      : "mdi-vector-union"
+                  }}
+                </v-icon>
+              </template>
+              Ungroup Region
+            </v-btn>
+          </v-row>
+        </template>
+        <template v-else>
+          <v-row>
+            <v-btn
+              variant="outlined"
+              block
+              class="my-1"
+              @click="selectedSourceRegions.push(clickedRegion)"
+            >
+              <template v-slot:prepend>
+                <v-icon>
+                  {{
+                    regionGroupingType === "intersection"
+                      ? "mdi-vector-intersection"
+                      : "mdi-vector-union"
+                  }}
+                </v-icon>
+              </template>
+              Add region to grouping
+            </v-btn>
+          </v-row>
+        </template>
       </template>
       <template v-else>
         <v-row>
@@ -216,67 +224,63 @@ export default {
             variant="outlined"
             block
             class="my-1"
-            @click="selectedSourceRegions.push(selectedRegion)"
+            prepend-icon="mdi-vector-intersection"
+            @click="beginRegionGrouping('intersection')"
           >
-            <template v-slot:prepend>
-              <v-icon>
-                {{
-                  regionGroupingType === "intersection"
-                    ? "mdi-vector-intersection"
-                    : "mdi-vector-union"
-                }}
-              </v-icon>
-            </template>
-            Add region to grouping
+            Begin region intersection
+          </v-btn>
+        </v-row>
+        <v-row>
+          <v-btn
+            variant="outlined"
+            block
+            class="my-1"
+            prepend-icon="mdi-vector-union"
+            @click="beginRegionGrouping('union')"
+          >
+            Begin region union
           </v-btn>
         </v-row>
       </template>
-    </template>
-    <template v-else>
-      <v-row>
-        <v-btn
-          variant="outlined"
-          block
-          class="my-1"
-          prepend-icon="mdi-vector-intersection"
-          @click="beginRegionGrouping('intersection')"
-        >
-          Begin region intersection
-        </v-btn>
+    </div>
+    <!-- Render for Network Nodes -->
+    <!-- TODO: Eventually allow deactivating Network Edges -->
+    <div v-else-if="clickedFeature.getProperties().node_id" class="pa-2">
+      <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
+        {{ k }}: {{ v }}
       </v-row>
-      <v-row>
-        <v-btn
-          variant="outlined"
-          block
-          class="my-1"
-          prepend-icon="mdi-vector-union"
-          @click="beginRegionGrouping('union')"
-        >
-          Begin region union
-        </v-btn>
-      </v-row>
-    </template>
-  </div>
-  <!-- Render for networks -->
-  <div v-else-if="clickedMapLayer?.dataset?.network" class="pa-2">
-    <v-row no-gutters v-for="(v, k) in selectedFeatureProperties" :key="k">
-      {{ k }}: {{ v }}
-    </v-row>
-    <template v-if="selectedFeature && networkVis">
       <v-btn
         variant="outlined"
-        v-if="deactivatedNodes.includes(selectedFeature.get('id'))"
-        @click="toggleNodeActive(selectedFeature.get('id'))"
+        v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)"
+        @click="
+          toggleNodeActive(
+            clickedFeature.getProperties().node_id,
+            dataObjectForClickedMapLayer,
+            clickedMapLayer
+          )
+        "
       >
         Reactivate Node
       </v-btn>
       <v-btn
         variant="outlined"
-        @click="toggleNodeActive(selectedFeature.get('id'))"
+        @click="
+          toggleNodeActive(
+            clickedFeature.getProperties().node_id,
+            dataObjectForClickedMapLayer,
+            clickedMapLayer
+          )
+        "
         v-else
       >
         Deactivate Node
       </v-btn>
-    </template>
+    </div>
+    <!-- Render for all other features -->
+    <div v-else>
+      <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
+        {{ k }}: {{ v }}
+      </v-row>
+    </div>
   </div>
 </template>

@@ -1,34 +1,39 @@
 <script lang="ts">
+import { ref, computed, watch } from "vue";
 import {
-  currentContext,
   availableCharts,
   currentChart,
+  selectedDatasets,
+  availableDatasets,
   availableSimulationTypes,
   currentSimulationType,
   availableDerivedRegions,
   availableMapLayers,
-  // activeMapLayers,
+  currentMapLayer,
 } from "@/store";
-
-import { MapLayer } from "@/data";
-import { ref, computed, onMounted, watch } from "vue";
 import {
-  getContextDatasets,
-  getContextCharts,
-  getContextSimulationTypes,
-  listDerivedRegions,
-} from "@/api/rest";
+  loadDatasets,
+  loadCharts,
+  loadSimulationTypes,
+  loadDerivedRegions,
+} from "../storeFunctions";
 import { Dataset, DerivedRegion } from "@/types";
+import {
+  getDataObjectMapLayer,
+  isMapLayerVisible,
+  toggleMapLayer,
+} from "@/layers";
 
 export default {
   setup() {
     const openPanels = ref([0]);
-    const expandedDatasetGroups = ref([0]);
+
+    const expandedDatasetGroups = ref<string[]>([]);
+
     const availableDatasetGroups = computed(() => {
-      if (!currentContext.value) return [];
       const groupKey = "category";
       const datasetGroups: Record<string, Dataset[]> = {};
-      currentContext.value.datasets.forEach((dataset: Dataset) => {
+      availableDatasets.value.forEach((dataset: Dataset) => {
         const currentGroup = dataset[groupKey];
         if (!datasetGroups[currentGroup]) datasetGroups[currentGroup] = [];
         datasetGroups[currentGroup].push(dataset);
@@ -38,27 +43,47 @@ export default {
         id: number;
         datasets: Dataset[];
         name: string;
-      }[] = Object.entries(datasetGroups).map(([name, datasets], index) => ({
-        id: index,
-        datasets,
-        name,
-      }));
-
-      // .sort((a, b) => a.name.localeCompare(b.name));
+      }[] = Object.entries(datasetGroups)
+        .map(([name, datasets], index) => ({
+          id: index,
+          datasets,
+          name,
+        }))
+        .sort((a, b) => b.name.localeCompare(a.name));
       return ret;
     });
+
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
-    function fetchDatasets() {
-      if (!currentContext.value) return;
-      getContextDatasets(currentContext.value.id).then((datasets) => {
-        if (!currentContext.value) return;
-        currentContext.value.datasets = datasets;
-      });
+    async function derivedRegionSelected(derivedRegion: DerivedRegion) {
+      console.log("is derived region selected?", derivedRegion);
+      const mapLayer = await getDataObjectMapLayer(derivedRegion);
+      return isMapLayerVisible(mapLayer);
     }
 
-    async function setDerivedRegions() {
-      availableDerivedRegions.value = await listDerivedRegions();
+    async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
+      console.log("toggling derived region", derivedRegion);
+      const mapLayer = await getDataObjectMapLayer(derivedRegion);
+      toggleMapLayer(mapLayer);
+    }
+
+    async function toggleDataset(dataset: Dataset) {
+      if (selectedDatasets.value?.includes(dataset)) {
+        selectedDatasets.value = selectedDatasets.value.filter(
+          (d) => d.id !== dataset.id
+        );
+      } else {
+        selectedDatasets.value?.push(dataset);
+      }
+
+      // Find first related MapLayer
+      const mapLayer = await getDataObjectMapLayer(dataset);
+      toggleMapLayer(mapLayer);
+    }
+
+    async function expandOptionsPanelFromDataset(dataset: Dataset) {
+      const mapLayer = await getDataObjectMapLayer(dataset);
+      currentMapLayer.value = mapLayer;
     }
 
     // If new derived region created, open panel
@@ -72,88 +97,15 @@ export default {
       }
     });
 
-    // function toggleMapLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
-    //   console.log("TODO: toggle map layer", mapLayer);
-
-    // if (activeMapLayers.value.has(mapLayer.uid)) {
-    //   hideMapLayerFromMap(mapLayer);
-    // } else {
-    //   addMapLayerToMap(mapLayer);
-    // }
-    // }
-
-    const datasetIdToMapLayer = computed(() => {
-      const map = new Map();
-      availableMapLayers.value.forEach((ds) => {
-        if (ds.dataset !== undefined) {
-          map.set(ds.dataset.id, ds);
-        }
-      });
-      MapLayer;
-
-      return map;
+    watch(availableDatasets, () => {
+      expandedDatasetGroups.value = availableDatasetGroups.value.map(
+        (g) => g.name
+      );
     });
 
-    // const derivedRegionIdToMapLayer = computed(() => {
-    //   const map = new Map();
-    //   availableMapLayers.value.forEach((ds) => {
-    //     if (ds.derivedRegion !== undefined) {
-    //       map.set(ds.derivedRegion.id, ds);
-    //     }
-    //   });
-
-    //   return map;
-    // });
-
-    function datasetSelected(datasetId: number) {
-      console.log("TODO: is dataset selected?", datasetId);
-      // const uid = datasetIdToMapLayer.value.get(datasetId)?.uid;
-      // return uid && activeMapLayers.value.has(uid);
-    }
-
-    function derivedRegionSelected(derivedRegionId: number) {
-      console.log("TODO: is derived region selected?", derivedRegionId);
-      // const uid = derivedRegionIdToMapLayer.value.get(derivedRegionId)?.uid;
-      // return uid && activeMapLayers.value.has(uid);
-    }
-
-    function toggleDataset(dataset: Dataset) {
-      console.log("TODO: toggle dataset", dataset);
-      // toggleMapLayer(new MapLayer({ dataset }));
-    }
-
-    function toggleDerivedRegion(derivedRegion: DerivedRegion) {
-      console.log("TODO: toggle derived region", derivedRegion);
-      // toggleMapLayer(new MapLayer({ derivedRegion }));
-    }
-
-    function expandOptionsPanelFromDataset(dataset: Dataset) {
-      console.log("TODO: expand options panel", dataset);
-      // currentMapLayer.value = new MapLayer({ dataset });
-    }
-
-    function fetchCharts() {
-      if (!currentContext.value) return;
-      currentChart.value = undefined;
-      getContextCharts(currentContext.value.id).then((charts) => {
-        availableCharts.value = charts;
-      });
-    }
-
-    function fetchSimulations() {
-      if (!currentContext.value) return;
-      currentSimulationType.value = undefined;
-      getContextSimulationTypes(currentContext.value.id).then((sims) => {
-        availableSimulationTypes.value = sims;
-      });
-    }
-
-    onMounted(fetchCharts);
-    onMounted(fetchSimulations);
-    onMounted(setDerivedRegions);
-
     return {
-      currentContext,
+      availableDatasets,
+      selectedDatasets,
       openPanels,
       expandedDatasetGroups,
       availableDatasetGroups,
@@ -164,16 +116,15 @@ export default {
       availableSimulationTypes,
       availableDerivedRegions,
       availableMapLayers,
-      datasetIdToMapLayer,
-      fetchDatasets,
+      currentMapLayer,
+      loadDatasets,
       toggleDataset,
       expandOptionsPanelFromDataset,
-      fetchCharts,
-      fetchSimulations,
       toggleDerivedRegion,
-      datasetSelected,
       derivedRegionSelected,
-      setDerivedRegions,
+      loadCharts,
+      loadSimulationTypes,
+      loadDerivedRegions,
     };
   },
 };
@@ -183,7 +134,7 @@ export default {
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="fetchDatasets" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadDatasets" class="mr-2">mdi-refresh</v-icon>
         Available Datasets
       </v-expansion-panel-title>
       <v-expansion-panel-text>
@@ -191,17 +142,19 @@ export default {
           multiple
           variant="accordion"
           v-model="expandedDatasetGroups"
-          v-if="currentContext?.datasets[0].id"
+          v-if="availableDatasets.length && availableDatasets[0].id"
         >
           <v-expansion-panel
             v-for="group in availableDatasetGroups"
             :title="group.name"
             :key="group.id"
+            :value="group.name"
           >
             <v-expansion-panel-text>
               <v-checkbox
                 v-for="dataset in group.datasets"
-                :model-value="datasetSelected(dataset.id)"
+                v-model="selectedDatasets"
+                :value="dataset"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -216,7 +169,9 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="datasetSelected(dataset.id)"
+                    v-show="
+                      selectedDatasets && selectedDatasets.includes(dataset)
+                    "
                     size="small"
                     class="expand-icon ml-1"
                     @click.prevent="expandOptionsPanelFromDataset(dataset)"
@@ -233,7 +188,7 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="setDerivedRegions" class="mr-2">
+        <v-icon @click.stop="loadDerivedRegions" class="mr-2">
           mdi-refresh
         </v-icon>
         Available Derived Regions
@@ -241,7 +196,7 @@ export default {
       <v-expansion-panel-text>
         <v-checkbox
           v-for="region in availableDerivedRegions"
-          :model-value="derivedRegionSelected(region.id)"
+          :model-value="derivedRegionSelected(region)"
           :key="region.id"
           :label="region.name"
           hide-details
@@ -253,7 +208,7 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="fetchCharts" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadCharts" class="mr-2">mdi-refresh</v-icon>
         Available Charts
       </v-expansion-panel-title>
       <v-expansion-panel-text>
@@ -277,7 +232,9 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="fetchSimulations" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadSimulationTypes" class="mr-2"
+          >mdi-refresh</v-icon
+        >
         Available Simulations
       </v-expansion-panel-title>
       <v-expansion-panel-text>

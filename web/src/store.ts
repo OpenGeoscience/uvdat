@@ -6,23 +6,29 @@ import {
   DerivedRegion,
   SourceRegion,
   SimulationType,
+  VectorMapLayer,
+  RasterMapLayer,
 } from "./types.js";
-import { MapLayer } from "@/data";
+// import { MapLayer } from "@/data";
 import { Map as olMap, Feature } from "ol";
 
 // Context
 export const availableContexts = ref<Context[]>([]);
 export const currentContext = ref<Context>();
 
+// Datasets
+export const availableDatasets = ref<Dataset[]>([]);
+export const selectedDatasets = ref<Dataset[]>([]);
+
 // Map
 export const map = ref<olMap>();
-export const availableMapLayers = ref<MapLayer[]>([]);
-export const activeMapLayers = ref<MapLayer[]>([]);
-export const currentMapLayer = ref<MapLayer>();
-export const clickedMapLayer = ref<MapLayer>();
+export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
+export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
+export const currentMapLayer = ref<VectorMapLayer | RasterMapLayer>();
+export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
-export const selectedFeature = ref<Feature>();
+export const clickedFeature = ref<Feature>();
 export const rasterTooltip = ref();
 
 // Charts & Simulations
@@ -39,7 +45,8 @@ export const regionGroupingActive = ref(false);
 export const regionGroupingType = ref<"intersection" | "union" | null>(null);
 
 // Network
-export const networkVis = ref<Dataset>();
+export const currentNetworkDataset = ref<Dataset>();
+export const currentNetworkMapLayer = ref<VectorMapLayer>();
 export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 

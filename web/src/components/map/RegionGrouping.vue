@@ -3,12 +3,11 @@ import { ref } from "vue";
 import {
   selectedSourceRegions,
   regionGroupingType,
-  availableDerivedRegions,
   regionGroupingActive,
   currentContext,
 } from "@/store";
-import { cancelRegionGrouping } from "@/storeFunctions";
-import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
+import { cancelRegionGrouping, loadDerivedRegions } from "@/storeFunctions";
+import { postDerivedRegion } from "@/api/rest";
 
 export default {
   setup() {
@@ -36,7 +35,7 @@ export default {
 
       // Close dialog
       cancelRegionGrouping();
-      availableDerivedRegions.value = await listDerivedRegions();
+      loadDerivedRegions();
     }
     return {
       regionGroupingActive,

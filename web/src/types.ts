@@ -8,15 +8,23 @@ export interface Dataset {
   processing: boolean;
   metadata: object;
   dataset_type: string;
-  network: object;
+  map_layers: {
+    id: number;
+    index: number;
+    type: string;
+  }[];
+  network: {
+    nodes: NetworkNode[];
+    edges: NetworkEdge[];
+  };
 }
 
 export interface SourceRegion {
   id: number;
-  name: string;
-  dataset: number;
-  metadata: object;
-  boundary: object;
+  name?: string;
+  dataset_id?: number;
+  metadata?: object;
+  boundary?: object;
 }
 
 export interface DerivedRegion {
@@ -27,6 +35,13 @@ export interface DerivedRegion {
   boundary: object;
   source_regions: number[];
   operation: "UNION" | "INTERSECTION";
+  map_layers: {
+    id: number;
+    index: number;
+    type: string;
+  }[];
+  network: null;
+  category: null;
 }
 
 export interface Context {
@@ -72,11 +87,18 @@ export interface NetworkEdge {
 
 export interface RasterMapLayer {
   id: number;
-  file_item: number;
-  metadata: object;
-  default_style: object;
+  file_item?: number;
+  metadata?: {
+    network?: boolean;
+  };
+  default_style?: object;
   index: number;
-  cloud_optimized_geotiff: string;
+  cloud_optimized_geotiff?: string;
+  type: string;
+  dataset_id?: number;
+  derived_region_id?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  openlayer?: any;
 }
 
 export interface RasterData {
@@ -91,11 +113,22 @@ export interface RasterData {
 
 export interface VectorMapLayer {
   id: number;
-  file_item: number;
-  metadata: object;
-  default_style: object;
+  file_item?: number;
+  metadata?: {
+    network?: boolean;
+  };
+  default_style?: object;
   index: number;
-  tile_coords: object[];
+  tile_coords?: {
+    x: number;
+    y: number;
+    z: number;
+  }[];
+  type: string;
+  dataset_id?: number;
+  derived_region_id?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  openlayer?: any;
 }
 
 export interface VectorTile {
