@@ -20,10 +20,12 @@ import { baseURL } from "@/api/auth";
 import { cacheRasterData, createStyle, randomColor } from "./utils";
 import {
   availableDatasets,
+  currentDataset,
   availableDerivedRegions,
   currentNetworkGCC,
   selectedDatasets,
   selectedMapLayers,
+  showMapBaseLayer,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
@@ -37,7 +39,7 @@ export async function getOrCreateLayerFromID(
     throw new Error(`Could not get or create openLayer for undefined layer`);
   }
 
-  const cachedMapLayer = _mapLayerManager.value.find((l) => {
+  let cachedMapLayer = _mapLayerManager.value.find((l) => {
     return l.id === mapLayerId && l.type === mapLayerType;
   });
   if (cachedMapLayer) return cachedMapLayer;
@@ -50,8 +52,14 @@ export async function getOrCreateLayerFromID(
     styleRasterOpenLayer(mapLayer.openlayer, {});
     cacheRasterData(mapLayerId);
   }
-  _mapLayerManager.value.push(mapLayer);
-  updateVisibleMapLayers();
+
+  // since this is an async context, check again for existing layer before pushing.
+  cachedMapLayer = _mapLayerManager.value.find((l) => {
+    return l.id === mapLayerId && l.type === mapLayerType;
+  });
+  if (!cachedMapLayer) {
+    _mapLayerManager.value.push(mapLayer);
+  }
   return mapLayer;
 }
 
@@ -172,6 +180,7 @@ export function styleRasterOpenLayer(
     tileParams.max = colormapRange[1];
   }
   if (nodataValue) tileParams.nodata = nodataValue;
+  openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
   const tileParamString = new URLSearchParams(tileParams).toString();
   openLayer
     .getSource()
@@ -237,30 +246,40 @@ export function getDataObjectForMapLayer(
   }
 
   if (mapLayer.derived_region_id) {
-    return availableDerivedRegions.value.find(
+    return availableDerivedRegions.value?.find(
       (r) => r.id === mapLayer.derived_region_id
     );
   } else if (mapLayer.dataset_id) {
-    return availableDatasets.value?.find((d) => d.id === mapLayer.dataset_id);
+    const dataset = availableDatasets.value?.find(
+      (d) => d.id === mapLayer.dataset_id
+    );
+    if (dataset) {
+      dataset.current_layer_index =
+        dataset?.map_layers.find(({ id }) => id === mapLayer.id)?.index || 0;
+    }
+    return dataset;
   }
   return undefined;
 }
 
 export async function getMapLayerForDataObject(
   dataObject: Dataset | DerivedRegion | undefined,
-  index = 0
+  layerIndex = 0
 ): Promise<VectorMapLayer | RasterMapLayer | undefined> {
   // Data Object refers to the original object for which this map layer was created.
   // Can either be a Dataset or a DerivedRegion.
   if (dataObject === undefined) {
     throw new Error(`Could not get map layer for undefined data object`);
   }
-  if (index >= dataObject.map_layers?.length) {
+  const mapLayer = dataObject.map_layers.find(
+    ({ index }) => index === layerIndex
+  );
+  if (!mapLayer) {
     throw new Error(
-      `No map layer with index ${index} exists for ${dataObject}.`
+      `No map layer with index ${layerIndex} exists for ${dataObject}.`
     );
   }
-  const mapLayer = dataObject.map_layers[index];
+  dataObject.current_layer_index = layerIndex;
   return await getOrCreateLayerFromID(mapLayer.id, mapLayer.type);
 }
 
@@ -284,6 +303,17 @@ export function updateVisibleMapLayers() {
   }
 }
 
+export function updateBaseLayer() {
+  getMap()
+    .getLayers()
+    .getArray()
+    .forEach((l) => {
+      if (l.getProperties().id === undefined) {
+        l.setVisible(showMapBaseLayer.value);
+      }
+    });
+}
+
 export function clearMapLayers() {
   getMap()
     .getLayers()
@@ -294,5 +324,6 @@ export function clearMapLayers() {
         l.setVisible(false);
       }
     });
+  currentDataset.value = undefined;
   updateVisibleMapLayers();
 }

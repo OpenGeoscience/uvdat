@@ -69,10 +69,7 @@ export async function getMapLayer(
   mapLayerId: number,
   mapLayerType: string
 ): Promise<VectorMapLayer | RasterMapLayer> {
-  return Object.assign(
-    { type: mapLayerType },
-    (await apiClient.get(`${mapLayerType}s/${mapLayerId}`)).data
-  );
+  return (await apiClient.get(`${mapLayerType}s/${mapLayerId}`)).data;
 }
 
 export async function getRasterData(layerId: number): Promise<RasterData> {
@@ -126,8 +123,9 @@ export async function postDerivedRegion(
   name: string,
   context: number,
   regions: number[],
-  op: "union" | "intersection"
+  op: "union" | "intersection" | undefined
 ) {
+  if (!op) return;
   const operation = op.toUpperCase();
   const res = await apiClient.post("derived-regions/", {
     name,

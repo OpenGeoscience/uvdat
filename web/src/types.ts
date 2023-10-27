@@ -41,6 +41,7 @@ export interface DerivedRegion {
     index: number;
     type: string;
   }[];
+  current_layer_index: null;
 }
 
 export interface Context {

@@ -11,7 +11,7 @@ import {
   showMapBaseLayer,
 } from "./store";
 import { loadContexts } from "./storeFunctions";
-import { updateVisibleMapLayers } from "@/layers";
+import { updateBaseLayer } from "@/layers";
 import OpenLayersMap from "./components/map/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
@@ -41,7 +41,7 @@ export default defineComponent({
       currentChart,
       currentSimulationType,
       showMapBaseLayer,
-      updateVisibleMapLayers,
+      updateBaseLayer,
     };
   },
 });
@@ -74,7 +74,7 @@ export default defineComponent({
       </v-list-item>
       <v-checkbox
         v-model="showMapBaseLayer"
-        @change="updateVisibleMapLayers"
+        @change="updateBaseLayer"
         true-icon="mdi-map-check"
         false-icon="mdi-map-outline"
         style="max-width: 50px"

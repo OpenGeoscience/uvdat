@@ -82,6 +82,7 @@ export default {
             </v-tooltip>
 
             {{ getDataObjectForMapLayer(element)?.name }}
+            (Layer {{ getDataObjectForMapLayer(element)?.current_layer_index }})
 
             <v-tooltip
               v-if="selectedMapLayers.length"

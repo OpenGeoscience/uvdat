@@ -23,7 +23,6 @@ export const currentDataset = ref<Dataset>();
 
 // Map
 export const map = ref<olMap>();
-export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
 export const showMapBaseLayer = ref(true);
@@ -32,17 +31,17 @@ export const clickedFeature = ref<Feature>();
 export const rasterTooltip = ref();
 
 // Charts & Simulations
-export const availableCharts = ref<Chart[]>([]);
+export const availableCharts = ref<Chart[]>();
 export const currentChart = ref<Chart>();
-export const availableSimulationTypes = ref<SimulationType[]>([]);
+export const availableSimulationTypes = ref<SimulationType[]>();
 export const currentSimulationType = ref<SimulationType>();
 
 // Regions
-export const availableDerivedRegions = ref<DerivedRegion[]>([]);
+export const availableDerivedRegions = ref<DerivedRegion[]>();
 export const selectedSourceRegions = ref<SourceRegion[]>([]);
 export const selectedDerivedRegions = ref<DerivedRegion[]>([]);
 export const regionGroupingActive = ref(false);
-export const regionGroupingType = ref<"intersection" | "union" | null>(null);
+export const regionGroupingType = ref<"intersection" | "union" | undefined>();
 
 // Network
 export const currentNetworkDataset = ref<Dataset>();

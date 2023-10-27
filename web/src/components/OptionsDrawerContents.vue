@@ -1,9 +1,9 @@
 <script lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
 import {
   getMapLayerForDataObject,
-  getOrCreateLayerFromID,
+  isMapLayerVisible,
   styleRasterOpenLayer,
   toggleMapLayer,
 } from "@/layers";
@@ -12,6 +12,7 @@ import { NetworkNode, RasterMapLayer, VectorMapLayer } from "@/types";
 
 export default {
   setup() {
+    const currentMapLayerIndex = ref(0);
     const currentMapLayer = ref<VectorMapLayer | RasterMapLayer | undefined>();
     const opacity = ref(1);
     const colormap = ref("terrain");
@@ -22,44 +23,61 @@ export default {
       return currentMapLayer.value?.file_item?.name;
     });
 
-    async function populateRefs() {
+    function getCurrentMapLayer() {
+      if (currentDataset.value) {
+        getMapLayerForDataObject(
+          currentDataset.value,
+          currentDataset.value?.current_layer_index
+        ).then((mapLayer) => {
+          if (!isMapLayerVisible(mapLayer)) {
+            toggleMapLayer(mapLayer);
+          }
+          currentMapLayer.value = mapLayer;
+          populateRefs();
+        });
+      } else {
+        currentMapLayer.value = undefined;
+      }
+    }
+
+    function populateRefs() {
       opacity.value = 1;
       colormap.value = "terrain";
       layerRange.value = [];
       colormapRange.value = [];
-      if (currentMapLayer.value) {
-        if (!currentMapLayer.value.openlayer) {
-          currentMapLayer.value = await getOrCreateLayerFromID(
-            currentMapLayer.value.id,
-            currentMapLayer.value.type
-          );
-        }
-        const openlayer = currentMapLayer.value?.openlayer;
-        if (openlayer) {
-          const layerProperties = openlayer.getProperties();
-          const defaultStyle = layerProperties.default_style;
+      if (currentMapLayer.value?.openlayer) {
+        currentMapLayerIndex.value = currentMapLayer.value.index;
+        const openlayer = currentMapLayer.value.openlayer;
+        opacity.value = openlayer.getOpacity();
+        const layerProperties = openlayer.getProperties();
+        const defaultStyle = layerProperties.default_style;
+        const { min, max, palette } = layerProperties;
+        console.log(layerProperties);
 
-          if (defaultStyle) {
-            opacity.value = openlayer.getOpacity();
-            colormap.value = defaultStyle.palette || "terrain";
-            layerRange.value =
-              defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
+        if (defaultStyle) {
+          colormap.value = palette || defaultStyle.palette || "terrain";
+          layerRange.value =
+            defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
+          if (min && max) {
+            colormapRange.value = [min, max];
+          } else {
             colormapRange.value = layerRange.value;
           }
         }
       }
     }
 
-    async function updateLayerShown(layerIndex: number) {
-      console.log(layerIndex);
-      const targetLayerInfo = currentDataset.value?.map_layers[layerIndex];
-      const targetLayer = await getOrCreateLayerFromID(
-        targetLayerInfo?.id,
-        targetLayerInfo?.type
-      );
-      toggleMapLayer(currentMapLayer.value);
-      currentMapLayer.value = targetLayer;
-      toggleMapLayer(currentMapLayer.value);
+    async function updateLayerShown() {
+      if (
+        currentMapLayerIndex.value !== undefined &&
+        currentDataset.value?.map_layers &&
+        currentMapLayerIndex.value < currentDataset.value?.map_layers.length
+      ) {
+        // turn off layer at previous index
+        toggleMapLayer(currentMapLayer.value);
+        currentDataset.value.current_layer_index = currentMapLayerIndex.value;
+        getCurrentMapLayer();
+      }
     }
 
     function updateLayerOpacity() {
@@ -88,24 +106,17 @@ export default {
       )?.name;
     }
 
-    watch(currentMapLayer, populateRefs);
-    watch(opacity, updateLayerOpacity);
     // Use deep watcher to catch inputs from number fields alongside sliders
     watch(colormapRange, updateColormap, { deep: true });
     watch(colormap, updateColormap);
+    watch(opacity, updateLayerOpacity);
 
-    watch(currentDataset, () => {
-      if (currentDataset.value) {
-        getMapLayerForDataObject(
-          currentDataset.value,
-          currentDataset.value?.current_layer_index
-        ).then((mapLayer) => (currentMapLayer.value = mapLayer));
-      } else {
-        currentMapLayer.value = undefined;
-      }
-    });
+    watch(currentDataset, getCurrentMapLayer);
+    watch(currentMapLayerIndex, updateLayerShown);
+    onMounted(getCurrentMapLayer);
 
     return {
+      currentMapLayerIndex,
       currentMapLayer,
       currentDataset,
       currentFileItemName,
@@ -118,7 +129,6 @@ export default {
       deactivatedNodes,
       toggleNodeActive,
       getNetworkNodeName,
-      updateLayerShown,
     };
   },
 };
@@ -137,16 +147,19 @@ export default {
 
     <div
       class="pa-2"
-      v-if="currentDataset?.map_layers && currentDataset?.map_layers.length > 1"
+      v-if="
+        currentMapLayer &&
+        currentDataset?.map_layers &&
+        currentDataset?.map_layers.length > 1
+      "
     >
       <v-slider
-        v-model="currentDataset.current_layer_index"
+        v-model="currentMapLayerIndex"
         label="Current Layer"
         dense
         min="0"
         step="1"
         :max="currentDataset?.map_layers.length - 1"
-        @update:modelValue="updateLayerShown"
       />
       <v-card-subtitle class="wrap-subtitle">
         {{ currentFileItemName || "Untitled" }}

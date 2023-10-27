@@ -8,9 +8,14 @@ import {
   availableContexts,
   currentContext,
   availableDatasets,
+  selectedDatasets,
   currentDataset,
   map,
   showMapTooltip,
+  selectedMapLayers,
+  clickedMapLayer,
+  clickedFeature,
+  showMapBaseLayer,
   selectedSourceRegions,
   regionGroupingActive,
   regionGroupingType,
@@ -21,6 +26,13 @@ import {
   availableSimulationTypes,
   currentSimulationType,
   availableDerivedRegions,
+  selectedDerivedRegions,
+  currentNetworkDataset,
+  currentNetworkMapLayer,
+  currentNetworkGCC,
+  deactivatedNodes,
+  loading,
+  currentError,
 } from "./store";
 import { Dataset } from "./types";
 import {
@@ -32,6 +44,35 @@ import {
   getContextDerivedRegions,
 } from "@/api/rest";
 
+export function clearState() {
+  availableContexts.value = [];
+  currentContext.value = undefined;
+  availableDatasets.value = undefined;
+  selectedDatasets.value = [];
+  currentDataset.value = undefined;
+  selectedMapLayers.value = [];
+  clickedMapLayer.value = undefined;
+  showMapBaseLayer.value = true;
+  clickedFeature.value = undefined;
+  rasterTooltip.value = undefined;
+  availableCharts.value = undefined;
+  currentChart.value = undefined;
+  availableSimulationTypes.value = undefined;
+  currentSimulationType.value = undefined;
+  availableDerivedRegions.value = undefined;
+  selectedSourceRegions.value = [];
+  selectedDerivedRegions.value = [];
+  regionGroupingActive.value = false;
+  regionGroupingType.value = undefined;
+  currentNetworkDataset.value = undefined;
+  currentNetworkMapLayer.value = undefined;
+  deactivatedNodes.value = [];
+  currentNetworkGCC.value = undefined;
+  loading.value = false;
+  currentError.value = undefined;
+  polls.value = {};
+}
+
 export function getMap() {
   if (map.value === undefined) {
     throw new Error("Map not yet initialized!");
@@ -40,6 +81,7 @@ export function getMap() {
 }
 
 export function loadContexts() {
+  clearState();
   getContexts().then((data) => {
     availableContexts.value = data;
     if (data.length) {
@@ -57,37 +99,6 @@ export function loadContexts() {
     loadCharts();
     loadSimulationTypes();
     loadDerivedRegions();
-  });
-}
-
-export function loadDatasets() {
-  if (!currentContext.value) return;
-  availableDatasets.value = undefined;
-  getContextDatasets(currentContext.value.id).then((data: Dataset[]) => {
-    availableDatasets.value = data;
-  });
-}
-
-export function loadCharts() {
-  if (!currentContext.value) return;
-  currentChart.value = undefined;
-  getContextCharts(currentContext.value.id).then((charts) => {
-    availableCharts.value = charts;
-  });
-}
-
-export function loadSimulationTypes() {
-  if (!currentContext.value) return;
-  currentSimulationType.value = undefined;
-  getContextSimulationTypes(currentContext.value.id).then((sims) => {
-    availableSimulationTypes.value = sims;
-  });
-}
-
-export function loadDerivedRegions() {
-  if (!currentContext.value) return;
-  getContextDerivedRegions(currentContext.value.id).then((ders) => {
-    availableDerivedRegions.value = ders;
   });
 }
 
@@ -111,10 +122,44 @@ export function clearMap() {
   ]);
 }
 
+export function loadDatasets() {
+  if (!currentContext.value) return;
+  availableDatasets.value = undefined;
+  getContextDatasets(currentContext.value.id).then((data: Dataset[]) => {
+    availableDatasets.value = data;
+  });
+}
+
+export function loadCharts() {
+  if (!currentContext.value) return;
+  availableCharts.value = undefined;
+  currentChart.value = undefined;
+  getContextCharts(currentContext.value.id).then((charts) => {
+    availableCharts.value = charts;
+  });
+}
+
+export function loadSimulationTypes() {
+  if (!currentContext.value) return;
+  availableSimulationTypes.value = undefined;
+  currentSimulationType.value = undefined;
+  getContextSimulationTypes(currentContext.value.id).then((sims) => {
+    availableSimulationTypes.value = sims;
+  });
+}
+
+export function loadDerivedRegions() {
+  if (!currentContext.value) return;
+  availableDerivedRegions.value = undefined;
+  getContextDerivedRegions(currentContext.value.id).then((ders) => {
+    availableDerivedRegions.value = ders;
+  });
+}
+
 export function cancelRegionGrouping() {
   selectedSourceRegions.value = [];
   regionGroupingActive.value = false;
-  regionGroupingType.value = null;
+  regionGroupingType.value = undefined;
 
   showMapTooltip.value = false;
 }

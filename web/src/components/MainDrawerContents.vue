@@ -8,7 +8,6 @@ import {
   availableSimulationTypes,
   currentSimulationType,
   availableDerivedRegions,
-  availableMapLayers,
   currentDataset,
 } from "@/store";
 import {
@@ -85,11 +84,11 @@ export default {
 
     // If new derived region created, open panel
     watch(availableDerivedRegions, (availableRegs, oldRegs) => {
-      if (!oldRegs.length || availableRegs.length === oldRegs.length) {
+      if (!oldRegs?.length || availableRegs?.length === oldRegs.length) {
         return;
       }
 
-      if (availableRegs.length && !openPanels.value.includes(1)) {
+      if (availableRegs?.length && !openPanels.value.includes(1)) {
         openPanels.value.push(1);
       }
     });
@@ -113,7 +112,6 @@ export default {
       currentSimulationType,
       availableSimulationTypes,
       availableDerivedRegions,
-      availableMapLayers,
       loadDatasets,
       toggleDataset,
       toggleDerivedRegion,
@@ -202,6 +200,17 @@ export default {
         Available Derived Regions
       </v-expansion-panel-title>
       <v-expansion-panel-text>
+        <div
+          v-if="!availableDerivedRegions"
+          style="text-align: center; width: 100%"
+        >
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle
+          v-if="availableDerivedRegions && availableDerivedRegions.length === 0"
+        >
+          No Available Derived Regions.
+        </v-card-subtitle>
         <v-checkbox
           v-for="region in availableDerivedRegions"
           :model-value="derivedRegionSelected(region)"
@@ -220,7 +229,12 @@ export default {
         Available Charts
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <span v-if="availableCharts.length === 0">No charts available.</span>
+        <div v-if="!availableCharts" style="text-align: center; width: 100%">
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle v-if="availableCharts && availableCharts.length === 0">
+          No Available Charts.
+        </v-card-subtitle>
         <v-list>
           <v-list-item
             v-for="chart in availableCharts"
@@ -246,9 +260,19 @@ export default {
         Available Simulations
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <span v-if="availableSimulationTypes.length === 0"
-          >No simulations available.</span
+        <div
+          v-if="!availableSimulationTypes"
+          style="text-align: center; width: 100%"
         >
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle
+          v-if="
+            availableSimulationTypes && availableSimulationTypes.length === 0
+          "
+        >
+          No Available Simulation Types.
+        </v-card-subtitle>
         <v-list>
           <v-list-item
             v-for="sim in availableSimulationTypes"
