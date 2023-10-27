@@ -45,8 +45,6 @@ import {
 } from "@/api/rest";
 
 export function clearState() {
-  availableContexts.value = [];
-  currentContext.value = undefined;
   availableDatasets.value = undefined;
   selectedDatasets.value = [];
   currentDataset.value = undefined;
@@ -94,11 +92,6 @@ export function loadContexts() {
         }
       });
     }
-    clearMap();
-    loadDatasets();
-    loadCharts();
-    loadSimulationTypes();
-    loadDerivedRegions();
   });
 }
 
@@ -185,7 +178,14 @@ export function pollForProcessingDataset(datasetId: number) {
   }, 10000);
 }
 
-watch(currentContext, clearMap);
+watch(currentContext, () => {
+  clearState();
+  clearMap();
+  loadDatasets();
+  loadCharts();
+  loadSimulationTypes();
+  loadDerivedRegions();
+});
 watch(currentDataset, () => {
   rasterTooltip.value = undefined;
 });
