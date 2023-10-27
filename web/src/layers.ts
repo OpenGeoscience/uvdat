@@ -4,7 +4,7 @@ import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
 import VectorTileSource from "ol/source/VectorTile";
 import { TileCoord } from "ol/tilecoord";
-import { Style } from "ol/style";
+import { Circle, Stroke, Style } from "ol/style";
 import { Feature } from "ol";
 
 import { ref } from "vue";
@@ -26,6 +26,7 @@ import {
   selectedDatasets,
   selectedMapLayers,
   showMapBaseLayer,
+  deactivatedNodes,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
@@ -107,36 +108,63 @@ export function styleVectorOpenLayer(
       if (options.showGCC && currentNetworkGCC.value) {
         const featureProps = feature.getProperties();
         const { node_id, from_node_id, to_node_id } = featureProps;
-        if (
-          !(node_id && currentNetworkGCC.value.includes(node_id)) &&
-          !(
-            from_node_id &&
-            to_node_id &&
-            currentNetworkGCC.value.includes(from_node_id) &&
+        let highlight = false;
+        let translucent = false;
+        if (node_id) {
+          if (deactivatedNodes.value.includes(node_id)) translucent = true;
+          if (currentNetworkGCC.value.includes(node_id)) highlight = true;
+        } else if (from_node_id && to_node_id) {
+          if (
+            currentNetworkGCC.value.includes(from_node_id) ||
             currentNetworkGCC.value.includes(to_node_id)
-          )
-        ) {
-          // feature not included in current GCC, make it translucent
+          ) {
+            highlight = true;
+          }
+        }
+
+        if (translucent) {
           newStyle = oldStyle.map((s: Style) => {
             const stroke = s.getStroke();
             const image = s.getImage();
-            if (stroke && options.translucency) {
-              const color =
-                stroke.getColor()?.toString().substring(0, 7) +
-                options.translucency;
-              stroke.setColor(color);
+            const circle = image as CircleStyle;
+
+            let strokeColor = stroke?.getColor()?.toString().substring(0, 7);
+            let circleColor = circle
+              ?.getFill()
+              .getColor()
+              ?.toString()
+              .substring(0, 7);
+            if (translucent && options.translucency) {
+              if (strokeColor) strokeColor += options.translucency;
+              if (circleColor) circleColor += options.translucency;
+            } else {
+              if (strokeColor) strokeColor += "ff";
+              if (circleColor) circleColor += "ff";
             }
-            if (image && options.translucency) {
-              const circle = image as CircleStyle;
-              const color =
-                circle.getFill().getColor()?.toString().substring(0, 7) +
-                options.translucency;
-              circle.getFill().setColor(color);
-            }
+            if (strokeColor) stroke.setColor(strokeColor);
+            if (circleColor) circle.getFill().setColor(circleColor);
             return s;
           });
         }
+
+        if (highlight) {
+          const highlightStroke = new Stroke({
+            color: "yellow",
+            width: 8,
+          });
+          newStyle.push(
+            new Style({
+              zIndex: 0,
+              stroke: highlightStroke,
+              image: new Circle({
+                stroke: highlightStroke,
+                radius: 8,
+              }),
+            })
+          );
+        }
       }
+
       return newStyle;
     });
   }
