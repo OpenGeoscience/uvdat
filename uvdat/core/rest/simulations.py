@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.serializers import ModelSerializer
 from rest_framework.viewsets import GenericViewSet
 
+from uvdat.core.models import Context
 from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResult
 import uvdat.core.rest.serializers as uvdat_serializers
 
@@ -32,8 +33,6 @@ def get_available_simulations(context_id: int):
                     options = []
                 else:
                     option_serializer = option_serializer_matches[0]
-                    if hasattr(options_type, 'context'):
-                        options_query['context__id'] = context_id
                     option_objects = options_type.objects
                     if options_annotations:
                         option_objects = option_objects.annotate(**options_annotations)
@@ -42,6 +41,7 @@ def get_available_simulations(context_id: int):
                         for d in option_objects.filter(
                             **options_query,
                         ).all()
+                        if d.is_in_context(context_id)
                     )
             args.append(
                 {
@@ -58,6 +58,8 @@ def get_available_simulations(context_id: int):
 
 
 class SimulationViewSet(GenericViewSet):
+    serializer_class = uvdat_serializers.SimulationResultSerializer
+
     @action(
         detail=False,
         methods=['get'],
@@ -92,16 +94,19 @@ class SimulationViewSet(GenericViewSet):
     @action(
         detail=False,
         methods=['post'],
-        url_path=r'run/(?P<simulation_id>[\d*]+)/context/(?P<context_id>[\d*]+)',
+        url_path=r'run/(?P<simulation_index>[\d*]+)/context/(?P<context_id>[\d*]+)',
     )
-    def run(self, request, simulation_id: int, context_id: int, **kwargs):
+    def run(self, request, simulation_index: int, context_id: int, **kwargs):
+        simulation_type = list(AVAILABLE_SIMULATIONS.keys())[int(simulation_index)]
+        context = Context.objects.get(id=context_id)
+        input_args = request.data
         sim_result = SimulationResult.objects.create(
-            simulation_id=simulation_id,
-            input_args=kwargs,
-            context__id=context_id,
+            simulation_type=simulation_type,
+            input_args=input_args,
+            context=context,
         )
-        sim_result.run(**request.data)
+        sim_result.run(**input_args)
         return HttpResponse(
-            uvdat_serializers.SimulationResultSerializer(sim_result).data,
+            json.dumps(uvdat_serializers.SimulationResultSerializer(sim_result).data),
             status=200,
         )

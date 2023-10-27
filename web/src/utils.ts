@@ -19,7 +19,7 @@ import {
   currentNetworkMapLayer,
   availableDatasets,
 } from "@/store";
-import { Dataset, RasterData, VectorMapLayer } from "./types.js";
+import { Dataset, RasterData, VectorMapLayer } from "./types";
 import { Ref } from "vue";
 import { isMapLayerVisible, styleVectorOpenLayer } from "./layers";
 
@@ -188,24 +188,26 @@ export function deactivatedNodesUpdated() {
   }
 }
 
+export function fetchDatasetNetwork(dataset: Dataset) {
+  getDatasetNetwork(dataset.id).then((data) => {
+    availableDatasets.value = availableDatasets.value?.map((d) => {
+      if (d.id === dataset.id) {
+        return Object.assign(d, { network: data });
+      } else return d;
+    });
+    currentNetworkDataset.value = availableDatasets.value?.find(
+      (d) => d.id === dataset.id
+    );
+  });
+}
+
 export function toggleNodeActive(
   nodeId: number,
   dataset: Dataset | undefined,
   mapLayer: VectorMapLayer | undefined
 ) {
   if (!dataset || !mapLayer || !isMapLayerVisible(mapLayer)) return;
-  if (!dataset.network) {
-    getDatasetNetwork(dataset.id).then((data) => {
-      availableDatasets.value = availableDatasets.value?.map((d) => {
-        if (d.id === dataset.id) {
-          return Object.assign(d, { network: data });
-        } else return d;
-      });
-      currentNetworkDataset.value = availableDatasets.value?.find(
-        (d) => d.id === dataset.id
-      );
-    });
-  }
+  if (!dataset.network) fetchDatasetNetwork(dataset);
   currentNetworkDataset.value = dataset as Dataset;
   currentNetworkMapLayer.value = mapLayer as VectorMapLayer;
   if (deactivatedNodes.value.includes(nodeId)) {

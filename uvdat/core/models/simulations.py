@@ -5,6 +5,7 @@ from uvdat.core.tasks import simulations as uvdat_simulations
 
 from .context import Context
 from .dataset import Dataset
+from .map_layers import VectorMapLayer, RasterMapLayer
 
 
 class SimulationResult(TimeStampedModel):
@@ -23,6 +24,9 @@ class SimulationResult(TimeStampedModel):
     output_data = models.JSONField(blank=True, null=True)
     error_message = models.TextField(null=True, blank=True)
 
+    def is_in_context(self, context_id):
+        return self.context.id == int(context_id)
+
     def get_simulation_type(self):
         if not self.simulation_type or self.simulation_type not in AVAILABLE_SIMULATIONS:
             raise ValueError(f'Simulation type not found: {self.simulation_type}')
@@ -31,8 +35,7 @@ class SimulationResult(TimeStampedModel):
     def get_name(self):
         # method built into text choice field
         simulation_type = self.get_simulation_type_display()
-        print(simulation_type)
-        return 'Unnamed Simulation Result'
+        return simulation_type
 
     def run(self, **kwargs):
         self.output_data = None
@@ -64,14 +67,14 @@ AVAILABLE_SIMULATIONS = {
                 },
             },
             {
-                'name': 'elevation_dataset',
-                'type': Dataset,
-                'options_query': {'category': 'elevation'},
+                'name': 'elevation_data',
+                'type': RasterMapLayer,
+                'options_query': {'file_item__dataset__category': 'elevation'},
             },
             {
-                'name': 'flood_dataset',
-                'type': Dataset,
-                'options_query': {'category': 'flood'},
+                'name': 'flood_area',
+                'type': VectorMapLayer,
+                'options_query': {'file_item__dataset__category': 'flood'},
             },
         ],
     },
@@ -89,7 +92,7 @@ AVAILABLE_SIMULATIONS = {
                 'type': SimulationResult,
                 'options_query': {
                     'simulation_type__in': [
-                        'Flood 1',
+                        'FLOOD_1',
                         # add other node failure simulation types here as created
                     ]
                 },

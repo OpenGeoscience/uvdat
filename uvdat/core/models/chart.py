@@ -13,6 +13,9 @@ class Chart(models.Model):
     chart_options = models.JSONField(blank=True, null=True)
     editable = models.BooleanField(default=False)
 
+    def is_in_context(self, context_id):
+        return self.context.id == context_id
+
     def spawn_conversion_task(
         self,
         conversion_options=None,

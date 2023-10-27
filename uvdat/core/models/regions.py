@@ -12,6 +12,9 @@ class SourceRegion(models.Model):
     metadata = models.JSONField(blank=True, null=True)
     boundary = geo_models.MultiPolygonField()
 
+    def is_in_context(self, context_id):
+        return self.dataset.is_in_context(context_id)
+
     class Meta:
         constraints = [
             # We enforce name uniqueness across datasets
@@ -39,6 +42,9 @@ class DerivedRegion(models.Model):
     # Since these regions are not associated with Datasets,
     # They need their own reference to a map representation
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.PROTECT)
+
+    def is_in_context(self, context_id):
+        return self.context.id == int(context_id)
 
     class Meta:
         constraints = [

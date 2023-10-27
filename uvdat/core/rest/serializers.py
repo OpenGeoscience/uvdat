@@ -33,9 +33,13 @@ class ContextSerializer(serializers.ModelSerializer):
 
 class DatasetSerializer(serializers.ModelSerializer):
     map_layers = serializers.SerializerMethodField('get_map_layers')
+    networked = serializers.SerializerMethodField('get_networked')
 
     def get_map_layers(self, obj):
         return obj.get_map_layers()
+
+    def get_networked(self, obj):
+        return obj.get_network() is not None
 
     class Meta:
         model = Dataset
@@ -55,8 +59,18 @@ class ChartSerializer(serializers.ModelSerializer):
 
 
 class RasterMapLayerSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField('get_name')
+    type = serializers.SerializerMethodField('get_type')
     dataset_id = serializers.SerializerMethodField('get_dataset_id')
     file_item = serializers.SerializerMethodField('get_file_item')
+
+    def get_name(self, obj):
+        if obj.file_item is None:
+            return None
+        return obj.file_item.name
+
+    def get_type(self, obj):
+        return 'raster'
 
     def get_dataset_id(self, obj):
         if obj.file_item and obj.file_item.dataset:
@@ -77,10 +91,20 @@ class RasterMapLayerSerializer(serializers.ModelSerializer):
 
 
 class VectorMapLayerSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField('get_name')
+    type = serializers.SerializerMethodField('get_type')
     dataset_id = serializers.SerializerMethodField('get_dataset_id')
     file_item = serializers.SerializerMethodField('get_file_item')
     derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
     tile_coords = serializers.SerializerMethodField('get_tile_coords')
+
+    def get_name(self, obj):
+        if obj.file_item is None:
+            return None
+        return obj.file_item.name
+
+    def get_type(self, obj):
+        return 'vector'
 
     def get_dataset_id(self, obj):
         if obj.file_item and obj.file_item.dataset:
@@ -175,3 +199,4 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SimulationResult
+        fields = '__all__'

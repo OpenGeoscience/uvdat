@@ -16,6 +16,12 @@ class Dataset(models.Model):
         choices=DatasetType.choices,
     )
 
+    def is_in_context(self, context_id):
+        from uvdat.core.models import Context
+
+        context = Context.objects.get(id=context_id)
+        return context.datasets.filter(id=self.id).exists()
+
     def spawn_conversion_task(
         self,
         style_options=None,
@@ -47,10 +53,13 @@ class Dataset(models.Model):
     def get_network(self):
         from uvdat.core.models import NetworkEdge, NetworkNode
 
-        return {
+        network = {
             'nodes': NetworkNode.objects.filter(dataset=self),
             'edges': NetworkEdge.objects.filter(dataset=self),
         }
+        if len(network.get('nodes')) == 0 and len(network.get('edges')) == 0:
+            return None
+        return network
 
     def get_network_graph(self):
         from uvdat.core.tasks.networks import get_dataset_network_graph

@@ -1,11 +1,14 @@
 <script lang="ts">
-import { ref, watch, computed } from "vue";
+import { ref, watch, computed, onMounted } from "vue";
 import {
   currentNetworkDataset,
+  currentNetworkMapLayer,
   deactivatedNodes,
   selectedDatasets,
+  selectedMapLayers,
 } from "@/store";
-import { deactivatedNodesUpdated } from "@/utils";
+import { deactivatedNodesUpdated, fetchDatasetNetwork } from "@/utils";
+import { getMapLayerForDataObject } from "@/layers";
 
 export default {
   props: {
@@ -33,6 +36,20 @@ export default {
       if (props.nodeRecoveries?.length) return props.nodeRecoveries;
       else return props.nodeFailures;
     });
+
+    function findCurrentNetworkDataset() {
+      currentNetworkDataset.value = selectedDatasets.value.find(
+        (d) => d.networked
+      );
+      if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
+        fetchDatasetNetwork(currentNetworkDataset.value);
+      }
+      if (currentNetworkDataset.value) {
+        getMapLayerForDataObject(currentNetworkDataset.value).then(
+          (mapLayer) => (currentNetworkMapLayer.value = mapLayer)
+        );
+      }
+    }
 
     function pause() {
       clearInterval(ticker.value);
@@ -74,9 +91,13 @@ export default {
       deactivatedNodesUpdated();
     });
 
+    watch(selectedDatasets, findCurrentNetworkDataset);
+    onMounted(findCurrentNetworkDataset);
+
     return {
       currentNetworkDataset,
-      selectedDatasets,
+      currentNetworkMapLayer,
+      selectedMapLayers,
       nodeChanges,
       currentTick,
       seconds,
@@ -92,10 +113,11 @@ export default {
   <div
     v-if="
       !currentNetworkDataset ||
-      !selectedDatasets.includes(currentNetworkDataset)
+      !currentNetworkMapLayer ||
+      !selectedMapLayers.includes(currentNetworkMapLayer)
     "
   >
-    Show network dataset and enable network mode visualization to begin.
+    Show network dataset layer to begin.
   </div>
   <div v-else class="d-flex" style="align-items: center">
     <v-btn @click="play" icon="mdi-play" variant="text" />

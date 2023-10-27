@@ -1,9 +1,19 @@
 <script lang="ts">
 import { ref, watch } from "vue";
-import { currentSimulationType, currentContext } from "@/store";
+import {
+  currentSimulationType,
+  currentContext,
+  selectedMapLayers,
+} from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { SimulationResult } from "@/types";
+import { RasterMapLayer, SimulationResult, VectorMapLayer } from "@/types";
+import {
+  getMapLayerForDataObject,
+  getOrCreateLayerFromID,
+  isMapLayerVisible,
+  toggleMapLayer,
+} from "@/layers";
 
 export default {
   components: {
@@ -12,6 +22,14 @@ export default {
   setup() {
     const tab = ref();
     const activeResult = ref<SimulationResult>();
+    const activeResultInputs = ref<
+      {
+        key: string;
+        viewable: boolean;
+        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        value: { name: string };
+      }[]
+    >([]);
     const availableResults = ref<SimulationResult[]>([]);
     const inputForm = ref();
     const selectedInputs = ref<Record<string, object[]>>({});
@@ -28,9 +46,9 @@ export default {
             currentSimulationType.value.id,
             currentContext.value.id,
             selectedInputs.value
-          ).then(({ result }) => {
+          ).then((result) => {
             tab.value = "old";
-            activeResult.value = result.id;
+            activeResult.value = result;
           });
         }
       });
@@ -43,6 +61,11 @@ export default {
         currentContext.value.id
       ).then((results) => {
         availableResults.value = results;
+        if (activeResult.value) {
+          activeResult.value = availableResults.value.find(
+            (r) => r.id == activeResult.value?.id
+          );
+        }
       });
     }
 
@@ -51,45 +74,50 @@ export default {
       return date.toUTCString();
     }
 
-    function resultInputArgs(result: SimulationResult) {
-      let args: {
+    async function populateActiveResultInputs() {
+      if (!activeResult.value?.input_args) return;
+      activeResultInputs.value = [];
+      const args = Object.entries(activeResult.value.input_args);
+      const inputInfo = await Promise.all(
+        args.map(async ([argName, argValue]) => {
+          // const [argName, argValue] = args[i];
+          const argDef = currentSimulationType.value?.args.find(
+            (a: { name: string }) => a.name === argName
+          );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const selectedOption: any = argDef?.options.find(
+            (o: { id: number }) => o === argValue || o.id === argValue
+          );
+          if (selectedOption) {
+            let mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+            if (selectedOption.map_layers) {
+              // Object has layers
+              mapLayer = await getMapLayerForDataObject(selectedOption);
+            } else if (selectedOption.file_item && selectedOption.type) {
+              // Object is layer
+              mapLayer = await getOrCreateLayerFromID(
+                selectedOption.id,
+                selectedOption.type
+              );
+            }
+            return {
+              key: argName.replaceAll("_", " "),
+              value: selectedOption,
+              mapLayer,
+              viewable: mapLayer && !isMapLayerVisible(mapLayer),
+            };
+          }
+        })
+      );
+      activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
         key: string;
         viewable: boolean;
+        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
         value: { name: string };
-      }[] = [];
-      Object.entries(result.input_args).forEach(([k, v]) => {
-        if (!currentSimulationType.value) return;
-        const simArg = currentSimulationType.value.args.find(
-          (a: { name: string }) => a.name === k
-        );
-        if (simArg) {
-          let selectedOption = simArg.options.find(
-            (o) => o.id === v || o === v
-          );
-          // const mapLayerUid = getDatasetUid(selectedOption.id);
-          const mapLayerSelected = false;
-          // selectedMapLayers.value.has(mapLayerUid);
-          const mapLayerAvailable = true;
-          // availableMapLayersTable.value.has(mapLayerUid);
-
-          if (selectedOption) {
-            args.push({
-              key: k,
-              value: selectedOption,
-              viewable: mapLayerAvailable && !mapLayerSelected,
-            });
-          }
-        }
-      });
-      return args;
+      }[];
     }
 
-    function showDataset(dataset: object) {
-      console.log("TODO: show dataset", dataset);
-      // addMapLayerToMap(new MapLayer({ dataset }));
-    }
-
-    function pollForActiveDatasetOutput() {
+    function pollForActiveResultOutput() {
       if (!availableResults.value) {
         clearInterval(outputPoll.value);
         outputPoll.value = undefined;
@@ -122,15 +150,21 @@ export default {
     });
 
     watch(activeResult, () => {
-      if (activeResult.value && !activeResult.value.output_data) {
-        outputPoll.value = setInterval(pollForActiveDatasetOutput, 3000);
+      if (activeResult.value) {
+        populateActiveResultInputs();
+        if (!activeResult.value.output_data) {
+          outputPoll.value = setInterval(pollForActiveResultOutput, 3000);
+        }
       }
     });
+
+    watch(selectedMapLayers, populateActiveResultInputs);
 
     return {
       currentSimulationType,
       tab,
       activeResult,
+      activeResultInputs,
       inputForm,
       selectedInputs,
       availableResults,
@@ -138,8 +172,7 @@ export default {
       inputSelectionRules,
       run,
       timestampToTitle,
-      resultInputArgs,
-      showDataset,
+      toggleMapLayer,
     };
   },
 };
@@ -201,22 +234,22 @@ export default {
           <v-expansion-panel
             v-for="result in availableResults"
             :key="result.id"
-            :value="result.id"
+            :value="result"
             :title="timestampToTitle(result.modified)"
           >
             <v-expansion-panel-text>
               <v-table>
                 <tbody>
                   <tr
-                    v-for="arg in resultInputArgs(result)"
+                    v-for="arg in activeResultInputs"
                     v-bind="arg"
                     :key="arg.key"
                   >
                     <td>{{ arg.key }}</td>
-                    <td>{{ arg.value.name }}</td>
+                    <td>{{ arg.value.name || arg.value }}</td>
                     <td>
                       <v-btn
-                        @click="showDataset(arg.value)"
+                        @click="toggleMapLayer(arg.mapLayer)"
                         v-if="arg.viewable"
                       >
                         Show on Map
