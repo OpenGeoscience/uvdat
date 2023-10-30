@@ -7,7 +7,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 import geopandas
 
-from uvdat.core.models import DerivedRegion, SourceRegion, Context, VectorMapLayer
+from uvdat.core.models import Context, DerivedRegion, SourceRegion, VectorMapLayer
 from uvdat.core.tasks.map_layers import save_vector_tiles
 
 

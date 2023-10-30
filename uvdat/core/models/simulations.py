@@ -5,7 +5,7 @@ from uvdat.core.tasks import simulations as uvdat_simulations
 
 from .context import Context
 from .dataset import Dataset
-from .map_layers import VectorMapLayer, RasterMapLayer
+from .map_layers import RasterMapLayer, VectorMapLayer
 
 
 class SimulationResult(TimeStampedModel):

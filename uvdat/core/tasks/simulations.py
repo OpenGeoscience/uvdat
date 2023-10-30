@@ -44,7 +44,7 @@ def get_network_node_elevations(network_nodes, elevation_data):
 
 @shared_task
 def flood_scenario_1(simulation_result_id, network_dataset, elevation_data, flood_area):
-    from uvdat.core.models import SimulationResult, VectorMapLayer, RasterMapLayer
+    from uvdat.core.models import RasterMapLayer, SimulationResult, VectorMapLayer
 
     result = SimulationResult.objects.get(id=simulation_result_id)
     try:
