@@ -58,7 +58,7 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
             data = serializer.validated_data
             derived_region = create_derived_region(
                 name=data['name'],
-                context_id=data['context'],
+                context=data['context'],
                 region_ids=data['regions'],
                 operation=data['operation'],
             )

@@ -46,6 +46,15 @@ class DerivedRegion(models.Model):
     def is_in_context(self, context_id):
         return self.context.id == int(context_id)
 
+    def get_map_layers(self):
+        return [
+            {
+                'id': self.map_layer.id,
+                'index': 0,
+                'type': 'vector',
+            }
+        ]
+
     class Meta:
         constraints = [
             # We enforce name uniqueness across contexts

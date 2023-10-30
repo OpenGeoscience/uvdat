@@ -19,7 +19,7 @@ import {
   currentNetworkMapLayer,
   availableDatasets,
 } from "@/store";
-import { Dataset, RasterData, VectorMapLayer } from "./types";
+import { Dataset, DerivedRegion, RasterData, VectorMapLayer } from "./types";
 import { Ref } from "vue";
 import { isMapLayerVisible, styleVectorOpenLayer } from "./layers";
 
@@ -203,10 +203,11 @@ export function fetchDatasetNetwork(dataset: Dataset) {
 
 export function toggleNodeActive(
   nodeId: number,
-  dataset: Dataset | undefined,
+  dataset: Dataset | DerivedRegion | undefined,
   mapLayer: VectorMapLayer | undefined
 ) {
   if (!dataset || !mapLayer || !isMapLayerVisible(mapLayer)) return;
+  dataset = dataset as Dataset;
   if (!dataset.network) fetchDatasetNetwork(dataset);
   currentNetworkDataset.value = dataset as Dataset;
   currentNetworkMapLayer.value = mapLayer as VectorMapLayer;

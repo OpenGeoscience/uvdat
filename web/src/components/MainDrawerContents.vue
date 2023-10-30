@@ -56,13 +56,11 @@ export default {
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     async function derivedRegionSelected(derivedRegion: DerivedRegion) {
-      console.log("is derived region selected?", derivedRegion);
       const mapLayer = await getMapLayerForDataObject(derivedRegion);
       return isMapLayerVisible(mapLayer);
     }
 
     async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
-      console.log("toggling derived region", derivedRegion);
       const mapLayer = await getMapLayerForDataObject(derivedRegion);
       toggleMapLayer(mapLayer);
     }

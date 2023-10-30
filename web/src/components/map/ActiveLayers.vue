@@ -3,7 +3,12 @@ import { ref, watch } from "vue";
 import draggable from "vuedraggable";
 import { currentDataset, selectedMapLayers } from "@/store";
 import { updateVisibleMapLayers, clearMapLayers } from "@/layers";
-import { RasterMapLayer, VectorMapLayer, Dataset } from "@/types";
+import {
+  RasterMapLayer,
+  VectorMapLayer,
+  Dataset,
+  DerivedRegion,
+} from "@/types";
 import { getDataObjectForMapLayer } from "@/layers";
 
 export default {
@@ -12,6 +17,19 @@ export default {
   },
   setup() {
     const layerMenuActive = ref(false);
+
+    function labelForLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+      const dataObject: Dataset | DerivedRegion | undefined =
+        getDataObjectForMapLayer(mapLayer);
+      if (dataObject) {
+        let ret = dataObject.name;
+        if (dataObject.map_layers.length > 1) {
+          ret += ` (Layer ${mapLayer.index})`;
+        }
+        return ret;
+      }
+      return "Unnamed Layer";
+    }
 
     async function setCurrentDataset(layer: VectorMapLayer | RasterMapLayer) {
       currentDataset.value = getDataObjectForMapLayer(layer) as Dataset;
@@ -24,6 +42,7 @@ export default {
     return {
       layerMenuActive,
       selectedMapLayers,
+      labelForLayer,
       clearMapLayers,
       updateVisibleMapLayers,
       setCurrentDataset,
@@ -81,8 +100,7 @@ export default {
               </template>
             </v-tooltip>
 
-            {{ getDataObjectForMapLayer(element)?.name }}
-            (Layer {{ getDataObjectForMapLayer(element)?.current_layer_index }})
+            {{ labelForLayer(element) }}
 
             <v-tooltip
               v-if="selectedMapLayers.length"

@@ -47,12 +47,18 @@ class VectorMapLayer(AbstractMapLayer):
 
     def get_geojson_data(self):
         if self.geojson_data:
+            if isinstance(self.geojson_data, dict):
+                return self.geojson_data
             return json.loads(self.geojson_data)
         else:
             return json.loads(json.load(self.large_geojson_data.open()))
 
     def save_geojson_data(self, content):
-        geojson = content.to_json()
+        if isinstance(content, dict):
+            geojson = content
+        else:
+            geojson = content.to_json()
+
         geojson_size = len(json.dumps(geojson).encode())
 
         # JSONField limited to 268435455 bytes

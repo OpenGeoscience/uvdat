@@ -120,10 +120,10 @@ class VectorMapLayerSerializer(serializers.ModelSerializer):
         }
 
     def get_derived_region_id(self, obj):
-        matches = DerivedRegion.objects.filter(map_layer=obj)
-        if matches.count == 1:
-            return matches.first()
-        return None
+        dr = obj.derivedregion_set.first()
+        if dr is None:
+            return None
+        return dr.id
 
     def get_tile_coords(self, obj):
         return obj.get_available_tile_coords()
@@ -149,9 +149,22 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
 
 
 class DerivedRegionListSerializer(serializers.ModelSerializer):
+    map_layers = serializers.SerializerMethodField('get_map_layers')
+
+    def get_map_layers(self, obj):
+        return obj.get_map_layers()
+
     class Meta:
         model = DerivedRegion
-        fields = ['id', 'name', 'context', 'metadata', 'source_regions', 'operation']
+        fields = [
+            'id',
+            'name',
+            'context',
+            'metadata',
+            'source_regions',
+            'operation',
+            'map_layers',
+        ]
 
 
 class DerivedRegionDetailSerializer(serializers.ModelSerializer):
@@ -160,9 +173,13 @@ class DerivedRegionDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     boundary = serializers.SerializerMethodField()
+    map_layers = serializers.SerializerMethodField('get_map_layers')
 
     def get_boundary(self, obj):
         return json.loads(obj.boundary.geojson)
+
+    def get_map_layers(self, obj):
+        return obj.get_map_layers()
 
 
 class DerivedRegionCreationSerializer(serializers.ModelSerializer):

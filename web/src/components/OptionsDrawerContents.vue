@@ -52,7 +52,6 @@ export default {
         const layerProperties = openlayer.getProperties();
         const defaultStyle = layerProperties.default_style;
         const { min, max, palette } = layerProperties;
-        console.log(layerProperties);
 
         if (defaultStyle) {
           colormap.value = palette || defaultStyle.palette || "terrain";

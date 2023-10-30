@@ -95,7 +95,6 @@ export default {
       selectedSourceRegions.value = [clickedRegion.value];
     }
 
-    // TODO
     // Ensure that if any regions of the currently selected datasets are
     // de-selected, their regions are removed from the selection
     watch(selectedMapLayers, () => {
