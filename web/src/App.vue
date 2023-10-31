@@ -62,8 +62,9 @@ export default defineComponent({
       <v-spacer />
       {{ currentError }}
       <v-spacer />
-      <v-list-item prepend-icon="mdi-bookmark-box-outline">
+      <v-list-item>
         <v-select
+          label="Study Context"
           v-model="currentContext"
           :items="availableContexts"
           item-title="name"
