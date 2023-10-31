@@ -18,6 +18,7 @@ export default {
     const colormap = ref("terrain");
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
+    const applyToAll = ref<boolean>(false);
 
     const currentFileItemName = computed(() => {
       return currentMapLayer.value?.file_item?.name;
@@ -41,28 +42,34 @@ export default {
     }
 
     function populateRefs() {
-      opacity.value = 1;
-      colormap.value = "terrain";
-      layerRange.value = [];
-      colormapRange.value = [];
       if (currentMapLayer.value?.openlayer) {
-        currentMapLayerIndex.value = currentMapLayer.value.index;
         const openlayer = currentMapLayer.value.openlayer;
-        opacity.value = openlayer.getOpacity();
-        const layerProperties = openlayer.getProperties();
-        const defaultStyle = layerProperties.default_style;
-        const { min, max, palette } = layerProperties;
+        if (applyToAll.value) {
+          updateLayerOpacity();
+          updateColormap();
+        } else {
+          currentMapLayerIndex.value = currentMapLayer.value.index;
+          opacity.value = openlayer.getOpacity();
+          const layerProperties = openlayer.getProperties();
+          const defaultStyle = layerProperties.default_style;
+          const { min, max, palette } = layerProperties;
 
-        if (defaultStyle) {
-          colormap.value = palette || defaultStyle.palette || "terrain";
-          layerRange.value =
-            defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
-          if (min && max) {
-            colormapRange.value = [min, max];
-          } else {
-            colormapRange.value = layerRange.value;
+          if (defaultStyle) {
+            colormap.value = palette || defaultStyle.palette || "terrain";
+            layerRange.value =
+              defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
+            if (min && max) {
+              colormapRange.value = [min, max];
+            } else {
+              colormapRange.value = layerRange.value;
+            }
           }
         }
+      } else {
+        opacity.value = 1;
+        colormap.value = "terrain";
+        layerRange.value = [];
+        colormapRange.value = [];
       }
     }
 
@@ -124,6 +131,7 @@ export default {
       colormap,
       layerRange,
       colormapRange,
+      applyToAll,
       rasterTooltip,
       deactivatedNodes,
       toggleNodeActive,
@@ -152,16 +160,24 @@ export default {
         currentDataset?.map_layers.length > 1
       "
     >
+      <v-checkbox
+        v-model="applyToAll"
+        :label="`Apply style changes to all ${currentDataset.map_layers.length} layers in Dataset`"
+      />
+
       <v-slider
         v-model="currentMapLayerIndex"
         label="Current Layer"
+        :thumb-label="true"
+        show-ticks="always"
+        :tick-size="5"
         dense
         min="0"
         step="1"
         :max="currentDataset?.map_layers.length - 1"
       />
       <v-card-subtitle class="wrap-subtitle">
-        {{ currentFileItemName || "Untitled" }}
+        Current layer file name: {{ currentFileItemName || "Untitled" }}
       </v-card-subtitle>
     </div>
 
