@@ -35,6 +35,13 @@ export default {
       currentDataset.value = getDataObjectForMapLayer(layer) as Dataset;
     }
 
+    function reorderMapLayers() {
+      selectedMapLayers.value.forEach((mapLayer, index) => {
+        mapLayer.openlayer.setZIndex(selectedMapLayers.value.length - index);
+      });
+      updateVisibleMapLayers();
+    }
+
     watch(selectedMapLayers, () => {
       layerMenuActive.value = !!selectedMapLayers.value.length;
     });
@@ -44,7 +51,7 @@ export default {
       selectedMapLayers,
       labelForLayer,
       clearMapLayers,
-      updateVisibleMapLayers,
+      reorderMapLayers,
       setCurrentDataset,
       getDataObjectForMapLayer,
     };
@@ -85,7 +92,7 @@ export default {
       <div v-if="!selectedMapLayers.length" class="pa-4">No layers active.</div>
       <draggable
         v-model="selectedMapLayers"
-        @change="updateVisibleMapLayers"
+        @change="reorderMapLayers"
         item-key="id"
       >
         <template #item="{ element }">

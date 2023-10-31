@@ -53,6 +53,7 @@ export async function getOrCreateLayerFromID(
     styleRasterOpenLayer(mapLayer.openlayer, {});
     cacheRasterData(mapLayerId);
   }
+  mapLayer.openlayer.setZIndex(selectedMapLayers.value.length);
 
   // since this is an async context, check again for existing layer before pushing.
   cachedMapLayer = _mapLayerManager.value.find((l) => {
@@ -312,9 +313,6 @@ export async function getMapLayerForDataObject(
 }
 
 export function updateVisibleMapLayers() {
-  selectedMapLayers.value.forEach((mapLayer, index) => {
-    mapLayer.openlayer.setZIndex(selectedMapLayers.value.length - index);
-  });
   selectedMapLayers.value = _mapLayerManager.value.filter(isMapLayerVisible);
 
   selectedMapLayers.value.sort(

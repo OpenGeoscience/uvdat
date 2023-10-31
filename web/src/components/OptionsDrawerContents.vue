@@ -19,6 +19,7 @@ export default {
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
     const applyToAll = ref<boolean>(false);
+    const zIndex = ref<number>();
 
     const currentFileItemName = computed(() => {
       return currentMapLayer.value?.file_item?.name;
@@ -30,6 +31,9 @@ export default {
           currentDataset.value,
           currentDataset.value?.current_layer_index
         ).then((mapLayer) => {
+          if (zIndex.value !== undefined) {
+            mapLayer?.openlayer.setZIndex(zIndex.value);
+          }
           if (!isMapLayerVisible(mapLayer)) {
             toggleMapLayer(mapLayer);
           }
@@ -44,6 +48,7 @@ export default {
     function populateRefs() {
       if (currentMapLayer.value?.openlayer) {
         const openlayer = currentMapLayer.value.openlayer;
+        zIndex.value = openlayer.getZIndex();
         if (applyToAll.value) {
           updateLayerOpacity();
           updateColormap();
