@@ -94,3 +94,12 @@ class VectorTile(models.Model):
     x = models.IntegerField(default=0)
     y = models.IntegerField(default=0)
     z = models.IntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            # Ensure that a full index only ever resolves to one record
+            models.UniqueConstraint(
+                name='unique-map-layer-index', fields=['map_layer', 'z', 'x', 'y']
+            )
+        ]
+        indexes = [models.Index(fields=('z', 'x', 'y'), name='vectortile-coordinates-index')]
