@@ -42,32 +42,22 @@ class RasterMapLayer(AbstractMapLayer):
 
 
 class VectorMapLayer(AbstractMapLayer):
-    geojson_data = models.JSONField(blank=True, null=True)
-    large_geojson_data = S3FileField(null=True)
+    geojson_file = S3FileField(null=True)
 
-    def get_geojson_data(self):
-        if self.geojson_data:
-            if isinstance(self.geojson_data, dict):
-                return self.geojson_data
-            return json.loads(self.geojson_data)
+    def write_geojson_data(self, content: str | dict):
+        if isinstance(content, str):
+            data = content
+        elif isinstance(content, dict):
+            data = json.dumps(content)
         else:
-            return json.loads(json.load(self.large_geojson_data.open()))
+            raise Exception(f'Invalid content type supplied: {type(content)}')
 
-    def save_geojson_data(self, content):
-        if isinstance(content, dict):
-            geojson = content
-        else:
-            geojson = content.to_json()
+        self.geojson_file.save('vectordata.geojson', ContentFile(data.encode()))
 
-        geojson_size = len(json.dumps(geojson).encode())
+    def read_geojson_data(self) -> dict:
+        """Reads and loads the data from geojson_file into a dict."""
+        return json.load(self.geojson_file.open())
 
-        # JSONField limited to 268435455 bytes
-        if geojson_size < 268000000:
-            self.geojson_data = geojson
-        else:
-            self.large_geojson_data.save(
-                'vectordata.geojson',
-                ContentFile(json.dumps(geojson).encode()),
             )
 
     def get_available_tile_coords(self):

@@ -130,7 +130,7 @@ class VectorMapLayerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VectorMapLayer
-        exclude = ['geojson_data', 'large_geojson_data']
+        exclude = ['geojson_file']
 
 
 class SourceRegionSerializer(serializers.ModelSerializer):

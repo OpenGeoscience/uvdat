@@ -67,7 +67,7 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_data, floo
 
     node_failures = []
     network_nodes = network_dataset.network_nodes.all()
-    flood_geodata = flood_area.get_geojson_data()
+    flood_geodata = flood_area.read_geojson_data()
     flood_areas = [
         shapely.geometry.shape(feature['geometry']) for feature in flood_geodata['features']
     ]
