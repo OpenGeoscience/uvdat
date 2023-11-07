@@ -33,13 +33,9 @@ class ContextSerializer(serializers.ModelSerializer):
 
 class DatasetSerializer(serializers.ModelSerializer):
     map_layers = serializers.SerializerMethodField('get_map_layers')
-    networked = serializers.SerializerMethodField('get_networked')
 
     def get_map_layers(self, obj):
         return obj.get_map_layers()
-
-    def get_networked(self, obj):
-        return obj.get_network() is not None
 
     class Meta:
         model = Dataset

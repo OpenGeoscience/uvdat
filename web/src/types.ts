@@ -14,7 +14,7 @@ export interface Dataset {
     type: string;
   }[];
   current_layer_index: number;
-  networked: boolean;
+  classification: "Network" | "Region" | "Other";
   network: {
     nodes: NetworkNode[];
     edges: NetworkEdge[];

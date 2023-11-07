@@ -6,6 +6,11 @@ class Dataset(models.Model):
         VECTOR = 'VECTOR', 'Vector'
         RASTER = 'RASTER', 'Raster'
 
+    class Classification(models.TextChoices):
+        NETWORK = 'Network'
+        REGION = 'Region'
+        OTHER = 'Other'
+
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
@@ -14,6 +19,9 @@ class Dataset(models.Model):
     dataset_type = models.CharField(
         max_length=max(len(choice[0]) for choice in DatasetType.choices),
         choices=DatasetType.choices,
+    )
+    classification = models.CharField(
+        max_length=16, choices=Classification.choices, default=Classification.OTHER
     )
 
     def is_in_context(self, context_id):

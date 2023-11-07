@@ -39,7 +39,7 @@ export default {
 
     function findCurrentNetworkDataset() {
       currentNetworkDataset.value = selectedDatasets.value.find(
-        (d) => d.networked
+        (d) => d.classification === "Network"
       );
       if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
         fetchDatasetNetwork(currentNetworkDataset.value);
