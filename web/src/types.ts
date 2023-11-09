@@ -105,8 +105,16 @@ export interface AbstractMapLayer {
   openlayer?: any;
 }
 
+export function isNonNullObject(obj: unknown): obj is object {
+  return typeof obj === "object" && obj !== null;
+}
+
 export interface RasterMapLayer extends AbstractMapLayer {
   cloud_optimized_geotiff: string;
+}
+
+export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
+  return isNonNullObject(obj) && "cloud_optimized_geotiff" in obj;
 }
 
 export interface RasterData {
@@ -128,6 +136,10 @@ export interface VectorMapLayer extends AbstractMapLayer {
       max_y: number;
     };
   };
+}
+
+export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
+  return isNonNullObject(obj) && "tile_extents" in obj;
 }
 
 export interface VectorTile {

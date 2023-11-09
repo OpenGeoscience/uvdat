@@ -9,6 +9,7 @@ import {
 } from "@/store";
 import { deactivatedNodesUpdated, fetchDatasetNetwork } from "@/utils";
 import { getMapLayerForDataObject } from "@/layers";
+import { isVectorMapLayer } from "@/types";
 
 export default {
   props: {
@@ -37,7 +38,7 @@ export default {
       else return props.nodeFailures;
     });
 
-    function findCurrentNetworkDataset() {
+    async function findCurrentNetworkDataset() {
       currentNetworkDataset.value = selectedDatasets.value.find(
         (d) => d.classification === "Network"
       );
@@ -45,9 +46,12 @@ export default {
         fetchDatasetNetwork(currentNetworkDataset.value);
       }
       if (currentNetworkDataset.value) {
-        getMapLayerForDataObject(currentNetworkDataset.value).then(
-          (mapLayer) => (currentNetworkMapLayer.value = mapLayer)
+        const mapLayer = await getMapLayerForDataObject(
+          currentNetworkDataset.value
         );
+        if (isVectorMapLayer(mapLayer)) {
+          currentNetworkMapLayer.value = mapLayer;
+        }
       }
     }
 

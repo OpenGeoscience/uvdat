@@ -12,7 +12,10 @@ import {
   Dataset,
   DerivedRegion,
   RasterMapLayer,
+  isRasterMapLayer,
   VectorMapLayer,
+  isVectorMapLayer,
+  AbstractMapLayer,
 } from "./types";
 import { getMapLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
@@ -46,9 +49,9 @@ export async function getOrCreateLayerFromID(
   if (cachedMapLayer) return cachedMapLayer;
 
   const mapLayer = await getMapLayer(mapLayerId, mapLayerType);
-  if (mapLayerType === "vector") {
+  if (isVectorMapLayer(mapLayer)) {
     mapLayer.openlayer = createVectorOpenLayer(mapLayer);
-  } else if (mapLayerType === "raster") {
+  } else if (isRasterMapLayer(mapLayer)) {
     mapLayer.openlayer = createRasterOpenLayer(mapLayer);
     styleRasterOpenLayer(mapLayer.openlayer, {});
     cacheRasterData(mapLayerId);
@@ -226,9 +229,7 @@ export function styleRasterOpenLayer(
     );
 }
 
-export function findExistingOpenLayer(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
-) {
+export function findExistingOpenLayer(mapLayer: AbstractMapLayer | undefined) {
   if (mapLayer === undefined) {
     throw new Error(`Could not find existing openlayer for undefined layer`);
   }
@@ -243,7 +244,7 @@ export function findExistingOpenLayer(
 }
 
 export function isMapLayerVisible(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+  mapLayer: AbstractMapLayer | undefined
 ): boolean {
   if (mapLayer === undefined) {
     throw new Error(`Could not determine visibility of undefined layer`);
@@ -254,9 +255,7 @@ export function isMapLayerVisible(
   return existing.getVisible();
 }
 
-export function toggleMapLayer(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
-) {
+export function toggleMapLayer(mapLayer: AbstractMapLayer | undefined) {
   if (mapLayer === undefined) {
     throw new Error(`Could not toggle undefined layer`);
   }
@@ -267,7 +266,8 @@ export function toggleMapLayer(
   } else {
     getMap().addLayer(mapLayer.openlayer);
   }
-  if (mapLayer.metadata?.network) {
+
+  if (isVectorMapLayer(mapLayer) && mapLayer.metadata?.network) {
     styleVectorOpenLayer(mapLayer, { showGCC: true, translucency: "55" });
   }
   updateVisibleMapLayers();
@@ -302,7 +302,7 @@ export function getDataObjectForMapLayer(
 export async function getMapLayerForDataObject(
   dataObject: Dataset | DerivedRegion | undefined,
   layerIndex = 0
-): Promise<VectorMapLayer | RasterMapLayer | undefined> {
+): Promise<AbstractMapLayer | undefined> {
   // Data Object refers to the original object for which this map layer was created.
   // Can either be a Dataset or a DerivedRegion.
   if (dataObject === undefined) {

@@ -92,7 +92,10 @@ export default {
             let mapLayer: VectorMapLayer | RasterMapLayer | undefined;
             if (selectedOption.map_layers) {
               // Object has layers
-              mapLayer = await getMapLayerForDataObject(selectedOption);
+              mapLayer = (await getMapLayerForDataObject(selectedOption)) as
+                | VectorMapLayer
+                | RasterMapLayer
+                | undefined;
             } else if (selectedOption.file_item && selectedOption.type) {
               // Object is layer
               mapLayer = await getOrCreateLayerFromID(
