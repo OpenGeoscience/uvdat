@@ -1,15 +1,15 @@
 import json
-from pathlib import Path
 import tempfile
 import zipfile
+from pathlib import Path
 
-from django.core.files.base import ContentFile
-from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import large_image_converter
 import numpy
 import rasterio
 import shapefile
+from django.core.files.base import ContentFile
+from geojson2vt import geojson2vt, vt2geojson
 from webcolors import name_to_hex
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
@@ -174,6 +174,8 @@ def save_vector_tiles(vector_map_layer):
         vector_map_layer.read_geojson_data(),
         {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
     )
+
+    created = 0
     for coord in tile_index.tile_coords:
         tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
         features = tile.get('features')
@@ -185,5 +187,6 @@ def save_vector_tiles(vector_map_layer):
                 y=coord['y'],
                 z=coord['z'],
             )
-    available_tile_coords = vector_map_layer.get_available_tile_coords()
-    print('\t', f'{len(available_tile_coords)} vector tiles created.')
+            created += 1
+
+    print('\t', f'{created} vector tiles created.')

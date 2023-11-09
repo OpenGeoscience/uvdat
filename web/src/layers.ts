@@ -78,16 +78,24 @@ export function createVectorOpenLayer(mapLayer: VectorMapLayer) {
         colors: feature.getProperties().colors || defaultColors,
       }),
     source: new VectorTileSource({
+      maxZoom: Math.max(
+        ...Object.keys(mapLayer.tile_extents).map((z) => Number(z))
+      ),
       format: new GeoJSON(),
       tileUrlFunction: (tileCoord: TileCoord) => {
-        const existing = mapLayer.tile_coords?.find(
-          ({ x, y, z }) =>
-            x == tileCoord[1] && y == tileCoord[2] && z == tileCoord[0]
-        );
-        if (existing) {
-          return `${baseURL}vectors/${mapLayer.id}/tiles/${existing.z}/${existing.x}/${existing.y}/`;
+        const [z, x, y] = tileCoord;
+        const entry = mapLayer.tile_extents[z];
+        if (!entry) {
+          return undefined;
         }
-        return undefined;
+
+        // Ensure current x/y is within zoom level extent
+        const { min_x, min_y, max_x, max_y } = entry;
+        if (!(min_x <= x && x <= max_x && min_y <= y && y <= max_y)) {
+          return undefined;
+        }
+
+        return `${baseURL}vectors/${mapLayer.id}/tiles/${z}/${x}/${y}/`;
       },
     }),
   });

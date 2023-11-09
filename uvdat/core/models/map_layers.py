@@ -1,11 +1,11 @@
 import json
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
+import large_image
 from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-import large_image
 from s3_file_field import S3FileField
 
 from .file_item import FileItem
@@ -58,27 +58,30 @@ class VectorMapLayer(AbstractMapLayer):
         """Reads and loads the data from geojson_file into a dict."""
         return json.load(self.geojson_file.open())
 
-            )
-
-    def get_available_tile_coords(self):
-        # TODO: compute this once and save it on the object;
-        # Query can take a while, and this is called on the RasterMapLayerSerializer
-        tile_coords = []
-        for vector_tile in VectorTile.objects.filter(map_layer=self):
-            tile_coords.append(
-                dict(
-                    x=vector_tile.x,
-                    y=vector_tile.y,
-                    z=vector_tile.z,
+    def get_tile_extents(self):
+        """Return a dict that maps z tile values to the x/y extent at that depth."""
+        return {
+            entry.pop('z'): entry
+            for entry in (
+                VectorTile.objects.filter(map_layer=self)
+                .values('z')
+                .annotate(
+                    min_x=models.Min('x'),
+                    min_y=models.Min('y'),
+                    max_x=models.Max('x'),
+                    max_y=models.Max('y'),
                 )
+                .order_by()
             )
-        return tile_coords
-
-    def get_vector_tile(self, x, y, z):
-        return VectorTile.objects.get(map_layer=self, x=x, y=y, z=z)
+        }
 
 
 class VectorTile(models.Model):
+    EMPTY_TILE_DATA = {
+        "type": "FeatureCollection",
+        "features": [],
+    }
+
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)
     geojson_data = models.JSONField(blank=True, null=True)
     x = models.IntegerField(default=0)

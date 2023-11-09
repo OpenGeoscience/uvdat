@@ -3,9 +3,11 @@ import json
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.models.map_layers import VectorTile
 from uvdat.core.rest.serializers import RasterMapLayerSerializer, VectorMapLayerSerializer
 
 
@@ -36,7 +38,11 @@ class VectorMapLayerViewSet(ModelViewSet):
         url_path=r'tiles/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)',
         url_name='tiles',
     )
-    def get_vector_tile(self, request, x: int, y: int, z: int, **kwargs):
-        vector_map_layer = self.get_object()
-        tile = vector_map_layer.get_vector_tile(int(x), int(y), int(z))
-        return HttpResponse(json.dumps(tile.geojson_data), status=200)
+    def get_vector_tile(self, request, x: str, y: str, z: str, pk: str):
+        # Return vector tile or empty tile
+        try:
+            tile = VectorTile.objects.get(map_layer_id=pk, x=x, y=y, z=z)
+        except VectorTile.DoesNotExist:
+            return Response(VectorTile.EMPTY_TILE_DATA, status=200)
+
+        return Response(tile.geojson_data, status=200)

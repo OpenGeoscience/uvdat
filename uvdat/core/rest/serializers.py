@@ -92,7 +92,7 @@ class VectorMapLayerSerializer(serializers.ModelSerializer):
     dataset_id = serializers.SerializerMethodField('get_dataset_id')
     file_item = serializers.SerializerMethodField('get_file_item')
     derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
-    tile_coords = serializers.SerializerMethodField('get_tile_coords')
+    tile_extents = serializers.SerializerMethodField('get_tile_extents')
 
     def get_name(self, obj):
         if obj.file_item is None:
@@ -121,8 +121,8 @@ class VectorMapLayerSerializer(serializers.ModelSerializer):
             return None
         return dr.id
 
-    def get_tile_coords(self, obj):
-        return obj.get_available_tile_coords()
+    def get_tile_extents(self, obj: VectorMapLayer):
+        return obj.get_tile_extents()
 
     class Meta:
         model = VectorMapLayer
