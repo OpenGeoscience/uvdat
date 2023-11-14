@@ -17,10 +17,12 @@ import {
   loadDerivedRegions,
 } from "../storeFunctions";
 import { Dataset, DerivedRegion } from "@/types";
+import { getDatasetMapLayers } from "@/api/rest";
 import {
   getMapLayerForDataObject,
   isMapLayerVisible,
   toggleMapLayer,
+  createOpenLayer,
 } from "@/layers";
 
 export default {
@@ -72,11 +74,20 @@ export default {
       ) {
         currentDataset.value = undefined;
       }
-      // Find related MapLayer at current index
-      const mapLayer = await getMapLayerForDataObject(
-        dataset,
-        dataset.current_layer_index
-      );
+
+      // Ensure layer index is set
+      dataset.current_layer_index = dataset.current_layer_index || 0;
+      if (dataset.map_layers === undefined) {
+        dataset.map_layers = await getDatasetMapLayers(dataset.id);
+      }
+
+      // Use non null assertions since we know from above that both are set
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const mapLayer = dataset.map_layers![dataset.current_layer_index!];
+      if (mapLayer.openlayer === undefined) {
+        mapLayer.openlayer = createOpenLayer(mapLayer);
+      }
+
       toggleMapLayer(mapLayer);
     }
 

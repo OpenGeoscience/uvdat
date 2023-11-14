@@ -9,6 +9,7 @@ import {
   DerivedRegion,
   VectorMapLayer,
   RasterMapLayer,
+  AbstractMapLayer,
 } from "@/types";
 
 export async function getContexts(): Promise<Context[]> {
@@ -41,6 +42,12 @@ export async function getContextSimulationTypes(
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}`)).data;
+}
+
+export async function getDatasetMapLayers(
+  datasetId: number
+): Promise<AbstractMapLayer[]> {
+  return (await apiClient.get(`datasets/${datasetId}/map_layers`)).data;
 }
 
 export async function convertDataset(datasetId: number): Promise<Dataset> {

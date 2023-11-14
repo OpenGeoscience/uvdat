@@ -35,6 +35,32 @@ import CircleStyle from "ol/style/Circle";
 
 const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
+export function createOpenLayer(mapLayer: AbstractMapLayer) {
+  let openLayer: VectorTileLayer | TileLayer<XYZSource>;
+
+  if (isVectorMapLayer(mapLayer)) {
+    openLayer = createVectorOpenLayer(mapLayer);
+  } else if (isRasterMapLayer(mapLayer)) {
+    openLayer = createRasterOpenLayer(mapLayer);
+    styleRasterOpenLayer(mapLayer.openlayer, {});
+    cacheRasterData(mapLayer.id);
+  } else {
+    throw new Error("Unsupported map layer type.");
+  }
+
+  openLayer.setZIndex(selectedMapLayers.value.length);
+
+  // Check for existing layer
+  const existingLayer = _mapLayerManager.value.find(
+    (l) => l.id === mapLayer.id && l.type === mapLayer.type
+  );
+  if (!existingLayer) {
+    _mapLayerManager.value.push(mapLayer);
+  }
+
+  return openLayer;
+}
+
 export async function getOrCreateLayerFromID(
   mapLayerId: number | undefined,
   mapLayerType: string | undefined
@@ -43,28 +69,14 @@ export async function getOrCreateLayerFromID(
     throw new Error(`Could not get or create openLayer for undefined layer`);
   }
 
-  let cachedMapLayer = _mapLayerManager.value.find((l) => {
+  const cachedMapLayer = _mapLayerManager.value.find((l) => {
     return l.id === mapLayerId && l.type === mapLayerType;
   });
   if (cachedMapLayer) return cachedMapLayer;
 
   const mapLayer = await getMapLayer(mapLayerId, mapLayerType);
-  if (isVectorMapLayer(mapLayer)) {
-    mapLayer.openlayer = createVectorOpenLayer(mapLayer);
-  } else if (isRasterMapLayer(mapLayer)) {
-    mapLayer.openlayer = createRasterOpenLayer(mapLayer);
-    styleRasterOpenLayer(mapLayer.openlayer, {});
-    cacheRasterData(mapLayerId);
-  }
-  mapLayer.openlayer.setZIndex(selectedMapLayers.value.length);
+  mapLayer.openlayer = createOpenLayer(mapLayer);
 
-  // since this is an async context, check again for existing layer before pushing.
-  cachedMapLayer = _mapLayerManager.value.find((l) => {
-    return l.id === mapLayerId && l.type === mapLayerType;
-  });
-  if (!cachedMapLayer) {
-    _mapLayerManager.value.push(mapLayer);
-  }
   return mapLayer;
 }
 
@@ -292,7 +304,7 @@ export function getDataObjectForMapLayer(
     );
     if (dataset) {
       dataset.current_layer_index =
-        dataset?.map_layers.find(({ id }) => id === mapLayer.id)?.index || 0;
+        dataset?.map_layers?.find(({ id }) => id === mapLayer.id)?.index || 0;
     }
     return dataset;
   }
@@ -308,7 +320,7 @@ export async function getMapLayerForDataObject(
   if (dataObject === undefined) {
     throw new Error(`Could not get map layer for undefined data object`);
   }
-  const mapLayer = dataObject.map_layers.find(
+  const mapLayer = dataObject.map_layers?.find(
     ({ index }) => index === layerIndex
   );
   if (!mapLayer) {

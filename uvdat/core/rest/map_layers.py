@@ -8,11 +8,15 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
 from uvdat.core.models.map_layers import VectorTile
-from uvdat.core.rest.serializers import RasterMapLayerSerializer, VectorMapLayerSerializer
+from uvdat.core.rest.serializers import (
+    RasterMapLayerSerializer,
+    VectorMapLayerDetailSerializer,
+    VectorMapLayerSerializer,
+)
 
 
 class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
-    queryset = RasterMapLayer.objects.all()
+    queryset = RasterMapLayer.objects.select_related('file_item__dataset').all()
     serializer_class = RasterMapLayerSerializer
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
@@ -29,8 +33,13 @@ class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
 
 
 class VectorMapLayerViewSet(ModelViewSet):
-    queryset = VectorMapLayer.objects.all()
+    queryset = VectorMapLayer.objects.select_related('file_item__dataset').all()
     serializer_class = VectorMapLayerSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = VectorMapLayerDetailSerializer(instance)
+        return Response(serializer.data)
 
     @action(
         detail=True,

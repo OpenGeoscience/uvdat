@@ -2,6 +2,7 @@ import json
 
 from django.http import HttpResponse
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset
@@ -18,6 +19,28 @@ class DatasetViewSet(ModelViewSet):
             return Dataset.objects.filter(context__id=context_id)
         else:
             return Dataset.objects.all()
+
+    @action(detail=True, methods=['get'])
+    def map_layers(self, request, **kwargs):
+        dataset: Dataset = self.get_object()
+        map_layers = list(dataset.get_map_layers().select_related('file_item__dataset'))
+
+        # Set serializer based on dataset type
+        if dataset.dataset_type == Dataset.DatasetType.RASTER:
+            serializer = uvdat_serializers.RasterMapLayerSerializer(map_layers, many=True)
+        elif dataset.dataset_type == Dataset.DatasetType.VECTOR:
+            # Inject tile extents
+            extents = dataset.get_map_layer_tile_extents()
+            for layer in map_layers:
+                layer.tile_extents = extents.pop(layer.id)
+
+            # Set serializer
+            serializer = uvdat_serializers.ExtendedVectorMapLayerSerializer(map_layers, many=True)
+        else:
+            raise NotImplementedError(f'Dataset Type {dataset.dataset_type}')
+
+        # Return response with rendered data
+        return Response(serializer.data, status=200)
 
     @action(detail=True, methods=['get'])
     def convert(self, request, **kwargs):

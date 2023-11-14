@@ -7,13 +7,9 @@ export interface Dataset {
   modified: string;
   processing: boolean;
   metadata: object;
-  dataset_type: string;
-  map_layers: {
-    id: number;
-    index: number;
-    type: string;
-  }[];
-  current_layer_index: number;
+  dataset_type: "vector" | "raster";
+  map_layers?: AbstractMapLayer[];
+  current_layer_index?: number;
   classification: "Network" | "Region" | "Other";
   network: {
     nodes: NetworkNode[];
@@ -97,7 +93,7 @@ export interface AbstractMapLayer {
   };
   default_style?: object;
   index: number;
-  type: string;
+  type: "vector" | "raster";
   dataset_id?: number;
   derived_region_id?: number;
 

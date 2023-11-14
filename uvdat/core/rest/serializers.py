@@ -32,11 +32,6 @@ class ContextSerializer(serializers.ModelSerializer):
 
 
 class DatasetSerializer(serializers.ModelSerializer):
-    map_layers = serializers.SerializerMethodField('get_map_layers')
-
-    def get_map_layers(self, obj):
-        return obj.get_map_layers()
-
     class Meta:
         model = Dataset
         fields = '__all__'
@@ -54,26 +49,28 @@ class ChartSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RasterMapLayerSerializer(serializers.ModelSerializer):
+class AbstractMapLayerSerializer(serializers.Serializer):
     name = serializers.SerializerMethodField('get_name')
     type = serializers.SerializerMethodField('get_type')
     dataset_id = serializers.SerializerMethodField('get_dataset_id')
     file_item = serializers.SerializerMethodField('get_file_item')
 
-    def get_name(self, obj):
+    def get_name(self, obj: VectorMapLayer | RasterMapLayer):
         if obj.file_item is None:
             return None
         return obj.file_item.name
 
-    def get_type(self, obj):
+    def get_type(self, obj: VectorMapLayer | RasterMapLayer):
+        if isinstance(obj, VectorMapLayer):
+            return 'vector'
         return 'raster'
 
-    def get_dataset_id(self, obj):
+    def get_dataset_id(self, obj: VectorMapLayer | RasterMapLayer):
         if obj.file_item and obj.file_item.dataset:
             return obj.file_item.dataset.id
         return None
 
-    def get_file_item(self, obj):
+    def get_file_item(self, obj: VectorMapLayer | RasterMapLayer):
         if obj.file_item is None:
             return None
         return {
@@ -81,39 +78,30 @@ class RasterMapLayerSerializer(serializers.ModelSerializer):
             'name': obj.file_item.name,
         }
 
+
+class RasterMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
     class Meta:
         model = RasterMapLayer
         fields = '__all__'
 
 
-class VectorMapLayerSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField('get_name')
-    type = serializers.SerializerMethodField('get_type')
-    dataset_id = serializers.SerializerMethodField('get_dataset_id')
-    file_item = serializers.SerializerMethodField('get_file_item')
+class ExtendedVectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+    tile_extents = serializers.JSONField()
+
+    class Meta:
+        model = VectorMapLayer
+        exclude = ['geojson_file']
+
+
+class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+    class Meta:
+        model = VectorMapLayer
+        exclude = ['geojson_file']
+
+
+class VectorMapLayerDetailSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
     derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
     tile_extents = serializers.SerializerMethodField('get_tile_extents')
-
-    def get_name(self, obj):
-        if obj.file_item is None:
-            return None
-        return obj.file_item.name
-
-    def get_type(self, obj):
-        return 'vector'
-
-    def get_dataset_id(self, obj):
-        if obj.file_item and obj.file_item.dataset:
-            return obj.file_item.dataset.id
-        return None
-
-    def get_file_item(self, obj):
-        if obj.file_item is None:
-            return None
-        return {
-            'id': obj.file_item.id,
-            'name': obj.file_item.name,
-        }
 
     def get_derived_region_id(self, obj):
         dr = obj.derivedregion_set.first()
