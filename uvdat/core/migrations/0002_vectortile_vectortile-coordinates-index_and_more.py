@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0001_models_redesign'),
     ]
@@ -16,6 +15,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='vectortile',
-            constraint=models.UniqueConstraint(fields=('map_layer', 'z', 'x', 'y'), name='unique-map-layer-index'),
+            constraint=models.UniqueConstraint(
+                fields=('map_layer', 'z', 'x', 'y'), name='unique-map-layer-index'
+            ),
         ),
     ]

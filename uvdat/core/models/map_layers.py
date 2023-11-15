@@ -1,11 +1,11 @@
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 
-import large_image
 from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+import large_image
 from s3_file_field import S3FileField
 
 from .file_item import FileItem
@@ -55,7 +55,7 @@ class VectorMapLayer(AbstractMapLayer):
         self.geojson_file.save('vectordata.geojson', ContentFile(data.encode()))
 
     def read_geojson_data(self) -> dict:
-        """Reads and loads the data from geojson_file into a dict."""
+        """Read and load the data from geojson_file into a dict."""
         return json.load(self.geojson_file.open())
 
     def get_tile_extents(self):
@@ -78,8 +78,8 @@ class VectorMapLayer(AbstractMapLayer):
 
 class VectorTile(models.Model):
     EMPTY_TILE_DATA = {
-        "type": "FeatureCollection",
-        "features": [],
+        'type': 'FeatureCollection',
+        'features': [],
     }
 
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)

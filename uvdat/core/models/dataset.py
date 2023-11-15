@@ -80,7 +80,7 @@ class Dataset(models.Model):
         return get_dataset_network_gcc(self, exclude_nodes)
 
     def get_map_layers(self):
-        """Returns a queryset of either RasterMapLayer, or VectorMapLayer."""
+        """Return a queryset of either RasterMapLayer, or VectorMapLayer."""
         from uvdat.core.models import RasterMapLayer, VectorMapLayer
 
         if self.dataset_type == self.DatasetType.RASTER:
@@ -88,7 +88,7 @@ class Dataset(models.Model):
         if self.dataset_type == self.DatasetType.VECTOR:
             return VectorMapLayer.objects.filter(file_item__dataset=self)
 
-        raise NotImplementedError(f"Dataset Type {self.dataset_type}")
+        raise NotImplementedError(f'Dataset Type {self.dataset_type}')
 
     def get_map_layer_tile_extents(self):
         """

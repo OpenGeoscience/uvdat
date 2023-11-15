@@ -1,15 +1,15 @@
 import json
+from pathlib import Path
 import tempfile
 import zipfile
-from pathlib import Path
 
+from django.core.files.base import ContentFile
+from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import large_image_converter
 import numpy
 import rasterio
 import shapefile
-from django.core.files.base import ContentFile
-from geojson2vt import geojson2vt, vt2geojson
 from webcolors import name_to_hex
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
