@@ -9,6 +9,7 @@ import {
   currentSimulationType,
   availableDerivedRegions,
   currentDataset,
+  availableMapLayers,
 } from "@/store";
 import {
   loadDatasets,
@@ -22,7 +23,7 @@ import {
   getMapLayerForDataObject,
   isMapLayerVisible,
   toggleMapLayer,
-  createOpenLayer,
+  getOrCreateLayerFromID,
 } from "@/layers";
 
 export default {
@@ -81,16 +82,20 @@ export default {
       dataset.current_layer_index = dataset.current_layer_index || 0;
       if (dataset.map_layers === undefined) {
         dataset.map_layers = await getDatasetMapLayers(dataset.id);
+        availableMapLayers.value = [
+          ...availableMapLayers.value,
+          ...dataset.map_layers,
+        ];
       }
 
-      // Use non null assertions since we know from above that both are set
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const mapLayer = dataset.map_layers![dataset.current_layer_index!];
-      if (mapLayer.openlayer === undefined) {
-        mapLayer.openlayer = createOpenLayer(mapLayer);
+      if (
+        dataset.map_layers !== undefined &&
+        dataset.current_layer_index !== undefined
+      ) {
+        const { id, type } = dataset.map_layers[dataset.current_layer_index];
+        const mapLayer = await getOrCreateLayerFromID(id, type);
+        toggleMapLayer(mapLayer);
       }
-
-      toggleMapLayer(mapLayer);
     }
 
     // If new derived region created, open panel

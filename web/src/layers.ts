@@ -15,7 +15,6 @@ import {
   isRasterMapLayer,
   VectorMapLayer,
   isVectorMapLayer,
-  AbstractMapLayer,
 } from "./types";
 import { getMapLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
@@ -30,12 +29,13 @@ import {
   selectedMapLayers,
   showMapBaseLayer,
   deactivatedNodes,
+  availableMapLayers,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
 const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
-export function createOpenLayer(mapLayer: AbstractMapLayer) {
+export function createOpenLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
   let openLayer: VectorTileLayer | TileLayer<XYZSource>;
 
   if (isVectorMapLayer(mapLayer)) {
@@ -74,8 +74,13 @@ export async function getOrCreateLayerFromID(
   });
   if (cachedMapLayer) return cachedMapLayer;
 
-  const mapLayer = await getMapLayer(mapLayerId, mapLayerType);
-  mapLayer.openlayer = createOpenLayer(mapLayer);
+  const mapLayer = availableMapLayers.value.find(
+    (l) => l.id === mapLayerId && l.type === mapLayerType
+  );
+  if (!mapLayer) {
+    await getMapLayer(mapLayerId, mapLayerType);
+  }
+  if (mapLayer) mapLayer.openlayer = createOpenLayer(mapLayer);
 
   return mapLayer;
 }
@@ -241,7 +246,9 @@ export function styleRasterOpenLayer(
     );
 }
 
-export function findExistingOpenLayer(mapLayer: AbstractMapLayer | undefined) {
+export function findExistingOpenLayer(
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+) {
   if (mapLayer === undefined) {
     throw new Error(`Could not find existing openlayer for undefined layer`);
   }
@@ -256,7 +263,7 @@ export function findExistingOpenLayer(mapLayer: AbstractMapLayer | undefined) {
 }
 
 export function isMapLayerVisible(
-  mapLayer: AbstractMapLayer | undefined
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
 ): boolean {
   if (mapLayer === undefined) {
     throw new Error(`Could not determine visibility of undefined layer`);
@@ -267,7 +274,9 @@ export function isMapLayerVisible(
   return existing.getVisible();
 }
 
-export function toggleMapLayer(mapLayer: AbstractMapLayer | undefined) {
+export function toggleMapLayer(
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+) {
   if (mapLayer === undefined) {
     throw new Error(`Could not toggle undefined layer`);
   }
@@ -314,7 +323,7 @@ export function getDataObjectForMapLayer(
 export async function getMapLayerForDataObject(
   dataObject: Dataset | DerivedRegion | undefined,
   layerIndex = 0
-): Promise<AbstractMapLayer | undefined> {
+): Promise<VectorMapLayer | RasterMapLayer | undefined> {
   // Data Object refers to the original object for which this map layer was created.
   // Can either be a Dataset or a DerivedRegion.
   if (dataObject === undefined) {

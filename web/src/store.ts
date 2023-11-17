@@ -23,6 +23,7 @@ export const currentDataset = ref<Dataset>();
 
 // Map
 export const map = ref<olMap>();
+export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
 export const showMapBaseLayer = ref(true);

@@ -8,7 +8,7 @@ export interface Dataset {
   processing: boolean;
   metadata: object;
   dataset_type: "vector" | "raster";
-  map_layers?: AbstractMapLayer[];
+  map_layers?: (VectorMapLayer | RasterMapLayer)[];
   current_layer_index?: number;
   classification: "Network" | "Region" | "Other";
   network: {
