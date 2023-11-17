@@ -57,6 +57,8 @@ export default {
 
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
+    // TODO: Avoid fetching entire map layer for each available
+    // derived region just to check if it's selected or not
     async function derivedRegionSelected(derivedRegion: DerivedRegion) {
       const mapLayer = await getMapLayerForDataObject(derivedRegion);
       return isMapLayerVisible(mapLayer);
