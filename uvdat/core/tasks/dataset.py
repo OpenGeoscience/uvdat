@@ -27,8 +27,8 @@ def convert_dataset(
     dataset.save()
 
     # Determine network/region classificaton
-    network = Dataset.classification == Dataset.Classification.NETWORK
-    region = Dataset.classification == Dataset.Classification.REGION
+    network = dataset.classification == Dataset.Classification.NETWORK
+    region = dataset.classification == Dataset.Classification.REGION
 
     if dataset.dataset_type == dataset.DatasetType.RASTER:
         RasterMapLayer.objects.filter(file_item__dataset=dataset).delete()
