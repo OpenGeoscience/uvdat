@@ -27,7 +27,9 @@ def get_available_simulations(context_id: int):
                 option_serializer_matches = [
                     s
                     for name, s in inspect.getmembers(uvdat_serializers, inspect.isclass)
-                    if issubclass(s, ModelSerializer) and s.Meta.model == options_type
+                    if issubclass(s, ModelSerializer)
+                    and s.Meta.model == options_type
+                    and 'Extended' not in s.__name__
                 ]
                 if not options_query or not options_type or len(option_serializer_matches) == 0:
                     options = []
