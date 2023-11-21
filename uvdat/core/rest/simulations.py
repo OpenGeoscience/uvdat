@@ -12,6 +12,7 @@ from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResul
 import uvdat.core.rest.serializers as uvdat_serializers
 
 
+# TODO: Refactor
 def get_available_simulations(context_id: int):
     sims = []
     for index, (name, details) in enumerate(AVAILABLE_SIMULATIONS.items()):
