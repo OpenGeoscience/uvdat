@@ -74,14 +74,16 @@ export async function getOrCreateLayerFromID(
   });
   if (cachedMapLayer) return cachedMapLayer;
 
-  const mapLayer = availableMapLayers.value.find(
+  // Grab map layer from available or by fetching
+  let mapLayer = availableMapLayers.value.find(
     (l) => l.id === mapLayerId && l.type === mapLayerType
   );
   if (!mapLayer) {
-    await getMapLayer(mapLayerId, mapLayerType);
+    mapLayer = await getMapLayer(mapLayerId, mapLayerType);
   }
-  if (mapLayer) mapLayer.openlayer = createOpenLayer(mapLayer);
 
+  // Create open layer and return
+  mapLayer.openlayer = createOpenLayer(mapLayer);
   return mapLayer;
 }
 
