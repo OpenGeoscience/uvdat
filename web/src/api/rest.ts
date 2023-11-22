@@ -43,6 +43,12 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}`)).data;
 }
 
+export async function getDatasetMapLayers(
+  datasetId: number
+): Promise<(VectorMapLayer | RasterMapLayer)[]> {
+  return (await apiClient.get(`datasets/${datasetId}/map_layers`)).data;
+}
+
 export async function convertDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}/convert`)).data;
 }

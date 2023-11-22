@@ -8,7 +8,12 @@ import {
   toggleMapLayer,
 } from "@/layers";
 import { currentDataset, deactivatedNodes, rasterTooltip } from "@/store";
-import { NetworkNode, RasterMapLayer, VectorMapLayer } from "@/types";
+import {
+  NetworkNode,
+  RasterMapLayer,
+  VectorMapLayer,
+  isVectorMapLayer,
+} from "@/types";
 
 export default {
   setup() {
@@ -37,7 +42,12 @@ export default {
           if (!isMapLayerVisible(mapLayer)) {
             toggleMapLayer(mapLayer);
           }
-          currentMapLayer.value = mapLayer;
+
+          currentMapLayer.value = mapLayer as
+            | VectorMapLayer
+            | RasterMapLayer
+            | undefined;
+
           populateRefs();
         });
       } else {
@@ -75,6 +85,16 @@ export default {
         colormap.value = "terrain";
         layerRange.value = [];
         colormapRange.value = [];
+      }
+    }
+
+    function activateNode(deactivated: number) {
+      if (isVectorMapLayer(currentMapLayer.value)) {
+        toggleNodeActive(
+          deactivated,
+          currentDataset.value,
+          currentMapLayer.value
+        );
       }
     }
 
@@ -139,7 +159,7 @@ export default {
       applyToAll,
       rasterTooltip,
       deactivatedNodes,
-      toggleNodeActive,
+      activateNode,
       getNetworkNodeName,
     };
   },
@@ -257,14 +277,7 @@ export default {
               <v-btn
                 size="small"
                 style="float: right"
-                @click="
-                  () =>
-                    toggleNodeActive(
-                      deactivated,
-                      currentDataset,
-                      currentMapLayer
-                    )
-                "
+                @click="activateNode(deactivated)"
               >
                 Activate
               </v-btn>

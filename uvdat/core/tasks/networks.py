@@ -25,7 +25,7 @@ def create_network(vector_map_layer, network_options):
     connection_column_delimiter = network_options.get('connection_column_delimiter')
     node_id_column = network_options.get('node_id_column')
 
-    source_data = vector_map_layer.get_geojson_data()
+    source_data = vector_map_layer.read_geojson_data()
     geodata = geopandas.GeoDataFrame.from_features(source_data.get('features')).set_crs(4326)
     geodata[connection_column].fillna('', inplace=True)
     edge_set = geodata[geodata.geom_type != 'Point']
@@ -197,7 +197,7 @@ def create_network(vector_map_layer, network_options):
         total_edges += 1
 
     new_geodata = geopandas.GeoDataFrame.from_features(new_feature_set)
-    vector_map_layer.save_geojson_data(new_geodata)
+    vector_map_layer.write_geojson_data(new_geodata.to_json())
     vector_map_layer.metadata['network'] = True
     vector_map_layer.save()
     print('\t', f'{total_nodes} nodes and {total_edges} edges created.')

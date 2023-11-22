@@ -12,6 +12,7 @@ from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResul
 import uvdat.core.rest.serializers as uvdat_serializers
 
 
+# TODO: Refactor
 def get_available_simulations(context_id: int):
     sims = []
     for index, (name, details) in enumerate(AVAILABLE_SIMULATIONS.items()):
@@ -27,7 +28,9 @@ def get_available_simulations(context_id: int):
                 option_serializer_matches = [
                     s
                     for name, s in inspect.getmembers(uvdat_serializers, inspect.isclass)
-                    if issubclass(s, ModelSerializer) and s.Meta.model == options_type
+                    if issubclass(s, ModelSerializer)
+                    and s.Meta.model == options_type
+                    and 'Extended' not in s.__name__
                 ]
                 if not options_query or not options_type or len(option_serializer_matches) == 0:
                     options = []

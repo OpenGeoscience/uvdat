@@ -7,14 +7,10 @@ export interface Dataset {
   modified: string;
   processing: boolean;
   metadata: object;
-  dataset_type: string;
-  map_layers: {
-    id: number;
-    index: number;
-    type: string;
-  }[];
-  current_layer_index: number;
-  networked: boolean;
+  dataset_type: "vector" | "raster";
+  map_layers?: (VectorMapLayer | RasterMapLayer)[];
+  current_layer_index?: number;
+  classification: "Network" | "Region" | "Other";
   network: {
     nodes: NetworkNode[];
     edges: NetworkEdge[];
@@ -86,7 +82,7 @@ export interface NetworkEdge {
   to_node: number;
 }
 
-export interface RasterMapLayer {
+export interface AbstractMapLayer {
   id: number;
   file_item?: {
     id: number;
@@ -97,12 +93,24 @@ export interface RasterMapLayer {
   };
   default_style?: object;
   index: number;
-  cloud_optimized_geotiff?: string;
-  type: string;
+  type: "vector" | "raster";
   dataset_id?: number;
   derived_region_id?: number;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   openlayer?: any;
+}
+
+export function isNonNullObject(obj: unknown): obj is object {
+  return typeof obj === "object" && obj !== null;
+}
+
+export interface RasterMapLayer extends AbstractMapLayer {
+  cloud_optimized_geotiff: string;
+}
+
+export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
+  return isNonNullObject(obj) && "cloud_optimized_geotiff" in obj;
 }
 
 export interface RasterData {
@@ -115,27 +123,19 @@ export interface RasterData {
   data: number[][];
 }
 
-export interface VectorMapLayer {
-  id: number;
-  file_item?: {
-    id: number;
-    name: string;
+export interface VectorMapLayer extends AbstractMapLayer {
+  tile_extents: {
+    [z: number]: {
+      min_x: number;
+      min_y: number;
+      max_x: number;
+      max_y: number;
+    };
   };
-  metadata?: {
-    network?: boolean;
-  };
-  default_style?: object;
-  index: number;
-  tile_coords?: {
-    x: number;
-    y: number;
-    z: number;
-  }[];
-  type: string;
-  dataset_id?: number;
-  derived_region_id?: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  openlayer?: any;
+}
+
+export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
+  return isNonNullObject(obj) && "tile_extents" in obj;
 }
 
 export interface VectorTile {

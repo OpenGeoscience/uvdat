@@ -9,6 +9,7 @@ import {
   currentSimulationType,
   availableDerivedRegions,
   currentDataset,
+  availableMapLayers,
 } from "@/store";
 import {
   loadDatasets,
@@ -17,10 +18,12 @@ import {
   loadDerivedRegions,
 } from "../storeFunctions";
 import { Dataset, DerivedRegion } from "@/types";
+import { getDatasetMapLayers } from "@/api/rest";
 import {
   getMapLayerForDataObject,
   isMapLayerVisible,
   toggleMapLayer,
+  getOrCreateLayerFromID,
 } from "@/layers";
 
 export default {
@@ -55,6 +58,8 @@ export default {
 
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
+    // TODO: Avoid fetching entire map layer for each available
+    // derived region just to check if it's selected or not
     async function derivedRegionSelected(derivedRegion: DerivedRegion) {
       const mapLayer = await getMapLayerForDataObject(derivedRegion);
       return isMapLayerVisible(mapLayer);
@@ -72,12 +77,25 @@ export default {
       ) {
         currentDataset.value = undefined;
       }
-      // Find related MapLayer at current index
-      const mapLayer = await getMapLayerForDataObject(
-        dataset,
-        dataset.current_layer_index
-      );
-      toggleMapLayer(mapLayer);
+
+      // Ensure layer index is set
+      dataset.current_layer_index = dataset.current_layer_index || 0;
+      if (dataset.map_layers === undefined) {
+        dataset.map_layers = await getDatasetMapLayers(dataset.id);
+        availableMapLayers.value = [
+          ...availableMapLayers.value,
+          ...dataset.map_layers,
+        ];
+      }
+
+      if (
+        dataset.map_layers !== undefined &&
+        dataset.current_layer_index !== undefined
+      ) {
+        const { id, type } = dataset.map_layers[dataset.current_layer_index];
+        const mapLayer = await getOrCreateLayerFromID(id, type);
+        toggleMapLayer(mapLayer);
+      }
     }
 
     // If new derived region created, open panel

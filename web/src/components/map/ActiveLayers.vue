@@ -23,7 +23,7 @@ export default {
         getDataObjectForMapLayer(mapLayer);
       if (dataObject) {
         let ret = dataObject.name;
-        if (dataObject.map_layers.length > 1) {
+        if (dataObject.map_layers && dataObject.map_layers.length > 1) {
           ret += ` (Layer ${mapLayer.index})`;
         }
         return ret;
