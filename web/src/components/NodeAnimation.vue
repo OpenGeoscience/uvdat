@@ -1,21 +1,29 @@
-<script>
-import { ref, watch, computed } from "vue";
-import { deactivatedNodes } from "@/store";
-import { deactivatedNodesUpdated } from "@/utils";
-import { networkVis } from "../store";
+<script lang="ts">
+import { ref, watch, computed, onMounted } from "vue";
+import {
+  currentNetworkDataset,
+  currentNetworkMapLayer,
+  deactivatedNodes,
+  selectedDatasets,
+  selectedMapLayers,
+} from "@/store";
+import { deactivatedNodesUpdated, fetchDatasetNetwork } from "@/utils";
+import { getMapLayerForDataObject } from "@/layers";
+import { isVectorMapLayer } from "@/types";
 
 export default {
   props: {
     nodeFailures: {
       required: true,
-      type: Array,
+      type: Array<number>,
     },
     nodeRecoveries: {
       required: false,
-      type: Array,
+      type: Array<number>,
     },
   },
-  setup(props) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setup(props: any) {
     const currentTick = ref(0);
     const ticker = ref();
     const seconds = ref(1);
@@ -29,6 +37,23 @@ export default {
       if (props.nodeRecoveries?.length) return props.nodeRecoveries;
       else return props.nodeFailures;
     });
+
+    async function findCurrentNetworkDataset() {
+      currentNetworkDataset.value = selectedDatasets.value.find(
+        (d) => d.classification === "Network"
+      );
+      if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
+        fetchDatasetNetwork(currentNetworkDataset.value);
+      }
+      if (currentNetworkDataset.value) {
+        const mapLayer = await getMapLayerForDataObject(
+          currentNetworkDataset.value
+        );
+        if (isVectorMapLayer(mapLayer)) {
+          currentNetworkMapLayer.value = mapLayer;
+        }
+      }
+    }
 
     function pause() {
       clearInterval(ticker.value);
@@ -58,11 +83,11 @@ export default {
     }
 
     watch(currentTick, () => {
-      const slice = nodeChanges.value.slice(0, currentTick.value);
+      const slice: number[] = nodeChanges.value.slice(0, currentTick.value);
       if (props.nodeRecoveries) {
         // recovery mode
         deactivatedNodes.value = startState.value.filter(
-          (i) => !slice.includes(i)
+          (i: number) => !slice.includes(i)
         );
       } else {
         deactivatedNodes.value = slice;
@@ -70,9 +95,14 @@ export default {
       deactivatedNodesUpdated();
     });
 
+    watch(selectedDatasets, findCurrentNetworkDataset);
+    onMounted(findCurrentNetworkDataset);
+
     return {
+      currentNetworkDataset,
+      currentNetworkMapLayer,
+      selectedMapLayers,
       nodeChanges,
-      networkVis,
       currentTick,
       seconds,
       play,
@@ -84,8 +114,14 @@ export default {
 </script>
 
 <template>
-  <div v-if="!networkVis">
-    Show network dataset and enable network mode visualization to begin.
+  <div
+    v-if="
+      !currentNetworkDataset ||
+      !currentNetworkMapLayer ||
+      !selectedMapLayers.includes(currentNetworkMapLayer)
+    "
+  >
+    Show network dataset layer to begin.
   </div>
   <div v-else class="d-flex" style="align-items: center">
     <v-btn @click="play" icon="mdi-play" variant="text" />

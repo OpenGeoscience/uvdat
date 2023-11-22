@@ -2,16 +2,16 @@
 import { defineComponent, ref, onMounted } from "vue";
 import {
   currentError,
-  currentMapDataSource,
-  currentCity,
-  cities,
+  currentContext,
+  currentDataset,
+  availableContexts,
   loading,
-  loadCities,
-  activeChart,
-  activeSimulation,
+  currentChart,
+  currentSimulationType,
   showMapBaseLayer,
 } from "./store";
-import { updateVisibleLayers } from "@/layers";
+import { loadContexts } from "./storeFunctions";
+import { updateBaseLayer } from "@/layers";
 import OpenLayersMap from "./components/map/OpenLayersMap.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
@@ -29,20 +29,19 @@ export default defineComponent({
   setup() {
     const drawer = ref(true);
 
-    onMounted(loadCities);
-    currentMapDataSource.value = undefined;
+    onMounted(loadContexts);
 
     return {
       drawer,
-      currentCity,
-      currentMapDataSource,
-      cities,
+      currentContext,
+      currentDataset,
+      availableContexts,
       loading,
       currentError,
-      activeChart,
-      activeSimulation,
+      currentChart,
+      currentSimulationType,
       showMapBaseLayer,
-      updateVisibleLayers,
+      updateBaseLayer,
     };
   },
 });
@@ -63,10 +62,11 @@ export default defineComponent({
       <v-spacer />
       {{ currentError }}
       <v-spacer />
-      <v-list-item prepend-icon="mdi-city">
+      <v-list-item>
         <v-select
-          v-model="currentCity"
-          :items="cities"
+          label="Study Context"
+          v-model="currentContext"
+          :items="availableContexts"
           item-title="name"
           density="compact"
           return-object
@@ -75,7 +75,7 @@ export default defineComponent({
       </v-list-item>
       <v-checkbox
         v-model="showMapBaseLayer"
-        @change="updateVisibleLayers"
+        @change="updateBaseLayer"
         true-icon="mdi-map-check"
         false-icon="mdi-map-outline"
         style="max-width: 50px"
@@ -83,7 +83,7 @@ export default defineComponent({
       />
     </v-app-bar>
     <v-navigation-drawer
-      v-if="currentCity"
+      v-if="currentContext"
       v-model="drawer"
       permanent
       width="300"
@@ -92,9 +92,9 @@ export default defineComponent({
       <MainDrawerContents />
     </v-navigation-drawer>
     <v-navigation-drawer
-      :model-value="currentMapDataSource !== undefined"
+      :model-value="currentDataset !== undefined"
       permanent
-      width="250"
+      width="300"
       location="right"
       class="main-area drawer"
     >
@@ -103,15 +103,15 @@ export default defineComponent({
     <div
       :class="
         drawer
-          ? currentMapDataSource
+          ? currentDataset
             ? 'main-area shifted-2'
             : 'main-area shifted-1'
           : 'main-area'
       "
     >
       <OpenLayersMap />
-      <ChartJS v-if="activeChart" />
-      <SimulationsPanel v-if="activeSimulation" />
+      <ChartJS v-if="currentChart" />
+      <SimulationsPanel v-if="currentSimulationType" />
     </div>
   </v-app>
 </template>
@@ -127,12 +127,12 @@ export default defineComponent({
   left: 250px;
 }
 .shifted-1 {
-  left: 250px;
-  width: calc(100% - 250px);
+  left: 300px;
+  width: calc(100% - 300px);
 }
 .shifted-2 {
-  left: 250px;
-  right: 250px;
-  width: calc(100% - 500px);
+  left: 300px;
+  right: 300px;
+  width: calc(100% - 600px);
 }
 </style>

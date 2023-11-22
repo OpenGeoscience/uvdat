@@ -22,8 +22,9 @@ class ContextSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
 
     def get_center(self, obj):
+        # Web client expects Lon, Lat
         if obj.default_map_center:
-            return [obj.default_map_center.x, obj.default_map_center.y]
+            return [obj.default_map_center.y, obj.default_map_center.x]
 
     class Meta:
         model = Context
@@ -48,21 +49,72 @@ class ChartSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RasterMapLayerSerializer(serializers.ModelSerializer):
+class AbstractMapLayerSerializer(serializers.Serializer):
+    name = serializers.SerializerMethodField('get_name')
+    type = serializers.SerializerMethodField('get_type')
+    dataset_id = serializers.SerializerMethodField('get_dataset_id')
+    file_item = serializers.SerializerMethodField('get_file_item')
+
+    def get_name(self, obj: VectorMapLayer | RasterMapLayer):
+        if obj.file_item is None:
+            return None
+        return obj.file_item.name
+
+    def get_type(self, obj: VectorMapLayer | RasterMapLayer):
+        if isinstance(obj, VectorMapLayer):
+            return 'vector'
+        return 'raster'
+
+    def get_dataset_id(self, obj: VectorMapLayer | RasterMapLayer):
+        if obj.file_item and obj.file_item.dataset:
+            return obj.file_item.dataset.id
+        return None
+
+    def get_file_item(self, obj: VectorMapLayer | RasterMapLayer):
+        if obj.file_item is None:
+            return None
+        return {
+            'id': obj.file_item.id,
+            'name': obj.file_item.name,
+        }
+
+
+class RasterMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
     class Meta:
         model = RasterMapLayer
         fields = '__all__'
 
 
-class VectorMapLayerSerializer(serializers.ModelSerializer):
-    tile_coords = serializers.SerializerMethodField('get_tile_coords')
-
-    def get_tile_coords(self, obj):
-        return obj.get_available_tile_coords()
+class ExtendedVectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+    tile_extents = serializers.JSONField()
 
     class Meta:
         model = VectorMapLayer
-        fields = '__all__'
+        exclude = ['geojson_file']
+
+
+class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+    class Meta:
+        model = VectorMapLayer
+        exclude = ['geojson_file']
+
+
+class VectorMapLayerDetailSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+    derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
+    tile_extents = serializers.SerializerMethodField('get_tile_extents')
+
+    def get_derived_region_id(self, obj):
+        dr = obj.derivedregion_set.first()
+        if dr is None:
+            return None
+        return dr.id
+
+    def get_tile_extents(self, obj: VectorMapLayer):
+        return obj.get_tile_extents()
+
+    class Meta:
+        model = VectorMapLayer
+        exclude = ['geojson_file']
 
 
 class SourceRegionSerializer(serializers.ModelSerializer):
@@ -81,9 +133,22 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
 
 
 class DerivedRegionListSerializer(serializers.ModelSerializer):
+    map_layers = serializers.SerializerMethodField('get_map_layers')
+
+    def get_map_layers(self, obj):
+        return obj.get_map_layers()
+
     class Meta:
         model = DerivedRegion
-        fields = ['id', 'name', 'context', 'properties', 'source_regions', 'source_operation']
+        fields = [
+            'id',
+            'name',
+            'context',
+            'metadata',
+            'source_regions',
+            'operation',
+            'map_layers',
+        ]
 
 
 class DerivedRegionDetailSerializer(serializers.ModelSerializer):
@@ -92,9 +157,13 @@ class DerivedRegionDetailSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     boundary = serializers.SerializerMethodField()
+    map_layers = serializers.SerializerMethodField('get_map_layers')
 
     def get_boundary(self, obj):
         return json.loads(obj.boundary.geojson)
+
+    def get_map_layers(self, obj):
+        return obj.get_map_layers()
 
 
 class DerivedRegionCreationSerializer(serializers.ModelSerializer):
@@ -131,3 +200,4 @@ class SimulationResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SimulationResult
+        fields = '__all__'

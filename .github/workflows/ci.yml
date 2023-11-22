@@ -15,6 +15,13 @@ jobs:
       - name: Lint
         run: tox -e lint
 
+  lint-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: cd web && npm i && npm run lint
+
   pytest:
     runs-on: ubuntu-latest
     steps:

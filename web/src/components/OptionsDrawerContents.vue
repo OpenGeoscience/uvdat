@@ -1,202 +1,210 @@
-<script>
-import { ref, watch, computed } from "vue";
+<script lang="ts">
+import { ref, watch, computed, onMounted } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
-import { getUid } from "ol/util";
-
 import {
-  getMapLayerFromDataSource,
-  updateVisibleLayers,
-  addNetworkLayerToMap,
+  getMapLayerForDataObject,
+  isMapLayerVisible,
+  styleRasterOpenLayer,
+  toggleMapLayer,
 } from "@/layers";
-import { MapDataSource, addDataSourceToMap } from "@/data";
-import { convertDataset, getDatasetNetwork } from "../api/rest";
+import { currentDataset, deactivatedNodes, rasterTooltip } from "@/store";
 import {
-  currentCity,
-  currentMapDataSource,
-  pollForProcessingDataset,
-  getMap,
-  networkVis,
-  deactivatedNodes,
-  rasterTooltip,
-  activeMapLayerIds,
-  availableMapDataSources,
-} from "../store";
+  NetworkNode,
+  RasterMapLayer,
+  VectorMapLayer,
+  isVectorMapLayer,
+} from "@/types";
 
 export default {
   setup() {
+    const currentMapLayerIndex = ref(0);
+    const currentMapLayer = ref<VectorMapLayer | RasterMapLayer | undefined>();
     const opacity = ref(1);
     const colormap = ref("terrain");
-    const datasetRange = ref(undefined);
-    const colormapRange = ref(undefined);
-    const showConfirmConvert = ref(false);
+    const layerRange = ref<number[]>([]);
+    const colormapRange = ref<number[]>([]);
+    const applyToAll = ref<boolean>(false);
+    const zIndex = ref<number>();
 
-    function collapseOptionsPanel() {
-      currentMapDataSource.value = undefined;
+    const currentFileItemName = computed(() => {
+      return currentMapLayer.value?.file_item?.name;
+    });
+
+    function getCurrentMapLayer() {
+      if (currentDataset.value) {
+        getMapLayerForDataObject(
+          currentDataset.value,
+          currentDataset.value?.current_layer_index
+        ).then((mapLayer) => {
+          if (zIndex.value !== undefined) {
+            mapLayer?.openlayer.setZIndex(zIndex.value);
+          }
+          if (!isMapLayerVisible(mapLayer)) {
+            toggleMapLayer(mapLayer);
+          }
+
+          currentMapLayer.value = mapLayer as
+            | VectorMapLayer
+            | RasterMapLayer
+            | undefined;
+
+          populateRefs();
+        });
+      } else {
+        currentMapLayer.value = undefined;
+      }
     }
 
     function populateRefs() {
-      if (currentMapDataSource.value === undefined) {
-        return;
+      if (currentMapLayer.value?.openlayer) {
+        const openlayer = currentMapLayer.value.openlayer;
+        zIndex.value = openlayer.getZIndex();
+        if (applyToAll.value) {
+          updateLayerOpacity();
+          updateColormap();
+        } else {
+          currentMapLayerIndex.value = currentMapLayer.value.index;
+          opacity.value = openlayer.getOpacity();
+          const layerProperties = openlayer.getProperties();
+          const defaultStyle = layerProperties.default_style;
+          const { min, max, palette } = layerProperties;
+
+          if (defaultStyle) {
+            colormap.value = palette || defaultStyle.palette || "terrain";
+            layerRange.value =
+              defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
+            if (min && max) {
+              colormapRange.value = [min, max];
+            } else {
+              colormapRange.value = layerRange.value;
+            }
+          }
+        }
+      } else {
+        opacity.value = 1;
+        colormap.value = "terrain";
+        layerRange.value = [];
+        colormapRange.value = [];
       }
+    }
 
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      const dataset = currentMapDataSource.value?.dataset;
-
-      // Set opacity to layer value, update if it hasn't been changed
-      opacity.value = layer.getOpacity();
-      if (opacity.value === 1 && dataset?.style?.opacity) {
-        opacity.value = dataset.style.opacity;
+    function activateNode(deactivated: number) {
+      if (isVectorMapLayer(currentMapLayer.value)) {
+        toggleNodeActive(
+          deactivated,
+          currentDataset.value,
+          currentMapLayer.value
+        );
       }
+    }
 
-      // Update other values
-      colormap.value = dataset?.style?.colormap || "terrain";
-      datasetRange.value =
-        dataset?.style?.data_range?.map((v) => Math.round(v)) || undefined;
-      colormapRange.value = datasetRange.value;
+    async function updateLayerShown() {
+      if (
+        currentMapLayerIndex.value !== undefined &&
+        currentDataset.value?.map_layers &&
+        currentMapLayerIndex.value < currentDataset.value?.map_layers.length
+      ) {
+        // turn off layer at previous index
+        toggleMapLayer(currentMapLayer.value);
+        currentDataset.value.current_layer_index = currentMapLayerIndex.value;
+        getCurrentMapLayer();
+      }
     }
 
     function updateLayerOpacity() {
-      if (currentMapDataSource.value === undefined) {
-        return;
-      }
-
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      layer.setOpacity(opacity.value);
+      if (currentMapLayer.value?.openlayer === undefined) return;
+      currentMapLayer.value?.openlayer.setOpacity(opacity.value);
     }
 
-    function updateCurrentDatasetLayer() {
-      if (currentMapDataSource.value?.dataset === undefined) {
-        return;
-      }
-
-      currentMapDataSource.value.dataset.style.opacity = opacity.value;
-      currentMapDataSource.value.dataset.style.colormap = colormap.value;
-      currentMapDataSource.value.dataset.style.colormap_range =
-        colormapRange.value;
-
-      const layer = getMapLayerFromDataSource(currentMapDataSource.value);
-      const layerNetwork = layer.getProperties().network;
+    function updateColormap() {
       if (
-        !layerNetwork ||
-        !networkVis.value ||
-        networkVis.value?.id === layerNetwork
-      ) {
-        getMap().removeLayer(layer);
-        addDataSourceToMap(currentMapDataSource.value);
-      }
-    }
-
-    function updateColormapMin(min) {
-      colormapRange.value[0] = min;
-      updateCurrentDatasetLayer();
-    }
-
-    function updateColormapMax(max) {
-      colormapRange.value[1] = max;
-      updateCurrentDatasetLayer();
-    }
-
-    function toggleNetworkVis() {
-      if (currentMapDataSource.value?.dataset === undefined) {
+        currentMapLayer.value?.openlayer === undefined ||
+        currentMapLayer.value.type !== "raster"
+      )
         return;
-      }
-
-      const { dataset } = currentMapDataSource.value;
-
-      // TODO: Check active map layers
-      // Check if there is a visible layer that matches the networkvis dataset id
-      const updated = updateVisibleLayers();
-      if (
-        !updated.shown.some(
-          (l) => l.getProperties().datasetId === networkVis.value.id
-        )
-      ) {
-        // no existing one shown, create a new network layer
-        getDatasetNetwork(dataset.id).then((nodes) => {
-          if (nodes.length && networkVis.value) {
-            networkVis.value.nodes = nodes;
-            const layer = addNetworkLayerToMap(dataset, nodes);
-
-            // TODO: Integrate the below code into the normal flow
-
-            // Set layer properties and add to activeMapLayerIds
-            const dataSource = new MapDataSource({ dataset });
-            layer.setProperties({ dataSourceId: dataSource.uid });
-
-            // Put new dataset at front of list, so it shows up above any existing layers
-            activeMapLayerIds.value = [
-              getUid(layer),
-              ...activeMapLayerIds.value,
-            ];
-          }
-        });
-      }
-    }
-
-    function runConversion() {
-      if (currentMapDataSource.value?.dataset === undefined) {
-        return;
-      }
-      showConfirmConvert.value = false;
-      const { dataset } = currentMapDataSource.value;
-      convertDataset(dataset.id).then((dataset) => {
-        currentMapDataSource.value = new MapDataSource({ dataset });
-        currentCity.value.datasets = currentCity.value.datasets.map((d) =>
-          d.id === dataset.id ? dataset : d
-        );
-        pollForProcessingDataset(dataset.id);
+      styleRasterOpenLayer(currentMapLayer.value.openlayer, {
+        colormap: {
+          palette: colormap.value,
+          range: colormapRange.value,
+        },
       });
     }
 
-    const datasetIdToDataSource = computed(() => {
-      const map = new Map();
-      availableMapDataSources.value.forEach((ds) => {
-        if (ds.dataset !== undefined) {
-          map.set(ds, ds.dataset);
-        }
-      });
+    function getNetworkNodeName(nodeId: number) {
+      if (!currentDataset.value) return "";
+      return currentDataset.value.network?.nodes?.find(
+        (n: NetworkNode) => n.id === nodeId
+      )?.name;
+    }
 
-      return map;
-    });
-
-    watch(currentMapDataSource, populateRefs);
+    // Use deep watcher to catch inputs from number fields alongside sliders
+    watch(colormapRange, updateColormap, { deep: true });
+    watch(colormap, updateColormap);
     watch(opacity, updateLayerOpacity);
-    watch(colormap, updateCurrentDatasetLayer);
-    watch(colormapRange, updateCurrentDatasetLayer);
+
+    watch(currentDataset, getCurrentMapLayer);
+    watch(currentMapLayerIndex, updateLayerShown);
+    onMounted(getCurrentMapLayer);
 
     return {
-      collapseOptionsPanel,
-      currentMapDataSource,
+      currentMapLayerIndex,
+      currentMapLayer,
+      currentDataset,
+      currentFileItemName,
       rasterColormaps,
       opacity,
       colormap,
-      datasetRange,
+      layerRange,
       colormapRange,
-      updateColormapMin,
-      updateColormapMax,
+      applyToAll,
       rasterTooltip,
-      networkVis,
-      toggleNetworkVis,
-      toggleNodeActive,
       deactivatedNodes,
-      showConfirmConvert,
-      runConversion,
-      datasetIdToDataSource,
+      activateNode,
+      getNetworkNodeName,
     };
   },
 };
 </script>
 
 <template>
-  <v-card class="fill-height" v-if="currentMapDataSource">
-    <v-icon class="close-icon" @click="collapseOptionsPanel">
+  <v-card class="fill-height" v-if="currentDataset">
+    <v-icon class="close-icon" @click="currentDataset = undefined">
       mdi-close
     </v-icon>
     <v-card-title class="medium-title">Options</v-card-title>
     <v-card-subtitle class="wrap-subtitle">
-      {{ currentMapDataSource.name }}
+      {{ currentDataset?.name }}
     </v-card-subtitle>
     <v-divider class="mb-2" />
+
+    <div
+      class="pa-2"
+      v-if="
+        currentMapLayer &&
+        currentDataset?.map_layers &&
+        currentDataset?.map_layers.length > 1
+      "
+    >
+      <v-checkbox
+        v-model="applyToAll"
+        :label="`Apply style changes to all ${currentDataset.map_layers.length} layers in Dataset`"
+      />
+
+      <v-slider
+        v-model="currentMapLayerIndex"
+        label="Current Layer"
+        :thumb-label="true"
+        show-ticks="always"
+        :tick-size="5"
+        dense
+        min="0"
+        step="1"
+        :max="currentDataset?.map_layers.length - 1"
+      />
+      <v-card-subtitle class="wrap-subtitle">
+        Current layer file name: {{ currentFileItemName || "Untitled" }}
+      </v-card-subtitle>
+    </div>
 
     <div class="pa-2">
       <v-slider
@@ -208,7 +216,7 @@ export default {
         step="0.05"
       />
 
-      <div v-if="currentMapDataSource.dataset?.raster_file">
+      <div v-if="currentMapLayer?.type === 'raster'">
         <v-select
           v-model="colormap"
           dense
@@ -222,64 +230,54 @@ export default {
         <v-range-slider
           v-if="colormapRange"
           v-model="colormapRange"
-          :min="datasetRange[0]"
-          :max="datasetRange[1]"
+          :min="layerRange[0]"
+          :max="layerRange[1]"
           :step="1"
         >
           <template v-slot:prepend>
             <input
-              :value="colormapRange[0]"
+              v-model="colormapRange[0]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMin(e.target.value)"
+              :min="layerRange[0]"
+              :max="layerRange[1]"
             />
           </template>
           <template v-slot:append>
             <input
-              :value="colormapRange[1]"
+              v-model="colormapRange[1]"
               class="pa-1"
               hide-details
               dense
               type="number"
               style="width: 60px"
-              @change="(e) => updateColormapMax(e.target.value)"
+              :min="layerRange[0]"
+              :max="layerRange[1]"
             />
           </template>
         </v-range-slider>
         <v-switch
           v-model="rasterTooltip"
-          :value="currentMapDataSource.dataset?.id"
+          :value="currentMapLayer?.id"
           label="Show value tooltip"
         />
       </div>
 
-      <div v-if="currentMapDataSource.dataset?.network">
-        <v-switch
-          v-model="networkVis"
-          :value="currentMapDataSource.dataset"
-          label="Show as node network"
-          @change="toggleNetworkVis"
-        />
-
-        <v-expansion-panels
-          v-show="networkVis"
-          :model-value="0"
-          variant="accordion"
-        >
+      <div v-if="currentDataset && currentDataset.network">
+        <v-expansion-panels :model-value="0" variant="accordion">
           <v-expansion-panel title="Deactivated Nodes">
             <v-expansion-panel-text
               v-for="deactivated in deactivatedNodes"
-              v-show="networkVis.nodes.map((n) => n.id).includes(deactivated)"
               :key="deactivated"
             >
-              {{ networkVis.nodes.find((n) => n.id === deactivated)?.name }}
+              {{ getNetworkNodeName(deactivated) }}
               <v-btn
                 size="small"
                 style="float: right"
-                @click="(e) => toggleNodeActive(deactivated)"
+                @click="activateNode(deactivated)"
               >
                 Activate
               </v-btn>
@@ -287,31 +285,6 @@ export default {
           </v-expansion-panel>
         </v-expansion-panels>
       </div>
-
-      <div class="bottom" @click="showConfirmConvert = true">
-        <v-icon>mdi-refresh</v-icon>
-        Rerun conversion task
-      </div>
-
-      <v-dialog v-model="showConfirmConvert">
-        <v-card>
-          <v-card-title>
-            Confirmation
-            <v-icon class="close-icon" @click="showConfirmConvert = false">
-              mdi-close
-            </v-icon>
-          </v-card-title>
-          <v-card-text>
-            Are you sure you want to rerun the conversion task? This will delete
-            the current converted data and start a new conversion task. The
-            conversion task will read the raw data archive, convert it, and save
-            it.
-          </v-card-text>
-          <v-card-actions>
-            <v-btn color="primary" @click="runConversion">Convert</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
     </div>
   </v-card>
 </template>

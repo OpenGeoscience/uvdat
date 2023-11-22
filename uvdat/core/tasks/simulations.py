@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import random
 import tempfile
@@ -6,22 +5,21 @@ import tempfile
 from celery import shared_task
 from django_large_image import tilesource
 import large_image
-import networkx as nx
 import shapely
 
 from uvdat.core.models import Dataset
 from uvdat.core.tasks.networks import (
     NODE_RECOVERY_MODES,
-    construct_edge_list,
+    get_dataset_network_graph,
     sort_graph_centrality,
 )
 
 
-def get_network_node_elevations(network_nodes, elevation_dataset):
+def get_network_node_elevations(network_nodes, elevation_data):
     with tempfile.TemporaryDirectory() as tmp:
         raster_path = Path(tmp, 'raster')
         with open(raster_path, 'wb') as raster_file:
-            raster_file.write(elevation_dataset.raster_file.read())
+            raster_file.write(elevation_data.cloud_optimized_geotiff.read())
         source = large_image.open(raster_path)
         data, data_format = source.getRegion(format='numpy')
         data = data[:, :, 0]
@@ -45,23 +43,23 @@ def get_network_node_elevations(network_nodes, elevation_dataset):
 
 
 @shared_task
-def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, flood_dataset):
-    from uvdat.core.models import SimulationResult
+def flood_scenario_1(simulation_result_id, network_dataset, elevation_data, flood_area):
+    from uvdat.core.models import RasterMapLayer, SimulationResult, VectorMapLayer
 
     result = SimulationResult.objects.get(id=simulation_result_id)
     try:
         network_dataset = Dataset.objects.get(id=network_dataset)
-        elevation_dataset = Dataset.objects.get(id=elevation_dataset)
-        flood_dataset = Dataset.objects.get(id=flood_dataset)
+        elevation_data = RasterMapLayer.objects.get(id=elevation_data)
+        flood_area = VectorMapLayer.objects.get(id=flood_area)
     except Dataset.DoesNotExist:
         result.error_message = 'Dataset not found.'
         result.save()
         return
 
     if (
-        not network_dataset.network
-        or elevation_dataset.category != 'elevation'
-        or flood_dataset.category != 'flood'
+        not network_dataset.get_network()
+        or elevation_data.file_item.dataset.category != 'elevation'
+        or flood_area.file_item.dataset.category != 'flood'
     ):
         result.error_message = 'Invalid dataset selected.'
         result.save()
@@ -69,7 +67,7 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, f
 
     node_failures = []
     network_nodes = network_dataset.network_nodes.all()
-    flood_geodata = json.loads(flood_dataset.geodata_file.open().read().decode())
+    flood_geodata = flood_area.read_geojson_data()
     flood_areas = [
         shapely.geometry.shape(feature['geometry']) for feature in flood_geodata['features']
     ]
@@ -78,7 +76,7 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_dataset, f
         if any(flood_area.contains(node_point) for flood_area in flood_areas):
             node_failures.append(network_node)
 
-    node_elevations = get_network_node_elevations(network_nodes, elevation_dataset)
+    node_elevations = get_network_node_elevations(network_nodes, elevation_data)
     node_failures.sort(key=lambda n: node_elevations[n.id])
 
     result.output_data = {'node_failures': [n.id for n in node_failures]}
@@ -115,9 +113,8 @@ def recovery_scenario(simulation_result_id, node_failure_simulation_result, reco
             result.error_message = 'Dataset not found.'
             result.save()
             return
-        edge_list = construct_edge_list(dataset)
-        g = nx.from_dict_of_lists(edge_list)
-        nodes_sorted, edge_list = sort_graph_centrality(g, recovery_mode)
+        graph = get_dataset_network_graph(dataset)
+        nodes_sorted, edge_list = sort_graph_centrality(graph, recovery_mode)
         node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
 
     result.output_data = {

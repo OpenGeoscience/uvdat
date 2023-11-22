@@ -1,33 +1,52 @@
 import { apiClient } from "./auth";
 import {
-  City,
+  Context,
   Dataset,
   NetworkNode,
   RasterData,
   Chart,
-  Simulation,
+  SimulationType,
+  DerivedRegion,
+  VectorMapLayer,
+  RasterMapLayer,
 } from "@/types";
 
-export async function getCities(): Promise<City[]> {
-  return (await apiClient.get("cities")).data.results;
+export async function getContexts(): Promise<Context[]> {
+  return (await apiClient.get("contexts")).data.results;
 }
 
-export async function getCityDatasets(cityId: number): Promise<Dataset[]> {
-  return (await apiClient.get(`datasets?city=${cityId}`)).data.results;
+export async function getContextDatasets(
+  contextId: number
+): Promise<Dataset[]> {
+  return (await apiClient.get(`datasets?context=${contextId}`)).data.results;
 }
 
-export async function getCityCharts(cityId: number): Promise<Chart[]> {
-  return (await apiClient.get(`charts?city=${cityId}`)).data.results;
+export async function getContextCharts(contextId: number): Promise<Chart[]> {
+  return (await apiClient.get(`charts?context=${contextId}`)).data.results;
 }
 
-export async function getCitySimulations(
-  cityId: number
-): Promise<Simulation[]> {
-  return (await apiClient.get(`simulations/available/city/${cityId}`)).data;
+export async function getContextDerivedRegions(
+  contextId: number
+): Promise<DerivedRegion[]> {
+  return (await apiClient.get(`derived-regions?context=${contextId}`)).data
+    .results;
+}
+
+export async function getContextSimulationTypes(
+  contextId: number
+): Promise<SimulationType[]> {
+  return (await apiClient.get(`simulations/available/context/${contextId}`))
+    .data;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}`)).data;
+}
+
+export async function getDatasetMapLayers(
+  datasetId: number
+): Promise<(VectorMapLayer | RasterMapLayer)[]> {
+  return (await apiClient.get(`datasets/${datasetId}/map_layers`)).data;
 }
 
 export async function convertDataset(datasetId: number): Promise<Dataset> {
@@ -42,22 +61,30 @@ export async function getDatasetNetwork(
 
 export async function getNetworkGCC(
   datasetId: number,
+  contextId: number,
   exclude_nodes: number[]
 ): Promise<NetworkNode[]> {
   return (
     await apiClient.get(
-      `datasets/${datasetId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
+      `datasets/${datasetId}/gcc?context=${contextId}&exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
 }
 
-export async function getRasterData(datasetId: number): Promise<RasterData> {
+export async function getMapLayer(
+  mapLayerId: number,
+  mapLayerType: string
+): Promise<VectorMapLayer | RasterMapLayer> {
+  return (await apiClient.get(`${mapLayerType}s/${mapLayerId}`)).data;
+}
+
+export async function getRasterData(layerId: number): Promise<RasterData> {
   const resolution = 0.1;
   const data = (
-    await apiClient.get(`datasets/${datasetId}/raster-data/${resolution}`)
+    await apiClient.get(`rasters/${layerId}/raster-data/${resolution}`)
   ).data;
   const { sourceBounds } = (
-    await apiClient.get(`datasets/${datasetId}/info/metadata`)
+    await apiClient.get(`rasters/${layerId}/info/metadata`)
   ).data;
   return {
     data,
@@ -71,12 +98,12 @@ export async function clearChart(chartId: number) {
 
 export async function runSimulation(
   simulationId: number,
-  cityId: number,
+  contextId: number,
   args: object
 ) {
   return (
     await apiClient.post(
-      `simulations/run/${simulationId}/city/${cityId}/`,
+      `simulations/run/${simulationId}/context/${contextId}/`,
       args
     )
   ).data;
@@ -84,33 +111,31 @@ export async function runSimulation(
 
 export async function getSimulationResults(
   simulationId: number,
-  cityId: number
+  contextId: number
 ) {
   return (
-    await apiClient.get(`simulations/${simulationId}/city/${cityId}/results/`)
+    await apiClient.get(
+      `simulations/${simulationId}/context/${contextId}/results/`
+    )
   ).data;
 }
 
-export async function listDerivedRegions() {
-  const res = await apiClient.get("derived_regions/");
-  return res.data.results;
-}
-
 export async function getDerivedRegion(regionId: number) {
-  const res = await apiClient.get(`derived_regions/${regionId}/`);
+  const res = await apiClient.get(`derived-regions/${regionId}/`);
   return res.data;
 }
 
 export async function postDerivedRegion(
   name: string,
-  city: number,
+  context: number,
   regions: number[],
-  op: "union" | "intersection"
+  op: "union" | "intersection" | undefined
 ) {
+  if (!op) return;
   const operation = op.toUpperCase();
-  const res = await apiClient.post("derived_regions/", {
+  const res = await apiClient.post("derived-regions/", {
     name,
-    city,
+    context,
     operation,
     regions,
   });

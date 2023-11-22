@@ -3,41 +3,49 @@ export interface Dataset {
   name: string;
   description: string;
   category: string;
-  raw_data_archive: string;
-  raw_data_type: string;
-  geodata_file: string;
-  vector_tiles_file: string;
-  raster_file: string;
   created: string;
   modified: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  style: { [key: string]: any };
   processing: boolean;
-  network: boolean;
+  metadata: object;
+  dataset_type: "vector" | "raster";
+  map_layers?: (VectorMapLayer | RasterMapLayer)[];
+  current_layer_index?: number;
+  classification: "Network" | "Region" | "Other";
+  network: {
+    nodes: NetworkNode[];
+    edges: NetworkEdge[];
+  };
 }
 
-export interface Region {
+export interface SourceRegion {
   id: number;
-  name: string;
-  city: number;
-  dataset: number;
-  properties: { [key: string]: unknown };
+  name?: string;
+  dataset_id?: number;
+  metadata?: object;
+  boundary?: object;
 }
 
 export interface DerivedRegion {
   id: number;
   name: string;
-  city: number;
-  properties: { [key: string]: unknown };
-  source_operation: "UNION" | "INTERSECTION";
+  context: number;
+  metadata: object;
+  boundary: object;
   source_regions: number[];
+  operation: "UNION" | "INTERSECTION";
+  map_layers: {
+    id: number;
+    index: number;
+    type: string;
+  }[];
+  current_layer_index: null;
 }
 
-export interface City {
+export interface Context {
   id: number;
   name: string;
-  center: number[];
-  default_zoom: number;
+  default_map_center: number[];
+  default_map_zoom: number;
   datasets: Dataset[];
   created: string;
   modified: string;
@@ -55,11 +63,54 @@ export interface Feature {
 
 export interface NetworkNode {
   id: number;
-  location: number[];
   name: string;
-  properties: object;
   dataset: number;
-  adjacent_nodes: number[];
+  metadata: object;
+  capacity: number | null;
+  location: number[];
+}
+
+export interface NetworkEdge {
+  id: number;
+  name: string;
+  dataset: number;
+  metadata: object;
+  capacity: number | null;
+  line_geopmetry: object;
+  directed: boolean;
+  from_node: number;
+  to_node: number;
+}
+
+export interface AbstractMapLayer {
+  id: number;
+  file_item?: {
+    id: number;
+    name: string;
+  };
+  metadata?: {
+    network?: boolean;
+  };
+  default_style?: object;
+  index: number;
+  type: "vector" | "raster";
+  dataset_id?: number;
+  derived_region_id?: number;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  openlayer?: any;
+}
+
+export function isNonNullObject(obj: unknown): obj is object {
+  return typeof obj === "object" && obj !== null;
+}
+
+export interface RasterMapLayer extends AbstractMapLayer {
+  cloud_optimized_geotiff: string;
+}
+
+export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
+  return isNonNullObject(obj) && "cloud_optimized_geotiff" in obj;
 }
 
 export interface RasterData {
@@ -72,28 +123,101 @@ export interface RasterData {
   data: number[][];
 }
 
-export interface Chart {
-  name: string;
-  city: number;
-  description: string;
-  category: string;
-  raw_data_file: string;
-  raw_data_type: string;
-  style: object;
-  clearable: boolean;
-  chart_data: {
-    labels: string[];
-    datasets: object[];
+export interface VectorMapLayer extends AbstractMapLayer {
+  tile_extents: {
+    [z: number]: {
+      min_x: number;
+      min_y: number;
+      max_x: number;
+      max_y: number;
+    };
   };
 }
 
-export interface Simulation {
+export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
+  return isNonNullObject(obj) && "tile_extents" in obj;
+}
+
+export interface VectorTile {
+  id: number;
+  map_layer: number;
+  geojson_data: object;
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface Chart {
+  id: number;
+  name: string;
+  description: string;
+  context: number;
+  metadata: object;
+  chart_data: {
+    labels: string[];
+    datasets: {
+      data: number[];
+    }[];
+  };
+  chart_options: {
+    chart_title: string;
+    x_title: string;
+    y_title: string;
+    x_range: number[];
+    y_range: number[];
+  };
+  editable: boolean;
+}
+
+export interface ChartOptions {
+  plugins: {
+    title?: object;
+  };
+  scales: {
+    x?: {
+      min?: number;
+      max?: number;
+      title?: {
+        display?: boolean;
+        text: string;
+      };
+    };
+    y?: {
+      min?: number;
+      max?: number;
+      title?: {
+        display?: boolean;
+        text: string;
+      };
+    };
+  };
+}
+
+export interface SimulationType {
   id: number;
   name: string;
   description: string;
   output_type: string;
   args: {
     name: string;
-    options: object[];
+    options: {
+      id: number;
+      name: string;
+    }[];
   }[];
+}
+
+export interface SimulationResult {
+  id: number;
+  name: string;
+  simulation_type: string;
+  context: number;
+  input_args: object;
+  output_data: {
+    node_failures: [];
+    node_recoveries: [];
+  };
+  error_message: string;
+  created: string;
+  modified: string;
 }

@@ -6,6 +6,11 @@ class Dataset(models.Model):
         VECTOR = 'VECTOR', 'Vector'
         RASTER = 'RASTER', 'Raster'
 
+    class Classification(models.TextChoices):
+        NETWORK = 'Network'
+        REGION = 'Region'
+        OTHER = 'Other'
+
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
@@ -15,6 +20,15 @@ class Dataset(models.Model):
         max_length=max(len(choice[0]) for choice in DatasetType.choices),
         choices=DatasetType.choices,
     )
+    classification = models.CharField(
+        max_length=16, choices=Classification.choices, default=Classification.OTHER
+    )
+
+    def is_in_context(self, context_id):
+        from uvdat.core.models import Context
+
+        context = Context.objects.get(id=context_id)
+        return context.datasets.filter(id=self.id).exists()
 
     def spawn_conversion_task(
         self,
@@ -40,17 +54,78 @@ class Dataset(models.Model):
         return size
 
     def get_regions(self):
-        # TODO: get regions
-        pass
+        from uvdat.core.models import SourceRegion
+
+        return SourceRegion.objects.filter(dataset=self)
 
     def get_network(self):
-        # TODO: get network
-        pass
+        from uvdat.core.models import NetworkEdge, NetworkNode
+
+        network = {
+            'nodes': NetworkNode.objects.filter(dataset=self),
+            'edges': NetworkEdge.objects.filter(dataset=self),
+        }
+        if len(network.get('nodes')) == 0 and len(network.get('edges')) == 0:
+            return None
+        return network
 
     def get_network_graph(self):
-        # TODO: get network graph
-        pass
+        from uvdat.core.tasks.networks import get_dataset_network_graph
+
+        return get_dataset_network_graph(self)
 
     def get_network_gcc(self, exclude_nodes):
-        # TODO: get network gcc
-        pass
+        from uvdat.core.tasks.networks import get_dataset_network_gcc
+
+        return get_dataset_network_gcc(self, exclude_nodes)
+
+    def get_map_layers(self):
+        """Return a queryset of either RasterMapLayer, or VectorMapLayer."""
+        from uvdat.core.models import RasterMapLayer, VectorMapLayer
+
+        if self.dataset_type == self.DatasetType.RASTER:
+            return RasterMapLayer.objects.filter(file_item__dataset=self)
+        if self.dataset_type == self.DatasetType.VECTOR:
+            return VectorMapLayer.objects.filter(file_item__dataset=self)
+
+        raise NotImplementedError(f'Dataset Type {self.dataset_type}')
+
+    def get_map_layer_tile_extents(self):
+        """
+        Return the extents of all vector map layers of this dataset.
+
+        Returns `None` if the dataset is not a vector dataset.
+        """
+        if self.dataset_type != self.DatasetType.VECTOR:
+            return None
+
+        from uvdat.core.models import VectorMapLayer, VectorTile
+
+        # Retrieve all layers
+        layer_ids = VectorMapLayer.objects.filter(file_item__dataset=self).values_list(
+            'id', flat=True
+        )
+
+        # Return x/y extents by layer id and z depth
+        vals = (
+            VectorTile.objects.filter(map_layer_id__in=layer_ids)
+            .values('map_layer_id', 'z')
+            .annotate(
+                min_x=models.Min('x'),
+                min_y=models.Min('y'),
+                max_x=models.Max('x'),
+                max_y=models.Max('y'),
+            )
+            .order_by('map_layer_id')
+        )
+
+        # Deconstruct query into response format
+        layers = {}
+        for entry in vals:
+            map_layer_id = entry.pop('map_layer_id')
+            if map_layer_id not in layers:
+                layers[map_layer_id] = {}
+
+            layers[map_layer_id][entry.pop('z')] = entry
+
+        return layers
