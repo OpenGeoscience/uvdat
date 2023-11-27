@@ -1,0 +1,112 @@
+root@70f88cf67dbf:/opt/django-project# python manage.py populate --include_large
+------------------------------------
+Populating server with sample data...
+Creating Context objects...
+        -  Boston Transportation
+         Context Boston Transportation created.
+        -  DC Transportation
+         Context DC Transportation created.
+        -  Boston-Washington Transportation
+         Context Boston-Washington Transportation created.
+Creating Chart objects...
+        -  Boston Harbor Daily Tide Levels
+         Chart Boston Harbor Daily Tide Levels created.
+         FileItem tide_level_data.csv created.
+         Converting data for Boston Harbor Daily Tide Levels...
+         Saved converted data for chart Boston Harbor Daily Tide Levels.
+Creating Dataset objects...
+        -  MBTA Rapid Transit
+         Dataset MBTA Rapid Transit created.
+         FileItem mbta_rapid_transit.zip created.
+         Converting data for MBTA Rapid Transit...
+         VectorMapLayer 1 created.
+         31 vector tiles created.
+         158 nodes and 164 edges created.
+        -  MBTA Commuter Rail
+         Dataset MBTA Commuter Rail created.
+         FileItem commuter_rail.zip created.
+         Converting data for MBTA Commuter Rail...
+         VectorMapLayer 2 created.
+         686 vector tiles created.
+         268 nodes and 269 edges created.
+        -  Boston Hurricane Surge Inundation Zones
+         Dataset Boston Hurricane Surge Inundation Zones created.
+         FileItem hurr_inun.zip created.
+         Converting data for Boston Hurricane Surge Inundation Zones...
+         VectorMapLayer 3 created.
+         295 vector tiles created.
+        -  Boston FEMA National Flood Hazard
+         Dataset Boston FEMA National Flood Hazard created.
+         FileItem flood_hazard_fema.zip created.
+         Converting data for Boston FEMA National Flood Hazard...
+         VectorMapLayer 4 created.
+         587 vector tiles created.
+        -  Massachusetts Elevation Data
+         Dataset Massachusetts Elevation Data created.
+         FileItem easternmass.tif created.
+         Converting data for Massachusetts Elevation Data...
+         RasterMapLayer 1 created.
+        -  Boston Neighborhoods
+         Dataset Boston Neighborhoods created.
+         FileItem neighborhoods2020.json created.
+         Converting data for Boston Neighborhoods...
+         VectorMapLayer 5 created.
+         26 vector tiles created.
+         24 regions created.
+        -  Boston Census 2020 Block Groups
+         Dataset Boston Census 2020 Block Groups created.
+         FileItem blockgroups.zip created.
+         Converting data for Boston Census 2020 Block Groups...
+         VectorMapLayer 6 created.
+         26 vector tiles created.
+         581 regions created.
+        -  Boston Zip Codes
+         Dataset Boston Zip Codes created.
+         FileItem zipcodes.zip created.
+         Converting data for Boston Zip Codes...
+         VectorMapLayer 7 created.
+         780 vector tiles created.
+         539 regions created.
+        -  Boston Sea Level Rises
+         Dataset Boston Sea Level Rises created.
+         FileItem 9in_rise.geojson created.
+         FileItem 21in_rise.geojson created.
+         FileItem 36in_rise.geojson created.
+         Converting data for Boston Sea Level Rises...
+         VectorMapLayer 8 created.
+         26 vector tiles created.
+         VectorMapLayer 9 created.
+         26 vector tiles created.
+         VectorMapLayer 10 created.
+         26 vector tiles created.
+        -  Boston 10-Year Flood Events
+         Dataset Boston 10-Year Flood Events created.
+         FileItem 9in_10yr_flood.geojson created.
+         FileItem 21in_10yr_flood.geojson created.
+         FileItem 36in_10yr_flood.geojson created.
+         Converting data for Boston 10-Year Flood Events...
+         VectorMapLayer 11 created.
+         26 vector tiles created.
+         VectorMapLayer 12 created.
+         26 vector tiles created.
+         VectorMapLayer 13 created.
+         26 vector tiles created.
+        -  Boston 100-Year Flood Events
+         Dataset Boston 100-Year Flood Events created.
+         FileItem 9in_100yr_flood.geojson created.
+         FileItem 21in_100yr_flood.geojson created.
+         FileItem 36in_100yr_flood.geojson created.
+         Converting data for Boston 100-Year Flood Events...
+         VectorMapLayer 14 created.
+         26 vector tiles created.
+         VectorMapLayer 15 created.
+         26 vector tiles created.
+         VectorMapLayer 16 created.
+         26 vector tiles created.
+        -  DC Metro
+         Dataset DC Metro created.
+         FileItem DC_Metro.zip created.
+         Converting data for DC Metro...
+         VectorMapLayer 17 created.
+         56 vector tiles created.
+         98 nodes and 134 edges created.

@@ -1,27 +1,32 @@
 from datetime import datetime
 
+from celery import shared_task
 import pandas
 from webcolors import name_to_hex
 
-from uvdat.core.models import Chart
+from uvdat.core.models import Chart, Context
 
 
-def convert_chart_data(chart):
-    options = chart.style.get('options')
-    chart_options = options.get('chart')
-    label_column = chart_options.get('labels')
-    dataset_columns = chart_options.get('datasets')
-    palette_options = options.get('palette')
+@shared_task
+def convert_chart(chart_id, conversion_options):
+    chart = Chart.objects.get(id=chart_id)
+
+    label_column = conversion_options.get('labels')
+    dataset_columns = conversion_options.get('datasets')
+    palette_options = conversion_options.get('palette')
 
     chart_data = {
         'labels': [],
         'datasets': [],
     }
 
-    if chart.raw_data_type == 'csv':
-        raw_data = pandas.read_csv(chart.raw_data_file.open())
+    chart_file = chart.fileitem_set.first()
+    if chart_file.file_type == 'csv':
+        raw_data = pandas.read_csv(chart_file.file.open())
     else:
-        raise NotImplementedError(f'Convert chart data for raw data type {chart.raw_data_type}')
+        raise NotImplementedError(
+            f'Convert chart data for file type {chart_file.file_type}',
+        )
     chart_data['labels'] = raw_data[label_column].fillna(-1).tolist()
     chart_data['datasets'] = [
         {
@@ -35,24 +40,23 @@ def convert_chart_data(chart):
 
     chart.chart_data = chart_data
     chart.save()
-    print(f"Saved data for chart {chart.name}")
+    print(f'\t Saved converted data for chart {chart.name}.')
 
 
-def get_gcc_chart(dataset):
+def get_gcc_chart(dataset, context_id):
     chart_name = f'{dataset.name} Greatest Connected Component Sizes'
     try:
         return Chart.objects.get(name=chart_name)
     except Chart.DoesNotExist:
-        chart = Chart(
+        chart = Chart.objects.create(
             name=chart_name,
             description="""
                 A set of previously-run calculations
                 for the network's greatest connected component (GCC),
                 showing GCC size by number of excluded nodes
             """,
-            city=dataset.city,
-            category="gcc",
-            clearable=True,
+            context=Context.objects.get(id=context_id),
+            editable=True,
             chart_data={},
             metadata=[],
             chart_options={
@@ -62,12 +66,13 @@ def get_gcc_chart(dataset):
                 'y_range': [0, dataset.network_nodes.count()],
             },
         )
+        print('\t', f'Chart {chart.name} created.')
         chart.save()
         return chart
 
 
-def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
-    chart = get_gcc_chart(dataset)
+def add_gcc_chart_datum(dataset, context_id, excluded_node_names, gcc_size):
+    chart = get_gcc_chart(dataset, context_id)
     if len(chart.metadata) == 0:
         # no data exists, need to initialize data structures
         chart.metadata = []
@@ -99,7 +104,7 @@ def add_gcc_chart_datum(dataset, excluded_node_names, gcc_size):
     chart.chart_data['datasets'] = datasets
 
     new_entry = {
-        'run_time': datetime.now().strftime("%d/%m/%Y %H:%M"),
+        'run_time': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'n_excluded_nodes': len(excluded_node_names),
         'excluded_node_names': excluded_node_names,
         'gcc_size': gcc_size,

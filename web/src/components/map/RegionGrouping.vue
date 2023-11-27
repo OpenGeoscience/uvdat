@@ -1,36 +1,61 @@
-<script setup lang="ts">
+<script lang="ts">
 import { ref } from "vue";
 import {
-  selectedRegions,
+  selectedSourceRegions,
   regionGroupingType,
-  availableDerivedRegions,
-  cancelRegionGrouping,
   regionGroupingActive,
+  currentContext,
 } from "@/store";
-import { postDerivedRegion, listDerivedRegions } from "@/api/rest";
+import {
+  cancelRegionGrouping as _cancelRegionGrouping,
+  loadDerivedRegions,
+} from "@/storeFunctions";
+import { postDerivedRegion } from "@/api/rest";
 
-// Region Controls
-const newRegionName = ref("");
-async function createDerivedRegion() {
-  if (selectedRegions.value.length === 0) {
-    throw new Error("Cannot created derived region with no selected regions");
-  }
-  if (regionGroupingType.value === null) {
-    throw new Error("Region grouping type is null");
-  }
+export default {
+  setup() {
+    // Region Controls
+    const newRegionName = ref("");
 
-  const city = selectedRegions.value[0].city;
-  await postDerivedRegion(
-    newRegionName.value,
-    city,
-    selectedRegions.value.map((reg) => reg.id),
-    regionGroupingType.value
-  );
+    function cancelRegionGrouping() {
+      newRegionName.value = "";
+      _cancelRegionGrouping();
+    }
 
-  // Close dialog
-  cancelRegionGrouping();
-  availableDerivedRegions.value = await listDerivedRegions();
-}
+    async function createDerivedRegion() {
+      if (selectedSourceRegions.value.length === 0) {
+        throw new Error(
+          "Cannot created derived region with no selected regions"
+        );
+      }
+      if (regionGroupingType.value === null) {
+        throw new Error("Region grouping type is null");
+      }
+
+      const context = currentContext.value;
+      if (context) {
+        await postDerivedRegion(
+          newRegionName.value,
+          context.id,
+          selectedSourceRegions.value.map((reg) => reg.id),
+          regionGroupingType.value
+        );
+      }
+
+      // Close dialog
+      cancelRegionGrouping();
+      loadDerivedRegions();
+    }
+    return {
+      regionGroupingActive,
+      regionGroupingType,
+      selectedSourceRegions,
+      newRegionName,
+      createDerivedRegion,
+      cancelRegionGrouping,
+    };
+  },
+};
 </script>
 
 <template>
@@ -40,7 +65,7 @@ async function createDerivedRegion() {
       Performing {{ regionGroupingType }} Grouping
     </v-card-title>
     <v-card-subtitle>
-      Grouping {{ selectedRegions.length }} Regions
+      Grouping {{ selectedSourceRegions.length }} Regions
     </v-card-subtitle>
 
     <v-row no-gutters class="px-2 mt-2">
@@ -65,7 +90,7 @@ async function createDerivedRegion() {
           color="success"
           variant="flat"
           prepend-icon="mdi-check"
-          :disabled="selectedRegions.length < 2 || !newRegionName"
+          :disabled="selectedSourceRegions.length < 2 || !newRegionName"
           @click="createDerivedRegion"
         >
           Save

@@ -2,11 +2,14 @@
     {
         "name": "Boston Harbor Daily Tide Levels",
         "description": "Raw data was obtained using the NOAA CO-OPS API for Data Retrieval and reformatted in tabular form",
-        "category": "ocean",
-        "city": "Boston, MA",
-        "raw_data_type": "csv",
-        "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
-        "path": "boston/tide_level_data.csv",
+        "context": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
+                "path": "boston/tide_level_data.csv"
+            }
+        ],
+        "editable": false,
         "metadata": {
             "columns": {
                 "Date": "YYYY-MM-DD",
@@ -36,23 +39,19 @@
             "x_title": "Date Recorded",
             "y_title": "Distance from Sensor (m)"
         },
-        "style": {
-            "options": {
-                "chart": {
-                    "labels": "Date",
-                    "datasets": [
-                        "HH",
-                        "H",
-                        "L",
-                        "LL"
-                    ]
-                },
-                "palette": {
-                    "HH": "red",
-                    "H": "pink",
-                    "L": "lightblue",
-                    "LL": "blue"
-                }
+        "conversion_options": {
+            "labels": "Date",
+            "datasets": [
+                "HH",
+                "H",
+                "L",
+                "LL"
+            ],
+            "palette": {
+                "HH": "red",
+                "H": "pink",
+                "L": "lightblue",
+                "LL": "blue"
             }
         }
     }

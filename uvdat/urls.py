@@ -5,7 +5,16 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-from uvdat.core import views
+from uvdat.core.rest import (
+    ChartViewSet,
+    ContextViewSet,
+    DatasetViewSet,
+    DerivedRegionViewSet,
+    RasterMapLayerViewSet,
+    SimulationViewSet,
+    SourceRegionViewSet,
+    VectorMapLayerViewSet,
+)
 
 router = routers.SimpleRouter()
 # OpenAPI generation
@@ -15,11 +24,14 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-router.register(r'datasets', views.DatasetViewSet, basename='datasets')
-router.register(r'cities', views.CityViewSet, basename='cities')
-router.register(r'charts', views.ChartViewSet, basename='charts')
-router.register(r'simulations', views.SimulationViewSet, basename='simulations')
-router.register(r'derived_regions', views.DerivedRegionViewSet, basename='derived_regions')
+router.register(r'contexts', ContextViewSet, basename='contexts')
+router.register(r'datasets', DatasetViewSet, basename='datasets')
+router.register(r'charts', ChartViewSet, basename='charts')
+router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')
+router.register(r'vectors', VectorMapLayerViewSet, basename='vectors')
+router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
+router.register(r'derived-regions', DerivedRegionViewSet, basename='derived-regions')
+router.register(r'simulations', SimulationViewSet, basename='simulations')
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),

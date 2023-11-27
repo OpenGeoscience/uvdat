@@ -1,14 +1,19 @@
-<script>
+<script lang="ts">
 import { ref, watch } from "vue";
 import {
-  activeSimulation,
-  currentCity,
-  activeDataSources,
-  availableDataSourcesTable,
+  currentSimulationType,
+  currentContext,
+  selectedMapLayers,
 } from "@/store";
-import { MapDataSource, addDataSourceToMap, getDatasetUid } from "@/data";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
+import { RasterMapLayer, SimulationResult, VectorMapLayer } from "@/types";
+import {
+  getMapLayerForDataObject,
+  getOrCreateLayerFromID,
+  isMapLayerVisible,
+  toggleMapLayer,
+} from "@/layers";
 
 export default {
   components: {
@@ -16,81 +21,114 @@ export default {
   },
   setup() {
     const tab = ref();
-    const activeResult = ref();
+    const activeResult = ref<SimulationResult>();
+    const activeResultInputs = ref<
+      {
+        key: string;
+        viewable: boolean;
+        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        value: { name: string };
+      }[]
+    >([]);
+    const availableResults = ref<SimulationResult[]>([]);
     const inputForm = ref();
-    const selectedInputs = ref({});
-    const availableResults = ref([]);
+    const selectedInputs = ref<Record<string, object[]>>({});
     const outputPoll = ref();
+    const inputSelectionRules = [
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (v: any) => (v ? true : "Selection required."),
+    ];
 
     function run() {
-      inputForm.value.validate().then(({ valid }) => {
-        if (valid) {
+      inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
+        if (valid && currentContext.value && currentSimulationType.value) {
           runSimulation(
-            activeSimulation.value.id,
-            currentCity.value.id,
+            currentSimulationType.value.id,
+            currentContext.value.id,
             selectedInputs.value
-          ).then(({ result }) => {
+          ).then((result) => {
             tab.value = "old";
-            activeResult.value = result.id;
+            activeResult.value = result;
           });
         }
       });
     }
 
     function fetchResults() {
+      if (!currentContext.value || !currentSimulationType.value) return;
       getSimulationResults(
-        activeSimulation.value.id,
-        currentCity.value.id
+        currentSimulationType.value.id,
+        currentContext.value.id
       ).then((results) => {
         availableResults.value = results;
+        if (activeResult.value) {
+          activeResult.value = availableResults.value.find(
+            (r) => r.id == activeResult.value?.id
+          );
+        }
       });
     }
 
-    function timestampToTitle(timestamp) {
+    function timestampToTitle(timestamp: string) {
       const date = new Date(Date.parse(timestamp));
       return date.toUTCString();
     }
 
-    function resultInputArgs(result) {
-      let args = [];
-      Object.entries(result.input_args).forEach(([k, v]) => {
-        const simArg = activeSimulation.value.args.find((a) => a.name === k);
-        if (simArg) {
-          let selectedOption = simArg.options.find(
-            (o) => o.id === v || o === v
+    async function populateActiveResultInputs() {
+      if (!activeResult.value?.input_args) return;
+      activeResultInputs.value = [];
+      const args = Object.entries(activeResult.value.input_args);
+      const inputInfo = await Promise.all(
+        args.map(async ([argName, argValue]) => {
+          // const [argName, argValue] = args[i];
+          const argDef = currentSimulationType.value?.args.find(
+            (a: { name: string }) => a.name === argName
           );
-          const dataSourceUid = getDatasetUid(selectedOption.id);
-          const dataSourceSelected = activeDataSources.value.has(dataSourceUid);
-          const dataSourceAvailable =
-            availableDataSourcesTable.value.has(dataSourceUid);
-
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const selectedOption: any = argDef?.options.find(
+            (o: { id: number }) => o === argValue || o.id === argValue
+          );
           if (selectedOption) {
-            if (!selectedOption.name) {
-              selectedOption = { name: selectedOption };
+            let mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+            if (selectedOption.map_layers) {
+              // Object has layers
+              mapLayer = (await getMapLayerForDataObject(selectedOption)) as
+                | VectorMapLayer
+                | RasterMapLayer
+                | undefined;
+            } else if (selectedOption.file_item && selectedOption.type) {
+              // Object is layer
+              mapLayer = await getOrCreateLayerFromID(
+                selectedOption.id,
+                selectedOption.type
+              );
             }
-            args.push({
-              key: k,
+            return {
+              key: argName.replaceAll("_", " "),
               value: selectedOption,
-              viewable: dataSourceAvailable && !dataSourceSelected,
-            });
+              mapLayer,
+              viewable: mapLayer && !isMapLayerVisible(mapLayer),
+            };
           }
-        }
-      });
-      return args;
+        })
+      );
+      activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
+        key: string;
+        viewable: boolean;
+        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        value: { name: string };
+      }[];
     }
 
-    function showDataset(dataset) {
-      addDataSourceToMap(new MapDataSource({ dataset }));
-    }
-
-    function pollForActiveDatasetOutput() {
+    function pollForActiveResultOutput() {
       if (!availableResults.value) {
         clearInterval(outputPoll.value);
         outputPoll.value = undefined;
       }
-      const targetResult = availableResults.value.find(
-        (r) => r.id == activeResult.value
-      );
+      const targetResult: SimulationResult | undefined =
+        availableResults.value.find(
+          (r: { id: number }) => r.id == activeResult.value?.id
+        );
       if (
         targetResult &&
         !targetResult.output_data &&
@@ -103,7 +141,7 @@ export default {
       }
     }
 
-    watch(activeSimulation, () => {
+    watch(currentSimulationType, () => {
       availableResults.value = [];
       fetchResults();
     });
@@ -115,30 +153,36 @@ export default {
     });
 
     watch(activeResult, () => {
-      if (activeResult.value && !activeResult.value.output_data) {
-        outputPoll.value = setInterval(pollForActiveDatasetOutput, 3000);
+      if (activeResult.value) {
+        populateActiveResultInputs();
+        if (!activeResult.value.output_data) {
+          outputPoll.value = setInterval(pollForActiveResultOutput, 3000);
+        }
       }
     });
 
+    watch(selectedMapLayers, populateActiveResultInputs);
+
     return {
-      activeSimulation,
+      currentSimulationType,
       tab,
       activeResult,
+      activeResultInputs,
       inputForm,
       selectedInputs,
       availableResults,
       outputPoll,
+      inputSelectionRules,
       run,
       timestampToTitle,
-      resultInputArgs,
-      showDataset,
+      toggleMapLayer,
     };
   },
 };
 </script>
 
 <template>
-  <v-card class="simulations-card">
+  <v-card class="simulations-card" v-if="currentSimulationType">
     <div style="position: absolute; right: 0">
       <v-tooltip text="Close" location="bottom">
         <template v-slot:activator="{ props }">
@@ -146,12 +190,12 @@ export default {
             v-bind="props"
             icon="mdi-close"
             variant="plain"
-            @click="activeSimulation = undefined"
+            @click="currentSimulationType = undefined"
           />
         </template>
       </v-tooltip>
     </div>
-    <v-card-title>{{ activeSimulation.name }}</v-card-title>
+    <v-card-title>{{ currentSimulationType.name }}</v-card-title>
 
     <v-tabs v-model="tab" align-tabs="center" fixed-tabs>
       <v-tab value="new">Run New</v-tab>
@@ -163,12 +207,12 @@ export default {
         <v-form class="pa-3" @submit.prevent ref="inputForm">
           <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
           <v-select
-            v-for="arg in activeSimulation.args"
+            v-for="arg in currentSimulationType.args"
             v-model="selectedInputs[arg.name]"
             v-bind="arg"
             :key="arg.name"
             :label="arg.name.replaceAll('_', ' ')"
-            :rules="[(v) => (v ? true : 'Selection required.')]"
+            :rules="inputSelectionRules"
             :items="arg.options"
             item-value="id"
             item-title="name"
@@ -183,7 +227,7 @@ export default {
       </v-window-item>
       <v-window-item value="old">
         <div
-          v-if="availableResults.length === 0"
+          v-if="availableResults && availableResults.length === 0"
           style="width: 100%; text-align: center"
           class="pa-3"
         >
@@ -193,22 +237,22 @@ export default {
           <v-expansion-panel
             v-for="result in availableResults"
             :key="result.id"
-            :value="result.id"
+            :value="result"
             :title="timestampToTitle(result.modified)"
           >
             <v-expansion-panel-text>
               <v-table>
                 <tbody>
                   <tr
-                    v-for="arg in resultInputArgs(result)"
+                    v-for="arg in activeResultInputs"
                     v-bind="arg"
                     :key="arg.key"
                   >
                     <td>{{ arg.key }}</td>
-                    <td>{{ arg.value.name }}</td>
+                    <td>{{ arg.value.name || arg.value }}</td>
                     <td>
                       <v-btn
-                        @click="showDataset(arg.value)"
+                        @click="toggleMapLayer(arg.mapLayer)"
                         v-if="arg.viewable"
                       >
                         Show on Map
@@ -233,10 +277,10 @@ export default {
               <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
                 <div
-                  v-if="activeSimulation.output_type == 'node_animation'"
+                  v-if="currentSimulationType.output_type == 'node_animation'"
                   class="pa-5"
                 >
-                  <div v-if="result.output_data.length === 0">
+                  <div v-if="result.output_data.node_failures?.length === 0">
                     No nodes are affected in this scenario.
                   </div>
                   <node-animation
@@ -247,7 +291,7 @@ export default {
                 </div>
                 <div v-else>
                   Unknown simulation output type
-                  {{ activeSimulation.output_type }}
+                  {{ currentSimulationType.output_type }}
                 </div>
               </div>
             </v-expansion-panel-text>

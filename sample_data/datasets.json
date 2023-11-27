@@ -3,94 +3,88 @@
         "name": "MBTA Rapid Transit",
         "description": "Boston Subway System Lines and Stops",
         "category": "transportation",
-        "city": "Boston, MA",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
-        "path": "boston/mbta_rapid_transit.zip",
-        "network": true,
-        "metadata": {
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
+                "path": "boston/mbta_rapid_transit.zip"
+            }
+        ],
+        "network_options": {
             "connection_column": "ROUTE",
             "connection_column_delimiter": "/",
             "node_id_column": "STATION"
         },
-        "style": {
-            "property_map": {
-                "colors": "LINE"
-            },
-            "options": {
-                "color_delimiter": "/",
-                "outline": "white"
-            }
+        "style_options": {
+            "color_property": "LINE",
+            "color_delimiter": "/",
+            "outline": "white"
         }
     },
     {
         "name": "MBTA Commuter Rail",
         "description": "Rail linework and station points for passenger, freight, and Amtrak and MBTA Commuter Rail trains.",
         "category": "transportation",
-        "city": "Boston, MA",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
-        "path": "boston/commuter_rail.zip",
-        "network": true,
-        "metadata": {
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
+                "path": "boston/commuter_rail.zip"
+            }
+        ],
+        "network_options": {
             "connection_column": "LINE_BRNCH",
             "connection_column_delimiter": "/",
             "node_id_column": "STATION"
         },
-        "style": {
-            "property_map": {
-                "colors": "gray"
-            },
-            "options": {
-                "outline": "black"
-            }
+        "style_options": {
+            "color_property": "gray",
+            "outline": "black"
         }
     },
     {
-        "name": "Hurricane Surge Inundation Zones",
+        "name": "Boston Hurricane Surge Inundation Zones",
         "description": "This layer represents worst-case Hurricane Surge Inundation areas for Category 1 through 4 hurricanes striking the coast of Massachusetts.",
         "category": "climate",
-        "city": "Boston, MA",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64907b6ef04fb368544295e7/download",
-        "path": "boston/hurr_inun.zip",
-        "style": {
-            "property_map": {
-                "colors": "HURR_CAT"
-            },
-            "options": {
-                "palette": {
-                    "1": "powderblue",
-                    "2": "deepskyblue",
-                    "3": "royalblue",
-                    "4": "mediumblue",
-                    "5": "darkblue"
-                }
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907b6ef04fb368544295e7/download",
+                "path": "boston/hurr_inun.zip"
+            }
+        ],
+        "style_options": {
+            "color_property": "HURR_CAT",
+            "palette": {
+                "1": "powderblue",
+                "2": "deepskyblue",
+                "3": "royalblue",
+                "4": "mediumblue",
+                "5": "darkblue"
             }
         }
     },
     {
-        "name": "FEMA National Flood Hazard",
+        "name": "Boston FEMA National Flood Hazard",
         "description": "The National Flood Hazard Layer (NFHL) dataset represents the current effective flood risk data for those parts of the country where maps have been modernized by the Federal Emergency Management Agency (FEMA).",
         "category": "climate",
-        "city": "Boston, MA",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
-        "path": "boston/flood_hazard_fema.zip",
-        "style": {
-            "property_map": {
-                "colors": "FLD_ZONE"
-            },
-            "options": {
-                "palette": {
-                    "A": "gold",
-                    "AE": "orange",
-                    "AH": "tomato",
-                    "AO": "orangered",
-                    "VE": "darkred",
-                    "D": "gray",
-                    "X": "green"
-                }
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
+                "path": "boston/flood_hazard_fema.zip"
+            }
+        ],
+        "style_options": {
+            "color_property": "FLD_ZONE",
+            "palette": {
+                "A": "gold",
+                "AE": "orange",
+                "AH": "tomato",
+                "AO": "orangered",
+                "VE": "darkred",
+                "D": "gray",
+                "X": "green"
             }
         }
     },
@@ -98,249 +92,178 @@
         "name": "Massachusetts Elevation Data",
         "description": "Low resolution sampling of land elevation in meters above sea level",
         "category": "elevation",
-        "city": "Boston, MA",
-        "raw_data_type": "cloud_optimized_geotiff",
-        "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
-        "path": "boston/easternmass.tif",
-        "style": {
-            "options": {
-                "transparency_threshold": 1,
-                "trim_distribution_percentage": 0.01
+        "type": "raster",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
+                "path": "boston/easternmass.tif"
             }
+        ],
+        "style_options": {
+            "transparency_threshold": 1,
+            "trim_distribution_percentage": 0.01
         }
     },
     {
         "name": "Boston Neighborhoods",
         "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
         "category": "region",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
-        "path": "boston/neighborhoods2020.json",
-        "style": {
-            "property_map": {
-                "name": "BlockGr202"
-            },
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
+                "path": "boston/neighborhoods2020.json"
             }
+        ],
+        "region_options": {
+            "name_property": "BlockGr202"
+        },
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "blue"
+            ]
         }
     },
     {
         "name": "Boston Census 2020 Block Groups",
         "description": "Block groups (between 600 and 3,000 people per block) for Boston from the 2020 census",
         "category": "region",
-        "city": "Boston, MA",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.boston.gov/dataset/c478b600-3e3e-46fd-9f57-da89459e9928/resource/11282722-9386-4272-8a82-2fcec89e6d55/download/census2020_blockgroups.zip",
-        "path": "mass/blockgroups.json",
-        "style": {
-            "property_map": {
-                "name": "GEOID20"
-            },
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "green"
-                ]
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.boston.gov/dataset/c478b600-3e3e-46fd-9f57-da89459e9928/resource/11282722-9386-4272-8a82-2fcec89e6d55/download/census2020_blockgroups.zip",
+                "path": "mass/blockgroups.zip"
             }
+        ],
+        "region_options": {
+            "name_property": "GEOID20"
+        },
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "green"
+            ]
         }
     },
     {
         "name": "Boston Zip Codes",
         "description": "Zip codes 01001-02791",
         "category": "region",
-        "city": "Boston, MA",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64fbb4c6e99e9e6006f00114/download",
-        "path": "boston/zipcodes.json",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "grey"
-                ]
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64fbb4c6e99e9e6006f00114/download",
+                "path": "boston/zipcodes.zip"
             }
+        ],
+        "region_options": {
+            "name_property": "GEOID20"
+        },
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "grey"
+            ]
         }
     },
     {
-        "name": "9-inch Sea Level Rise",
-        "description": "From Analyze Boston; 9 inches of sea level rise is expected across emissions scenarios as likely to occur as early as the 2030s.",
+        "name": "Boston Sea Level Rises",
+        "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch sea-level rise projections",
         "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f8743d6725af35134c1479/download",
-        "path": "boston/9in_rise.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f8743d6725af35134c1479/download",
+                "path": "boston/9in_rise.geojson"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f874486725af35134c147c/download",
+                "path": "boston/21in_rise.geojson"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f874566725af35134c147f/download",
+                "path": "boston/36in_rise.geojson"
             }
+        ],
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "blue"
+            ]
         }
     },
     {
-        "name": "9-inch 10-year Flood",
-        "description": "From Analyze Boston; a 9-inch flood event that has a 1 in 10 chance of occurring in any given year.",
+        "name": "Boston 10-Year Flood Events",
+        "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch 10-year flood projections",
         "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f87ba86725af35134c1485/download",
-        "path": "boston/9in_10yr_flood.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f87ba86725af35134c1485/download",
+                "path": "boston/9in_10yr_flood.geojson"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f87bd56725af35134c148b/download",
+                "path": "boston/21in_10yr_flood.geojson"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f87bfd6725af35134c1491/download",
+                "path": "boston/36in_10yr_flood.geojson"
             }
+        ],
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "blue"
+            ]
         }
     },
     {
-        "name": "9-inch 100-year Flood",
-        "description": "From Analyze Boston; a 9-inch flood event that has a 1 in 100 chance of occurring in any given year.",
+        "name": "Boston 100-Year Flood Events",
+        "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch 100-year flood projections",
         "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f87bc16725af35134c1488/download",
-        "path": "boston/9in_100yr_flood.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f87bc16725af35134c1488/download",
+                "path": "boston/9in_100yr_flood.geojson"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f87be96725af35134c148e/download",
+                "path": "boston/21in_100yr_flood.geojson"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/64f87c496725af35134c1494/download",
+                "path": "boston/36in_100yr_flood.geojson"
             }
-        }
-    },
-    {
-        "name": "21-inch Sea Level Rise",
-        "description": "From Analyze Boston; 21 inches of sea level rise is expected consistently across emissions scenarios by the end of the 2050s.",
-        "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f874486725af35134c147c/download",
-        "path": "boston/21in_rise.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
-            }
-        }
-    },
-    {
-        "name": "21-inch 10-year Flood",
-        "description": "From Analyze Boston; a 21-inch flood event that has a 1 in 10 chance of occurring in any given year.",
-        "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f87bd56725af35134c148b/download",
-        "path": "boston/21in_10yr_flood.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
-            }
-        }
-    },
-    {
-        "name": "21-inch 100-year Flood",
-        "description": "From Analyze Boston; a 21-inch flood event that has a 1 in 100 chance of occurring in any given year.",
-        "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f87be96725af35134c148e/download",
-        "path": "boston/21in_100yr_flood.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
-            }
-        }
-    },
-    {
-        "name": "36-inch Sea Level Rise",
-        "description": "From Analyze Boston; 36 inches of sea level rise has a 50% chance of occurring by the end of the century according to emissions scenarios.",
-        "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f874566725af35134c147f/download",
-        "path": "boston/36in_rise.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
-            }
-        }
-    },
-    {
-        "name": "36-inch 10-year Flood",
-        "description": "From Analyze Boston; a 36-inch flood event that has a 1 in 10 chance of occurring in any given year.",
-        "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f87bfd6725af35134c1491/download",
-        "path": "boston/36in_10yr_flood.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
-            }
-        }
-    },
-    {
-        "name": "36-inch 100-year Flood",
-        "description": "From Analyze Boston; a 36-inch flood event that has a 1 in 100 chance of occurring in any given year.",
-        "category": "flood",
-        "city": "Boston, MA",
-        "raw_data_type": "geojson",
-        "url": "https://data.kitware.com/api/v1/item/64f87c496725af35134c1494/download",
-        "path": "boston/36in_100yr_flood.geojson",
-        "style": {
-            "options": {
-                "outline": "white",
-                "palette": [
-                    "blue"
-                ]
-            }
+        ],
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "blue"
+            ]
         }
     },
     {
         "name": "DC Metro",
         "description": "DC Metro Lines and Stations",
         "category": "transportation",
-        "city": "Washington, DC",
-        "raw_data_type": "shape_file_archive",
-        "url": "https://data.kitware.com/api/v1/item/64b80188cf6a0eaef6c1416e/download",
-        "path": "washington/DC_Metro.zip",
-        "network": true,
-        "metadata": {
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64b80188cf6a0eaef6c1416e/download",
+                "path": "washington/DC_Metro.zip"
+            }
+        ],
+        "network_options": {
             "connection_column": "LINE",
             "connection_column_delimiter": ", ",
             "node_id_column": "NAME"
         },
-        "style": {
-            "property_map": {
-                "colors": "LINE"
-            },
-            "options": {
-                "color_delimiter": ", ",
-                "outline": "white"
-            }
+        "style_options": {
+            "color_property": "LINE",
+            "color_delimiter": ", ",
+            "outline": "white"
         }
     }
 ]

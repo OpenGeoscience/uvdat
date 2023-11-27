@@ -1,348 +1,397 @@
-import { Layer } from "ol/layer";
-import { getUid } from "ol/util";
-import VectorLayer from "ol/layer/Vector";
-import TileLayer from "ol/layer/Tile";
-import VectorSource from "ol/source/Vector";
-import type UrlTileSource from "ol/source/UrlTile";
 import GeoJSON from "ol/format/GeoJSON.js";
+import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
-import VectorTileSource from "ol/source/VectorTile.js";
-import Feature from "ol/Feature";
-import { LineString, Point } from "ol/geom";
-import { fromLonLat } from "ol/proj";
+import VectorTileSource from "ol/source/VectorTile";
+import { TileCoord } from "ol/tilecoord";
+import { Circle, Stroke, Style } from "ol/style";
+import { Feature } from "ol";
 
+import { ref } from "vue";
 import {
-  activeMapLayerIds,
-  networkVis,
-  showMapBaseLayer,
-  availableDataSourcesTable,
-  getMap,
-} from "@/store";
-import { createStyle, cacheRasterData, getNetworkFeatureStyle } from "@/utils";
+  Dataset,
+  DerivedRegion,
+  RasterMapLayer,
+  isRasterMapLayer,
+  VectorMapLayer,
+  isVectorMapLayer,
+} from "./types";
+import { getMapLayer } from "./api/rest";
+import { getMap } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
-import type { Dataset, NetworkNode } from "@/types";
-import type { MapDataSource } from "@/data";
-import BaseLayer from "ol/layer/Base";
+import { cacheRasterData, createStyle, randomColor } from "./utils";
+import {
+  availableDatasets,
+  currentDataset,
+  availableDerivedRegions,
+  currentNetworkGCC,
+  selectedDatasets,
+  selectedMapLayers,
+  showMapBaseLayer,
+  deactivatedNodes,
+  availableMapLayers,
+  selectedDerivedRegions,
+} from "./store";
+import CircleStyle from "ol/style/Circle";
 
-export function getMapLayerById(layerId: string): BaseLayer | undefined {
-  return getMap()
-    .getLayers()
-    .getArray()
-    .find((layer) => getUid(layer) === layerId);
-}
+const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
-export function getDataSourceFromLayerId(
-  layerId: string
-): MapDataSource | undefined {
-  const layer = getMapLayerById(layerId);
-  const dsId: string | undefined = layer?.get("dataSourceId");
-  if (dsId === undefined) {
-    throw new Error(`Data Source ID not present on layer ${layerId}`);
+export function createOpenLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+  let openLayer: VectorTileLayer | TileLayer<XYZSource>;
+
+  if (isVectorMapLayer(mapLayer)) {
+    openLayer = createVectorOpenLayer(mapLayer);
+  } else if (isRasterMapLayer(mapLayer)) {
+    openLayer = createRasterOpenLayer(mapLayer);
+    mapLayer.openlayer = openLayer;
+    styleRasterOpenLayer(mapLayer.openlayer, {});
+    cacheRasterData(mapLayer.id);
+  } else {
+    throw new Error("Unsupported map layer type.");
   }
 
-  return availableDataSourcesTable.value.get(dsId);
-}
+  openLayer.setZIndex(selectedMapLayers.value.length);
 
-export function getMapLayerFromDataSource(
-  source: MapDataSource
-): BaseLayer | undefined {
-  return getMap()
-    .getLayers()
-    .getArray()
-    .find((layer) => layer.get("dataSourceId") === source.uid);
-}
-
-/** Returns if a layer should be enabled based on showMapBaseLayer, activeMapLayerIds, and networkVis */
-export function getLayerEnabled(layer: BaseLayer) {
-  // Check if layer is map base layer
-  if (layer.getProperties().baseLayer) {
-    return showMapBaseLayer.value;
-  }
-
-  // Check if layer is enabled
-  const layerId = getUid(layer);
-  let layerEnabled = activeMapLayerIds.value.includes(layerId);
-
-  // Ensure that if networkVis is enabled, only the network layer is shown (not the original layer)
-  const layerDatasetId = getDataSourceFromLayerId(layerId)?.dataset?.id;
-  if (networkVis.value && networkVis.value.id === layerDatasetId) {
-    layerEnabled = layerEnabled && layer.get("network");
-  }
-
-  return layerEnabled;
-}
-
-/**
- * Shows/hides layers based on the getLayerEnabled function.
- *
- * Note: This only modifies layer visibility. It does not actually enable or disable any map layers directly.
- * */
-export function updateVisibleLayers() {
-  const layerState = {
-    shown: [] as BaseLayer[],
-    hidden: [] as BaseLayer[],
-  };
-  const allLayers = getMap().getLayers()?.getArray();
-  if (!allLayers) {
-    return layerState;
-  }
-
-  allLayers.forEach((layer) => {
-    const layerEnabled = getLayerEnabled(layer);
-    if (!layerEnabled) {
-      layer.setVisible(false);
-      layerState.hidden.push(layer);
-      return;
-    }
-
-    // Set layer visible and z-index
-    layer.setVisible(true);
-    layerState.shown.push(layer);
-    const layerId = getUid(layer);
-    const layerIndex = activeMapLayerIds.value.findIndex(
-      (id) => id === layerId
-    );
-    layer.setZIndex(
-      layerIndex > -1 ? activeMapLayerIds.value.length - layerIndex : 0
-    );
-  });
-
-  return layerState;
-}
-
-function randomColor() {
-  return (
-    "#" +
-    Math.floor(Math.random() * 16777215)
-      .toString(16)
-      .padStart(6, "0")
-      .slice(0, 6)
+  // Check for existing layer
+  const existingLayer = _mapLayerManager.value.find(
+    (l) => l.id === mapLayer.id && l.type === mapLayer.type
   );
+  if (!existingLayer) {
+    _mapLayerManager.value.push(mapLayer);
+  }
+
+  return openLayer;
 }
 
-function getObjectProperty(
-  object: Record<string, unknown>,
-  selector: string
-): unknown {
-  return selector
-    .split(".")
-    .filter((x) => x !== "")
-    .reduce((acc, cur) => acc && (acc[cur] as Record<string, unknown>), object);
+export async function getOrCreateLayerFromID(
+  mapLayerId: number | undefined,
+  mapLayerType: string | undefined
+): Promise<VectorMapLayer | RasterMapLayer | undefined> {
+  if (mapLayerId === undefined || mapLayerType === undefined) {
+    throw new Error(`Could not get or create openLayer for undefined layer`);
+  }
+
+  const cachedMapLayer = _mapLayerManager.value.find((l) => {
+    return l.id === mapLayerId && l.type === mapLayerType;
+  });
+  if (cachedMapLayer) return cachedMapLayer;
+
+  // Grab map layer from available or by fetching
+  let mapLayer = availableMapLayers.value.find(
+    (l) => l.id === mapLayerId && l.type === mapLayerType
+  );
+  if (!mapLayer) {
+    mapLayer = await getMapLayer(mapLayerId, mapLayerType);
+  }
+
+  // Create open layer and return
+  mapLayer.openlayer = createOpenLayer(mapLayer);
+  return mapLayer;
 }
 
-type VectorLayerProps = { colors?: string };
-export function createVectorLayer(
-  url: string,
-  props?: VectorLayerProps
-): Layer {
+export function createVectorOpenLayer(mapLayer: VectorMapLayer) {
   const defaultColors = `${randomColor()},#ffffff`;
-  return new VectorLayer({
-    style: (feature) =>
-      createStyle({
-        type: feature.getGeometry()?.getType(),
-        colors: props?.colors
-          ? getObjectProperty(feature.getProperties(), props.colors)
-          : defaultColors,
-      }),
-    source: new VectorSource({
-      url,
-      format: new GeoJSON(),
-    }),
-  });
-}
-
-export function createVectorTileLayer(dataset: Dataset): Layer {
   return new VectorTileLayer({
-    source: new VectorTileSource({
-      format: new GeoJSON(),
-      url: `${baseURL}datasets/${dataset.id}/vector-tiles/{z}/{x}/{y}/`,
-    }),
+    properties: {
+      id: mapLayer.id,
+      type: mapLayer.type,
+    },
     style: (feature) =>
       createStyle({
         type: feature.getGeometry()?.getType(),
-        colors: feature.get("colors"),
+        colors: feature.getProperties().colors || defaultColors,
       }),
-    opacity: dataset.style?.opacity || 1,
-  });
-}
-
-interface RasterLayerOptions {
-  palette?: string;
-  min?: number;
-  max?: number;
-  nodata?: number;
-}
-interface TileParams extends RasterLayerOptions {
-  band: number;
-  projection: "EPSG:3857";
-}
-
-export function setRasterLayerStyle(
-  layer: Layer,
-  dataset: Dataset,
-  options: RasterLayerOptions
-) {
-  let tileParams: TileParams = {
-    projection: "EPSG:3857",
-    band: 1,
-    palette: "terrain",
-  };
-
-  // Prefill with existing source before setting new values
-  const currentSource = layer.getSource() as UrlTileSource | null;
-  if (currentSource === null) {
-    throw new Error(`No source found on layer ${getUid(layer)}`);
-  }
-
-  // Prefill options from existing sourceUrl, if it exists
-  const sourceUrl = currentSource.getUrls()?.[0];
-  if (sourceUrl) {
-    tileParams = {
-      ...tileParams,
-      ...Object.fromEntries(new URL(sourceUrl).searchParams.entries()),
-    };
-  }
-
-  // Filter out undefined options
-  const optionKeys = Object.keys(options) as Array<keyof RasterLayerOptions>;
-  const filteredOptions: RasterLayerOptions = optionKeys
-    .filter((key) => options[key] !== undefined)
-    .reduce((acc, key) => ({ ...acc, [key]: options[key] }), {});
-
-  // Combine defaults and new options
-  tileParams = {
-    ...tileParams,
-    ...filteredOptions,
-  };
-
-  // Create query string from params object, removing any undefined values
-  const tileParamString = Object.keys(tileParams)
-    .filter((key) => !!tileParams[key as keyof TileParams])
-    .map(
-      (key) =>
-        encodeURIComponent(key) +
-        "=" +
-        encodeURIComponent(
-          tileParams[key as keyof TileParams] as string | number
-        )
-    )
-    .join("&");
-
-  // Set new source URL
-  currentSource.setUrl(
-    `${baseURL}datasets/${dataset.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`
-  );
-}
-
-export function createRasterLayer(dataset: Dataset): Layer {
-  cacheRasterData(dataset.id);
-  const layer = new TileLayer({
-    source: new XYZSource(),
-    opacity: dataset.style?.opacity || 1,
-  });
-
-  // Set style
-  setRasterLayerStyle(layer, dataset, {
-    palette: dataset.style?.colormap,
-    min: dataset.style?.colormap_range?.[0],
-    max: dataset.style?.colormap_range?.[1],
-    nodata: dataset.style?.options?.transparency_threshold,
-  });
-
-  return layer;
-}
-
-// TODO: Roll into addDatasetLayerToMap
-export function addNetworkLayerToMap(dataset: Dataset, nodes: NetworkNode[]) {
-  const source = new VectorSource();
-  const features: Feature[] = [];
-  const visitedNodes: number[] = [];
-  nodes.forEach((node) => {
-    // Add point for each node
-    features.push(
-      new Feature(
-        Object.assign(node.properties, {
-          name: node.name,
-          id: node.id,
-          node: true,
-          geometry: new Point(fromLonLat(node.location.slice().reverse())),
-        })
-      )
-    );
-
-    // Add edges between adjacent nodes
-    node.adjacent_nodes.forEach((adjId) => {
-      if (!visitedNodes.includes(adjId)) {
-        const adjNode = nodes.find((n) => n.id === adjId);
-        if (adjNode === undefined) {
-          return;
+    source: new VectorTileSource({
+      maxZoom: Math.max(
+        ...Object.keys(mapLayer.tile_extents).map((z) => Number(z))
+      ),
+      format: new GeoJSON(),
+      tileUrlFunction: (tileCoord: TileCoord) => {
+        const [z, x, y] = tileCoord;
+        const entry = mapLayer.tile_extents[z];
+        if (!entry) {
+          return undefined;
         }
 
-        features.push(
-          new Feature({
-            connects: [node.id, adjId],
-            edge: true,
-            geometry: new LineString([
-              fromLonLat(node.location.slice().reverse()),
-              fromLonLat(adjNode.location.slice().reverse()),
-            ]),
-          })
-        );
+        // Ensure current x/y is within zoom level extent
+        const { min_x, min_y, max_x, max_y } = entry;
+        if (!(min_x <= x && x <= max_x && min_y <= y && y <= max_y)) {
+          return undefined;
+        }
+
+        return `${baseURL}vectors/${mapLayer.id}/tiles/${z}/${x}/${y}/`;
+      },
+    }),
+  });
+}
+
+export function styleVectorOpenLayer(
+  mapLayer: VectorMapLayer,
+  options: {
+    showGCC?: boolean;
+    translucency?: string;
+  } = {}
+) {
+  const { openlayer } = mapLayer;
+  if (openlayer) {
+    const layerStyleFunction = openlayer.getStyle();
+    openlayer.setStyle((feature: Feature) => {
+      const oldStyle = layerStyleFunction(feature);
+      let newStyle = oldStyle;
+      if (options.showGCC && currentNetworkGCC.value) {
+        const featureProps = feature.getProperties();
+        const { node_id, from_node_id, to_node_id } = featureProps;
+        let highlight = false;
+        let translucent = false;
+        if (node_id) {
+          if (deactivatedNodes.value.includes(node_id)) translucent = true;
+          if (currentNetworkGCC.value.includes(node_id)) highlight = true;
+        } else if (from_node_id && to_node_id) {
+          if (
+            currentNetworkGCC.value.includes(from_node_id) ||
+            currentNetworkGCC.value.includes(to_node_id)
+          ) {
+            highlight = true;
+          }
+        }
+
+        if (translucent) {
+          newStyle = oldStyle.map((s: Style) => {
+            const stroke = s.getStroke();
+            const image = s.getImage();
+            const circle = image as CircleStyle;
+
+            let strokeColor = stroke?.getColor()?.toString().substring(0, 7);
+            let circleColor = circle
+              ?.getFill()
+              ?.getColor()
+              ?.toString()
+              .substring(0, 7);
+            if (translucent && options.translucency) {
+              if (strokeColor) strokeColor += options.translucency;
+              if (circleColor) circleColor += options.translucency;
+            } else {
+              if (strokeColor) strokeColor += "ff";
+              if (circleColor) circleColor += "ff";
+            }
+            if (strokeColor) stroke.setColor(strokeColor);
+            if (circleColor) circle.getFill().setColor(circleColor);
+            return s;
+          });
+        }
+
+        if (highlight) {
+          const highlightStroke = new Stroke({
+            color: "yellow",
+            width: 8,
+          });
+          newStyle.push(
+            new Style({
+              zIndex: 0,
+              stroke: highlightStroke,
+              image: new Circle({
+                stroke: highlightStroke,
+                radius: 8,
+              }),
+            })
+          );
+        }
+      }
+
+      return newStyle;
+    });
+  }
+}
+
+export function createRasterOpenLayer(mapLayer: RasterMapLayer) {
+  return new TileLayer({
+    properties: {
+      id: mapLayer.id,
+      type: mapLayer.type,
+      default_style: mapLayer.default_style,
+    },
+    source: new XYZSource(),
+  });
+}
+
+export function styleRasterOpenLayer(
+  openLayer: TileLayer<XYZSource>,
+  options: {
+    colormap?: {
+      palette?: string;
+      range?: number[];
+    };
+    nodata?: number;
+  }
+) {
+  const layerProperties = openLayer.getProperties();
+  const defaultStyle = layerProperties.default_style;
+  const colormapPalette =
+    options?.colormap?.palette || defaultStyle.palette || "terrain";
+  const colormapRange = options?.colormap?.range || defaultStyle.data_range;
+  const nodataValue = options.nodata || defaultStyle.transparency_threshold;
+
+  const tileParams: Record<string, string> = {
+    projection: "EPSG:3857",
+    band: "1",
+  };
+  if (colormapPalette) tileParams.palette = colormapPalette;
+  if (colormapRange?.length == 2) {
+    tileParams.min = colormapRange[0];
+    tileParams.max = colormapRange[1];
+  }
+  if (nodataValue) tileParams.nodata = nodataValue;
+  openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
+  const tileParamString = new URLSearchParams(tileParams).toString();
+  openLayer
+    .getSource()
+    ?.setUrl(
+      `${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`
+    );
+}
+
+export function findExistingOpenLayer(
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+) {
+  if (mapLayer === undefined) {
+    throw new Error(`Could not find existing openlayer for undefined layer`);
+  }
+
+  // Find existing on map
+  return getMap()
+    .getLayers()
+    .getArray()
+    .find((l) => {
+      return l.getProperties().id === mapLayer.id;
+    });
+}
+
+export function isMapLayerVisible(
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+): boolean {
+  if (mapLayer === undefined) {
+    throw new Error(`Could not determine visibility of undefined layer`);
+  }
+
+  const existing = findExistingOpenLayer(mapLayer);
+  if (!existing) return false;
+  return existing.getVisible();
+}
+
+export function toggleMapLayer(
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+) {
+  if (mapLayer === undefined) {
+    throw new Error(`Could not toggle undefined layer`);
+  }
+
+  const existing = findExistingOpenLayer(mapLayer);
+  if (existing) {
+    existing.setVisible(!existing.getVisible());
+  } else {
+    getMap().addLayer(mapLayer.openlayer);
+  }
+
+  if (isVectorMapLayer(mapLayer) && mapLayer.metadata?.network) {
+    styleVectorOpenLayer(mapLayer, { showGCC: true, translucency: "55" });
+  }
+  updateVisibleMapLayers();
+}
+
+export function getDataObjectForMapLayer(
+  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+): Dataset | DerivedRegion | undefined {
+  // Data Object refers to the original object for which this map layer was created.
+  // Can either be a Dataset or a DerivedRegion.
+  if (mapLayer === undefined) {
+    throw new Error(`Could not get data object for undefined layer`);
+  }
+
+  if (mapLayer.derived_region_id) {
+    return availableDerivedRegions.value?.find(
+      (r) => r.id === mapLayer.derived_region_id
+    );
+  } else if (mapLayer.dataset_id) {
+    const dataset = availableDatasets.value?.find(
+      (d) => d.id === mapLayer.dataset_id
+    );
+    if (dataset) {
+      dataset.current_layer_index =
+        dataset?.map_layers?.find(({ id }) => id === mapLayer.id)?.index || 0;
+    }
+    return dataset;
+  }
+  return undefined;
+}
+
+export async function getMapLayerForDataObject(
+  dataObject: Dataset | DerivedRegion | undefined,
+  layerIndex = 0
+): Promise<VectorMapLayer | RasterMapLayer | undefined> {
+  // Data Object refers to the original object for which this map layer was created.
+  // Can either be a Dataset or a DerivedRegion.
+  if (dataObject === undefined) {
+    throw new Error(`Could not get map layer for undefined data object`);
+  }
+  const mapLayer = dataObject.map_layers?.find(
+    ({ index }) => index === layerIndex
+  );
+  if (!mapLayer) {
+    throw new Error(
+      `No map layer with index ${layerIndex} exists for ${dataObject}.`
+    );
+  }
+  dataObject.current_layer_index = layerIndex;
+  return await getOrCreateLayerFromID(mapLayer.id, mapLayer.type);
+}
+
+export function updateVisibleMapLayers() {
+  selectedMapLayers.value = _mapLayerManager.value.filter(isMapLayerVisible);
+
+  selectedMapLayers.value.sort(
+    (a, b) => b.openlayer.getZIndex() - a.openlayer.getZIndex()
+  );
+
+  if (!availableDatasets.value) {
+    selectedDatasets.value = [];
+  } else {
+    selectedDatasets.value = availableDatasets.value.filter((d) => {
+      return selectedMapLayers.value.some(
+        (l) => getDataObjectForMapLayer(l) === d
+      );
+    });
+  }
+
+  // Set selected derived regions
+  const available = availableDerivedRegions.value || [];
+  selectedDerivedRegions.value = available.filter((d) => {
+    return selectedMapLayers.value.some(
+      (l) => getDataObjectForMapLayer(l) === d
+    );
+  });
+}
+
+export function updateBaseLayer() {
+  getMap()
+    .getLayers()
+    .getArray()
+    .forEach((l) => {
+      if (l.getProperties().id === undefined) {
+        l.setVisible(showMapBaseLayer.value);
       }
     });
-    visitedNodes.push(node.id);
-  });
-  source.addFeatures(features);
-
-  const layer = new VectorLayer({
-    properties: {
-      // This property only exists on the manually added node network layer
-      network: true,
-    },
-    zIndex: 99,
-    style: getNetworkFeatureStyle(),
-    source,
-  });
-  getMap().addLayer(layer);
-  return layer;
 }
 
-export function addDataSourceLayerToMap(dataSource: MapDataSource) {
-  let layer: Layer | undefined;
-  const { dataset, derivedRegion } = dataSource;
-  if (derivedRegion) {
-    layer = createVectorLayer(
-      `${baseURL}derived_regions/${derivedRegion.id}/as_feature/`
-    );
-  } else if (dataset) {
-    if (dataset.category === "region") {
-      layer = createVectorLayer(
-        `${baseURL}datasets/${dataSource.dataset?.id}/regions`,
-        { colors: "properties.colors" }
-      );
-    } else if (dataset.vector_tiles_file) {
-      layer = createVectorTileLayer(dataset);
-    } else if (dataset.geodata_file) {
-      layer = createVectorLayer(dataset.geodata_file, { colors: "colors" });
-    } else if (dataset.raster_file) {
-      layer = createRasterLayer(dataset);
-    }
-  }
-
-  if (layer === undefined) {
-    throw new Error("Could not add data source to map");
-  }
-
-  // Add this to link layers to data sources
-  layer.setProperties({ dataSourceId: dataSource.uid });
-  getMap().addLayer(layer);
-  return layer;
-}
-
-export function removeLayerFromMap(layer: BaseLayer) {
-  getMap().removeLayer(layer);
-  activeMapLayerIds.value = activeMapLayerIds.value.filter(
-    (layerId) => layerId !== getUid(layer)
-  );
+export function clearMapLayers() {
+  getMap()
+    .getLayers()
+    .getArray()
+    .forEach((l) => {
+      // only applies to layers with ids, i.e. not the base layer
+      if (l.getProperties().id) {
+        l.setVisible(false);
+      }
+    });
+  currentDataset.value = undefined;
+  updateVisibleMapLayers();
 }
