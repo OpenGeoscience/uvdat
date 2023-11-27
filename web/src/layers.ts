@@ -43,6 +43,7 @@ export function createOpenLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
     openLayer = createVectorOpenLayer(mapLayer);
   } else if (isRasterMapLayer(mapLayer)) {
     openLayer = createRasterOpenLayer(mapLayer);
+    mapLayer.openlayer = openLayer;
     styleRasterOpenLayer(mapLayer.openlayer, {});
     cacheRasterData(mapLayer.id);
   } else {
@@ -163,7 +164,7 @@ export function styleVectorOpenLayer(
             let strokeColor = stroke?.getColor()?.toString().substring(0, 7);
             let circleColor = circle
               ?.getFill()
-              .getColor()
+              ?.getColor()
               ?.toString()
               .substring(0, 7);
             if (translucent && options.translucency) {
