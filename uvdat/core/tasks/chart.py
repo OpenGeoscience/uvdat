@@ -1,10 +1,10 @@
-import pandas
+from datetime import datetime
 
 from celery import shared_task
-from datetime import datetime
+import pandas
 from webcolors import name_to_hex
 
-from uvdat.core.models import Chart
+from uvdat.core.models import Chart, Context
 
 
 @shared_task
@@ -40,10 +40,10 @@ def convert_chart(chart_id, conversion_options):
 
     chart.chart_data = chart_data
     chart.save()
-    print(f"\t Saved converted data for chart {chart.name}.")
+    print(f'\t Saved converted data for chart {chart.name}.')
 
 
-def get_gcc_chart(dataset, context):
+def get_gcc_chart(dataset, context_id):
     chart_name = f'{dataset.name} Greatest Connected Component Sizes'
     try:
         return Chart.objects.get(name=chart_name)
@@ -55,7 +55,7 @@ def get_gcc_chart(dataset, context):
                 for the network's greatest connected component (GCC),
                 showing GCC size by number of excluded nodes
             """,
-            context=context,
+            context=Context.objects.get(id=context_id),
             editable=True,
             chart_data={},
             metadata=[],
@@ -71,8 +71,8 @@ def get_gcc_chart(dataset, context):
         return chart
 
 
-def add_gcc_chart_datum(dataset, context, excluded_node_names, gcc_size):
-    chart = get_gcc_chart(dataset, context)
+def add_gcc_chart_datum(dataset, context_id, excluded_node_names, gcc_size):
+    chart = get_gcc_chart(dataset, context_id)
     if len(chart.metadata) == 0:
         # no data exists, need to initialize data structures
         chart.metadata = []
@@ -104,7 +104,7 @@ def add_gcc_chart_datum(dataset, context, excluded_node_names, gcc_size):
     chart.chart_data['datasets'] = datasets
 
     new_entry = {
-        'run_time': datetime.now().strftime("%d/%m/%Y %H:%M"),
+        'run_time': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'n_excluded_nodes': len(excluded_node_names),
         'excluded_node_names': excluded_node_names,
         'gcc_size': gcc_size,

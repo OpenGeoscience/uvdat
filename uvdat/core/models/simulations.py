@@ -5,6 +5,7 @@ from uvdat.core.tasks import simulations as uvdat_simulations
 
 from .context import Context
 from .dataset import Dataset
+from .map_layers import RasterMapLayer, VectorMapLayer
 
 
 class SimulationResult(TimeStampedModel):
@@ -23,6 +24,9 @@ class SimulationResult(TimeStampedModel):
     output_data = models.JSONField(blank=True, null=True)
     error_message = models.TextField(null=True, blank=True)
 
+    def is_in_context(self, context_id):
+        return self.context.id == int(context_id)
+
     def get_simulation_type(self):
         if not self.simulation_type or self.simulation_type not in AVAILABLE_SIMULATIONS:
             raise ValueError(f'Simulation type not found: {self.simulation_type}')
@@ -31,8 +35,7 @@ class SimulationResult(TimeStampedModel):
     def get_name(self):
         # method built into text choice field
         simulation_type = self.get_simulation_type_display()
-        print(simulation_type)
-        return 'Unnamed Simulation Result'
+        return simulation_type
 
     def run(self, **kwargs):
         self.output_data = None
@@ -43,44 +46,56 @@ class SimulationResult(TimeStampedModel):
 
 AVAILABLE_SIMULATIONS = {
     'FLOOD_1': {
-        'description': '''
+        'description': """
             Provide a network dataset, elevation dataset, and flood dataset
             to determine which network nodes go out of service
             when the target flood occurs.
-        ''',
+        """,
         'output_type': 'node_animation',
         'func': uvdat_simulations.flood_scenario_1,
         'args': [
             {
                 'name': 'network_dataset',
                 'type': Dataset,
-                'options_query': {'network': True},
+                'options_annotations': {
+                    'network_nodes_count': models.Count('network_nodes'),
+                    'network_edges_count': models.Count('network_edges'),
+                },
+                'options_query': {
+                    'network_nodes_count__gte': 1,
+                    'network_edges_count__gte': 1,
+                },
             },
             {
-                'name': 'elevation_dataset',
-                'type': Dataset,
-                'options_query': {'category': 'elevation'},
+                'name': 'elevation_data',
+                'type': RasterMapLayer,
+                'options_query': {'file_item__dataset__category': 'elevation'},
             },
             {
-                'name': 'flood_dataset',
-                'type': Dataset,
-                'options_query': {'category': 'flood'},
+                'name': 'flood_area',
+                'type': VectorMapLayer,
+                'options_query': {'file_item__dataset__category': 'flood'},
             },
         ],
     },
     'RECOVERY': {
-        'description': '''
+        'description': """
             Provide the output of another simulation which returns a list of deactivated nodes,
             and select a recovery mode to determine the order in which
             nodes will come back online.
-        ''',
+        """,
         'output_type': 'node_animation',
         'func': uvdat_simulations.recovery_scenario,
         'args': [
             {
                 'name': 'node_failure_simulation_result',
                 'type': SimulationResult,
-                'options_query': {'simulation_id__in': [1]},
+                'options_query': {
+                    'simulation_type__in': [
+                        'FLOOD_1',
+                        # add other node failure simulation types here as created
+                    ]
+                },
             },
             {
                 'name': 'recovery_mode',

@@ -116,10 +116,9 @@
             }
         ],
         "region_options": {
-            "name_property": "name"
+            "name_property": "BlockGr202"
         },
         "style_options": {
-            "name_property": "BlockGr202",
             "outline": "white",
             "palette": [
                 "blue"
@@ -138,10 +137,9 @@
             }
         ],
         "region_options": {
-            "name_property": "name"
+            "name_property": "GEOID20"
         },
         "style_options": {
-            "name_property": "GEOID20",
             "outline": "white",
             "palette": [
                 "green"
@@ -160,7 +158,7 @@
             }
         ],
         "region_options": {
-            "name_property": "name"
+            "name_property": "GEOID20"
         },
         "style_options": {
             "outline": "white",

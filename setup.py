@@ -41,7 +41,9 @@ setup(
         # TODO: remove django version constraint
         # when girder4 becomes compatible with 4.2
         'django-allauth<0.56.0',
-        'django-configurations[database,email]',
+        # TODO: remove repo link after django-configurations 2.4.2 is released to PyPI
+        # https://github.com/jazzband/django-configurations/pull/365
+        'django-configurations[database,email] @ git+https://github.com/jazzband/django-configurations@master',
         'django-extensions',
         'django-filter',
         'django-oauth-toolkit',

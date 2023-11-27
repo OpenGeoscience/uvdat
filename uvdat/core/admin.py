@@ -8,9 +8,9 @@ from uvdat.core.models import (
     FileItem,
     NetworkEdge,
     NetworkNode,
-    SourceRegion,
     RasterMapLayer,
     SimulationResult,
+    SourceRegion,
     VectorMapLayer,
     VectorTile,
 )
@@ -54,10 +54,10 @@ class VectorMapLayerAdmin(admin.ModelAdmin):
 
 
 class VectorTileAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name', 'get_map_layer_index', 'x', 'y', 'z']
+    list_display = ['id', 'get_fileitem_name', 'get_map_layer_index', 'x', 'y', 'z']
 
-    def get_dataset_name(self, obj):
-        return obj.map_layer.dataset.name
+    def get_fileitem_name(self, obj):
+        return obj.map_layer.file_item.name
 
     def get_map_layer_index(self, obj):
         return obj.map_layer.index

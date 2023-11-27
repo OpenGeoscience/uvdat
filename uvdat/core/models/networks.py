@@ -11,6 +11,9 @@ class NetworkNode(models.Model):
     capacity = models.IntegerField(null=True)
     location = geo_models.PointField()
 
+    def is_in_context(self, context_id):
+        return self.dataset.is_in_context(context_id)
+
     def get_adjacent_nodes(self) -> models.QuerySet:
         entering_node_ids = (
             NetworkEdge.objects.filter(to_node=self.id)
@@ -36,3 +39,6 @@ class NetworkEdge(models.Model):
     directed = models.BooleanField(default=False)
     from_node = models.ForeignKey(NetworkNode, related_name='+', on_delete=models.CASCADE)
     to_node = models.ForeignKey(NetworkNode, related_name='+', on_delete=models.CASCADE)
+
+    def is_in_context(self, context_id):
+        return self.dataset.is_in_context(context_id)

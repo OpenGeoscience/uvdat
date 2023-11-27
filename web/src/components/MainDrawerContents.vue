@@ -1,178 +1,140 @@
-<script>
+<script lang="ts">
+import { ref, computed, watch } from "vue";
 import {
-  currentCity,
-  currentMapDataSource,
-  activeChart,
   availableCharts,
-  activeSimulation,
-  availableSimulations,
+  currentChart,
+  selectedDatasets,
+  availableDatasets,
+  availableSimulationTypes,
+  currentSimulationType,
   availableDerivedRegions,
-  selectedDerivedRegionIds,
-  availableMapDataSources,
-  activeDataSources,
+  currentDataset,
+  availableMapLayers,
 } from "@/store";
-
 import {
-  MapDataSource,
-  addDataSourceToMap,
-  hideDataSourceFromMap,
-} from "@/data";
-import { ref, computed, onMounted, watch } from "vue";
+  loadDatasets,
+  loadCharts,
+  loadSimulationTypes,
+  loadDerivedRegions,
+} from "../storeFunctions";
+import { Dataset, DerivedRegion } from "@/types";
+import { getDatasetMapLayers } from "@/api/rest";
 import {
-  getCityDatasets,
-  getCityCharts,
-  getCitySimulations,
-  listDerivedRegions,
-} from "@/api/rest";
+  getMapLayerForDataObject,
+  isMapLayerVisible,
+  toggleMapLayer,
+  getOrCreateLayerFromID,
+} from "@/layers";
 
 export default {
   setup() {
     const openPanels = ref([0]);
-    const openCategories = ref([0]);
-    const availableLayerTree = computed(() => {
+
+    const expandedDatasetGroups = ref<string[]>([]);
+
+    const availableDatasetGroups = computed(() => {
+      if (!availableDatasets.value) return [];
       const groupKey = "category";
-      return Object.entries(
-        currentCity.value.datasets.reduce(function (rv, x) {
-          (rv[x[groupKey]] = rv[x[groupKey]] || []).push(x);
-          return rv;
-        }, {})
-      )
-        .map(([name, children], id) => {
-          return {
-            id,
-            name,
-            children,
-          };
-        })
-        .filter((group) => group.name != "chart")
-        .sort((a, b) => a.name < b.name);
+      const datasetGroups: Record<string, Dataset[]> = {};
+      availableDatasets.value.forEach((dataset: Dataset) => {
+        const currentGroup = dataset[groupKey];
+        if (!datasetGroups[currentGroup]) datasetGroups[currentGroup] = [];
+        datasetGroups[currentGroup].push(dataset);
+      });
+
+      const ret: {
+        id: number;
+        datasets: Dataset[];
+        name: string;
+      }[] = Object.entries(datasetGroups)
+        .map(([name, datasets], index) => ({
+          id: index,
+          datasets,
+          name,
+        }))
+        .sort((a, b) => b.name.localeCompare(a.name));
+      return ret;
     });
+
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
-    function fetchDatasets() {
-      getCityDatasets(currentCity.value.id).then((datasets) => {
-        currentCity.value.datasets = datasets;
-      });
+    // TODO: Avoid fetching entire map layer for each available
+    // derived region just to check if it's selected or not
+    async function derivedRegionSelected(derivedRegion: DerivedRegion) {
+      const mapLayer = await getMapLayerForDataObject(derivedRegion);
+      return isMapLayerVisible(mapLayer);
     }
 
-    async function setDerivedRegions() {
-      availableDerivedRegions.value = await listDerivedRegions();
+    async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
+      const mapLayer = await getMapLayerForDataObject(derivedRegion);
+      toggleMapLayer(mapLayer);
+    }
+
+    async function toggleDataset(dataset: Dataset) {
+      if (
+        !selectedDatasets.value.map((d) => d.id).includes(dataset.id) &&
+        currentDataset.value?.id === dataset.id
+      ) {
+        currentDataset.value = undefined;
+      }
+
+      // Ensure layer index is set
+      dataset.current_layer_index = dataset.current_layer_index || 0;
+      if (dataset.map_layers === undefined) {
+        dataset.map_layers = await getDatasetMapLayers(dataset.id);
+        availableMapLayers.value = [
+          ...availableMapLayers.value,
+          ...dataset.map_layers,
+        ];
+      }
+
+      if (
+        dataset.map_layers !== undefined &&
+        dataset.current_layer_index !== undefined
+      ) {
+        const { id, type } = dataset.map_layers[dataset.current_layer_index];
+        const mapLayer = await getOrCreateLayerFromID(id, type);
+        toggleMapLayer(mapLayer);
+      }
     }
 
     // If new derived region created, open panel
     watch(availableDerivedRegions, (availableRegs, oldRegs) => {
-      if (!oldRegs.length || availableRegs.length === oldRegs.length) {
+      if (!oldRegs?.length || availableRegs?.length === oldRegs.length) {
         return;
       }
 
-      if (availableRegs.length && !openPanels.value.includes(1)) {
+      if (availableRegs?.length && !openPanels.value.includes(1)) {
         openPanels.value.push(1);
       }
     });
 
-    function toggleDataSource(dataSource) {
-      if (activeDataSources.value.has(dataSource.uid)) {
-        hideDataSourceFromMap(dataSource);
-      } else {
-        addDataSourceToMap(dataSource);
-      }
-    }
-
-    const datasetIdToDataSource = computed(() => {
-      const map = new Map();
-      availableMapDataSources.value.forEach((ds) => {
-        if (ds.dataset !== undefined) {
-          map.set(ds.dataset.id, ds);
-        }
-      });
-
-      return map;
+    watch(availableDatasets, () => {
+      expandedDatasetGroups.value = availableDatasetGroups.value.map(
+        (g) => g.name
+      );
     });
-
-    const derivedRegionIdToDataSource = computed(() => {
-      const map = new Map();
-      availableMapDataSources.value.forEach((ds) => {
-        if (ds.derivedRegion !== undefined) {
-          map.set(ds.derivedRegion.id, ds);
-        }
-      });
-
-      return map;
-    });
-
-    function datasetSelected(datasetId) {
-      const uid = datasetIdToDataSource.value.get(datasetId)?.uid;
-      return uid && activeDataSources.value.has(uid);
-    }
-
-    function derivedRegionSelected(derivedRegionId) {
-      const uid = derivedRegionIdToDataSource.value.get(derivedRegionId)?.uid;
-      return uid && activeDataSources.value.has(uid);
-    }
-
-    function toggleDataset(dataset) {
-      toggleDataSource(new MapDataSource({ dataset }));
-    }
-
-    function toggleDerivedRegion(derivedRegion) {
-      toggleDataSource(new MapDataSource({ derivedRegion }));
-    }
-
-    function expandOptionsPanelFromDataset(dataset) {
-      currentMapDataSource.value = new MapDataSource({ dataset });
-    }
-
-    function fetchCharts() {
-      activeChart.value = undefined;
-      getCityCharts(currentCity.value.id).then((charts) => {
-        availableCharts.value = charts;
-      });
-    }
-
-    function activateChart(chart) {
-      activeChart.value = chart;
-    }
-
-    function fetchSimulations() {
-      activeSimulation.value = undefined;
-      getCitySimulations(currentCity.value.id).then((sims) => {
-        availableSimulations.value = sims;
-      });
-    }
-
-    function activateSimulation(sim) {
-      activeSimulation.value = sim;
-    }
-
-    onMounted(fetchCharts);
-    onMounted(fetchSimulations);
-    onMounted(setDerivedRegions);
 
     return {
-      currentCity,
-      fetchDatasets,
+      availableDatasets,
+      currentDataset,
+      selectedDatasets,
       openPanels,
-      openCategories,
-      toggleDataset,
-      availableLayerTree,
+      expandedDatasetGroups,
+      availableDatasetGroups,
       activeLayerTableHeaders,
-      expandOptionsPanelFromDataset,
-      activeChart,
+      currentChart,
       availableCharts,
-      fetchCharts,
-      activateChart,
-      activeSimulation,
-      availableSimulations,
-      fetchSimulations,
-      activateSimulation,
+      currentSimulationType,
+      availableSimulationTypes,
       availableDerivedRegions,
-      selectedDerivedRegionIds,
+      loadDatasets,
+      toggleDataset,
       toggleDerivedRegion,
-      availableMapDataSources,
-      datasetIdToDataSource,
-      datasetSelected,
       derivedRegionSelected,
-      setDerivedRegions,
+      loadCharts,
+      loadSimulationTypes,
+      loadDerivedRegions,
     };
   },
 };
@@ -182,24 +144,39 @@ export default {
   <v-expansion-panels multiple variant="accordion" v-model="openPanels">
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="fetchDatasets" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadDatasets" class="mr-2">mdi-refresh</v-icon>
         Available Datasets
       </v-expansion-panel-title>
       <v-expansion-panel-text>
+        <div v-if="!availableDatasets" style="text-align: center; width: 100%">
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle
+          v-if="availableDatasets && availableDatasets.length === 0"
+        >
+          No Available Datasets.
+        </v-card-subtitle>
         <v-expansion-panels
           multiple
           variant="accordion"
-          v-model="openCategories"
+          v-model="expandedDatasetGroups"
+          v-if="
+            availableDatasets &&
+            availableDatasets.length &&
+            availableDatasets[0].id
+          "
         >
           <v-expansion-panel
-            v-for="category in availableLayerTree"
-            :title="category.name"
-            :key="category.id"
+            v-for="group in availableDatasetGroups"
+            :title="group.name"
+            :key="group.id"
+            :value="group.name"
           >
             <v-expansion-panel-text>
               <v-checkbox
-                v-for="dataset in category.children"
-                :model-value="datasetSelected(dataset.id)"
+                v-for="dataset in group.datasets"
+                v-model="selectedDatasets"
+                :value="dataset"
                 :key="dataset.name"
                 :label="dataset.name"
                 :disabled="dataset.processing"
@@ -214,10 +191,12 @@ export default {
                     {{ dataset.description }}
                   </v-tooltip>
                   <v-icon
-                    v-show="datasetSelected(dataset.id)"
+                    v-show="
+                      selectedDatasets && selectedDatasets.includes(dataset)
+                    "
                     size="small"
                     class="expand-icon ml-1"
-                    @click.prevent="expandOptionsPanelFromDataset(dataset)"
+                    @click.prevent="currentDataset = dataset"
                   >
                     mdi-cog
                   </v-icon>
@@ -231,15 +210,26 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="setDerivedRegions" class="mr-2">
+        <v-icon @click.stop="loadDerivedRegions" class="mr-2">
           mdi-refresh
         </v-icon>
         Available Derived Regions
       </v-expansion-panel-title>
       <v-expansion-panel-text>
+        <div
+          v-if="!availableDerivedRegions"
+          style="text-align: center; width: 100%"
+        >
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle
+          v-if="availableDerivedRegions && availableDerivedRegions.length === 0"
+        >
+          No Available Derived Regions.
+        </v-card-subtitle>
         <v-checkbox
           v-for="region in availableDerivedRegions"
-          :model-value="derivedRegionSelected(region.id)"
+          :model-value="derivedRegionSelected(region)"
           :key="region.id"
           :label="region.name"
           hide-details
@@ -251,18 +241,23 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="fetchCharts" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadCharts" class="mr-2">mdi-refresh</v-icon>
         Available Charts
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <span v-if="availableCharts.length === 0">No charts available.</span>
+        <div v-if="!availableCharts" style="text-align: center; width: 100%">
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle v-if="availableCharts && availableCharts.length === 0">
+          No Available Charts.
+        </v-card-subtitle>
         <v-list>
           <v-list-item
             v-for="chart in availableCharts"
             :key="chart.id"
             :value="chart.id"
-            :active="activeChart && chart.id === activeChart.id"
-            @click="activateChart(chart)"
+            :active="currentChart && chart.id === currentChart.id"
+            @click="currentChart = chart"
           >
             {{ chart.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
@@ -275,20 +270,34 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="fetchSimulations" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadSimulationTypes" class="mr-2"
+          >mdi-refresh</v-icon
+        >
         Available Simulations
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <span v-if="availableSimulations.length === 0"
-          >No simulations available.</span
+        <div
+          v-if="!availableSimulationTypes"
+          style="text-align: center; width: 100%"
         >
+          <v-progress-circular indeterminate size="30" />
+        </div>
+        <v-card-subtitle
+          v-if="
+            availableSimulationTypes && availableSimulationTypes.length === 0
+          "
+        >
+          No Available Simulation Types.
+        </v-card-subtitle>
         <v-list>
           <v-list-item
-            v-for="sim in availableSimulations"
+            v-for="sim in availableSimulationTypes"
             :key="sim.id"
             :value="sim.id"
-            :active="activeSimulation && sim.id === activeSimulation.id"
-            @click="activateSimulation(sim)"
+            :active="
+              currentSimulationType && sim.id === currentSimulationType.id
+            "
+            @click="currentSimulationType = sim"
           >
             {{ sim.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
@@ -304,6 +313,9 @@ export default {
 <style>
 .v-expansion-panel-text__wrapper {
   padding: 8px 10px 16px !important;
+}
+.v-checkbox .v-selection-control {
+  max-width: 100%;
 }
 .expand-icon {
   float: right;

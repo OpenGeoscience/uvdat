@@ -2,8 +2,8 @@ from django.contrib.gis.db import models as geo_models
 from django.db import models
 
 from .context import Context
-from .map_layers import VectorMapLayer
 from .dataset import Dataset
+from .map_layers import VectorMapLayer
 
 
 class SourceRegion(models.Model):
@@ -11,6 +11,9 @@ class SourceRegion(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='regions')
     metadata = models.JSONField(blank=True, null=True)
     boundary = geo_models.MultiPolygonField()
+
+    def is_in_context(self, context_id):
+        return self.dataset.is_in_context(context_id)
 
     class Meta:
         constraints = [
@@ -39,6 +42,18 @@ class DerivedRegion(models.Model):
     # Since these regions are not associated with Datasets,
     # They need their own reference to a map representation
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.PROTECT)
+
+    def is_in_context(self, context_id):
+        return self.context.id == int(context_id)
+
+    def get_map_layers(self):
+        return [
+            {
+                'id': self.map_layer.id,
+                'index': 0,
+                'type': 'vector',
+            }
+        ]
 
     class Meta:
         constraints = [

@@ -1,16 +1,16 @@
 import json
-import geopandas
-import large_image_converter
-import numpy
-import rasterio
-import shapefile
+from pathlib import Path
 import tempfile
 import zipfile
 
 from django.core.files.base import ContentFile
 from geojson2vt import geojson2vt, vt2geojson
+import geopandas
+import large_image_converter
+import numpy
+import rasterio
+import shapefile
 from webcolors import name_to_hex
-from pathlib import Path
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
 
@@ -32,9 +32,9 @@ def add_styling(geojson_data, style_options):
             if color_value:
                 feature_colors += str(color_value).split(color_delimiter)
 
-        if type(palette) == dict:
+        if isinstance(palette, dict):
             feature_colors = [palette[c] for c in feature_colors if c in palette]
-        elif type(palette) == list:
+        elif isinstance(palette, list):
             feature_colors.append(palette[index % len(palette)])
 
         if outline:
@@ -47,8 +47,7 @@ def add_styling(geojson_data, style_options):
 
 
 def create_raster_map_layer(file_item, style_options):
-    """Saves a RasterMapLayer from a FileItem's contents."""
-
+    """Save a RasterMapLayer from a FileItem's contents."""
     new_map_layer = RasterMapLayer.objects.create(
         file_item=file_item,
         metadata={},
@@ -105,7 +104,7 @@ def create_raster_map_layer(file_item, style_options):
                 band[band < transparency_threshold] = transparency_threshold
 
             band_range = [float(band.min()), float(band.max())]
-            file_item.dataset.metadata['data_range'] = band_range
+            new_map_layer.default_style['data_range'] = band_range
 
             output_data.write(band, 1)
             output_data.close()
@@ -121,8 +120,7 @@ def create_raster_map_layer(file_item, style_options):
 
 
 def create_vector_map_layer(file_item, style_options):
-    """Saves a VectorMapLayer from a FileItem's contents."""
-
+    """Save a VectorMapLayer from a FileItem's contents."""
     new_map_layer = VectorMapLayer.objects.create(
         file_item=file_item,
         metadata={},
@@ -142,10 +140,11 @@ def create_vector_map_layer(file_item, style_options):
             geojson_data = geojson_data.to_crs(4326)
 
     geojson_data = add_styling(geojson_data, style_options)
-    new_map_layer.save_geojson_data(geojson_data)
+    new_map_layer.write_geojson_data(geojson_data.to_json())
     new_map_layer.save()
 
-    save_vector_tiles(new_map_layer)
+    # save_vector_tiles(vector_map_layer=new_map_layer)
+
     return new_map_layer
 
 
@@ -172,9 +171,11 @@ def convert_zip_to_geojson(file_item):
 
 def save_vector_tiles(vector_map_layer):
     tile_index = geojson2vt.geojson2vt(
-        vector_map_layer.get_geojson_data(),
+        vector_map_layer.read_geojson_data(),
         {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
     )
+
+    created = 0
     for coord in tile_index.tile_coords:
         tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
         features = tile.get('features')
@@ -186,5 +187,6 @@ def save_vector_tiles(vector_map_layer):
                 y=coord['y'],
                 z=coord['z'],
             )
-    available_tile_coords = vector_map_layer.get_available_tile_coords()
-    print('\t', f'{len(available_tile_coords)} vector tiles created.')
+            created += 1
+
+    print('\t', f'{created} vector tiles created.')

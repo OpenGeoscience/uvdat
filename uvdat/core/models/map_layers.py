@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 import tempfile
 
-from django.db import models
 from django.core.files.base import ContentFile
+from django.db import models
 from django_extensions.db.models import TimeStampedModel
 import large_image
 from s3_file_field import S3FileField
@@ -16,6 +16,9 @@ class AbstractMapLayer(TimeStampedModel):
     metadata = models.JSONField(blank=True, null=True)
     default_style = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
+
+    def is_in_context(self, context_id):
+        return self.file_item.is_in_context(context_id)
 
     class Meta:
         abstract = True
@@ -39,47 +42,57 @@ class RasterMapLayer(AbstractMapLayer):
 
 
 class VectorMapLayer(AbstractMapLayer):
-    geojson_data = models.JSONField(blank=True, null=True)
-    large_geojson_data = S3FileField(null=True)
+    geojson_file = S3FileField(null=True)
 
-    def get_geojson_data(self):
-        if self.geojson_data:
-            return json.loads(self.geojson_data)
+    def write_geojson_data(self, content: str | dict):
+        if isinstance(content, str):
+            data = content
+        elif isinstance(content, dict):
+            data = json.dumps(content)
         else:
-            return json.loads(json.load(self.large_geojson_data.open()))
+            raise Exception(f'Invalid content type supplied: {type(content)}')
 
-    def save_geojson_data(self, content):
-        geojson = content.to_json()
-        geojson_size = len(json.dumps(geojson).encode())
+        self.geojson_file.save('vectordata.geojson', ContentFile(data.encode()))
 
-        # JSONField limited to 268435455 bytes
-        if geojson_size < 268000000:
-            self.geojson_data = geojson
-        else:
-            self.large_geojson_data.save(
-                'vectordata.geojson',
-                ContentFile(json.dumps(geojson).encode()),
-            )
+    def read_geojson_data(self) -> dict:
+        """Read and load the data from geojson_file into a dict."""
+        return json.load(self.geojson_file.open())
 
-    def get_available_tile_coords(self):
-        tile_coords = []
-        for vector_tile in VectorTile.objects.filter(map_layer=self):
-            tile_coords.append(
-                dict(
-                    x=vector_tile.x,
-                    y=vector_tile.y,
-                    z=vector_tile.z,
+    def get_tile_extents(self):
+        """Return a dict that maps z tile values to the x/y extent at that depth."""
+        return {
+            entry.pop('z'): entry
+            for entry in (
+                VectorTile.objects.filter(map_layer=self)
+                .values('z')
+                .annotate(
+                    min_x=models.Min('x'),
+                    min_y=models.Min('y'),
+                    max_x=models.Max('x'),
+                    max_y=models.Max('y'),
                 )
+                .order_by()
             )
-        return tile_coords
-
-    def get_vector_tile(self, x, y, z):
-        return VectorTile.objects.get(map_layer=self, x=x, y=y, z=z)
+        }
 
 
 class VectorTile(models.Model):
+    EMPTY_TILE_DATA = {
+        'type': 'FeatureCollection',
+        'features': [],
+    }
+
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)
     geojson_data = models.JSONField(blank=True, null=True)
     x = models.IntegerField(default=0)
     y = models.IntegerField(default=0)
     z = models.IntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            # Ensure that a full index only ever resolves to one record
+            models.UniqueConstraint(
+                name='unique-map-layer-index', fields=['map_layer', 'z', 'x', 'y']
+            )
+        ]
+        indexes = [models.Index(fields=('z', 'x', 'y'), name='vectortile-coordinates-index')]
