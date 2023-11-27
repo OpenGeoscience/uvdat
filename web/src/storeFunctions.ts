@@ -141,12 +141,14 @@ export function loadSimulationTypes() {
   });
 }
 
-export function loadDerivedRegions() {
-  if (!currentContext.value) return;
-  availableDerivedRegions.value = undefined;
-  getContextDerivedRegions(currentContext.value.id).then((ders) => {
-    availableDerivedRegions.value = ders;
-  });
+export async function loadDerivedRegions() {
+  if (!currentContext.value) {
+    return;
+  }
+
+  availableDerivedRegions.value = await getContextDerivedRegions(
+    currentContext.value.id
+  );
 }
 
 export function cancelRegionGrouping() {

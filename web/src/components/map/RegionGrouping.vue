@@ -6,13 +6,22 @@ import {
   regionGroupingActive,
   currentContext,
 } from "@/store";
-import { cancelRegionGrouping, loadDerivedRegions } from "@/storeFunctions";
+import {
+  cancelRegionGrouping as _cancelRegionGrouping,
+  loadDerivedRegions,
+} from "@/storeFunctions";
 import { postDerivedRegion } from "@/api/rest";
 
 export default {
   setup() {
     // Region Controls
     const newRegionName = ref("");
+
+    function cancelRegionGrouping() {
+      newRegionName.value = "";
+      _cancelRegionGrouping();
+    }
+
     async function createDerivedRegion() {
       if (selectedSourceRegions.value.length === 0) {
         throw new Error(

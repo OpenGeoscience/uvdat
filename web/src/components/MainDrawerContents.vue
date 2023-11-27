@@ -93,11 +93,14 @@ export default {
 
     // If new derived region created, open panel
     watch(availableDerivedRegions, (availableRegs, oldRegs) => {
-      if (!oldRegs?.length || availableRegs?.length === oldRegs.length) {
+      if (availableRegs === undefined || oldRegs === undefined) {
+        return;
+      }
+      if (!(availableRegs.length > oldRegs.length)) {
         return;
       }
 
-      if (availableRegs?.length && !openPanels.value.includes(1)) {
+      if (!openPanels.value.includes(1)) {
         openPanels.value.push(1);
       }
     });
@@ -209,17 +212,12 @@ export default {
         Available Derived Regions
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <div
-          v-if="!availableDerivedRegions"
-          style="text-align: center; width: 100%"
-        >
-          <v-progress-circular indeterminate size="30" />
-        </div>
-        <v-card-subtitle
-          v-if="availableDerivedRegions && availableDerivedRegions.length === 0"
-        >
-          No Available Derived Regions.
-        </v-card-subtitle>
+        <template v-if="!availableDerivedRegions?.length">
+          <div style="text-align: center; width: 100%">
+            <v-progress-circular indeterminate size="30" />
+          </div>
+          <v-card-subtitle> No Available Derived Regions. </v-card-subtitle>
+        </template>
         <v-checkbox
           v-for="region in availableDerivedRegions"
           v-model="selectedDerivedRegions"

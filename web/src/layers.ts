@@ -361,15 +361,13 @@ export function updateVisibleMapLayers() {
     });
   }
 
-  if (!availableDerivedRegions.value) {
-    selectedDerivedRegions.value = [];
-  } else {
-    selectedDerivedRegions.value = availableDerivedRegions.value.filter((d) => {
-      return selectedMapLayers.value.some(
-        (l) => getDataObjectForMapLayer(l) === d
-      );
-    });
-  }
+  // Set selected derived regions
+  const available = availableDerivedRegions.value || [];
+  selectedDerivedRegions.value = available.filter((d) => {
+    return selectedMapLayers.value.some(
+      (l) => getDataObjectForMapLayer(l) === d
+    );
+  });
 }
 
 export function updateBaseLayer() {
