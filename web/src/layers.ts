@@ -30,6 +30,7 @@ import {
   showMapBaseLayer,
   deactivatedNodes,
   availableMapLayers,
+  selectedDerivedRegions,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
@@ -349,10 +350,21 @@ export function updateVisibleMapLayers() {
   selectedMapLayers.value.sort(
     (a, b) => b.openlayer.getZIndex() - a.openlayer.getZIndex()
   );
+
   if (!availableDatasets.value) {
     selectedDatasets.value = [];
   } else {
     selectedDatasets.value = availableDatasets.value.filter((d) => {
+      return selectedMapLayers.value.some(
+        (l) => getDataObjectForMapLayer(l) === d
+      );
+    });
+  }
+
+  if (!availableDerivedRegions.value) {
+    selectedDerivedRegions.value = [];
+  } else {
+    selectedDerivedRegions.value = availableDerivedRegions.value.filter((d) => {
       return selectedMapLayers.value.some(
         (l) => getDataObjectForMapLayer(l) === d
       );

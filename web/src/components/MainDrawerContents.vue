@@ -10,6 +10,7 @@ import {
   availableDerivedRegions,
   currentDataset,
   availableMapLayers,
+  selectedDerivedRegions,
 } from "@/store";
 import {
   loadDatasets,
@@ -21,7 +22,6 @@ import { Dataset, DerivedRegion } from "@/types";
 import { getDatasetMapLayers } from "@/api/rest";
 import {
   getMapLayerForDataObject,
-  isMapLayerVisible,
   toggleMapLayer,
   getOrCreateLayerFromID,
 } from "@/layers";
@@ -57,13 +57,6 @@ export default {
     });
 
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
-
-    // TODO: Avoid fetching entire map layer for each available
-    // derived region just to check if it's selected or not
-    async function derivedRegionSelected(derivedRegion: DerivedRegion) {
-      const mapLayer = await getMapLayerForDataObject(derivedRegion);
-      return isMapLayerVisible(mapLayer);
-    }
 
     async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
       const mapLayer = await getMapLayerForDataObject(derivedRegion);
@@ -119,6 +112,7 @@ export default {
       availableDatasets,
       currentDataset,
       selectedDatasets,
+      selectedDerivedRegions,
       openPanels,
       expandedDatasetGroups,
       availableDatasetGroups,
@@ -131,7 +125,6 @@ export default {
       loadDatasets,
       toggleDataset,
       toggleDerivedRegion,
-      derivedRegionSelected,
       loadCharts,
       loadSimulationTypes,
       loadDerivedRegions,
@@ -229,7 +222,8 @@ export default {
         </v-card-subtitle>
         <v-checkbox
           v-for="region in availableDerivedRegions"
-          :model-value="derivedRegionSelected(region)"
+          v-model="selectedDerivedRegions"
+          :value="region"
           :key="region.id"
           :label="region.name"
           hide-details
