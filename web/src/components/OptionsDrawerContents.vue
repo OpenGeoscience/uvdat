@@ -25,6 +25,7 @@ export default {
     const colormapRange = ref<number[]>([]);
     const applyToAll = ref<boolean>(false);
     const zIndex = ref<number>();
+    const ticker = ref();
 
     const currentFileItemName = computed(() => {
       return currentMapLayer.value?.file_item?.name;
@@ -137,6 +138,39 @@ export default {
       )?.name;
     }
 
+    function pause() {
+      clearInterval(ticker.value);
+      ticker.value = undefined;
+    }
+
+    function play() {
+      if (currentDataset.value?.map_layers) {
+        pause();
+        ticker.value = setInterval(() => {
+          if (
+            currentDataset.value?.map_layers &&
+            currentMapLayerIndex.value <
+              currentDataset.value.map_layers?.length - 1
+          ) {
+            currentMapLayerIndex.value += 1;
+          } else {
+            pause();
+          }
+        }, 2000);
+      }
+    }
+
+    function rewind() {
+      pause();
+      ticker.value = setInterval(() => {
+        if (currentMapLayerIndex.value > 0) {
+          currentMapLayerIndex.value -= 1;
+        } else {
+          pause();
+        }
+      }, 2000);
+    }
+
     // Use deep watcher to catch inputs from number fields alongside sliders
     watch(colormapRange, updateColormap, { deep: true });
     watch(colormap, updateColormap);
@@ -161,6 +195,9 @@ export default {
       deactivatedNodes,
       activateNode,
       getNetworkNodeName,
+      play,
+      pause,
+      rewind,
     };
   },
 };
@@ -199,8 +236,14 @@ export default {
         dense
         min="0"
         step="1"
+        hide-details
         :max="currentDataset?.map_layers.length - 1"
       />
+      <div style="width: 100%; text-align: center">
+        <v-btn @click="play" icon="mdi-play" variant="text" />
+        <v-btn @click="pause" icon="mdi-pause" variant="text" />
+        <v-btn @click="rewind" icon="mdi-rewind" variant="text" />
+      </div>
       <v-card-subtitle class="wrap-subtitle">
         Current layer file name: {{ currentFileItemName || "Untitled" }}
       </v-card-subtitle>
