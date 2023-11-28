@@ -17,7 +17,8 @@
             "Boston Zip Codes",
             "Boston Sea Level Rises",
             "Boston 10-Year Flood Events",
-            "Boston 100-Year Flood Events"
+            "Boston 100-Year Flood Events",
+            "Constant Precipitation for 45 hours"
         ]
     },
     {
@@ -50,7 +51,8 @@
             "Boston Sea Level Rises",
             "Boston 10-Year Flood Events",
             "Boston 100-Year Flood Events",
-            "DC Metro"
+            "DC Metro",
+            "Constant Precipitation for 45 hours"
         ]
     }
 ]

@@ -265,5 +265,22 @@
             "color_delimiter": ", ",
             "outline": "white"
         }
+    },
+    {
+        "name": "Constant Precipitation for 45 hours",
+        "description": "Simulation of constant precipitation (7.5mm/hour) distributed evenly over 3 watersheds draining into Boston harbor",
+        "category": "flood",
+        "type": "raster",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6564cc5ac5a2b36857ad16cf/download",
+                "path": "boston/flood_timeseries_simulation.zip",
+                "extract": true
+            }
+        ],
+        "style_options": {
+            "transparency_threshold": -9999,
+            "trim_distribution_percentage": 0.01
+        }
     }
 ]
