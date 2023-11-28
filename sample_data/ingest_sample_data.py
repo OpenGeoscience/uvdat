@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import zipfile
 
 from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile
@@ -14,6 +15,7 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
     file_path = file_info.get('path')
     file_name = file_info.get('name', file_path.split('/')[-1])
     file_url = file_info.get('url')
+    file_extract = file_info.get('extract')
     file_metadata = file_info.get('metadata', {})
 
     file_location = Path('sample_data', file_path)
@@ -25,25 +27,59 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
             r = requests.get(file_url)
             f.write(r.content)
 
-    existing = FileItem.objects.filter(name=file_name)
-    if existing.count():
-        print('\t', f'FileItem {file_name} already exists.')
+    if file_extract:
+        files = []
+        # Done specifically for simulated flood timeseries data, not abstracted
+        with zipfile.ZipFile(file_location) as zip_archive:
+            # sort so that timestamps are in order with index
+            filenames = zip_archive.namelist()
+            vrt_filenames = sorted(f for f in filenames if f.endswith('.vrt'))
+            for vrt in vrt_filenames:
+                current_name = vrt.replace('.vrt', '')
+                matching_tif_filenames = [f for f in filenames if 'tif' in f and current_name in f]
+                if len(matching_tif_filenames) > 0:
+                    tif = matching_tif_filenames[0]
+                    new_zip_location = f'sample_data/{current_name}.zip'
+                    os.makedirs(os.path.dirname(new_zip_location), exist_ok=True)
+                    with zipfile.ZipFile(new_zip_location, 'w') as current_zip:
+                        current_zip.writestr(vrt, zip_archive.read(vrt))
+                        current_zip.writestr(tif, zip_archive.read(tif))
+                    files.append({
+                        'name': current_name,
+                        'path': file_location,
+                        'type': file_type,
+                        'metadata': file_metadata,
+                        'index': len(files)
+                    })
     else:
-        new_file_item = FileItem.objects.create(
-            name=file_name,
-            dataset=dataset,
-            chart=chart,
-            file_type=file_type,
-            file_size=os.path.getsize(file_location),
-            metadata=dict(
-                **file_metadata,
-                uploaded=str(datetime.now()),
-            ),
-            index=index,
-        )
-        print('\t', f'FileItem {new_file_item.name} created.')
-        with file_location.open('rb') as f:
-            new_file_item.file.save(file_path, ContentFile(f.read()))
+        files = [{
+            'name': file_name,
+            'path': file_location,
+            'type': file_type,
+            'metadata': file_metadata,
+            'index': index,
+        }]
+
+    for file in files:
+        existing = FileItem.objects.filter(name=file['name'])
+        if existing.count():
+            print('\t', f'FileItem {file["name"]} already exists.')
+        else:
+            new_file_item = FileItem.objects.create(
+                name=file['name'],
+                dataset=dataset,
+                chart=chart,
+                file_type=file['type'],
+                file_size=os.path.getsize(file['path']),
+                metadata=dict(
+                    **file['metadata'],
+                    uploaded=str(datetime.now()),
+                ),
+                index=file['index'],
+            )
+            print('\t', f'FileItem {new_file_item.name} created.')
+            with file['path'].open('rb') as f:
+                new_file_item.file.save(file['path'], ContentFile(f.read()))
 
 
 def ingest_contexts():

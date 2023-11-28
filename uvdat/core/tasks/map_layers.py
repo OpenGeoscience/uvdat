@@ -59,62 +59,72 @@ def create_raster_map_layer(file_item, style_options):
     with tempfile.TemporaryDirectory() as temp_dir:
         raw_data_path = Path(temp_dir, 'raw_data.tiff')
         with open(raw_data_path, 'wb') as raw_data:
-            with file_item.file.open('rb') as raw_data_archive:
-                raw_data.write(raw_data_archive.read())
+            if file_item.file.name.endswith('.zip'):
+                raw_data_path = None
+                with zipfile.ZipFile(file_item.file) as zip_archive:
+                    zip_archive.extractall(temp_dir)
+                    vrts = [f for f in zip_archive.namelist() if f.endswith('.vrt')]
+                    if len(vrts) > 0:
+                        raw_data_path = Path(temp_dir, vrts[0])
+            else:
+                with file_item.file.open('rb') as raw_data_archive:
+                    raw_data.write(raw_data_archive.read())
+
+        if raw_data_path is None:
+            raise TypeError('Raster data path is None.')
 
         transparency_threshold = style_options.get('transparency_threshold')
         trim_distribution_percentage = style_options.get('trim_distribution_percentage')
 
         raster_path = Path(temp_dir, 'raster.tiff')
-        with open(raw_data_path, 'rb') as raw_data:
-            input_data = rasterio.open(raw_data)
-            output_data = rasterio.open(
-                raster_path,
-                'w',
-                driver='GTiff',
-                height=input_data.height,
-                width=input_data.width,
-                count=1,
-                dtype=numpy.float32,
-                crs=input_data.crs,
-                transform=input_data.transform,
+        input_data = rasterio.open(raw_data_path)
+        output_data = rasterio.open(
+            raster_path,
+            'w',
+            driver='GTiff',
+            height=input_data.height,
+            width=input_data.width,
+            count=1,
+            dtype=numpy.float32,
+            crs=input_data.crs,
+            transform=input_data.transform,
+        )
+        band = input_data.read(1)
+
+        if trim_distribution_percentage:
+            # trim a number of values from both ends of the distribution
+            histogram, bin_edges = numpy.histogram(band, bins=1000)
+            trim_n = band.size * trim_distribution_percentage
+            new_min = None
+            new_max = None
+            sum_values = 0
+            for bin_index, bin_count in enumerate(histogram):
+                bin_edge = bin_edges[bin_index]
+                sum_values += bin_count
+                if new_min is None and sum_values > trim_n:
+                    new_min = bin_edge
+                if new_max is None and sum_values > band.size - trim_n:
+                    new_max = bin_edge
+            if new_min:
+                band[band < new_min] = new_min
+            if new_max:
+                band[band > new_max] = new_max
+
+        if transparency_threshold is not None:
+            band[band < transparency_threshold] = transparency_threshold
+
+        band_range = [float(band.min()), float(band.max())]
+        new_map_layer.default_style['data_range'] = band_range
+
+        output_data.write(band, 1)
+        output_data.close()
+
+        cog_raster_path = Path(temp_dir, 'cog_raster.tiff')
+        large_image_converter.convert(str(raster_path), str(cog_raster_path))
+        with open(cog_raster_path, 'rb') as cog_raster_file:
+            new_map_layer.cloud_optimized_geotiff.save(
+                cog_raster_path, ContentFile(cog_raster_file.read())
             )
-            band = input_data.read(1)
-
-            if trim_distribution_percentage:
-                # trim a number of values from both ends of the distribution
-                histogram, bin_edges = numpy.histogram(band, bins=1000)
-                trim_n = band.size * trim_distribution_percentage
-                new_min = None
-                new_max = None
-                sum_values = 0
-                for bin_index, bin_count in enumerate(histogram):
-                    bin_edge = bin_edges[bin_index]
-                    sum_values += bin_count
-                    if new_min is None and sum_values > trim_n:
-                        new_min = bin_edge
-                    if new_max is None and sum_values > band.size - trim_n:
-                        new_max = bin_edge
-                if new_min:
-                    band[band < new_min] = new_min
-                if new_max:
-                    band[band > new_max] = new_max
-
-            if transparency_threshold is not None:
-                band[band < transparency_threshold] = transparency_threshold
-
-            band_range = [float(band.min()), float(band.max())]
-            new_map_layer.default_style['data_range'] = band_range
-
-            output_data.write(band, 1)
-            output_data.close()
-
-            cog_raster_path = Path(temp_dir, 'cog_raster.tiff')
-            large_image_converter.convert(str(raster_path), str(cog_raster_path))
-            with open(cog_raster_path, 'rb') as cog_raster_file:
-                new_map_layer.cloud_optimized_geotiff.save(
-                    cog_raster_path, ContentFile(cog_raster_file.read())
-                )
 
     return new_map_layer
 
