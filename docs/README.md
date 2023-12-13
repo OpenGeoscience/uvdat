@@ -1,8 +1,10 @@
 # UVDAT: Urban Visualization and Data Analysis Toolkit
 [![License][apache-license-image]][license-link]
 
+<p float="left">
 <img style="display: inline-block;" src="kitware.svg" alt="Kitware Logo" href="https://kitware.com" width="100">
 <img style="display: inline-block;" src="sds_lab.png" alt="NEU SDS Lab Logo" href="https://https://sdslab.io/" width="100">
+</p>
 
 > Developed by Kitware Inc. in collaboration with the Sustainability and Data Sciences Lab at Northeastern University
 
