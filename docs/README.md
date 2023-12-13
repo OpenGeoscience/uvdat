@@ -2,17 +2,18 @@
 [![License][apache-license-image]][license-link]
 
 <p float="left">
-<img style="display: inline-block;" src="kitware.svg" alt="Kitware Logo" href="https://kitware.com" width="100">
-<img style="display: inline-block;" src="sds_lab.png" alt="NEU SDS Lab Logo" href="https://https://sdslab.io/" width="100">
+<img style="display: inline-block;" src="kitware.svg" alt="Kitware Logo" width="100">
+<img style="display: inline-block;" src="sds_lab.png" alt="NEU SDS Lab Logo" width="100">
 </p>
 
-> Developed by Kitware Inc. in collaboration with the Sustainability and Data Sciences Lab at Northeastern University
-
+> Developed by [Kitware Inc.][kitware-link] in collaboration with the [Sustainability and Data Sciences Lab at Northeastern University][sds-lab-link]
 
 Urban planners need better tools to access and analyze diverse data, including weather, climate, infrastructure networks, and in-situ sensors. The **Urban Visualization and Data Analytics Toolkit (UVDAT)** presents a novel software solution, offering analysis-ready data, resilience models, and neighborhood-scale visualizations, enabling robust and socially just solutions.
 
 ![](uvdat_screenshot.png)
 ![](uvdat_flow.jpg)
+
+> Sample use case (shown above) examines the effect of coastal flooding on the availability of the Boston Transit system. Sample data obtained from [MassMapper][mass-mapper-link], a public tool for open infrastructure data hosted by the state of Massachusetts.
 
 ## Problem Statement
 Urban areas, particularly those with underserved populations and critical assets in vulnerable zones, are at increased risks of cascading failures due to climate change, urbanization, and aging infrastructure. There is an urgent need for urban models that can effectively address and visualize these growing threats to avoid substantial loss of life and property.
@@ -28,6 +29,10 @@ UVDAT is built with Kitware's Girder 4 technology stack ([cookiecutter][girder-4
 ## Getting Started
 To run UVDAT locally with `docker-compose`, follow the instructions in the [Setup Guide](setup.md).
 
+
 [apache-license-image]: https://img.shields.io/badge/license-Apache%202-blue.svg
 [license-link]: https://raw.githubusercontent.com/OpenGeoscience/uvdat/master/LICENSE
+[kitware-link]: https://kitware.com
+[sds-lab-link]: https://sdslab.io
+[mass-mapper-link]: https://maps.massgis.digital.mass.gov/MassMapper/MassMapper.html
 [girder-4-cookiecutter-link]: https://github.com/girder/cookiecutter-girder-4
