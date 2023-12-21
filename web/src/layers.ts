@@ -233,7 +233,7 @@ export function styleRasterOpenLayer(
 
   const tileParams: Record<string, string> = {
     projection: "EPSG:3857",
-    band: "1",
+    band: defaultStyle.band || "1",
   };
   if (colormapPalette) tileParams.palette = colormapPalette;
   if (colormapRange?.length == 2) {

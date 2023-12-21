@@ -18,7 +18,14 @@ from uvdat.core.rest.serializers import (
 class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
     queryset = RasterMapLayer.objects.select_related('file_item__dataset').all()
     serializer_class = RasterMapLayerSerializer
-    FILE_FIELD_NAME = 'cloud_optimized_geotiff'
+
+    def get_field_file(self):
+        obj = self.get_object()
+        if obj.cloud_optimized_geotiff:
+            return obj.cloud_optimized_geotiff
+        else:
+            # Default to original file data
+            return obj.file_item.file
 
     @action(
         detail=True,
