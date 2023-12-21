@@ -31,7 +31,10 @@ class RasterMapLayer(AbstractMapLayer):
         with tempfile.TemporaryDirectory() as tmp:
             raster_path = Path(tmp, 'raster')
             with open(raster_path, 'wb') as raster_file:
-                raster_file.write(self.cloud_optimized_geotiff.read())
+                if self.cloud_optimized_geotiff:
+                    raster_file.write(self.cloud_optimized_geotiff.read())
+                else:
+                    raster_file.write(self.file_item.file.read())
             source = large_image.open(raster_path)
             data, data_format = source.getRegion(format='numpy')
             data = data[:, :, 0]

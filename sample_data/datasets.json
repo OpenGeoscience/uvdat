@@ -273,13 +273,14 @@
         "type": "raster",
         "files": [
             {
-                "url": "https://data.kitware.com/api/v1/item/6564cc5ac5a2b36857ad16cf/download",
-                "path": "boston/flood_timeseries_simulation.zip",
-                "extract": true
+                "url": "https://data.kitware.com/api/v1/item/6584bcfe8c54f378b99230b0/download",
+                "path": "boston/flood.nc"
             }
         ],
         "style_options": {
-            "transparency_threshold": -9999,
+            "split": "NC_GLOBAL#time",
+            "split_delimiter": ",",
+            "transparency_threshold": -1,
             "trim_distribution_percentage": 0.01
         }
     }
