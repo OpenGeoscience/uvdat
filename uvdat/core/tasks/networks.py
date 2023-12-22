@@ -161,9 +161,7 @@ def create_network(vector_map_layer, network_options):
                         metadata=metadata,
                     )
     # rewrite vector_map_layer geojson_data with updated features
-    vector_map_layer.write_geojson_data(
-        geojson_from_network(vector_map_layer.file_item.dataset)
-    )
+    vector_map_layer.write_geojson_data(geojson_from_network(vector_map_layer.file_item.dataset))
     vector_map_layer.metadata['network'] = True
     vector_map_layer.save()
 
