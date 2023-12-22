@@ -160,14 +160,19 @@ def create_network(vector_map_layer, network_options):
                         line_geometry=edge_line_geometry,
                         metadata=metadata,
                     )
+    # rewrite vector_map_layer geojson_data with updated features
+    vector_map_layer.write_geojson_data(geojson_from_network(vector_map_layer.file_item.dataset))
+    vector_map_layer.metadata['network'] = True
+    vector_map_layer.save()
 
+
+def geojson_from_network(dataset):
     total_nodes = 0
     total_edges = 0
     new_feature_set = []
-    # rewrite vector_map_layer geojson_data with updated features
-    for n in NetworkNode.objects.filter(dataset=vector_map_layer.file_item.dataset):
+    for n in NetworkNode.objects.filter(dataset=dataset):
         node_as_feature = {
-            'id': i,
+            'id': n.id,
             'type': 'Feature',
             'geometry': {
                 'type': 'Point',
@@ -178,9 +183,9 @@ def create_network(vector_map_layer, network_options):
         new_feature_set.append(node_as_feature)
         total_nodes += 1
 
-    for e in NetworkEdge.objects.filter(dataset=vector_map_layer.file_item.dataset):
+    for e in NetworkEdge.objects.filter(dataset=dataset):
         edge_as_feature = {
-            'id': i,
+            'id': e.id,
             'type': 'Feature',
             'geometry': {
                 'type': 'LineString',
@@ -197,10 +202,8 @@ def create_network(vector_map_layer, network_options):
         total_edges += 1
 
     new_geodata = geopandas.GeoDataFrame.from_features(new_feature_set)
-    vector_map_layer.write_geojson_data(new_geodata.to_json())
-    vector_map_layer.metadata['network'] = True
-    vector_map_layer.save()
-    print('\t', f'{total_nodes} nodes and {total_edges} edges created.')
+    print('\t', f'GeoJSON feature set created for {total_nodes} nodes and {total_edges} edges.')
+    return new_geodata.to_json()
 
 
 def get_dataset_network_graph(dataset):
