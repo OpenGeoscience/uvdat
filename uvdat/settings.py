@@ -37,14 +37,11 @@ class UvdatMixin(ConfigMixin):
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
 
+        # Update db backend to postgis
         configuration.DATABASES = {
             'default': {
+                **configuration.DATABASES.value['default'],
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': 'django',
-                'USER': 'postgres',
-                'PASSWORD': 'postgres',
-                'HOST': 'postgres',
-                'PORT': '5432',
             }
         }
 

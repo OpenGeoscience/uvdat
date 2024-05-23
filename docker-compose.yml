@@ -1,7 +1,7 @@
 version: '3'
 services:
   postgres:
-    image: postgis/postgis:14-3.3
+    image: postgis/postgis:16-3.4
     environment:
       POSTGRES_DB: django
       POSTGRES_PASSWORD: postgres
@@ -9,6 +9,11 @@ services:
       - ${DOCKER_POSTGRES_PORT-5432}:5432
     volumes:
       - postgres:/var/lib/postgresql/data
+
+  neo4j:
+    image: neo4j:4.4.34
+    ports:
+      - 7687:7687
 
   rabbitmq:
     image: rabbitmq:management
