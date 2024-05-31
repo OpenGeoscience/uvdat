@@ -1,0 +1,32 @@
+name: Publish Docker Packages
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: OpenGeoscience/uvdat:server
+
+jobs:
+  publish-uvdat-server:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: Log into the Container registry
+          uses: docker/login-action@v2
+          with:
+            registry: ${{ env.REGISTRY }}
+            username: token
+            password: ${{ secrets.GITHUB_TOKEN }}
+        - name: Build and push the Docker image
+          uses: docker/build-push-action@v3
+          with:
+            context: .
+            file: dev/Dockerfile
+            push: ${{ github.actor != 'dependabot[bot]' }}
+            tags: ${{ env.IMAGE_NAME }}
