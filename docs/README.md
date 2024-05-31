@@ -27,7 +27,7 @@ The **Urban Visualization and Data Analytics Toolkit (UVDAT)** presents a novel 
 * AI tools for neighborhood-level localization of climate prediction models (spatial downscaling)
 * readily available models for predicting the impact of climate extremes on urban transportation
 * web-based user interface with workflow support for live inference and interpretation
-* high-resolution, multiscale data visualization for detailed data and uncertainty representatitons.
+* high-resolution, multiscale data visualization for detailed data and uncertainty representations.
 
 UVDAT is designed to assist urban planners, policymakers, logistics engineers, and infrastructure developers/owners in managing increasingly large, complex, and diverse datasets. By integrating climate data with other critical data types such as infrastructure, sensor, and demographic information using our advanced analytic and visualization tools, users will be empowered to make data-driven decisions.
 
