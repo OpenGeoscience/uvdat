@@ -31,7 +31,7 @@ The **Urban Visualization and Data Analytics Toolkit (UVDAT)** presents a novel 
 
 UVDAT is designed to assist urban planners, policymakers, logistics engineers, and infrastructure developers/owners in managing increasingly large, complex, and diverse datasets. By integrating climate data with other critical data types such as infrastructure, sensor, and demographic information using our advanced analytic and visualization tools, users will be empowered to make data-driven decisions.
 
-UVDAT is built with Kitware's [Girder 4][girder-4-cookiecutter-link] technology stack. It consists of a series of container services, managed by `docker-compose`. These services include a Django Python server, PostgreSQL/PostGIS database, Minio object store, Vue web application, and Celery task service.
+UVDAT is built with Kitware's [Resonant][girder-4-cookiecutter-link] technology stack. It consists of a series of container services, managed by `docker-compose`. These services include a Django Python server, PostgreSQL/PostGIS database, Minio object store, Vue web application, and Celery task service.
 
 ## Getting Started with UVDAT
 To run UVDAT locally with `docker-compose`, follow the instructions in the [Setup Guide](setup.md).
