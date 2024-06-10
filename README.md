@@ -49,3 +49,8 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+### Infrastructure model
+![Infrastructure main model](.infragenie/infrastructure_main_model.svg)
+
+---
