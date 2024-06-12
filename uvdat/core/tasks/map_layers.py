@@ -1,17 +1,19 @@
 import json
-from pathlib import Path
 import tempfile
 import zipfile
+from pathlib import Path
 
-from django.core.files.base import ContentFile
-from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import numpy
 import rasterio
 import shapefile
+from django.contrib.gis.geos import GEOSGeometry
+from django.core.files.base import ContentFile
+from geojson2vt import geojson2vt, vt2geojson
 from webcolors import name_to_hex
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
+from uvdat.core.models.map_layers import VectorFeature
 
 
 def add_styling(geojson_data, style_options):
@@ -168,6 +170,24 @@ def convert_zip_to_geojson(file_item):
         geodata = geodata.set_crs(source_projection, allow_override=True)
         geodata = geodata.to_crs(4326)
         return geodata
+
+
+def save_vector_features(vector_map_layer: VectorMapLayer):
+    features = vector_map_layer.read_geojson_data()['features']
+    vector_features = []
+    for feature in features:
+        vector_features.append(
+            VectorFeature(
+                map_layer=vector_map_layer,
+                geometry=GEOSGeometry(json.dumps(feature['geometry'])),
+                properties=feature['properties'],
+            )
+        )
+
+    created = VectorFeature.objects.bulk_create(vector_features)
+    print('\t', f'{len(created)} vector features created.')
+
+    return created
 
 
 def save_vector_tiles(vector_map_layer):

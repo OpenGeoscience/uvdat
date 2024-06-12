@@ -1,4 +1,5 @@
 import GeoJSON from "ol/format/GeoJSON.js";
+import MVT from "ol/format/MVT";
 import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
@@ -102,22 +103,22 @@ export function createVectorOpenLayer(mapLayer: VectorMapLayer) {
         colors: feature.getProperties().colors || defaultColors,
       }),
     source: new VectorTileSource({
-      maxZoom: Math.max(
-        ...Object.keys(mapLayer.tile_extents).map((z) => Number(z))
-      ),
-      format: new GeoJSON(),
+      // maxZoom: Math.max(
+      //   ...Object.keys(mapLayer.tile_extents).map((z) => Number(z))
+      // ),
+      format: new MVT(),
       tileUrlFunction: (tileCoord: TileCoord) => {
         const [z, x, y] = tileCoord;
-        const entry = mapLayer.tile_extents[z];
-        if (!entry) {
-          return undefined;
-        }
+        // const entry = mapLayer.tile_extents[z];
+        // if (!entry) {
+        //   return undefined;
+        // }
 
         // Ensure current x/y is within zoom level extent
-        const { min_x, min_y, max_x, max_y } = entry;
-        if (!(min_x <= x && x <= max_x && min_y <= y && y <= max_y)) {
-          return undefined;
-        }
+        // const { min_x, min_y, max_x, max_y } = entry;
+        // if (!(min_x <= x && x <= max_x && min_y <= y && y <= max_y)) {
+        //   return undefined;
+        // }
 
         return `${baseURL}vectors/${mapLayer.id}/tiles/${z}/${x}/${y}/`;
       },
