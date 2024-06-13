@@ -13,7 +13,7 @@ def get_or_create_road_dataset():
     dataset, created = Dataset.objects.get_or_create(
         name='Boston Road Network',
         description='Roads and intersections retrieved from OpenStreetMap via OSMnx',
-        type='vector',
+        dataset_type=Dataset.DatasetType.VECTOR,
         category='transportation',
     )
     if created:
