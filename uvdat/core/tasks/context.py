@@ -1,13 +1,13 @@
 import json
-import networkx
-import osmnx
-from celery import shared_task
 
-from django.core.files.base import ContentFile
+from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
-from uvdat.core.models import Context, Dataset, FileItem, NetworkNode, NetworkEdge, VectorMapLayer
-from uvdat.core.tasks.networks import geojson_from_network
+from django.core.files.base import ContentFile
+import osmnx
+
+from uvdat.core.models import Context, Dataset, FileItem, NetworkEdge, NetworkNode, VectorMapLayer
 from uvdat.core.tasks.map_layers import save_vector_tiles
+from uvdat.core.tasks.networks import geojson_from_network
 
 
 def get_or_create_road_dataset(context, location):
@@ -29,9 +29,9 @@ def get_or_create_road_dataset(context, location):
 
 def metadata_for_row(row):
     return {
-        k:v for k, v in row.to_dict().items()
-        if k not in ['osmid', 'geometry', 'ref']
-        and str(v) != 'nan'
+        k: v
+        for k, v in row.to_dict().items()
+        if k not in ['osmid', 'geometry', 'ref'] and str(v) != 'nan'
     }
 
 
@@ -45,19 +45,20 @@ def load_roads(context_id, location):
     road_nodes, road_edges = osmnx.graph_to_gdfs(roads)
 
     print('Traversing data and saving to database...')
-    for index, edge_data in road_edges.iterrows():
+    for _, edge_data in road_edges.iterrows():
         edge_geom = edge_data['geometry'].coords
         start = edge_geom[0]
         end = edge_geom[-1]
         edge_name = edge_data['name']
         if str(edge_name) == 'nan' or len(str(edge_name)) < 2:
             edge_name = 'Unnamed Road at {:0.4f}/{:0.4f}'.format(
-                *edge_geom[int(len(edge_geom)/2)]
+                *edge_geom[int(len(edge_geom) / 2)]
             )
-        name_duplicates_count = NetworkEdge.objects.filter(dataset=dataset, name__contains=edge_name).count()
+        name_duplicates_count = NetworkEdge.objects.filter(
+            dataset=dataset, name__contains=edge_name
+        ).count()
         if name_duplicates_count > 0:
             edge_name = f'{str(edge_name)} {name_duplicates_count + 1}'
-
 
         start_node_data = road_nodes.loc[
             (road_nodes['x'] == start[0]) & (road_nodes['y'] == start[1])
@@ -86,21 +87,18 @@ def load_roads(context_id, location):
             directed=edge_data['oneway'],
             from_node=start_node,
             to_node=end_node,
-            line_geometry=LineString(*[Point(*p) for p in edge_geom])
+            line_geometry=LineString(*[Point(*p) for p in edge_geom]),
         )
         edge.metadata = metadata_for_row(edge_data)
         edge.save()
 
     geojson = geojson_from_network(dataset)
     file_item = FileItem.objects.create(
-        name=f'{location} Roads',
-        dataset=dataset,
-        file_type='geojson'
+        name=f'{location} Roads', dataset=dataset, file_type='geojson'
     )
     file_item.file.save('roads.geojson', ContentFile(json.dumps(geojson).encode()))
     vector_map_layer = VectorMapLayer.objects.create(
-        file_item=file_item,
-        metadata={'network': True}
+        file_item=file_item, metadata={'network': True}
     )
     vector_map_layer.write_geojson_data(geojson)
     save_vector_tiles(vector_map_layer)

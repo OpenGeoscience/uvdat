@@ -23,7 +23,6 @@ class ContextViewSet(ModelViewSet):
         simulation_results = context.simulation_results.all()
         return HttpResponse(simulation_results, status=200)
 
-
     @action(
         detail=True,
         methods=['get'],
