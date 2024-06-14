@@ -4,6 +4,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Context
 from uvdat.core.rest.serializers import ContextSerializer
+from uvdat.core.tasks.context import load_roads
 
 
 class ContextViewSet(ModelViewSet):
@@ -21,3 +22,14 @@ class ContextViewSet(ModelViewSet):
         context = self.get_object()
         simulation_results = context.simulation_results.all()
         return HttpResponse(simulation_results, status=200)
+
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path=r'load_roads/(?P<location>.+)',
+    )
+    def load_roads(self, request, location, **kwargs):
+        context = self.get_object()
+        load_roads.delay(context.id, location)
+        return HttpResponse('Task spawned successfully.', status=200)

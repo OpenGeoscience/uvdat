@@ -1,6 +1,7 @@
 import json
 import networkx
 import osmnx
+from celery import shared_task
 
 from django.core.files.base import ContentFile
 from django.contrib.gis.geos import LineString, Point
@@ -8,10 +9,10 @@ from uvdat.core.models import Context, Dataset, FileItem, NetworkNode, NetworkEd
 from uvdat.core.tasks.networks import geojson_from_network
 from uvdat.core.tasks.map_layers import save_vector_tiles
 
-def get_or_create_road_dataset():
-    context = Context.objects.get(name='Boston Transportation')
+
+def get_or_create_road_dataset(context, location):
     dataset, created = Dataset.objects.get_or_create(
-        name='Boston Road Network',
+        name=f'{location} Road Network',
         description='Roads and intersections retrieved from OpenStreetMap via OSMnx',
         dataset_type=Dataset.DatasetType.VECTOR,
         category='transportation',
@@ -34,9 +35,10 @@ def metadata_for_row(row):
     }
 
 
-def load_roads():
-    dataset = get_or_create_road_dataset()
-    location = 'Boston, Massachusetts, USA'
+@shared_task
+def load_roads(context_id, location):
+    context = Context.objects.get(id=context_id)
+    dataset = get_or_create_road_dataset(context, location)
 
     print(f'Fetching road data for {location}...')
     roads = osmnx.graph_from_place(location, network_type='drive')
@@ -91,7 +93,7 @@ def load_roads():
 
     geojson = geojson_from_network(dataset)
     file_item = FileItem.objects.create(
-        name='Boston Roads',
+        name=f'{location} Roads',
         dataset=dataset,
         file_type='geojson'
     )
