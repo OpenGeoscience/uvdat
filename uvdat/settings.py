@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from composed_configuration import (
     ComposedConfiguration,
@@ -37,14 +39,16 @@ class UvdatMixin(ConfigMixin):
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
 
+        # Re-configure the database for PostGIS
+        db_parts = urlparse(os.environ['DJANGO_DATABASE_URL'])
         configuration.DATABASES = {
             'default': {
                 'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': 'django',
-                'USER': 'postgres',
-                'PASSWORD': 'postgres',
-                'HOST': 'postgres',
-                'PORT': '5432',
+                'NAME': db_parts.path.strip('/'),
+                'USER': db_parts.username,
+                'PASSWORD': db_parts.password,
+                'HOST': db_parts.hostname,
+                'PORT': db_parts.port,
             }
         }
 
