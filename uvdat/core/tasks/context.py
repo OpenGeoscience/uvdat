@@ -54,11 +54,6 @@ def load_roads(context_id, location):
             edge_name = 'Unnamed Road at {:0.4f}/{:0.4f}'.format(
                 *edge_geom[int(len(edge_geom) / 2)]
             )
-        name_duplicates_count = NetworkEdge.objects.filter(
-            dataset=dataset, name__contains=edge_name
-        ).count()
-        if name_duplicates_count > 0:
-            edge_name = f'{str(edge_name)} {name_duplicates_count + 1}'
 
         start_node_data = road_nodes.loc[
             (road_nodes['x'] == start[0]) & (road_nodes['y'] == start[1])
