@@ -6,7 +6,6 @@ import zipfile
 from django.core.files.base import ContentFile
 from geojson2vt import geojson2vt, vt2geojson
 import geopandas
-import large_image_converter
 import numpy
 import rasterio
 import shapefile
@@ -48,6 +47,8 @@ def add_styling(geojson_data, style_options):
 
 def create_raster_map_layer(file_item, style_options):
     """Save a RasterMapLayer from a FileItem's contents."""
+    import large_image_converter
+
     new_map_layer = RasterMapLayer.objects.create(
         file_item=file_item,
         metadata={},
