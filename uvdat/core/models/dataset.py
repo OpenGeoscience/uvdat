@@ -84,8 +84,8 @@ class Dataset(models.Model):
         from uvdat.core.models import RasterMapLayer, VectorMapLayer
 
         if self.dataset_type == self.DatasetType.RASTER:
-            return RasterMapLayer.objects.filter(file_item__dataset=self)
+            return RasterMapLayer.objects.filter(dataset=self)
         if self.dataset_type == self.DatasetType.VECTOR:
-            return VectorMapLayer.objects.filter(file_item__dataset=self)
+            return VectorMapLayer.objects.filter(dataset=self)
 
         raise NotImplementedError(f'Dataset Type {self.dataset_type}')

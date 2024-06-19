@@ -58,8 +58,8 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_data, floo
 
     if (
         not network_dataset.get_network()
-        or elevation_data.file_item.dataset.category != 'elevation'
-        or flood_area.file_item.dataset.category != 'flood'
+        or elevation_data.dataset.category != 'elevation'
+        or flood_area.dataset.category != 'flood'
     ):
         result.error_message = 'Invalid dataset selected.'
         result.save()

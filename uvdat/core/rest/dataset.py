@@ -23,7 +23,7 @@ class DatasetViewSet(ModelViewSet):
     @action(detail=True, methods=['get'])
     def map_layers(self, request, **kwargs):
         dataset: Dataset = self.get_object()
-        map_layers = list(dataset.get_map_layers().select_related('file_item__dataset'))
+        map_layers = list(dataset.get_map_layers().select_related('dataset'))
 
         # Set serializer based on dataset type
         if dataset.dataset_type == Dataset.DatasetType.RASTER:

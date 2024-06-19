@@ -51,7 +51,7 @@ def create_raster_map_layer(file_item, style_options):
     import large_image_converter
 
     new_map_layer = RasterMapLayer.objects.create(
-        file_item=file_item,
+        dataset=file_item.dataset,
         metadata={},
         default_style=style_options,
         index=file_item.index,
@@ -124,7 +124,7 @@ def create_raster_map_layer(file_item, style_options):
 def create_vector_map_layer(file_item, style_options):
     """Save a VectorMapLayer from a FileItem's contents."""
     new_map_layer = VectorMapLayer.objects.create(
-        file_item=file_item,
+        dataset=file_item.dataset,
         metadata={},
         default_style=style_options,
         index=file_item.index,

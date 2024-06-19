@@ -69,12 +69,12 @@ AVAILABLE_SIMULATIONS = {
             {
                 'name': 'elevation_data',
                 'type': RasterMapLayer,
-                'options_query': {'file_item__dataset__category': 'elevation'},
+                'options_query': {'dataset__category': 'elevation'},
             },
             {
                 'name': 'flood_area',
                 'type': VectorMapLayer,
-                'options_query': {'file_item__dataset__category': 'flood'},
+                'options_query': {'dataset__category': 'flood'},
             },
         ],
     },

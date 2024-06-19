@@ -84,6 +84,7 @@ export interface NetworkEdge {
 
 export interface AbstractMapLayer {
   id: number;
+  name: string;
   file_item?: {
     id: number;
     name: string;
