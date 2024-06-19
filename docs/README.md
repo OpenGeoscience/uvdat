@@ -9,7 +9,6 @@
 > Developed by [Kitware Inc.][kitware-link] in collaboration with the [Sustainability and Data Sciences Lab at Northeastern University][sds-lab-link]
 
 ![](uvdat_screenshot.png)
-<!-- ![](uvdat_flow.jpg) -->
 
 > Sample use case examines the effect of coastal flooding on the availability of the Boston Transit system (MBTA). Sample data obtained from [MassMapper][mass-mapper-link], a public tool for open infrastructure data hosted by the state of Massachusetts.
 
