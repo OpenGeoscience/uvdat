@@ -28,6 +28,7 @@ def test_populate():
 
     call_command(
         'populate',
+        'boston_floods',
         include_large=True,
         dataset_indexes=dataset_indexes,
     )
