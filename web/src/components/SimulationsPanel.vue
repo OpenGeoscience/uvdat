@@ -96,7 +96,7 @@ export default {
                 | VectorMapLayer
                 | RasterMapLayer
                 | undefined;
-            } else if (selectedOption.file_item && selectedOption.type) {
+            } else if (selectedOption.index && selectedOption.type) {
               // Object is layer
               mapLayer = await getOrCreateLayerFromID(
                 selectedOption.id,

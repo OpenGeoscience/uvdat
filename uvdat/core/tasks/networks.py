@@ -77,12 +77,12 @@ def create_network(vector_map_layer, network_options):
 
             try:
                 from_node_obj = NetworkNode.objects.get(
-                    dataset=vector_map_layer.file_item.dataset,
+                    dataset=vector_map_layer.dataset,
                     name=current_node_name,
                 )
             except NetworkNode.DoesNotExist:
                 from_node_obj = NetworkNode.objects.create(
-                    dataset=vector_map_layer.file_item.dataset,
+                    dataset=vector_map_layer.dataset,
                     name=current_node_name,
                     location=Point(
                         current_node_coordinates.x,
@@ -106,12 +106,12 @@ def create_network(vector_map_layer, network_options):
 
                 try:
                     to_node_obj = NetworkNode.objects.get(
-                        dataset=vector_map_layer.file_item.dataset,
+                        dataset=vector_map_layer.dataset,
                         name=next_node_name,
                     )
                 except NetworkNode.DoesNotExist:
                     to_node_obj = NetworkNode.objects.create(
-                        dataset=vector_map_layer.file_item.dataset,
+                        dataset=vector_map_layer.dataset,
                         name=next_node_name,
                         location=Point(
                             next_node_coordinates.x,
@@ -139,7 +139,7 @@ def create_network(vector_map_layer, network_options):
 
                 try:
                     NetworkEdge.objects.get(
-                        dataset=vector_map_layer.file_item.dataset,
+                        dataset=vector_map_layer.dataset,
                         name=f'{current_node_name} - {next_node_name}',
                     )
                 except NetworkEdge.DoesNotExist:
@@ -153,7 +153,7 @@ def create_network(vector_map_layer, network_options):
                         )
                     )
                     NetworkEdge.objects.create(
-                        dataset=vector_map_layer.file_item.dataset,
+                        dataset=vector_map_layer.dataset,
                         name=f'{current_node_name} - {next_node_name}',
                         from_node=from_node_obj,
                         to_node=to_node_obj,
@@ -161,7 +161,7 @@ def create_network(vector_map_layer, network_options):
                         metadata=metadata,
                     )
     # rewrite vector_map_layer geojson_data with updated features
-    vector_map_layer.write_geojson_data(geojson_from_network(vector_map_layer.file_item.dataset))
+    vector_map_layer.write_geojson_data(geojson_from_network(vector_map_layer.dataset))
     vector_map_layer.metadata['network'] = True
     vector_map_layer.save()
 

@@ -43,14 +43,24 @@ class RasterMapLayerAdmin(admin.ModelAdmin):
     list_display = ['id', 'get_dataset_name', 'index']
 
     def get_dataset_name(self, obj):
-        return obj.file_item.dataset.name
+        return obj.dataset.name
 
 
 class VectorMapLayerAdmin(admin.ModelAdmin):
     list_display = ['id', 'get_dataset_name', 'index']
 
     def get_dataset_name(self, obj):
-        return obj.file_item.dataset.name
+        return obj.dataset.name
+
+
+class VectorFeatureAdmin(admin.ModelAdmin):
+    list_display = ['id', 'get_dataset_name', 'get_map_layer_index']
+
+    def get_dataset_name(self, obj):
+        return obj.map_layer.dataset.name
+
+    def get_map_layer_index(self, obj):
+        return obj.map_layer.index
 
 
 class VectorFeatureAdmin(admin.ModelAdmin):
