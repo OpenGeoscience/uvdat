@@ -10,13 +10,16 @@ import requests
 from uvdat.core.models import Chart, Context, Dataset, FileItem
 
 
+USE_CASE_FOLDER = Path('sample_data/use_cases')
+
+
 def ingest_file(file_info, index=0, dataset=None, chart=None):
     file_path = file_info.get('path')
     file_name = file_info.get('name', file_path.split('/')[-1])
     file_url = file_info.get('url')
     file_metadata = file_info.get('metadata', {})
 
-    file_location = Path('sample_data', file_path)
+    file_location = Path('sample_data/downloads', file_path)
     file_type = file_path.split('.')[-1]
     if not file_location.exists():
         print(f'\t Downloading data file {file_name}.')
@@ -46,9 +49,9 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
             new_file_item.file.save(file_path, ContentFile(f.read()))
 
 
-def ingest_contexts():
+def ingest_contexts(use_case):
     print('Creating Context objects...')
-    with open('sample_data/contexts.json') as contexts_json:
+    with open(str(USE_CASE_FOLDER / use_case / 'contexts.json')) as contexts_json:
         data = json.load(contexts_json)
         for context in data:
             print('\t- ', context['name'])
@@ -66,9 +69,9 @@ def ingest_contexts():
             context_for_setting.datasets.set(Dataset.objects.filter(name__in=context['datasets']))
 
 
-def ingest_charts():
+def ingest_charts(use_case):
     print('Creating Chart objects...')
-    with open('sample_data/charts.json') as charts_json:
+    with open(str(USE_CASE_FOLDER / use_case / 'charts.json')) as charts_json:
         data = json.load(charts_json)
         for chart in data:
             print('\t- ', chart['name'])
@@ -100,9 +103,9 @@ def ingest_charts():
             )
 
 
-def ingest_datasets(include_large=False, dataset_indexes=None):
+def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
     print('Creating Dataset objects...')
-    with open('sample_data/datasets.json') as datasets_json:
+    with open(str(USE_CASE_FOLDER / use_case / 'datasets.json')) as datasets_json:
         data = json.load(datasets_json)
         for index, dataset in enumerate(data):
             if dataset_indexes is None or index in dataset_indexes:
