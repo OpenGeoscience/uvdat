@@ -11,6 +11,7 @@ from uvdat.core.models import (
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
+    VectorFeature,
     VectorMapLayer,
 )
 
@@ -50,6 +51,10 @@ class VectorMapLayerAdmin(admin.ModelAdmin):
 
     def get_dataset_name(self, obj):
         return obj.file_item.dataset.name
+
+
+class VectorFeatureAdmin(admin.ModelAdmin):
+    list_display = ['id', 'map_layer']
 
 
 class SourceRegionAdmin(admin.ModelAdmin):
@@ -96,6 +101,7 @@ admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)
 admin.site.register(RasterMapLayer, RasterMapLayerAdmin)
 admin.site.register(VectorMapLayer, VectorMapLayerAdmin)
+admin.site.register(VectorFeature, VectorFeatureAdmin)
 admin.site.register(SourceRegion, SourceRegionAdmin)
 admin.site.register(DerivedRegion, DerivedRegionAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
