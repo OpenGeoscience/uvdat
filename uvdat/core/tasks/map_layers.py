@@ -145,9 +145,6 @@ def create_vector_map_layer(file_item, style_options):
     new_map_layer.write_geojson_data(geojson_data.to_json())
     new_map_layer.save()
 
-    # Extract vector features for use in vector tiles
-    save_vector_features(vector_map_layer=new_map_layer)
-
     return new_map_layer
 
 
