@@ -1,0 +1,19 @@
+[
+    {
+        "name": "NY Energy",
+        "default_map_center": [
+            43.5,
+            -75.5
+        ],
+        "default_map_zoom": 8,
+        "datasets": [
+            "National Grid Substations",
+            "National Grid DistAssetsOverview",
+            "National Grid Electrification_Data",
+            "National Grid EV_Load_Serving_Capacity",
+            "National Grid Hosting_Capacity_Data",
+            "National Grid LSRV",
+            "National Grid NY_SubT_SDP"
+        ]
+    }
+]
