@@ -1,0 +1,72 @@
+[
+    {
+        "name": "National Grid Substations",
+        "description": "Substation vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "Substations"
+        }
+    },
+    {
+        "name": "National Grid DistAssetsOverview",
+        "description": "DistAssetsOverview vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "DistAssetsOverview"
+        }
+    },
+    {
+        "name": "National Grid Electrification_Data",
+        "description": "Electrification_Data vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "Electrification_Data"
+        }
+    },
+    {
+        "name": "National Grid EV_Load_Serving_Capacity",
+        "description": "EV_Load_Serving_Capacity vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "EV_Load_Serving_Capacity"
+        }
+    },
+    {
+        "name": "National Grid Hosting_Capacity_Data",
+        "description": "Hosting_Capacity_Data vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "Hosting_Capacity_Data"
+        }
+    },
+    {
+        "name": "National Grid LSRV",
+        "description": "LSRV vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "LSRV"
+        }
+    },
+    {
+        "name": "National Grid NY_SubT_SDP",
+        "description": "NY_SubT_SDP vector data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_vector_features",
+        "kwargs": {
+            "service_name": "NY_SubT_SDP"
+        }
+    }
+]

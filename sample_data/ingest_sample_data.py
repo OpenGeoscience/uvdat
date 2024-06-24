@@ -1,4 +1,5 @@
 from datetime import datetime
+import importlib
 import json
 import os
 from pathlib import Path
@@ -146,12 +147,27 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
                 dataset_size_mb = dataset_for_conversion.get_size() >> 20
                 if include_large or dataset_size_mb < 50:
                     print('\t', f'Converting data for {dataset_for_conversion.name}...')
-                    dataset_for_conversion.spawn_conversion_task(
-                        style_options=dataset.get('style_options'),
-                        network_options=network_options,
-                        region_options=region_options,
-                        asynchronous=False,
-                    )
+                    if dataset.get('module') and dataset.get('function'):
+                        module_path = str(USE_CASE_FOLDER / use_case / dataset.get('module')).replace('/', '.')
+                        function_name = dataset.get('function')
+                        func_kwargs = dataset.get('kwargs', {})
+                        function = None
+                        try:
+                            module = importlib.import_module(module_path)
+                            function = getattr(module, function_name)
+                        except ImportError:
+                            print('\t', f'Failed to import module {module_path}.')
+                        except AttributeError:
+                            print('\t', f'Failed to import function {function_name} from {module_path}.')
+                        if function is not None:
+                            function(dataset_for_conversion, **func_kwargs)
+                    else:
+                        dataset_for_conversion.spawn_conversion_task(
+                            style_options=dataset.get('style_options'),
+                            network_options=network_options,
+                            region_options=region_options,
+                            asynchronous=False,
+                        )
                 else:
                     print(
                         '\t', f'Dataset too large ({dataset_size_mb} MB); skipping conversion step.'
