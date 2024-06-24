@@ -12,6 +12,7 @@ from uvdat.core.models import (
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
+    VectorFeature,
     VectorMapLayer,
 )
 
@@ -42,4 +43,4 @@ def test_populate():
     assert SimulationResult.objects.all().count() == 0
     assert SourceRegion.objects.all().count() == 24
     assert VectorMapLayer.objects.all().count() == 5
-    # TODO: Add vectorfeature assertion
+    assert VectorFeature.objects.count() == 351
