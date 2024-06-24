@@ -93,7 +93,6 @@ export interface AbstractMapLayer {
   };
   default_style?: object;
   index: number;
-  type: "vector" | "raster";
   dataset_id?: number;
   derived_region_id?: number;
 
@@ -107,10 +106,11 @@ export function isNonNullObject(obj: unknown): obj is object {
 
 export interface RasterMapLayer extends AbstractMapLayer {
   cloud_optimized_geotiff: string;
+  type: "raster";
 }
 
 export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
-  return isNonNullObject(obj) && "cloud_optimized_geotiff" in obj;
+  return isNonNullObject(obj) && "type" in obj && obj.type === "raster";
 }
 
 export interface RasterData {
@@ -123,8 +123,9 @@ export interface RasterData {
   data: number[][];
 }
 
-// Just define type alias for now, since VectorMapLayer no longer extends any properties
-export type VectorMapLayer = AbstractMapLayer;
+export interface VectorMapLayer extends AbstractMapLayer {
+  type: "vector";
+}
 
 export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
