@@ -9,10 +9,9 @@ import rasterio
 import shapefile
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.files.base import ContentFile
-from geojson2vt import geojson2vt, vt2geojson
 from webcolors import name_to_hex
 
-from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
+from uvdat.core.models import RasterMapLayer, VectorMapLayer
 from uvdat.core.models.map_layers import VectorFeature
 
 
@@ -188,26 +187,3 @@ def save_vector_features(vector_map_layer: VectorMapLayer):
     print('\t', f'{len(created)} vector features created.')
 
     return created
-
-
-def save_vector_tiles(vector_map_layer):
-    tile_index = geojson2vt.geojson2vt(
-        vector_map_layer.read_geojson_data(),
-        {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
-    )
-
-    created = 0
-    for coord in tile_index.tile_coords:
-        tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
-        features = tile.get('features')
-        if features and len(features) > 0:
-            VectorTile.objects.create(
-                map_layer=vector_map_layer,
-                geojson_data=vt2geojson.vt2geojson(tile),
-                x=coord['x'],
-                y=coord['y'],
-                z=coord['z'],
-            )
-            created += 1
-
-    print('\t', f'{created} vector tiles created.')

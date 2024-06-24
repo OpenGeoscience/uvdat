@@ -29,12 +29,8 @@ class DatasetViewSet(ModelViewSet):
         if dataset.dataset_type == Dataset.DatasetType.RASTER:
             serializer = uvdat_serializers.RasterMapLayerSerializer(map_layers, many=True)
         elif dataset.dataset_type == Dataset.DatasetType.VECTOR:
-            # Inject tile extents
-            for layer in map_layers:
-                layer.tile_extents = {}
-
             # Set serializer
-            serializer = uvdat_serializers.ExtendedVectorMapLayerSerializer(map_layers, many=True)
+            serializer = uvdat_serializers.VectorMapLayerSerializer(map_layers, many=True)
         else:
             raise NotImplementedError(f'Dataset Type {dataset.dataset_type}')
 

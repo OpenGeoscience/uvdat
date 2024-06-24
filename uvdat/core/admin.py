@@ -12,7 +12,6 @@ from uvdat.core.models import (
     SimulationResult,
     SourceRegion,
     VectorMapLayer,
-    VectorTile,
 )
 
 
@@ -51,16 +50,6 @@ class VectorMapLayerAdmin(admin.ModelAdmin):
 
     def get_dataset_name(self, obj):
         return obj.file_item.dataset.name
-
-
-class VectorTileAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_fileitem_name', 'get_map_layer_index', 'x', 'y', 'z']
-
-    def get_fileitem_name(self, obj):
-        return obj.map_layer.file_item.name
-
-    def get_map_layer_index(self, obj):
-        return obj.map_layer.index
 
 
 class SourceRegionAdmin(admin.ModelAdmin):
@@ -107,7 +96,6 @@ admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)
 admin.site.register(RasterMapLayer, RasterMapLayerAdmin)
 admin.site.register(VectorMapLayer, VectorMapLayerAdmin)
-admin.site.register(VectorTile, VectorTileAdmin)
 admin.site.register(SourceRegion, SourceRegionAdmin)
 admin.site.register(DerivedRegion, DerivedRegionAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)

@@ -1,5 +1,5 @@
-from django.core.management import call_command
 import pytest
+from django.core.management import call_command
 
 from uvdat.core.models import (
     Chart,
@@ -13,7 +13,6 @@ from uvdat.core.models import (
     SimulationResult,
     SourceRegion,
     VectorMapLayer,
-    VectorTile,
 )
 
 
@@ -43,4 +42,4 @@ def test_populate():
     assert SimulationResult.objects.all().count() == 0
     assert SourceRegion.objects.all().count() == 24
     assert VectorMapLayer.objects.all().count() == 5
-    assert VectorTile.objects.all().count() == 135
+    # TODO: Add vectorfeature assertion
