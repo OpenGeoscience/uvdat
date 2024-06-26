@@ -1,14 +1,14 @@
 import json
+from pathlib import Path
 import tempfile
 import zipfile
-from pathlib import Path
 
+from django.contrib.gis.geos import GEOSGeometry
+from django.core.files.base import ContentFile
 import geopandas
 import numpy
 import rasterio
 import shapefile
-from django.contrib.gis.geos import GEOSGeometry
-from django.core.files.base import ContentFile
 from webcolors import name_to_hex
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer

@@ -1,12 +1,12 @@
 import json
-import tempfile
 from pathlib import Path
+import tempfile
 
-import large_image
 from django.contrib.gis.db import models as geomodels
 from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+import large_image
 from s3_file_field import S3FileField
 
 from .file_item import FileItem
