@@ -9,8 +9,9 @@ from uvdat.core.models import (
     SourceRegion,
     VectorMapLayer,
 )
+from uvdat.core.tasks.map_layers import save_vector_features
 
-from .map_layers import create_raster_map_layer, create_vector_map_layer, save_vector_tiles
+from .map_layers import create_raster_map_layer, create_vector_map_layer
 from .networks import create_network
 from .regions import create_source_regions
 
@@ -58,7 +59,7 @@ def convert_dataset(
 
             # Create vector tiles after geojson_data may have
             # been altered by create_network or create_source_regions
-            save_vector_tiles(vector_map_layer)
+            save_vector_features(vector_map_layer=vector_map_layer)
 
     dataset.processing = False
     dataset.save()

@@ -3,15 +3,16 @@ from pathlib import Path
 import tempfile
 import zipfile
 
+from django.contrib.gis.geos import GEOSGeometry
 from django.core.files.base import ContentFile
-from geojson2vt import geojson2vt, vt2geojson
 import geopandas
 import numpy
 import rasterio
 import shapefile
 from webcolors import name_to_hex
 
-from uvdat.core.models import RasterMapLayer, VectorMapLayer, VectorTile
+from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.models.map_layers import VectorFeature
 
 
 def add_styling(geojson_data, style_options):
@@ -144,8 +145,6 @@ def create_vector_map_layer(file_item, style_options):
     new_map_layer.write_geojson_data(geojson_data.to_json())
     new_map_layer.save()
 
-    # save_vector_tiles(vector_map_layer=new_map_layer)
-
     return new_map_layer
 
 
@@ -170,24 +169,19 @@ def convert_zip_to_geojson(file_item):
         return geodata
 
 
-def save_vector_tiles(vector_map_layer):
-    tile_index = geojson2vt.geojson2vt(
-        vector_map_layer.read_geojson_data(),
-        {'indexMaxZoom': 12, 'maxZoom': 12, 'indexMaxPoints': 0},
-    )
-
-    created = 0
-    for coord in tile_index.tile_coords:
-        tile = tile_index.get_tile(coord['z'], coord['x'], coord['y'])
-        features = tile.get('features')
-        if features and len(features) > 0:
-            VectorTile.objects.create(
+def save_vector_features(vector_map_layer: VectorMapLayer):
+    features = vector_map_layer.read_geojson_data()['features']
+    vector_features = []
+    for feature in features:
+        vector_features.append(
+            VectorFeature(
                 map_layer=vector_map_layer,
-                geojson_data=vt2geojson.vt2geojson(tile),
-                x=coord['x'],
-                y=coord['y'],
-                z=coord['z'],
+                geometry=GEOSGeometry(json.dumps(feature['geometry'])),
+                properties=feature['properties'],
             )
-            created += 1
+        )
 
-    print('\t', f'{created} vector tiles created.')
+    created = VectorFeature.objects.bulk_create(vector_features)
+    print('\t', f'{len(created)} vector features created.')
+
+    return created

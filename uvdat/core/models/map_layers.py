@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 
+from django.contrib.gis.db import models as geomodels
 from django.core.files.base import ContentFile
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -58,41 +59,8 @@ class VectorMapLayer(AbstractMapLayer):
         """Read and load the data from geojson_file into a dict."""
         return json.load(self.geojson_file.open())
 
-    def get_tile_extents(self):
-        """Return a dict that maps z tile values to the x/y extent at that depth."""
-        return {
-            entry.pop('z'): entry
-            for entry in (
-                VectorTile.objects.filter(map_layer=self)
-                .values('z')
-                .annotate(
-                    min_x=models.Min('x'),
-                    min_y=models.Min('y'),
-                    max_x=models.Max('x'),
-                    max_y=models.Max('y'),
-                )
-                .order_by()
-            )
-        }
 
-
-class VectorTile(models.Model):
-    EMPTY_TILE_DATA = {
-        'type': 'FeatureCollection',
-        'features': [],
-    }
-
+class VectorFeature(models.Model):
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)
-    geojson_data = models.JSONField(blank=True, null=True)
-    x = models.IntegerField(default=0)
-    y = models.IntegerField(default=0)
-    z = models.IntegerField(default=0)
-
-    class Meta:
-        constraints = [
-            # Ensure that a full index only ever resolves to one record
-            models.UniqueConstraint(
-                name='unique-map-layer-index', fields=['map_layer', 'z', 'x', 'y']
-            )
-        ]
-        indexes = [models.Index(fields=('z', 'x', 'y'), name='vectortile-coordinates-index')]
+    geometry = geomodels.GeometryField()
+    properties = models.JSONField()

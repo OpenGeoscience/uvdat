@@ -8,7 +8,7 @@ from django.db import transaction
 import geopandas
 
 from uvdat.core.models import Context, DerivedRegion, SourceRegion, VectorMapLayer
-from uvdat.core.tasks.map_layers import save_vector_tiles
+from uvdat.core.tasks.map_layers import save_vector_features
 
 
 class DerivedRegionCreationError(Exception):
@@ -61,7 +61,7 @@ def create_derived_region(name: str, context: Context, region_ids: List[int], op
         )
         new_map_layer.write_geojson_data(geojson)
         new_map_layer.save()
-        save_vector_tiles(new_map_layer)
+        save_vector_features(new_map_layer)
 
         derived_region = DerivedRegion.objects.create(
             name=name,

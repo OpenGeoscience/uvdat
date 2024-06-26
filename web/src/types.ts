@@ -93,7 +93,6 @@ export interface AbstractMapLayer {
   };
   default_style?: object;
   index: number;
-  type: "vector" | "raster";
   dataset_id?: number;
   derived_region_id?: number;
 
@@ -107,10 +106,11 @@ export function isNonNullObject(obj: unknown): obj is object {
 
 export interface RasterMapLayer extends AbstractMapLayer {
   cloud_optimized_geotiff: string;
+  type: "raster";
 }
 
 export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
-  return isNonNullObject(obj) && "cloud_optimized_geotiff" in obj;
+  return isNonNullObject(obj) && "type" in obj && obj.type === "raster";
 }
 
 export interface RasterData {
@@ -124,18 +124,11 @@ export interface RasterData {
 }
 
 export interface VectorMapLayer extends AbstractMapLayer {
-  tile_extents: {
-    [z: number]: {
-      min_x: number;
-      min_y: number;
-      max_x: number;
-      max_y: number;
-    };
-  };
+  type: "vector";
 }
 
 export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
-  return isNonNullObject(obj) && "tile_extents" in obj;
+  return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
 }
 
 export interface VectorTile {

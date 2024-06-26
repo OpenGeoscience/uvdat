@@ -85,14 +85,6 @@ class RasterMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSeri
         fields = '__all__'
 
 
-class ExtendedVectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
-    tile_extents = serializers.JSONField()
-
-    class Meta:
-        model = VectorMapLayer
-        exclude = ['geojson_file']
-
-
 class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
     class Meta:
         model = VectorMapLayer
@@ -101,16 +93,12 @@ class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSeri
 
 class VectorMapLayerDetailSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
     derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
-    tile_extents = serializers.SerializerMethodField('get_tile_extents')
 
     def get_derived_region_id(self, obj):
         dr = obj.derivedregion_set.first()
         if dr is None:
             return None
         return dr.id
-
-    def get_tile_extents(self, obj: VectorMapLayer):
-        return obj.get_tile_extents()
 
     class Meta:
         model = VectorMapLayer

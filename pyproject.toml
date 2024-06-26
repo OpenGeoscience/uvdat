@@ -19,3 +19,7 @@ target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "single"
+
+[tool.ruff.lint.isort]
+force-sort-within-sections = true # Sort by name, don't cluster "from" vs "import"
+combine-as-imports = true # Combines "as" imports on the same line
