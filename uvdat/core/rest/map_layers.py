@@ -1,5 +1,6 @@
 import json
 
+from django.core.cache import cache
 from django.db import connection
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
@@ -106,6 +107,15 @@ class VectorMapLayerViewSet(ModelViewSet):
         url_name='tiles',
     )
     def get_vector_tile(self, request, x: str, y: str, z: str, pk: str):
+        cache_key = f'{pk}-{z}-{x}-{y}'
+        cached_tile: bytes | None = cache.get(cache_key)
+        if cached_tile is not None:
+            return HttpResponse(
+                cached_tile,
+                content_type='application/octet-stream',
+                status=200 if cached_tile else 204,
+            )
+
         with connection.cursor() as cursor:
             cursor.execute(
                 VECTOR_TILE_SQL,
@@ -119,7 +129,8 @@ class VectorMapLayerViewSet(ModelViewSet):
             )
             row = cursor.fetchone()
 
-        tile = row[0]
+        tile: memoryview = row[0]
+        cache.set(cache_key, tile.tobytes(), timeout=600)
         return HttpResponse(
             tile,
             content_type='application/octet-stream',
