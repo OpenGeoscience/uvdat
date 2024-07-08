@@ -1,22 +1,12 @@
 [
     {
-        "name": "National Grid Substations",
-        "description": "Substation vector data",
+        "name": "National Grid CompanyBoundary",
+        "description": "CompanyBoundary vector data",
         "category": "energy",
         "module": "nysdp",
         "function": "create_vector_features",
         "kwargs": {
-            "service_name": "Substations"
-        }
-    },
-    {
-        "name": "National Grid DistAssetsOverview",
-        "description": "DistAssetsOverview vector data",
-        "category": "energy",
-        "module": "nysdp",
-        "function": "create_vector_features",
-        "kwargs": {
-            "service_name": "DistAssetsOverview"
+            "service_name": "CompanyBoundary"
         }
     },
     {
@@ -68,5 +58,12 @@
         "kwargs": {
             "service_name": "NY_SubT_SDP"
         }
+    },
+    {
+        "name": "National Grid Network",
+        "description": "Consolidated network from several services' combined data",
+        "category": "energy",
+        "module": "nysdp",
+        "function": "create_consolidated_network"
     }
 ]

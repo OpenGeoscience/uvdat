@@ -7,6 +7,8 @@
         ],
         "default_map_zoom": 8,
         "datasets": [
+            "National Grid CompanyBoundary",
+            "National Grid Network",
             "National Grid Substations",
             "National Grid DistAssetsOverview",
             "National Grid Electrification_Data",
