@@ -4,7 +4,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Context
 from uvdat.core.rest.serializers import ContextSerializer
-from uvdat.core.tasks.context import load_roads
+from uvdat.core.tasks.osmnx import load_roads
 
 
 class ContextViewSet(ModelViewSet):

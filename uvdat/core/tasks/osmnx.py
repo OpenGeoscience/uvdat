@@ -1,12 +1,12 @@
 import json
+import osmnx
 
 from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
 from django.core.files.base import ContentFile
-import osmnx
 
 from uvdat.core.models import Context, Dataset, FileItem, NetworkEdge, NetworkNode, VectorMapLayer
-from uvdat.core.tasks.map_layers import save_vector_tiles
+from uvdat.core.tasks.map_layers import save_vector_features
 from uvdat.core.tasks.networks import geojson_from_network
 
 
@@ -51,6 +51,7 @@ def load_roads(context_id, location):
         end = edge_geom[-1]
         edge_name = edge_data['name']
         if str(edge_name) == 'nan' or len(str(edge_name)) < 2:
+            # If name is invalid, write new name string
             edge_name = 'Unnamed Road at {:0.4f}/{:0.4f}'.format(
                 *edge_geom[int(len(edge_geom) / 2)]
             )
@@ -96,5 +97,5 @@ def load_roads(context_id, location):
         file_item=file_item, metadata={'network': True}
     )
     vector_map_layer.write_geojson_data(geojson)
-    save_vector_tiles(vector_map_layer)
+    save_vector_features(vector_map_layer)
     print('Done.')
