@@ -3,7 +3,7 @@ import geopandas
 import requests
 
 from django.contrib.gis.geos import GEOSGeometry
-from uvdat.core.models import VectorMapLayer, VectorFeature
+from uvdat.core.models import Dataset, VectorMapLayer, VectorFeature
 
 
 NYDSP_URL = 'https://systemdataportal.nationalgrid.com/arcgis/rest/services/NYSDP'
@@ -53,3 +53,55 @@ def create_vector_features(dataset, service_name=None):
                 )
             )
     VectorFeature.objects.bulk_create(vector_features)
+
+
+def create_consolidated_network(dataset):
+    VectorMapLayer.objects.filter(dataset=dataset).delete()
+    map_layer = VectorMapLayer.objects.create(dataset=dataset, index=0)
+    include_services = [
+        "Substations",
+        "DistAssetsOverview",
+        "Electrification_Data",
+        "EV_Load_Serving_Capacity",
+        "Hosting_Capacity_Data",
+        "LSRV",
+        "NY_SubT_SDP"
+    ]
+
+    features = []
+    for service_name in include_services:
+        try:
+            dataset = Dataset.objects.get(name=f'National Grid {service_name}')
+            print('\t', f'Using saved vector features for {service_name}...')
+            features += [
+                dict(
+                    type='Feature',
+                    geometry=json.loads(feature.geometry.json),
+                    properties=feature.properties
+                )
+                for feature in VectorFeature.objects.filter(map_layer__dataset=dataset)
+            ]
+        except Dataset.DoesNotExist:
+            print('\t', f'Querying {service_name}...')
+            feature_sets = fetch_vector_features(service_name=service_name)
+            for layer_id, feature_set in feature_sets.items():
+                features += feature_set
+    print('\t', len(features), 'features found. Combining like geometries...')
+
+    # Use geopandas to merge properties of duplicate features
+    gdf = geopandas.GeoDataFrame.from_features(features)
+    gdf["geometry"] = gdf.normalize()
+
+    grouped = gdf.groupby(gdf['geometry'].to_wkt()).first()
+    intersects = grouped.sjoin(grouped, how='left', predicate='intersects')
+    print('\t', len(grouped), 'consolidated features found. Saving to database...')
+
+    geojson = json.loads(grouped.to_json())
+    VectorFeature.objects.bulk_create([
+        VectorFeature(
+            map_layer=map_layer,
+            geometry=GEOSGeometry(json.dumps(feature['geometry'])),
+            properties=feature['properties'],
+        )
+        for feature in geojson.get('features')
+    ])
