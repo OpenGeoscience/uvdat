@@ -9,6 +9,7 @@ from uvdat.core.models import (
     Dataset,
     DerivedRegion,
     FileItem,
+    Network,
     NetworkEdge,
     NetworkNode,
     RasterMapLayer,
@@ -171,6 +172,17 @@ class DerivedRegionCreationSerializer(serializers.ModelSerializer):
 
     regions = serializers.ListField(child=serializers.IntegerField())
     operation = serializers.ChoiceField(choices=DerivedRegion.VectorOperation.choices)
+
+
+class NetworkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Network
+        fields = '__all__'
+
+    name = serializers.SerializerMethodField('get_name')
+
+    def get_name(self, obj):
+        return obj.dataset.name
 
 
 class NetworkNodeSerializer(serializers.ModelSerializer):

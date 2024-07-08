@@ -6,11 +6,6 @@ class Dataset(models.Model):
         VECTOR = 'VECTOR', 'Vector'
         RASTER = 'RASTER', 'Raster'
 
-    class Classification(models.TextChoices):
-        NETWORK = 'Network'
-        REGION = 'Region'
-        OTHER = 'Other'
-
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
@@ -19,9 +14,6 @@ class Dataset(models.Model):
     dataset_type = models.CharField(
         max_length=max(len(choice[0]) for choice in DatasetType.choices),
         choices=DatasetType.choices,
-    )
-    classification = models.CharField(
-        max_length=16, choices=Classification.choices, default=Classification.OTHER
     )
 
     def is_in_context(self, context_id):
@@ -57,27 +49,6 @@ class Dataset(models.Model):
         from uvdat.core.models import SourceRegion
 
         return SourceRegion.objects.filter(dataset=self)
-
-    def get_network(self):
-        from uvdat.core.models import NetworkEdge, NetworkNode
-
-        network = {
-            'nodes': NetworkNode.objects.filter(dataset=self),
-            'edges': NetworkEdge.objects.filter(dataset=self),
-        }
-        if len(network.get('nodes')) == 0 and len(network.get('edges')) == 0:
-            return None
-        return network
-
-    def get_network_graph(self):
-        from uvdat.core.tasks.networks import get_dataset_network_graph
-
-        return get_dataset_network_graph(self)
-
-    def get_network_gcc(self, exclude_nodes):
-        from uvdat.core.tasks.networks import get_dataset_network_gcc
-
-        return get_dataset_network_gcc(self, exclude_nodes)
 
     def get_map_layers(self):
         """Return a queryset of either RasterMapLayer, or VectorMapLayer."""

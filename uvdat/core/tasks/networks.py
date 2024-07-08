@@ -6,7 +6,7 @@ import networkx as nx
 import numpy
 import shapely
 
-from uvdat.core.models import NetworkEdge, NetworkNode
+from uvdat.core.models import Network, NetworkEdge, NetworkNode
 
 NODE_RECOVERY_MODES = [
     'random',
@@ -21,6 +21,13 @@ NODE_RECOVERY_MODES = [
 
 
 def create_network(vector_map_layer, network_options):
+    # Overwrite previous results
+    dataset = vector_map_layer.dataset
+    Network.objects.filter(dataset=dataset).delete()
+    network = Network.objects.create(
+        dataset=dataset, category=dataset.category, metadata={'source': 'Parsed from GeoJSON.'}
+    )
+
     connection_column = network_options.get('connection_column')
     connection_column_delimiter = network_options.get('connection_column_delimiter')
     node_id_column = network_options.get('node_id_column')
@@ -77,12 +84,12 @@ def create_network(vector_map_layer, network_options):
 
             try:
                 from_node_obj = NetworkNode.objects.get(
-                    dataset=vector_map_layer.dataset,
+                    network=network,
                     name=current_node_name,
                 )
             except NetworkNode.DoesNotExist:
                 from_node_obj = NetworkNode.objects.create(
-                    dataset=vector_map_layer.dataset,
+                    network=network,
                     name=current_node_name,
                     location=Point(
                         current_node_coordinates.x,
@@ -106,12 +113,12 @@ def create_network(vector_map_layer, network_options):
 
                 try:
                     to_node_obj = NetworkNode.objects.get(
-                        dataset=vector_map_layer.dataset,
+                        network=network,
                         name=next_node_name,
                     )
                 except NetworkNode.DoesNotExist:
                     to_node_obj = NetworkNode.objects.create(
-                        dataset=vector_map_layer.dataset,
+                        network=network,
                         name=next_node_name,
                         location=Point(
                             next_node_coordinates.x,
@@ -139,7 +146,7 @@ def create_network(vector_map_layer, network_options):
 
                 try:
                     NetworkEdge.objects.get(
-                        dataset=vector_map_layer.dataset,
+                        network=network,
                         name=f'{current_node_name} - {next_node_name}',
                     )
                 except NetworkEdge.DoesNotExist:
@@ -153,7 +160,7 @@ def create_network(vector_map_layer, network_options):
                         )
                     )
                     NetworkEdge.objects.create(
-                        dataset=vector_map_layer.dataset,
+                        network=network,
                         name=f'{current_node_name} - {next_node_name}',
                         from_node=from_node_obj,
                         to_node=to_node_obj,
@@ -170,7 +177,7 @@ def geojson_from_network(dataset):
     total_nodes = 0
     total_edges = 0
     new_feature_set = []
-    for n in NetworkNode.objects.filter(dataset=dataset):
+    for n in NetworkNode.objects.filter(network__dataset=dataset):
         node_as_feature = {
             'id': n.id,
             'type': 'Feature',
@@ -183,7 +190,7 @@ def geojson_from_network(dataset):
         new_feature_set.append(node_as_feature)
         total_nodes += 1
 
-    for e in NetworkEdge.objects.filter(dataset=dataset):
+    for e in NetworkEdge.objects.filter(network__dataset=dataset):
         edge_as_feature = {
             'id': e.id,
             'type': 'Feature',
@@ -206,11 +213,19 @@ def geojson_from_network(dataset):
     return new_geodata.to_json()
 
 
-def get_dataset_network_graph(dataset):
-    db_representation = dataset.get_network()
+def get_network_graph(network):
+    from uvdat.core.models import NetworkEdge, NetworkNode
+
+    network = {
+        'nodes': NetworkNode.objects.filter(network=network),
+        'edges': NetworkEdge.objects.filter(network=network),
+    }
+    if len(network.get('nodes')) == 0 and len(network.get('edges')) == 0:
+        return None
+
     # Construct adj list
     edge_list: dict[int, list[int]] = {}
-    for e in db_representation.get('edges'):
+    for e in network.get('edges'):
         if e.from_node.id not in edge_list:
             edge_list[e.from_node.id] = []
         edge_list[e.from_node.id].append(e.to_node.id)
@@ -218,16 +233,6 @@ def get_dataset_network_graph(dataset):
         edge_list[edge_id].sort()
     graph_representation = nx.from_dict_of_lists(edge_list)
     return graph_representation
-
-
-def get_dataset_network_gcc(dataset, exclude_nodes: list[int]) -> list[int]:
-    # Create graph, remove nodes, get GCC
-    graph = dataset.get_network_graph()
-    graph.remove_nodes_from(exclude_nodes)
-    gcc = max(nx.connected_components(graph), key=len)
-
-    # Return GCC's list of nodes
-    return list(gcc)
 
 
 # Authored by Jack Watson

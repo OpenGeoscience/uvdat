@@ -155,7 +155,7 @@ export default {
     watch(activeResult, () => {
       if (activeResult.value) {
         populateActiveResultInputs();
-        if (!activeResult.value.output_data) {
+        if (!outputPoll.value && !activeResult.value.output_data) {
           outputPoll.value = setInterval(pollForActiveResultOutput, 3000);
         }
       }
