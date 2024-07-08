@@ -1,9 +1,9 @@
 import json
-import osmnx
 
 from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
 from django.core.files.base import ContentFile
+import osmnx
 
 from uvdat.core.models import Context, Dataset, FileItem, NetworkEdge, NetworkNode, VectorMapLayer
 from uvdat.core.tasks.map_layers import save_vector_features
