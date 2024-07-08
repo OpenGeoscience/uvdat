@@ -32,11 +32,6 @@
                 "path": "boston/commuter_rail.zip"
             }
         ],
-        "network_options": {
-            "connection_column": "LINE_BRNCH",
-            "connection_column_delimiter": "/",
-            "node_id_column": "STATION"
-        },
         "style_options": {
             "color_property": "gray",
             "outline": "black"

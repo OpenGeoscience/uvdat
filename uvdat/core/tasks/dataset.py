@@ -27,10 +27,6 @@ def convert_dataset(
     dataset.processing = True
     dataset.save()
 
-    # Determine network/region classificaton
-    network = dataset.classification == Dataset.Classification.NETWORK
-    region = dataset.classification == Dataset.Classification.REGION
-
     if dataset.dataset_type == dataset.DatasetType.RASTER:
         RasterMapLayer.objects.filter(dataset=dataset).delete()
         for file_to_convert in FileItem.objects.filter(dataset=dataset):
@@ -41,18 +37,14 @@ def convert_dataset(
 
     elif dataset.dataset_type == dataset.DatasetType.VECTOR:
         VectorMapLayer.objects.filter(dataset=dataset).delete()
-        if network:
-            NetworkNode.objects.filter(dataset=dataset).delete()
-            NetworkEdge.objects.filter(dataset=dataset).delete()
-        elif region:
-            SourceRegion.objects.filter(dataset=dataset).delete()
+        SourceRegion.objects.filter(dataset=dataset).delete()
 
         for file_to_convert in FileItem.objects.filter(dataset=dataset):
             vector_map_layer = create_vector_map_layer(
                 file_to_convert,
                 style_options=style_options,
             )
-            if network:
+            if network_options:
                 create_network(vector_map_layer, network_options)
             elif region_options:
                 create_source_regions(vector_map_layer, region_options)

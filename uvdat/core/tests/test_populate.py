@@ -7,6 +7,7 @@ from uvdat.core.models import (
     Dataset,
     DerivedRegion,
     FileItem,
+    Network,
     NetworkEdge,
     NetworkNode,
     RasterMapLayer,
@@ -33,10 +34,11 @@ def test_populate():
     )
 
     assert Chart.objects.all().count() == 1
-    assert Context.objects.all().count() == 3
+    assert Context.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
     assert DerivedRegion.objects.all().count() == 0
     assert FileItem.objects.all().count() == 7
+    assert Network.objects.all().count() == 1
     assert NetworkEdge.objects.all().count() == 164
     assert NetworkNode.objects.all().count() == 158
     assert RasterMapLayer.objects.all().count() == 1

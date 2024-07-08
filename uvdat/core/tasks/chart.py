@@ -45,6 +45,9 @@ def convert_chart(chart_id, conversion_options):
 
 def get_gcc_chart(dataset, context_id):
     chart_name = f'{dataset.name} Greatest Connected Component Sizes'
+    max_nodes = 0
+    for network in dataset.networks.all():
+        max_nodes += network.nodes.count()
     try:
         return Chart.objects.get(name=chart_name)
     except Chart.DoesNotExist:
@@ -63,7 +66,7 @@ def get_gcc_chart(dataset, context_id):
                 'chart_title': 'Size of Greatest Connected Component over Period',
                 'x_title': 'Step when Excluded Nodes Changed',
                 'y_title': 'Number of Nodes',
-                'y_range': [0, dataset.network_nodes.count()],
+                'y_range': [0, max_nodes],
             },
         )
         print('\t', f'Chart {chart.name} created.')

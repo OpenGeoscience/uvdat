@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from uvdat.core.models import Dataset
+from uvdat.core.models import Dataset, NetworkEdge, NetworkNode
 from uvdat.core.rest import serializers as uvdat_serializers
 from uvdat.core.tasks.chart import add_gcc_chart_datum
 
@@ -46,17 +46,16 @@ class DatasetViewSet(ModelViewSet):
     @action(detail=True, methods=['get'])
     def network(self, request, **kwargs):
         dataset = self.get_object()
-        network = dataset.get_network()
         return HttpResponse(
             json.dumps(
                 {
                     'nodes': [
                         uvdat_serializers.NetworkNodeSerializer(n).data
-                        for n in network.get('nodes')
+                        for n in NetworkNode.objects.filter(network__dataset=dataset)
                     ],
                     'edges': [
                         uvdat_serializers.NetworkEdgeSerializer(e).data
-                        for e in network.get('edges')
+                        for e in NetworkEdge.objects.filter(network__dataset=dataset)
                     ],
                 }
             ),
@@ -70,10 +69,19 @@ class DatasetViewSet(ModelViewSet):
         exclude_nodes = request.query_params.get('exclude_nodes', [])
         exclude_nodes = exclude_nodes.split(',')
         exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
-        excluded_node_names = [
-            n.name for n in dataset.get_network().get('nodes') if n.id in exclude_nodes
-        ]
 
-        gcc = dataset.get_network_gcc(exclude_nodes)
-        add_gcc_chart_datum(dataset, context_id, excluded_node_names, len(gcc))
-        return HttpResponse(json.dumps(gcc), status=200)
+        # TODO: improve this for datasets with multiple networks;
+        # this currently returns the gcc for the network with the most excluded nodes
+        results = []
+        for network in dataset.networks.all():
+            excluded_node_names = [
+                n.name for n in network.nodes.all() if n.id in exclude_nodes
+            ]
+            gcc = network.get_gcc(exclude_nodes)
+            results.append(dict(excluded=excluded_node_names, gcc=gcc))
+        if len(results):
+            results.sort(key=lambda r: len(r.get('excluded')), reverse=True)
+            gcc = results[0].get('gcc')
+            excluded = results[0].get('excluded')
+            add_gcc_chart_datum(dataset, context_id, excluded, len(gcc))
+            return HttpResponse(json.dumps(gcc), status=200)

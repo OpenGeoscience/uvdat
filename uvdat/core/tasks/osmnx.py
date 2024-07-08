@@ -5,7 +5,7 @@ from django.contrib.gis.geos import LineString, Point
 from django.core.files.base import ContentFile
 import osmnx
 
-from uvdat.core.models import Context, Dataset, FileItem, NetworkEdge, NetworkNode, VectorMapLayer
+from uvdat.core.models import Context, Dataset, Network, NetworkEdge, NetworkNode, VectorMapLayer
 from uvdat.core.tasks.map_layers import save_vector_features
 from uvdat.core.tasks.networks import geojson_from_network
 
@@ -21,9 +21,7 @@ def get_or_create_road_dataset(context, location):
         context.datasets.add(dataset)
 
     print('Clearing previous results...')
-    FileItem.objects.filter(dataset=dataset).delete()
-    NetworkNode.objects.filter(dataset=dataset).delete()
-    NetworkEdge.objects.filter(dataset=dataset).delete()
+    Network.objects.filter(dataset=dataset).delete()
     return dataset
 
 
@@ -39,6 +37,9 @@ def metadata_for_row(row):
 def load_roads(context_id, location):
     context = Context.objects.get(id=context_id)
     dataset = get_or_create_road_dataset(context, location)
+    network = Network.objects.create(
+        dataset=dataset, category="roads", metadata={'source': 'Fetched with OSMnx.'}
+    )
 
     print(f'Fetching road data for {location}...')
     roads = osmnx.graph_from_place(location, network_type='drive')
@@ -64,21 +65,21 @@ def load_roads(context_id, location):
         ].iloc[0]
 
         start_node, created = NetworkNode.objects.get_or_create(
-            dataset=dataset,
+            network=network,
             name='{:0.5f}/{:0.5f}'.format(*start),
             location=Point(*start),
         )
         start_node.metadata = metadata_for_row(start_node_data)
         start_node.save()
         end_node, created = NetworkNode.objects.get_or_create(
-            dataset=dataset,
+            network=network,
             name='{:0.5f}/{:0.5f}'.format(*end),
             location=Point(*end),
         )
         end_node.metadata = metadata_for_row(end_node_data)
         end_node.save()
         edge, created = NetworkEdge.objects.get_or_create(
-            dataset=dataset,
+            network=network,
             name=edge_name,
             directed=edge_data['oneway'],
             from_node=start_node,
@@ -88,14 +89,11 @@ def load_roads(context_id, location):
         edge.metadata = metadata_for_row(edge_data)
         edge.save()
 
-    geojson = geojson_from_network(dataset)
-    file_item = FileItem.objects.create(
-        name=f'{location} Roads', dataset=dataset, file_type='geojson'
-    )
-    file_item.file.save('roads.geojson', ContentFile(json.dumps(geojson).encode()))
     vector_map_layer = VectorMapLayer.objects.create(
-        file_item=file_item, metadata={'network': True}
+        dataset=dataset,
+        metadata=dict(network=True),
+        index=0,
     )
-    vector_map_layer.write_geojson_data(geojson)
+    vector_map_layer.write_geojson_data(geojson_from_network(dataset))
     save_vector_features(vector_map_layer)
     print('Done.')

@@ -105,23 +105,12 @@ def ingest_datasets(include_large=False, dataset_indexes=None):
     with open('sample_data/datasets.json') as datasets_json:
         data = json.load(datasets_json)
         for index, dataset in enumerate(data):
-            # Grab fields specific to dataset classification
-            network_options = dataset.get('network_options')
-            region_options = dataset.get('region_options')
-
             if dataset_indexes is None or index in dataset_indexes:
                 print('\t- ', dataset['name'])
                 existing = Dataset.objects.filter(name=dataset['name'])
                 if existing.count():
                     dataset_for_conversion = existing.first()
                 else:
-                    # Determine classification
-                    classification = Dataset.Classification.OTHER
-                    if network_options:
-                        classification = Dataset.Classification.NETWORK
-                    elif region_options:
-                        classification = Dataset.Classification.REGION
-
                     # Create dataset
                     new_dataset = Dataset.objects.create(
                         name=dataset['name'],
@@ -129,7 +118,6 @@ def ingest_datasets(include_large=False, dataset_indexes=None):
                         category=dataset['category'],
                         dataset_type=dataset.get('type', 'vector').upper(),
                         metadata=dataset.get('metadata', {}),
-                        classification=classification,
                     )
                     print('\t', f'Dataset {new_dataset.name} created.')
                     for index, file_info in enumerate(dataset.get('files', [])):
