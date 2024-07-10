@@ -22,6 +22,7 @@ import {
 import { Dataset, DerivedRegion, RasterData, VectorMapLayer } from "./types";
 import { Ref } from "vue";
 import { isMapLayerVisible, styleVectorOpenLayer } from "./layers";
+import { parseLiteralStyle } from "ol/webgl/styleparser";
 
 export const rasterColormaps = [
   "terrain",
@@ -107,55 +108,65 @@ export function randomColor() {
 }
 
 export function createStyle(args: {
-  colors: string | undefined;
+  strokeColor: string;
+  fillColor: string;
   type: string | undefined;
 }) {
-  let colors = ["#00000022"];
-  if (args.colors) {
-    colors = args.colors.split(",");
+  // return parseLiteralStyle({
+  //   'fill-color': ['get', 'fillColor'],
+  //   'stroke-color': args.strokeColor,
+  //   'stroke-width': 5,
+  //   'circle-radius': 4,
+  //   'circle-fill-color': args.colors,
+  // });
+
+  if (args.type?.includes("Polygon")) {
+    return {
+      builder: parseLiteralStyle({
+        'fill-color': args.fillColor.length > 7 ? args.fillColor : args.fillColor + "bb",
+        'stroke-color': args.strokeColor,
+        'stroke-width': 5,
+        // 'circle-radius': 4,
+        // 'circle-fill-color': args.colors,
+      }).builder
+    };
   }
-  if (!args.type) {
-    return new Style();
-  }
-  if (args.type.includes("Polygon")) {
-    let stroke = undefined;
-    if (colors.length > 1) {
-      stroke = new Stroke({
-        color: colors[1],
-        width: 5,
+
+
+  return {
+    builder: parseLiteralStyle({
+      'fill-color': args.fillColor.length > 7 ? args.fillColor : args.fillColor + "bb",
+      'stroke-color': args.strokeColor,
+      'stroke-width': 5,
+      'circle-radius': 4,
+      'circle-fill-color': args.fillColor,
+    }).builder,
+  };
+
+  return colors.map((colorHex, index) => {
+    const styleSpec: {
+      zIndex: number;
+      image?: ImageStyle;
+      stroke?: Stroke;
+    } = {
+      zIndex: colors.length - index,
+    };
+    if (args.type?.includes("Point")) {
+      styleSpec.image = new Circle({
+        radius: 5 + 2 * index,
+        fill: new Fill({
+          color: colorHex,
+        }),
+      });
+    } else if (args.type?.includes("Line")) {
+      styleSpec.stroke = new Stroke({
+        color: colorHex,
+        width: 3 + 2 * index,
       });
     }
-    return new Style({
-      fill: new Fill({
-        color: colors[0].length > 7 ? colors[0] : colors[0] + "bb",
-      }),
-      stroke,
-    });
-  } else {
-    return colors.map((colorHex, index) => {
-      const styleSpec: {
-        zIndex: number;
-        image?: ImageStyle;
-        stroke?: Stroke;
-      } = {
-        zIndex: colors.length - index,
-      };
-      if (args.type?.includes("Point")) {
-        styleSpec.image = new Circle({
-          radius: 5 + 2 * index,
-          fill: new Fill({
-            color: colorHex,
-          }),
-        });
-      } else if (args.type?.includes("Line")) {
-        styleSpec.stroke = new Stroke({
-          color: colorHex,
-          width: 3 + 2 * index,
-        });
-      }
-      return new Style(styleSpec);
-    });
-  }
+    return new Style(styleSpec);
+  });
+}
 }
 
 export function deactivatedNodesUpdated() {

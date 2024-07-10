@@ -2,8 +2,10 @@ import MVT from "ol/format/MVT";
 import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
+import type { Options } from "ol/layer/VectorTile";
 import VectorTileSource from "ol/source/VectorTile";
 import { Feature } from "ol";
+import type { FeatureLike } from "ol/Feature";
 
 import { ref } from "vue";
 import {
@@ -39,7 +41,7 @@ import View from 'ol/View.js';
 import WebGLVectorTileLayerRenderer from 'ol/renderer/webgl/VectorTileLayer.js';
 import { Fill, Icon, Stroke, Style, Text } from 'ol/style.js';
 import { asArray } from 'ol/color.js';
-import { packColor, parseLiteralStyle } from 'ol/webgl/styleparser.js';
+import { StyleParseResult, packColor, parseLiteralStyle } from 'ol/webgl/styleparser.js';
 
 
 const result = parseLiteralStyle({
@@ -47,19 +49,26 @@ const result = parseLiteralStyle({
   'stroke-color': ['get', 'strokeColor'],
   'stroke-width': ['get', 'strokeWidth'],
   'circle-radius': 4,
-  'circle-fill-color': '#777',
+  // 'circle-fill-color': '#777',
+  'circle-fill-color': ['get', 'fillColor'],
 });
 
 // Define custom class to use WebGL renderer with vector tile layer
 class WebGLVectorTileLayer extends VectorTile {
+  constructor(options: Options<FeatureLike>) {
+    super(options);
+  }
+
   createRenderer() {
     return new WebGLVectorTileLayerRenderer(this, {
+      disableHitDetection: false,
       style: {
         builder: result.builder,
         attributes: {
           fillColor: {
             size: 2,
             callback: (feature) => {
+              return packColor('#05acfa');
               const style = this.getStyle()(feature, 1)[0];
               const color = asArray(style?.getFill()?.getColor() || '#eee');
               return packColor(color);
@@ -68,6 +77,7 @@ class WebGLVectorTileLayer extends VectorTile {
           strokeColor: {
             size: 2,
             callback: (feature) => {
+              return packColor('#05acfa');
               const style = this.getStyle()(feature, 1)[0];
               const color = asArray(style?.getStroke()?.getColor() || '#eee');
               return packColor(color);
@@ -76,6 +86,7 @@ class WebGLVectorTileLayer extends VectorTile {
           strokeWidth: {
             size: 1,
             callback: (feature) => {
+              return 4;
               const style = this.getStyle()(feature, 1)[0];
               return style?.getStroke()?.getWidth() || 0;
             },
@@ -89,7 +100,7 @@ class WebGLVectorTileLayer extends VectorTile {
 const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
 export function createOpenLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
-  let openLayer: VectorTileLayer | TileLayer<XYZSource>;
+  let openLayer: WebGLVectorTileLayer | TileLayer<XYZSource>;
 
   if (isVectorMapLayer(mapLayer)) {
     openLayer = createVectorOpenLayer(mapLayer);
@@ -148,10 +159,11 @@ export function createVectorOpenLayer(mapLayer: VectorMapLayer) {
       id: mapLayer.id,
       type: mapLayer.type,
     },
-    style: (feature) =>
+    style: (feature: Feature) =>
       createStyle({
         type: feature.getGeometry()?.getType(),
-        colors: feature.getProperties().colors || defaultColors,
+        strokeColor: feature.getProperties().colors || defaultColors,
+        fillColor: feature.getProperties().colors || defaultColors,
       }),
     source: new VectorTileSource({
       format: new MVT(),

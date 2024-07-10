@@ -40,6 +40,8 @@ export default {
         layer,
       ]) as [Feature, Layer] | undefined;
 
+      // getMap().forEachFeatureAtPixel(e.pixel, (f, l) => {console.log('----', f, l)});
+
       // If nothing clicked, reset values and return
       if (!res) {
         showMapTooltip.value = false;
