@@ -3,7 +3,6 @@ import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
 import VectorTileSource from "ol/source/VectorTile";
-import { Circle, Stroke, Style } from "ol/style";
 import { Feature } from "ol";
 
 import { ref } from "vue";
@@ -32,6 +31,60 @@ import {
   selectedDerivedRegions,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
+
+
+import Map from 'ol/Map.js';
+import VectorTile from 'ol/layer/VectorTile.js';
+import View from 'ol/View.js';
+import WebGLVectorTileLayerRenderer from 'ol/renderer/webgl/VectorTileLayer.js';
+import { Fill, Icon, Stroke, Style, Text } from 'ol/style.js';
+import { asArray } from 'ol/color.js';
+import { packColor, parseLiteralStyle } from 'ol/webgl/styleparser.js';
+
+
+const result = parseLiteralStyle({
+  'fill-color': ['get', 'fillColor'],
+  'stroke-color': ['get', 'strokeColor'],
+  'stroke-width': ['get', 'strokeWidth'],
+  'circle-radius': 4,
+  'circle-fill-color': '#777',
+});
+
+// Define custom class to use WebGL renderer with vector tile layer
+class WebGLVectorTileLayer extends VectorTile {
+  createRenderer() {
+    return new WebGLVectorTileLayerRenderer(this, {
+      style: {
+        builder: result.builder,
+        attributes: {
+          fillColor: {
+            size: 2,
+            callback: (feature) => {
+              const style = this.getStyle()(feature, 1)[0];
+              const color = asArray(style?.getFill()?.getColor() || '#eee');
+              return packColor(color);
+            },
+          },
+          strokeColor: {
+            size: 2,
+            callback: (feature) => {
+              const style = this.getStyle()(feature, 1)[0];
+              const color = asArray(style?.getStroke()?.getColor() || '#eee');
+              return packColor(color);
+            },
+          },
+          strokeWidth: {
+            size: 1,
+            callback: (feature) => {
+              const style = this.getStyle()(feature, 1)[0];
+              return style?.getStroke()?.getWidth() || 0;
+            },
+          },
+        },
+      },
+    });
+  }
+}
 
 const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
@@ -90,7 +143,7 @@ export async function getOrCreateLayerFromID(
 
 export function createVectorOpenLayer(mapLayer: VectorMapLayer) {
   const defaultColors = `${randomColor()},#ffffff`;
-  return new VectorTileLayer({
+  return new WebGLVectorTileLayer({
     properties: {
       id: mapLayer.id,
       type: mapLayer.type,

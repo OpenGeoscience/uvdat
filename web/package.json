@@ -15,7 +15,7 @@
     "buffer": "^6.0.3",
     "core-js": "^3.8.3",
     "maplibre-gl": "^2.4.0",
-    "ol": "^7.3.0",
+    "ol": "^9.2.4",
     "openlayers": "^4.6.5",
     "shpjs": "^4.0.4",
     "sortablejs": "^1.15.0",
