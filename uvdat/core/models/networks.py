@@ -5,7 +5,7 @@ from .dataset import Dataset
 
 
 class NetworkNode(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='network_nodes')
     metadata = models.JSONField(blank=True, null=True)
     capacity = models.IntegerField(null=True)
@@ -31,7 +31,7 @@ class NetworkNode(models.Model):
 
 
 class NetworkEdge(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=255)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='network_edges')
     metadata = models.JSONField(blank=True, null=True)
     capacity = models.IntegerField(null=True)

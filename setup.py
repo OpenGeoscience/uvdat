@@ -51,6 +51,7 @@ setup(
         'django-large-image',
         'drf-yasg',
         'ijson',
+        'osmnx',
         'matplotlib',
         'geojson2vt',
         'geopandas',
