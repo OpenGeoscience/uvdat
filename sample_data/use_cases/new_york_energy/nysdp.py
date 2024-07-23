@@ -1,10 +1,10 @@
 import json
+
+from django.contrib.gis.geos import GEOSGeometry
 import geopandas
 import requests
 
-from django.contrib.gis.geos import GEOSGeometry
-from uvdat.core.models import Dataset, VectorMapLayer, VectorFeature
-
+from uvdat.core.models import Dataset, VectorFeature, VectorMapLayer
 
 NYDSP_URL = 'https://systemdataportal.nationalgrid.com/arcgis/rest/services/NYSDP'
 RECORDS_PER_PAGE = 100
@@ -63,7 +63,7 @@ def create_consolidated_network(dataset):
         "DistAssetsOverview",
         "Electrification_Data",
         "EV_Load_Serving_Capacity",
-        "Hosting_Capacity_Data",
+        # "Hosting_Capacity_Data",
         "LSRV",
         "NY_SubT_SDP"
     ]
