@@ -12,6 +12,7 @@ from uvdat.core.models import Chart, Context, Dataset, FileItem
 
 
 USE_CASE_FOLDER = Path('sample_data/use_cases')
+DOWNLOADS_FOLDER = Path('sample_data/downloads')
 
 
 def ingest_file(file_info, index=0, dataset=None, chart=None):
@@ -20,7 +21,7 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
     file_url = file_info.get('url')
     file_metadata = file_info.get('metadata', {})
 
-    file_location = Path('sample_data/downloads', file_path)
+    file_location = Path(DOWNLOADS_FOLDER, file_path)
     file_type = file_path.split('.')[-1]
     if not file_location.exists():
         print(f'\t Downloading data file {file_name}.')
