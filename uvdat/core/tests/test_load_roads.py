@@ -23,5 +23,7 @@ def test_load_roads():
     dataset = Dataset.objects.get(name='Boston Road Network')
     assert dataset is not None
     assert dataset.networks.count() == 1
-    assert dataset.networks.first().nodes.count() == 11026
-    assert dataset.networks.first().edges.count() == 25274
+    # check if nodes and edges surpass a minimum amount
+    # (exact amounts are expected to change over time)
+    assert dataset.networks.first().nodes.count() > 10000
+    assert dataset.networks.first().edges.count() > 20000
