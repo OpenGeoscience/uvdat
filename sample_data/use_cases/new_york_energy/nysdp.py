@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from django.contrib.gis.geos import GEOSGeometry, Point, LineString
 from uvdat.core.models import Dataset, Network, NetworkNode, NetworkEdge, VectorMapLayer, VectorFeature, SourceRegion
+from uvdat.core.tasks.networks import vector_features_from_network
 
 from .interpret_network import interpret_group
 
@@ -63,31 +64,6 @@ def create_vector_features(dataset, service_name=None, **kwargs):
                 )
             )
     VectorFeature.objects.bulk_create(vector_features)
-
-
-def vector_features_from_network(network):
-    map_layer, created = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
-    VectorFeature.objects.bulk_create([
-        VectorFeature(
-            map_layer=map_layer,
-            geometry=node.location,
-            properties=dict(node_id=node.id, **node.metadata),
-        )
-        for node in network.nodes.all()
-    ])
-    VectorFeature.objects.bulk_create([
-        VectorFeature(
-            map_layer=map_layer,
-            geometry=edge.line_geometry,
-            properties=dict(
-                edge_id=edge.id,
-                from_node_id=edge.from_node.id,
-                to_node_id=edge.to_node.id,
-                **edge.metadata,
-            ),
-        )
-        for edge in network.edges.all()
-    ])
 
 
 def download_all_deduped_vector_features(**kwargs):
@@ -147,7 +123,6 @@ def download_all_deduped_vector_features(**kwargs):
 def create_consolidated_network(dataset, **kwargs):
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
-    VectorMapLayer.objects.filter(dataset=dataset).delete()
     gdf = download_all_deduped_vector_features(**kwargs)
 
     zones_dataset_name = kwargs.get('zones_dataset_name')

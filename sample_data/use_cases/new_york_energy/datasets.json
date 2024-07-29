@@ -41,13 +41,16 @@
         }
     },
     {
-        "name": "National Grid Network",
-        "description": "Consolidated network from several services' combined data",
+        "name": "National Grid County Networks",
+        "description": "Energy networks for each county in New York",
         "category": "energy",
-        "module": "nysdp",
-        "function": "create_consolidated_network",
-        "kwargs": {
-            "zones_dataset_name": "County Boundaries"
-        }
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/66a7bdab0ea2cce8e698b958/download",
+                "path": "nyc/networks.zip"
+            }
+        ],
+        "module": "import_networks",
+        "function": "perform_import"
     }
 ]
