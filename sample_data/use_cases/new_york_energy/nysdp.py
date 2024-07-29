@@ -123,6 +123,7 @@ def download_all_deduped_vector_features(**kwargs):
 def create_consolidated_network(dataset, **kwargs):
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
+    VectorMapLayer.objects.filter(dataset=network.dataset).delete()
     gdf = download_all_deduped_vector_features(**kwargs)
 
     zones_dataset_name = kwargs.get('zones_dataset_name')

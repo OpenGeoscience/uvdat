@@ -6,7 +6,7 @@ import networkx as nx
 import numpy
 import shapely
 
-from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature, VectorMapLayer
+from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature
 
 NODE_RECOVERY_MODES = [
     'random',
@@ -214,7 +214,6 @@ def geojson_from_network(dataset):
 
 
 def vector_features_from_network(network):
-    VectorMapLayer.objects.filter(dataset=network.dataset).delete()
     map_layer, created = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
     VectorFeature.objects.bulk_create(
         [
