@@ -6,7 +6,7 @@ import networkx as nx
 import numpy
 import shapely
 
-from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature
+from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature, VectorMapLayer
 
 NODE_RECOVERY_MODES = [
     'random',
