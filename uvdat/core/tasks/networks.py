@@ -6,7 +6,7 @@ import networkx as nx
 import numpy
 import shapely
 
-from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorMapLayer, VectorFeature
+from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature, VectorMapLayer
 
 NODE_RECOVERY_MODES = [
     'random',
@@ -216,27 +216,31 @@ def geojson_from_network(dataset):
 def vector_features_from_network(network):
     VectorMapLayer.objects.filter(dataset=network.dataset).delete()
     map_layer, created = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
-    VectorFeature.objects.bulk_create([
-        VectorFeature(
-            map_layer=map_layer,
-            geometry=node.location,
-            properties=dict(node_id=node.id, **node.metadata),
-        )
-        for node in network.nodes.all()
-    ])
-    VectorFeature.objects.bulk_create([
-        VectorFeature(
-            map_layer=map_layer,
-            geometry=edge.line_geometry,
-            properties=dict(
-                edge_id=edge.id,
-                from_node_id=edge.from_node.id,
-                to_node_id=edge.to_node.id,
-                **edge.metadata,
-            ),
-        )
-        for edge in network.edges.all()
-    ])
+    VectorFeature.objects.bulk_create(
+        [
+            VectorFeature(
+                map_layer=map_layer,
+                geometry=node.location,
+                properties=dict(node_id=node.id, **node.metadata),
+            )
+            for node in network.nodes.all()
+        ]
+    )
+    VectorFeature.objects.bulk_create(
+        [
+            VectorFeature(
+                map_layer=map_layer,
+                geometry=edge.line_geometry,
+                properties=dict(
+                    edge_id=edge.id,
+                    from_node_id=edge.from_node.id,
+                    to_node_id=edge.to_node.id,
+                    **edge.metadata,
+                ),
+            )
+            for edge in network.edges.all()
+        ]
+    )
 
 
 def get_network_graph(network):
