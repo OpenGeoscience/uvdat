@@ -21,6 +21,8 @@ class Network(models.Model):
     def get_gcc(self, exclude_nodes):
         graph = self.get_graph()
         graph.remove_nodes_from(exclude_nodes)
+        if graph.number_of_nodes == 0 or nx.number_connected_components(graph) == 0:
+            return []
         gcc = max(nx.connected_components(graph), key=len)
         return list(gcc)
 
