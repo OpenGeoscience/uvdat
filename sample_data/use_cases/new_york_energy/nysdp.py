@@ -1,22 +1,25 @@
 import json
 import geopandas
-import numpy
-import pandas
 import requests
-import shapely
+
+from datetime import datetime
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
 from django.contrib.gis.geos import GEOSGeometry, Point, LineString
-from uvdat.core.models import Dataset, Network, NetworkNode, NetworkEdge, VectorMapLayer, VectorFeature
+from uvdat.core.models import Dataset, Network, NetworkNode, NetworkEdge, VectorMapLayer, VectorFeature, SourceRegion
 
+from .interpret_network import interpret_group
 
+DOWNLOAD_PATH = Path(__file__).parent.parent
 NYDSP_URL = 'https://systemdataportal.nationalgrid.com/arcgis/rest/services/NYSDP'
-RECORDS_PER_PAGE = 100
+RECORDS_PER_PAGE = 1000
 SERVICE_SUFFIX = 'MapServer'
 FORMAT_SUFFIX = 'f=pjson'
 QUERY_CONTENT = f'where=1%3D1&returnGeometry=true&outFields=*&resultRecordCount={RECORDS_PER_PAGE}&f=geojson'
 
 
-def fetch_vector_features(service_name=None):
+def fetch_vector_features(service_name=None, **kwargs):
     feature_sets = {}
     if service_name is None:
         return feature_sets
@@ -31,16 +34,20 @@ def fetch_vector_features(service_name=None):
             while feature_page is None or len(feature_page) == RECORDS_PER_PAGE:
                 query_response = requests.get(
                     f"{service_url}/{layer_id}/query?resultOffset={result_offset}&{QUERY_CONTENT}"
-                ).json()
-                feature_page = query_response.get('features', [])
-                feature_set += feature_page
-                result_offset += RECORDS_PER_PAGE
+                )
+                try:
+                    query_json = query_response.json()
+                    feature_page = query_json.get('features', [])
+                    feature_set += feature_page
+                    result_offset += RECORDS_PER_PAGE
+                except Exception as e:
+                    print(f'\t\tFailed to get {service_name} data from NYSDP.')
         if len(feature_set):
             feature_sets[layer_id] = feature_set
     return feature_sets
 
 
-def create_vector_features(dataset, service_name=None):
+def create_vector_features(dataset, service_name=None, **kwargs):
     VectorMapLayer.objects.filter(dataset=dataset).delete()
 
     feature_sets = fetch_vector_features(service_name=service_name)
@@ -59,13 +66,12 @@ def create_vector_features(dataset, service_name=None):
 
 
 def vector_features_from_network(network):
-    VectorMapLayer.objects.filter(dataset=network.dataset).delete()
-    map_layer = VectorMapLayer.objects.create(dataset=network.dataset)
+    map_layer, created = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
     VectorFeature.objects.bulk_create([
         VectorFeature(
             map_layer=map_layer,
             geometry=node.location,
-            properties=node.metadata or {},
+            properties=dict(node_id=node.id, **node.metadata),
         )
         for node in network.nodes.all()
     ])
@@ -73,204 +79,125 @@ def vector_features_from_network(network):
         VectorFeature(
             map_layer=map_layer,
             geometry=edge.line_geometry,
-            properties=edge.metadata or {},
+            properties=dict(
+                edge_id=edge.id,
+                from_node_id=edge.from_node.id,
+                to_node_id=edge.to_node.id,
+                **edge.metadata,
+            ),
         )
         for edge in network.edges.all()
     ])
 
 
-def create_consolidated_network(dataset):
-    # VectorMapLayer.objects.filter(dataset=dataset).delete()
-    # map_layer = VectorMapLayer.objects.create(dataset=dataset, index=0)
-    # include_services = [
-    #     "Substations",
-    #     "DistAssetsOverview",
-    #     "Electrification_Data",
-    #     "EV_Load_Serving_Capacity",
-    #     "Hosting_Capacity_Data",
-    #     "LSRV",
-    #     "NY_SubT_SDP"
-    # ]
+def download_all_deduped_vector_features(**kwargs):
+    start = datetime.now()
+    include_services = kwargs.get('include_services', [
+        "DistAssetsOverview",
+        "Electrification_Data",
+        "EV_Load_Serving_Capacity",
+        "Hosting_Capacity_Data",
+        "LSRV",
+        "NY_SubT_SDP"
+    ])
+    downloads_folder = kwargs.get('downloads_folder')
+    if downloads_folder is None:
+        downloads_folder = Path(__file__).parent
+    else:
+        downloads_folder = Path(downloads_folder)
+    filename = downloads_folder / 'nyc' / 'network_basic_features.json'
+    if filename.exists():
+        print('\t\tReading saved file of basic features.')
+        return geopandas.GeoDataFrame.from_file(filename)
 
-    # features = []
-    # for service_name in include_services:
-    #     try:
-    #         d = Dataset.objects.get(name=f'National Grid {service_name}')
-    #         print('\t', f'Using saved vector features for {service_name}...')
-    #         features += [
-    #             dict(
-    #                 type='Feature',
-    #                 geometry=json.loads(feature.geometry.json),
-    #                 properties=feature.properties
-    #             )
-    #             for feature in VectorFeature.objects.filter(map_layer__dataset=d)
-    #         ]
-    #     except Dataset.DoesNotExist:
-    #         print('\t', f'Querying {service_name}...')
-    #         feature_sets = fetch_vector_features(service_name=service_name)
-    #         for layer_id, feature_set in feature_sets.items():
-    #             features += feature_set
-    # print('\t', len(features), 'features found. Combining like geometries...')
-    # print('features found:', len(features))
+    print('\t\tDownloading basic features from NYSDP.')
+    feature_sets = None
+    with ThreadPoolExecutor(max_workers=len(include_services)) as pool:
+        feature_sets = pool.map(fetch_vector_features, include_services)
 
-    # Use geopandas to merge properties of duplicate features
-    # gdf = geopandas.GeoDataFrame.from_features(features)
-    # gdf["geometry"] = gdf.normalize()
-
-    # grouped = gdf.groupby(gdf['geometry'].to_wkt()).first()
-    # print('\t', len(grouped), 'consolidated features found. Saving to database...')
-
-    # TODO: color by properties
-
-    # geojson = json.loads(grouped.to_json())
-    # VectorFeature.objects.bulk_create([
-    #     VectorFeature(
-    #         map_layer=map_layer,
-    #         geometry=GEOSGeometry(json.dumps(feature['geometry'])),
-    #         properties=feature['properties'],
-    #     )
-    #     for feature in geojson.get('features')
-    # ], batch_size=10000)
-
-    from django.contrib.gis.geos import Polygon
-
-
-    test_dataset, created = Dataset.objects.get_or_create(
-        name="Test Network",
-        category="energy",
-        dataset_type="VECTOR"
-    )
-    Network.objects.filter(dataset=test_dataset).delete()
-    network = Network.objects.create(dataset=test_dataset)
-
-    test_bbox = dict(xmin=-74, ymin=42.8, xmax=-73.9, ymax=42.9)
-    test_area = Polygon.from_bbox(
-        [test_bbox['xmin'], test_bbox['ymin'], test_bbox['xmax'], test_bbox['ymax']]
-    )
-    features = [
-        dict(
-            type='Feature',
-            geometry=json.loads(feature.geometry.json),
-            properties=feature.properties
-        )
-        for feature in VectorFeature.objects.filter(
-            map_layer__dataset=dataset,
-            geometry__coveredby=test_area,
-        )
-    ]
-    show_columns = [
-        'geometry',
-    ]
-    pandas.set_option('display.max_columns', None)
-    print('test features:', len(features))
-    gdf = geopandas.GeoDataFrame.from_features(features)
+    features = []
+    for feature_set in feature_sets:
+        for set_id, feature_set in feature_set.items():
+            for feature in feature_set:
+                properties = feature['properties']
+                geometry = GEOSGeometry(json.dumps(feature['geometry']))
+                geoms = []
+                # split multilinestrings
+                if geometry.geom_type == 'MultiLineString':
+                    geoms = [LineString(*line) for line in geometry.coords]
+                elif geometry.geom_type == 'LineString':
+                    geoms = [geometry]
+                for geom in geoms:
+                    features.append(dict(
+                        type='Feature',
+                        geometry=json.loads(geom.json),
+                        properties=properties
+                    ))
+    # normalize and eliminate duplicates
+    gdf = geopandas.GeoDataFrame.from_features(features, crs='EPSG:4326')
     gdf["geometry"] = gdf.normalize()
-    spatial_index = gdf.sindex
+    gdf = gdf.groupby(gdf.geometry.to_wkt()).first()
+    gdf.reset_index(inplace=True)
 
-    # construct adjacencies list
-    adjacencies = {}
-    for feat_index, feature in gdf.iterrows():
-        adjacencies[feat_index] = {}
-        geom = feature['geometry']
-        if geom.geom_type == 'MultiLineString':
-            # attempt to merge contiguous portions
-            geom = shapely.ops.linemerge(geom)
-        geom_list = [geom]
-        if geom.geom_type == 'MultiLineString':
-            # if still multi, contains non-contiguous portions
-            geom_list = geom.geoms
+    gdf.to_file(filename)
+    print(f'\t\tCompleted download in {(datetime.now() - start).total_seconds()} seconds.')
+    return gdf
 
-        for geom_index, geom in enumerate(geom_list):
-            adjacencies[feat_index][geom_index] = {}
-            # first and last points (endpoints of current geom)
-            # assumes no intersections will occur in the middle of a line
-            for coord_index, coord_name in [(0, 'start'), (-1, 'end')]:
-                coord = shapely.geometry.Point(geom.coords[coord_index])
-                nearest_indexes, distances = spatial_index.nearest(coord, max_distance=10, return_distance=True)
-                geom_inds, tree_inds = nearest_indexes
-                # exclude self from nearest results
-                tree_inds = [int(i) for i in tree_inds if i != feat_index]
-                node = None
-                if len(tree_inds) != 1:
-                    node = NetworkNode.objects.create(
-                        name=f'{feat_index}_{geom_index}_{coord_name}',
-                        network=network,
-                        location=Point(*geom.coords[coord_index])
-                    )
-                adjacencies[feat_index][geom_index][coord_name] = dict(
-                    node=node,
-                    adjs=tree_inds,
-                )
 
-    visited = []
-    def follow_adjacencies(feat_index, current_line=None, current_from_node=None):
-        if feat_index not in visited:
-            visited.append(feat_index)
-            feat = gdf.iloc[feat_index]
-            for geom_index, geom_record in adjacencies[feat_index].items():
-                start_record = geom_record.get('start', {})
-                start_node = start_record.get('node')
-                start_adjs = start_record.get('adjs')
+def create_consolidated_network(dataset, **kwargs):
+    start = datetime.now()
+    Network.objects.filter(dataset=dataset).delete()
+    VectorMapLayer.objects.filter(dataset=dataset).delete()
+    gdf = download_all_deduped_vector_features(**kwargs)
 
-                end_record = geom_record.get('end', {})
-                end_node = end_record.get('node')
-                end_adjs = end_record.get('adjs')
-                coords = []
-                if feat['geometry'].geom_type == 'MultiLineString':
-                    for geom in feat['geometry'].geoms:
-                        coords += geom.coords
-                else:
-                    coords = feat['geometry'].coords
+    zones_dataset_name = kwargs.get('zones_dataset_name')
+    if zones_dataset_name is None:
+        raise ValueError('`zones_dataset_name` is required.')
+    zones = SourceRegion.objects.filter(dataset__name=zones_dataset_name)
+    if zones.count() == 0:
+        raise ValueError(f'No regions found with dataset name "{zones_dataset_name}".')
 
-                if start_node and end_node:
-                    # print('edge', start_node, end_node, 'len', len(coords))
-                    NetworkEdge.objects.create(
-                        name='edge',
-                        network=network,
-                        from_node=start_node,
-                        to_node=end_node,
-                        metadata={},  # TODO: figure out capturing metadata
-                        line_geometry=LineString(*[
-                            Point(*p) for p in coords
-                        ])
-                    )
+    print(f'\t\tInterpreting networks from {len(gdf)} basic features...')
+    # Divide into groups
+    zone_geometries = [
+        geopandas.GeoSeries.from_wkt([zone.boundary.wkt]).set_crs(4326).iloc[0]
+        for zone in zones
+    ]
+    groups = [
+        gdf[gdf.geometry.covered_by(zone_geom)]
+        for zone_geom in zone_geometries
+    ]
+    groups = [g for g in groups if len(g) > 0]
+    print(f'\t\tSeparated into {len(groups)} groups.')
 
-                if current_line is None:
-                    current_line = list(coords)
-                else:
-                    current_line += list(coords)
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        results = pool.map(interpret_group, groups)
+    for result in results:
+        nodes, edges = result
+        network = Network.objects.create(dataset=dataset)
+        NetworkNode.objects.bulk_create([
+            NetworkNode(
+                network=network,
+                name=f'Node {i}',
+                location=Point(n.get('location').x, n.get('location').y),
+                metadata=n.get('metadata', {})
+            )
+            for i, n in enumerate(nodes)
+        ], batch_size=1000)
+        NetworkEdge.objects.bulk_create([
+            NetworkEdge(
+                network=network,
+                name=f'Edge {i}',
+                from_node=NetworkNode.objects.get(network=network, location=Point(e.get('from_point').x, e.get('from_point').y)),
+                to_node=NetworkNode.objects.get(network=network, location=Point(e.get('to_point').x, e.get('to_point').y)),
+                line_geometry=LineString(*e.get('line_geometry').coords),
+                metadata=e.get('metadata', {})
+            )
+            for i, e in enumerate(edges)
+        ], batch_size=1000)
 
-                follow_start_results = None
-                follow_end_results = None
-                if len(start_adjs) > 0:
-                    for adj in start_adjs:
-                        follow_start_results = follow_adjacencies(
-                            adj, current_line=current_line, current_from_node=current_from_node or end_node
-                        )
-                if len(end_adjs) > 0:
-                    for adj in end_adjs:
-                        follow_end_results = follow_adjacencies(
-                            adj, current_line=current_line, current_from_node=current_from_node or start_node
-                        )
+        print(f'\t\t{network.nodes.count()} nodes created, {network.edges.count()} edges created.')
+        vector_features_from_network(network)
 
-                start_line, start_from_node, end_line, end_from_node = None, None, None, None
-                if follow_start_results:
-                    start_line, start_from_node = follow_start_results
-                if follow_end_results:
-                    end_line, end_from_node = follow_end_results
-                if current_from_node is None:
-                    if start_line is not None and end_line is not None:
-                        print(feat_index, 'combine lines', len(start_line), '+', len(end_lines), 'between', start_from_node, end_from_node)
-                    if start_line is not None:
-                        print(feat_index, 'start line!', start_from_node, end_from_node, current_from_node, start_node, end_node)
-                    if end_line is not None:
-                        print(feat_index, 'end line!', start_from_node, end_from_node, current_from_node, start_node, end_node)
-
-            return current_line, current_from_node
-
-    for feat_index in list(adjacencies.keys())[:5]:
-        follow_adjacencies(feat_index)
-    print('total nodes', NetworkNode.objects.filter(network=network).count())
-    print('total edges', NetworkEdge.objects.filter(network=network).count())
-
-    vector_features_from_network(network)
+    print(f'\t\t{dataset.networks.count()} separate networks created.')
+    print(f'\tCompleted in {(datetime.now() - start).total_seconds()} seconds.')

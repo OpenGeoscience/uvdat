@@ -10,12 +10,7 @@
             "National Grid CompanyBoundary",
             "National Grid Network",
             "National Grid Substations",
-            "National Grid DistAssetsOverview",
-            "National Grid Electrification_Data",
-            "National Grid EV_Load_Serving_Capacity",
-            "National Grid Hosting_Capacity_Data",
-            "National Grid LSRV",
-            "National Grid NY_SubT_SDP"
+            "County Boundaries"
         ]
     }
 ]
