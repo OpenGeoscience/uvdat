@@ -75,7 +75,7 @@ def perform_import(dataset, **kwargs):
     print('\tEstimated time: 90 minutes.')
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
-    VectorMapLayer.objects.filter(dataset=network.dataset).delete()
+    VectorMapLayer.objects.filter(dataset=dataset).delete()
     for file_item in dataset.source_files.all():
         with tempfile.TemporaryDirectory() as temp_dir:
             archive_path = Path(temp_dir, 'archive.zip')
