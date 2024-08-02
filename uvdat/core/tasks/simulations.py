@@ -7,12 +7,7 @@ from django_large_image import tilesource
 import large_image
 import shapely
 
-from uvdat.core.models import Dataset
-from uvdat.core.tasks.networks import (
-    NODE_RECOVERY_MODES,
-    get_dataset_network_graph,
-    sort_graph_centrality,
-)
+from uvdat.core.tasks.networks import NODE_RECOVERY_MODES, get_network_graph, sort_graph_centrality
 
 
 def get_network_node_elevations(network_nodes, elevation_data):
@@ -43,30 +38,30 @@ def get_network_node_elevations(network_nodes, elevation_data):
 
 
 @shared_task
-def flood_scenario_1(simulation_result_id, network_dataset, elevation_data, flood_area):
-    from uvdat.core.models import RasterMapLayer, SimulationResult, VectorMapLayer
+def flood_scenario_1(simulation_result_id, network, elevation_data, flood_area):
+    from uvdat.core.models import Network, RasterMapLayer, SimulationResult, VectorMapLayer
 
     result = SimulationResult.objects.get(id=simulation_result_id)
     try:
-        network_dataset = Dataset.objects.get(id=network_dataset)
+        network = Network.objects.get(id=network)
         elevation_data = RasterMapLayer.objects.get(id=elevation_data)
         flood_area = VectorMapLayer.objects.get(id=flood_area)
-    except Dataset.DoesNotExist:
-        result.error_message = 'Dataset not found.'
+    except Exception:
+        result.error_message = 'Object not found.'
         result.save()
         return
 
     if (
-        not network_dataset.get_network()
-        or elevation_data.file_item.dataset.category != 'elevation'
-        or flood_area.file_item.dataset.category != 'flood'
+        network.nodes.count() < 1
+        or elevation_data.dataset.category != 'elevation'
+        or flood_area.dataset.category != 'flood'
     ):
         result.error_message = 'Invalid dataset selected.'
         result.save()
         return
 
     node_failures = []
-    network_nodes = network_dataset.network_nodes.all()
+    network_nodes = network.nodes.all()
     flood_geodata = flood_area.read_geojson_data()
     flood_areas = [
         shapely.geometry.shape(feature['geometry']) for feature in flood_geodata['features']
@@ -85,7 +80,7 @@ def flood_scenario_1(simulation_result_id, network_dataset, elevation_data, floo
 
 @shared_task
 def recovery_scenario(simulation_result_id, node_failure_simulation_result, recovery_mode):
-    from uvdat.core.models import SimulationResult
+    from uvdat.core.models import Network, SimulationResult
 
     result = SimulationResult.objects.get(id=simulation_result_id)
     try:
@@ -106,14 +101,14 @@ def recovery_scenario(simulation_result_id, node_failure_simulation_result, reco
     if recovery_mode == 'random':
         random.shuffle(node_recoveries)
     else:
-        dataset_id = node_failure_simulation_result.input_args['network_dataset']
+        network_id = node_failure_simulation_result.input_args['network']
         try:
-            dataset = Dataset.objects.get(id=dataset_id)
-        except Dataset.DoesNotExist:
-            result.error_message = 'Dataset not found.'
+            network = Network.objects.get(id=network_id)
+        except Network.DoesNotExist:
+            result.error_message = 'Network not found.'
             result.save()
             return
-        graph = get_dataset_network_graph(dataset)
+        graph = get_network_graph(network)
         nodes_sorted, edge_list = sort_graph_centrality(graph, recovery_mode)
         node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
 

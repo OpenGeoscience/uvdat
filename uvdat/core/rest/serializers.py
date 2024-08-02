@@ -9,6 +9,7 @@ from uvdat.core.models import (
     Dataset,
     DerivedRegion,
     FileItem,
+    Network,
     NetworkEdge,
     NetworkNode,
     RasterMapLayer,
@@ -56,9 +57,12 @@ class AbstractMapLayerSerializer(serializers.Serializer):
     file_item = serializers.SerializerMethodField('get_file_item')
 
     def get_name(self, obj: VectorMapLayer | RasterMapLayer):
-        if obj.file_item is None:
-            return None
-        return obj.file_item.name
+        if obj.dataset:
+            for file_item in obj.dataset.source_files.all():
+                if file_item.index == obj.index:
+                    return file_item.name
+            return f'{obj.dataset.name} Layer {obj.index}'
+        return None
 
     def get_type(self, obj: VectorMapLayer | RasterMapLayer):
         if isinstance(obj, VectorMapLayer):
@@ -66,17 +70,19 @@ class AbstractMapLayerSerializer(serializers.Serializer):
         return 'raster'
 
     def get_dataset_id(self, obj: VectorMapLayer | RasterMapLayer):
-        if obj.file_item and obj.file_item.dataset:
-            return obj.file_item.dataset.id
+        if obj.dataset:
+            return obj.dataset.id
         return None
 
     def get_file_item(self, obj: VectorMapLayer | RasterMapLayer):
-        if obj.file_item is None:
+        if obj.dataset is None:
             return None
-        return {
-            'id': obj.file_item.id,
-            'name': obj.file_item.name,
-        }
+        for file_item in obj.dataset.source_files.all():
+            if file_item.index == obj.index:
+                return {
+                    'id': file_item.id,
+                    'name': file_item.name,
+                }
 
 
 class RasterMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
@@ -166,6 +172,17 @@ class DerivedRegionCreationSerializer(serializers.ModelSerializer):
 
     regions = serializers.ListField(child=serializers.IntegerField())
     operation = serializers.ChoiceField(choices=DerivedRegion.VectorOperation.choices)
+
+
+class NetworkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Network
+        fields = '__all__'
+
+    name = serializers.SerializerMethodField('get_name')
+
+    def get_name(self, obj):
+        return obj.dataset.name
 
 
 class NetworkNodeSerializer(serializers.ModelSerializer):

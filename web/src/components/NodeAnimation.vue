@@ -39,8 +39,8 @@ export default {
     });
 
     async function findCurrentNetworkDataset() {
-      currentNetworkDataset.value = selectedDatasets.value.find(
-        (d) => d.classification === "Network"
+      currentNetworkDataset.value = selectedDatasets.value.find((d) =>
+        d.map_layers?.some((l) => l.metadata?.network)
       );
       if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
         fetchDatasetNetwork(currentNetworkDataset.value);

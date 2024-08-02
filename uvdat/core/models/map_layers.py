@@ -9,17 +9,17 @@ from django_extensions.db.models import TimeStampedModel
 import large_image
 from s3_file_field import S3FileField
 
-from .file_item import FileItem
+from .dataset import Dataset
 
 
 class AbstractMapLayer(TimeStampedModel):
-    file_item = models.ForeignKey(FileItem, on_delete=models.CASCADE, null=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True)
     metadata = models.JSONField(blank=True, null=True)
     default_style = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
 
     def is_in_context(self, context_id):
-        return self.file_item.is_in_context(context_id)
+        return self.dataset.is_in_context(context_id)
 
     class Meta:
         abstract = True

@@ -26,8 +26,8 @@ export default {
     const applyToAll = ref<boolean>(false);
     const zIndex = ref<number>();
 
-    const currentFileItemName = computed(() => {
-      return currentMapLayer.value?.file_item?.name;
+    const currentLayerName = computed(() => {
+      return currentMapLayer.value?.name;
     });
 
     function getCurrentMapLayer() {
@@ -150,7 +150,7 @@ export default {
       currentMapLayerIndex,
       currentMapLayer,
       currentDataset,
-      currentFileItemName,
+      currentLayerName,
       rasterColormaps,
       opacity,
       colormap,
@@ -202,7 +202,7 @@ export default {
         :max="currentDataset?.map_layers.length - 1"
       />
       <v-card-subtitle class="wrap-subtitle">
-        Current layer file name: {{ currentFileItemName || "Untitled" }}
+        Current layer name: {{ currentLayerName || "Untitled" }}
       </v-card-subtitle>
     </div>
 

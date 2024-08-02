@@ -74,7 +74,7 @@ SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 
 
 class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
-    queryset = RasterMapLayer.objects.select_related('file_item__dataset').all()
+    queryset = RasterMapLayer.objects.select_related('dataset').all()
     serializer_class = RasterMapLayerSerializer
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
@@ -91,7 +91,7 @@ class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
 
 
 class VectorMapLayerViewSet(ModelViewSet):
-    queryset = VectorMapLayer.objects.select_related('file_item__dataset').all()
+    queryset = VectorMapLayer.objects.select_related('dataset').all()
     serializer_class = VectorMapLayerSerializer
 
     def retrieve(self, request, *args, **kwargs):

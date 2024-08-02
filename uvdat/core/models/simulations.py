@@ -4,8 +4,8 @@ from django_extensions.db.models import TimeStampedModel
 from uvdat.core.tasks import simulations as uvdat_simulations
 
 from .context import Context
-from .dataset import Dataset
 from .map_layers import RasterMapLayer, VectorMapLayer
+from .networks import Network
 
 
 class SimulationResult(TimeStampedModel):
@@ -47,7 +47,7 @@ class SimulationResult(TimeStampedModel):
 AVAILABLE_SIMULATIONS = {
     'FLOOD_1': {
         'description': """
-            Provide a network dataset, elevation dataset, and flood dataset
+            Provide a network, elevation dataset, and flood dataset
             to determine which network nodes go out of service
             when the target flood occurs.
         """,
@@ -55,26 +55,26 @@ AVAILABLE_SIMULATIONS = {
         'func': uvdat_simulations.flood_scenario_1,
         'args': [
             {
-                'name': 'network_dataset',
-                'type': Dataset,
+                'name': 'network',
+                'type': Network,
                 'options_annotations': {
-                    'network_nodes_count': models.Count('network_nodes'),
-                    'network_edges_count': models.Count('network_edges'),
+                    'nodes_count': models.Count('nodes'),
+                    'edges_count': models.Count('edges'),
                 },
                 'options_query': {
-                    'network_nodes_count__gte': 1,
-                    'network_edges_count__gte': 1,
+                    'nodes_count__gte': 1,
+                    'edges_count__gte': 1,
                 },
             },
             {
                 'name': 'elevation_data',
                 'type': RasterMapLayer,
-                'options_query': {'file_item__dataset__category': 'elevation'},
+                'options_query': {'dataset__category': 'elevation'},
             },
             {
                 'name': 'flood_area',
                 'type': VectorMapLayer,
-                'options_query': {'file_item__dataset__category': 'flood'},
+                'options_query': {'dataset__category': 'flood'},
             },
         ],
     },

@@ -10,7 +10,6 @@ export interface Dataset {
   dataset_type: "vector" | "raster";
   map_layers?: (VectorMapLayer | RasterMapLayer)[];
   current_layer_index?: number;
-  classification: "Network" | "Region" | "Other";
   network: {
     nodes: NetworkNode[];
     edges: NetworkEdge[];
@@ -84,6 +83,7 @@ export interface NetworkEdge {
 
 export interface AbstractMapLayer {
   id: number;
+  name: string;
   file_item?: {
     id: number;
     name: string;
