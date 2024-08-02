@@ -53,7 +53,7 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
 
 def ingest_contexts(use_case):
     print('Creating Context objects...')
-    with open(str(USE_CASE_FOLDER / use_case / 'contexts.json')) as contexts_json:
+    with open(USE_CASE_FOLDER / use_case / 'contexts.json') as contexts_json:
         data = json.load(contexts_json)
         for context in data:
             print('\t- ', context['name'])
@@ -73,7 +73,7 @@ def ingest_contexts(use_case):
 
 def ingest_charts(use_case):
     print('Creating Chart objects...')
-    with open(str(USE_CASE_FOLDER / use_case / 'charts.json')) as charts_json:
+    with open(USE_CASE_FOLDER / use_case / 'charts.json') as charts_json:
         data = json.load(charts_json)
         for chart in data:
             print('\t- ', chart['name'])
@@ -107,7 +107,7 @@ def ingest_charts(use_case):
 
 def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
     print('Creating Dataset objects...')
-    with open(str(USE_CASE_FOLDER / use_case / 'datasets.json')) as datasets_json:
+    with open(USE_CASE_FOLDER / use_case / 'datasets.json') as datasets_json:
         data = json.load(datasets_json)
         for index, dataset in enumerate(data):
             if dataset_indexes is None or index in dataset_indexes:
