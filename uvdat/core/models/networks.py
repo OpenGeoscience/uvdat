@@ -1,6 +1,6 @@
-import networkx as nx
 from django.contrib.gis.db import models as geo_models
 from django.db import models
+import networkx as nx
 
 from .dataset import Dataset
 

@@ -1,14 +1,6 @@
 from celery import shared_task
 
-from uvdat.core.models import (
-    Dataset,
-    FileItem,
-    NetworkEdge,
-    NetworkNode,
-    RasterMapLayer,
-    SourceRegion,
-    VectorMapLayer,
-)
+from uvdat.core.models import Dataset, FileItem, RasterMapLayer, SourceRegion, VectorMapLayer
 from uvdat.core.tasks.map_layers import save_vector_features
 
 from .map_layers import create_raster_map_layer, create_vector_map_layer

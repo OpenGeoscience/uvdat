@@ -74,9 +74,7 @@ class DatasetViewSet(ModelViewSet):
         # this currently returns the gcc for the network with the most excluded nodes
         results = []
         for network in dataset.networks.all():
-            excluded_node_names = [
-                n.name for n in network.nodes.all() if n.id in exclude_nodes
-            ]
+            excluded_node_names = [n.name for n in network.nodes.all() if n.id in exclude_nodes]
             gcc = network.get_gcc(exclude_nodes)
             results.append(dict(excluded=excluded_node_names, gcc=gcc))
         if len(results):

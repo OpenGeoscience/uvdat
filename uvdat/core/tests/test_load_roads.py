@@ -1,5 +1,5 @@
-from django.core.management import call_command
 from django.contrib.gis.geos import Point
+from django.core.management import call_command
 import pytest
 
 from uvdat.core.models import Context, Dataset
@@ -9,9 +9,7 @@ from uvdat.core.models import Context, Dataset
 def test_load_roads():
 
     context = Context.objects.create(
-        name='Road Test',
-        default_map_zoom=10,
-        default_map_center=Point(42, -71)
+        name='Road Test', default_map_zoom=10, default_map_center=Point(42, -71)
     )
 
     call_command(

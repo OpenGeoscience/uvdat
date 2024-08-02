@@ -46,7 +46,7 @@ def flood_scenario_1(simulation_result_id, network, elevation_data, flood_area):
         network = Network.objects.get(id=network)
         elevation_data = RasterMapLayer.objects.get(id=elevation_data)
         flood_area = VectorMapLayer.objects.get(id=flood_area)
-    except:
+    except Exception:
         result.error_message = 'Object not found.'
         result.save()
         return

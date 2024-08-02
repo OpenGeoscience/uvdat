@@ -64,10 +64,6 @@ class VectorFeatureAdmin(admin.ModelAdmin):
         return obj.map_layer.index
 
 
-class VectorFeatureAdmin(admin.ModelAdmin):
-    list_display = ['id', 'map_layer']
-
-
 class SourceRegionAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_dataset_name']
 

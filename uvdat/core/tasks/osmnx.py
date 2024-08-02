@@ -1,8 +1,5 @@
-import json
-
 from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
-from django.core.files.base import ContentFile
 import osmnx
 
 from uvdat.core.models import Context, Dataset, Network, NetworkEdge, NetworkNode, VectorMapLayer
@@ -38,7 +35,7 @@ def load_roads(context_id, location):
     context = Context.objects.get(id=context_id)
     dataset = get_or_create_road_dataset(context, location)
     network = Network.objects.create(
-        dataset=dataset, category="roads", metadata={'source': 'Fetched with OSMnx.'}
+        dataset=dataset, category='roads', metadata={'source': 'Fetched with OSMnx.'}
     )
 
     print(f'Fetching road data for {location}...')
