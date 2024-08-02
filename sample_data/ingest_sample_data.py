@@ -133,8 +133,8 @@ def ingest_datasets(include_large=False, dataset_indexes=None):
                     print('\t', f'Converting data for {dataset_for_conversion.name}...')
                     dataset_for_conversion.spawn_conversion_task(
                         style_options=dataset.get('style_options'),
-                        network_options=network_options,
-                        region_options=region_options,
+                        network_options=dataset.get('network_options'),
+                        region_options=dataset.get('region_options'),
                         asynchronous=False,
                     )
                 else:
