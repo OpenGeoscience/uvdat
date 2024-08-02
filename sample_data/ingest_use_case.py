@@ -162,5 +162,5 @@ def ingest_use_case(use_case_name, include_large=False, dataset_indexes=None):
         include_large=include_large,
         dataset_indexes=dataset_indexes,
     )
-    ingest_charts(use_case=use_case_name)
     ingest_contexts(use_case=use_case_name)
+    ingest_charts(use_case=use_case_name)
