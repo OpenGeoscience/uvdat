@@ -49,8 +49,6 @@
                 "url": "https://data.kitware.com/api/v1/item/66a7bdab0ea2cce8e698b958/download",
                 "path": "nyc/networks.zip"
             }
-        ],
-        "module": "import_networks",
-        "function": "perform_import"
+        ]
     }
 ]

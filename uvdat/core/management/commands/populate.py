@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from sample_data.ingest_sample_data import ingest_charts, ingest_contexts, ingest_datasets
+from sample_data.ingest_use_case import ingest_use_case
 
 
 class Command(BaseCommand):
@@ -20,17 +20,14 @@ class Command(BaseCommand):
         parser.add_argument('--dataset_indexes', nargs='*', type=int)
 
     def handle(self, *args, **kwargs):
-        use_case = kwargs['use_case']
+        use_case_name = kwargs['use_case']
         include_large = kwargs['include_large']
         dataset_indexes = kwargs['dataset_indexes']
         if dataset_indexes is None or len(dataset_indexes) == 0:
             dataset_indexes = None
 
-        print(f'Populating server with sample data for use case {use_case}...')
-        ingest_datasets(
-            use_case,
+        ingest_use_case(
+            use_case_name,
             include_large=include_large,
             dataset_indexes=dataset_indexes,
         )
-        ingest_contexts(use_case)
-        ingest_charts(use_case)
