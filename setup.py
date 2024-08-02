@@ -36,42 +36,35 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
-        'celery',
-        'django==4.1',
-        # TODO: remove django version constraint
-        # when girder4 becomes compatible with 4.2
-        'django-allauth<0.56.0',
-        # TODO: remove repo link after django-configurations 2.4.2 is released to PyPI
-        # https://github.com/jazzband/django-configurations/pull/365
-        'django-configurations[database,email] @ git+https://github.com/jazzband/django-configurations@master',
-        'django-extensions',
-        'django-filter',
-        'django-oauth-toolkit',
-        'djangorestframework',
-        'django-large-image',
-        'drf-yasg',
-        'ijson',
-        'osmnx',
-        'matplotlib',
-        'geojson2vt',
-        'geopandas',
-        'networkx',
-        'pyshp',
-        'rasterio',
-        'urllib3==1.26.15',  # compensate for a bug affecting swagger docs page
-        'webcolors',
+        # Pinned August 2024
+        'celery==5.4.0',
+        'django==5.0.7',
+        'django-configurations[database,email]==2.5.1',
+        'django-extensions==3.2.3',
+        'django-filter==24.3',
+        'django-oauth-toolkit==2.4.0',
+        'djangorestframework==3.15.2',
+        'django-large-image==0.10.0',
+        'drf-yasg==1.21.7',
+        'osmnx==1.9.4',
+        'geopandas==0.14.4',
+        'networkx==3.3',
+        'pyshp==2.3.1',
+        'rasterio==1.3.10',
+        'urllib3==1.26.15',
+        'webcolors==24.6.0',
         # Production-only
-        'django-composed-configuration[prod]>=0.20',
-        'django-s3-file-field[boto3]',
-        'gunicorn',
+        'django-composed-configuration[prod]==0.25.0',
+        'django-s3-file-field[boto3]==1.0.1',
+        'gunicorn==22.0.0',
     ],
     extras_require={
         'dev': [
-            'django-composed-configuration[dev]>=0.18',
-            'django-debug-toolbar',
-            'django-s3-file-field[minio]',
-            'ipython',
-            'tox',
-        ]
+            'django-composed-configuration[dev]==0.25.0',
+            'django-debug-toolbar==4.4.6',
+            'django-s3-file-field[minio]==1.0.1',
+            'ipython==8.26.0',
+            'tox==4.16.0',
+        ],
     },
 )
