@@ -1,0 +1,44 @@
+[
+    {
+        "name": "National Grid CompanyBoundary",
+        "description": "CompanyBoundary vector data",
+        "category": "region"
+    },
+    {
+        "name": "County Boundaries",
+        "description": "From https://gis.ny.gov/civil-boundaries",
+        "category": "region",
+        "type": "vector",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/66a2a19a5d2551c516b1e502/download",
+                "path": "nyc/counties.zip"
+            }
+        ],
+        "region_options": {
+            "name_property": "NAME"
+        },
+        "style_options": {
+            "outline": "white",
+            "palette": [
+                "grey"
+            ]
+        }
+    },
+    {
+        "name": "National Grid Substations",
+        "description": "Substations vector data",
+        "category": "energy"
+    },
+    {
+        "name": "National Grid County Networks",
+        "description": "Energy networks for each county in New York",
+        "category": "energy",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/66a7bdab0ea2cce8e698b958/download",
+                "path": "nyc/networks.zip"
+            }
+        ]
+    }
+]

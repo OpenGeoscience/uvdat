@@ -29,12 +29,13 @@ def test_populate():
 
     call_command(
         'populate',
+        'boston_floods',
         include_large=True,
         dataset_indexes=dataset_indexes,
     )
 
     assert Chart.objects.all().count() == 1
-    assert Context.objects.all().count() == 3
+    assert Context.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
     assert DerivedRegion.objects.all().count() == 0
     assert FileItem.objects.all().count() == 7
