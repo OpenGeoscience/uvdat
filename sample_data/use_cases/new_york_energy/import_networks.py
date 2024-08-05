@@ -46,7 +46,7 @@ def create_network(dataset, network_name, geodata):
                 name=f'{network_name} {len(edges)}',
                 network=network,
                 line_geometry=LineString(*geom.get('coordinates')),
-                metadata=get_metadata('feature'),
+                metadata=get_metadata(feature),
             ))
     NetworkNode.objects.bulk_create(nodes, batch_size=1000)
 
