@@ -2,12 +2,7 @@
     {
         "name": "National Grid CompanyBoundary",
         "description": "CompanyBoundary vector data",
-        "category": "region",
-        "module": "nysdp",
-        "function": "create_vector_features",
-        "kwargs": {
-            "service_name": "CompanyBoundary"
-        }
+        "category": "region"
     },
     {
         "name": "County Boundaries",
@@ -33,12 +28,7 @@
     {
         "name": "National Grid Substations",
         "description": "Substations vector data",
-        "category": "energy",
-        "module": "nysdp",
-        "function": "create_vector_features",
-        "kwargs": {
-            "service_name": "Substations"
-        }
+        "category": "energy"
     },
     {
         "name": "National Grid County Networks",
