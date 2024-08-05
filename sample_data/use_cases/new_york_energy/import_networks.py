@@ -15,6 +15,13 @@ from uvdat.core.tasks.networks import vector_features_from_network
 TOLERANCE_METERS = 15
 
 
+def get_metadata(feature):
+    return {
+        k: v for k, v in feature.get('properties', {}).items()
+        if k and v
+    }
+
+
 def create_network(dataset, network_name, geodata):
     print(f'\t\tCreating network for {network_name}.')
     network = Network.objects.create(
@@ -32,14 +39,14 @@ def create_network(dataset, network_name, geodata):
                 name=f'{network_name} {len(nodes)}',
                 network=network,
                 location=Point(*geom.get('coordinates')),
-                metadata=feature.get('properties'),
+                metadata=get_metadata(feature),
             ))
         elif geom.get('type') == 'LineString':
             edges.append(NetworkEdge(
                 name=f'{network_name} {len(edges)}',
                 network=network,
                 line_geometry=LineString(*geom.get('coordinates')),
-                metadata=feature.get('properties'),
+                metadata=get_metadata('feature'),
             ))
     NetworkNode.objects.bulk_create(nodes, batch_size=1000)
 
