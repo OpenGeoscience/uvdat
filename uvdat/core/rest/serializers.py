@@ -6,18 +6,19 @@ from rest_framework import serializers
 
 from uvdat.core.models import (
     Chart,
-    Context,
     Dataset,
     DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
     NetworkNode,
+    Project,
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
     VectorMapLayer,
 )
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,8 +26,11 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
 
 
-class ContextSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
+    owner = UserSerializer(allow_null=True)
+    collaborators = UserSerializer(many=True)
+    followers = UserSerializer(many=True)
 
     def get_center(self, obj):
         # Web client expects Lon, Lat
@@ -34,7 +38,7 @@ class ContextSerializer(serializers.ModelSerializer):
             return [obj.default_map_center.y, obj.default_map_center.x]
 
     class Meta:
-        model = Context
+        model = Project
         fields = '__all__'
 
 
@@ -151,7 +155,7 @@ class DerivedRegionListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'context',
+            'project',
             'metadata',
             'source_regions',
             'operation',
@@ -179,7 +183,7 @@ class DerivedRegionCreationSerializer(serializers.ModelSerializer):
         model = DerivedRegion
         fields = [
             'name',
-            'context',
+            'project',
             'regions',
             'operation',
         ]

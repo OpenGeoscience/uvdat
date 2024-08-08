@@ -2,13 +2,13 @@ from django.contrib import admin
 
 from uvdat.core.models import (
     Chart,
-    Context,
     Dataset,
     DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
     NetworkNode,
+    Project,
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
@@ -17,8 +17,8 @@ from uvdat.core.models import (
 )
 
 
-class ContextAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name']
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'owner']
 
 
 class DatasetAdmin(admin.ModelAdmin):
@@ -72,10 +72,10 @@ class SourceRegionAdmin(admin.ModelAdmin):
 
 
 class DerivedRegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_context_name', 'operation', 'get_source_region_names']
+    list_display = ['id', 'name', 'get_project_name', 'operation', 'get_source_region_names']
 
-    def get_context_name(self, obj):
-        return obj.context.name
+    def get_project_name(self, obj):
+        return obj.project.name
 
     def get_source_region_names(self, obj):
         return ', '.join(r.name for r in obj.source_regions.all())
@@ -115,7 +115,7 @@ class SimulationResultAdmin(admin.ModelAdmin):
     list_display = ['id', 'simulation_type', 'input_args']
 
 
-admin.site.register(Context, ContextAdmin)
+admin.site.register(Project, ProjectAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)

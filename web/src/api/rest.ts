@@ -1,6 +1,6 @@
 import { apiClient } from "./auth";
 import {
-  Context,
+  Project,
   Dataset,
   NetworkNode,
   RasterData,
@@ -12,31 +12,31 @@ import {
   Network,
 } from "@/types";
 
-export async function getContexts(): Promise<Context[]> {
-  return (await apiClient.get("contexts")).data.results;
+export async function getProjects(): Promise<Project[]> {
+  return (await apiClient.get("projects")).data.results;
 }
 
-export async function getContextDatasets(
-  contextId: number
+export async function getProjectDatasets(
+  projectId: number
 ): Promise<Dataset[]> {
-  return (await apiClient.get(`datasets?context=${contextId}`)).data.results;
+  return (await apiClient.get(`datasets?project=${projectId}`)).data.results;
 }
 
-export async function getContextCharts(contextId: number): Promise<Chart[]> {
-  return (await apiClient.get(`charts?context=${contextId}`)).data.results;
+export async function getProjectCharts(projectId: number): Promise<Chart[]> {
+  return (await apiClient.get(`charts?project=${projectId}`)).data.results;
 }
 
-export async function getContextDerivedRegions(
-  contextId: number
+export async function getProjectDerivedRegions(
+  projectId: number
 ): Promise<DerivedRegion[]> {
-  return (await apiClient.get(`derived-regions?context=${contextId}`)).data
+  return (await apiClient.get(`derived-regions?project=${projectId}`)).data
     .results;
 }
 
-export async function getContextSimulationTypes(
-  contextId: number
+export async function getProjectSimulationTypes(
+  projectId: number
 ): Promise<SimulationType[]> {
-  return (await apiClient.get(`simulations/available/context/${contextId}`))
+  return (await apiClient.get(`simulations/available/project/${projectId}`))
     .data;
 }
 
@@ -65,12 +65,12 @@ export async function getDatasetNetwork(datasetId: number): Promise<Network[]> {
 
 export async function getNetworkGCC(
   datasetId: number,
-  contextId: number,
+  projectId: number,
   exclude_nodes: number[]
 ): Promise<NetworkNode[]> {
   return (
     await apiClient.get(
-      `datasets/${datasetId}/gcc?context=${contextId}&exclude_nodes=${exclude_nodes.toString()}`
+      `datasets/${datasetId}/gcc?project=${projectId}&exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
 }
@@ -101,12 +101,12 @@ export async function clearChart(chartId: number) {
 
 export async function runSimulation(
   simulationId: number,
-  contextId: number,
+  projectId: number,
   args: object
 ) {
   return (
     await apiClient.post(
-      `simulations/run/${simulationId}/context/${contextId}/`,
+      `simulations/run/${simulationId}/project/${projectId}/`,
       args
     )
   ).data;
@@ -114,11 +114,11 @@ export async function runSimulation(
 
 export async function getSimulationResults(
   simulationId: number,
-  contextId: number
+  projectId: number
 ) {
   return (
     await apiClient.get(
-      `simulations/${simulationId}/context/${contextId}/results/`
+      `simulations/${simulationId}/project/${projectId}/results/`
     )
   ).data;
 }
@@ -130,7 +130,7 @@ export async function getDerivedRegion(regionId: number) {
 
 export async function postDerivedRegion(
   name: string,
-  context: number,
+  project: number,
   regions: number[],
   op: "union" | "intersection" | undefined
 ) {
@@ -138,7 +138,7 @@ export async function postDerivedRegion(
   const operation = op.toUpperCase();
   const res = await apiClient.post("derived-regions/", {
     name,
-    context,
+    project,
     operation,
     regions,
   });

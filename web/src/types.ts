@@ -38,7 +38,7 @@ export interface SourceRegion {
 export interface DerivedRegion {
   id: number;
   name: string;
-  context: number;
+  project: number;
   metadata: object;
   boundary: object;
   source_regions: number[];
@@ -51,7 +51,7 @@ export interface DerivedRegion {
   current_layer_index: null;
 }
 
-export interface Context {
+export interface Project {
   id: number;
   name: string;
   default_map_center: [number, number];
@@ -59,6 +59,9 @@ export interface Context {
   datasets: Dataset[];
   created: string;
   modified: string;
+  owner: User;
+  collaborators: User[];
+  followers: User[];
 }
 
 export interface Feature {
@@ -198,7 +201,7 @@ export interface Chart {
   id: number;
   name: string;
   description: string;
-  context: number;
+  project: number;
   metadata: object;
   chart_data: {
     labels: string[];
@@ -258,7 +261,7 @@ export interface SimulationResult {
   id: number;
   name: string;
   simulation_type: string;
-  context: number;
+  project: number;
   input_args: object;
   output_data: {
     node_failures: [];

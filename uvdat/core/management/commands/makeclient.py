@@ -1,4 +1,5 @@
 import os
+
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.management.base import BaseCommand, CommandError
@@ -37,9 +38,7 @@ class Command(BaseCommand):
                 skip_authorization=True,
             )
             application.save()
-            self.stdout.write(
-                self.style.SUCCESS('Client Application created.')
-            )
+            self.stdout.write(self.style.SUCCESS('Client Application created.'))
         except User.DoesNotExist:
             raise CommandError(
                 'A user must exist before creating a client. Use createsuperuser command.'

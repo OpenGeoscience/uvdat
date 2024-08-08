@@ -3,15 +3,14 @@ import { defineComponent, ref, watch, onMounted, computed } from "vue";
 import {
   currentUser,
   currentError,
-  currentContext,
+  currentProject,
   currentDataset,
-  availableContexts,
+  availableProjects,
   currentChart,
   currentSimulationType,
 } from "./store";
 import { oauthClient, logout } from "./api/auth";
-import { loadContexts } from "./storeFunctions";
-import { updateBaseLayer } from "@/layers";
+import { loadProjects } from "./storeFunctions";
 import Map from "./components/map/Map.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
@@ -32,7 +31,7 @@ export default defineComponent({
 
     function onReady() {
       if (currentUser.value) {
-        loadContexts();
+        loadProjects();
       }
     }
 
@@ -42,8 +41,8 @@ export default defineComponent({
 
     onMounted(onReady);
     watch(currentUser, onReady);
-    watch(currentContext, () => {
-      drawer.value = currentContext.value !== undefined;
+    watch(currentProject, () => {
+      drawer.value = currentProject.value !== undefined;
     });
 
     return {
@@ -51,9 +50,9 @@ export default defineComponent({
       logout,
       currentUser,
       drawer,
-      currentContext,
+      currentProject,
       currentDataset,
-      availableContexts,
+      availableProjects,
       currentError,
       showError,
       currentChart,
@@ -99,15 +98,15 @@ export default defineComponent({
     </v-overlay>
     <v-app-bar app prominent>
       <v-app-bar-nav-icon
-        v-if="currentContext"
+        v-if="currentProject"
         @click.stop="drawer = !drawer"
       />
       <v-toolbar-title>UVDAT</v-toolbar-title>
       <v-spacer />
       <v-select
-        label="Study Context"
-        v-model="currentContext"
-        :items="availableContexts"
+        label="Select Project"
+        v-model="currentProject"
+        :items="availableProjects"
         item-title="name"
         density="compact"
         return-object
@@ -131,7 +130,7 @@ export default defineComponent({
       </div>
     </v-app-bar>
     <v-navigation-drawer
-      v-if="currentContext"
+      v-if="currentProject"
       v-model="drawer"
       permanent
       width="300"

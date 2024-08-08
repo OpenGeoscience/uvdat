@@ -16,11 +16,11 @@ class Dataset(models.Model):
         choices=DatasetType.choices,
     )
 
-    def is_in_context(self, context_id):
-        from uvdat.core.models import Context
+    def is_in_project(self, project_id):
+        from uvdat.core.models import Project
 
-        context = Context.objects.get(id=context_id)
-        return context.datasets.filter(id=self.id).exists()
+        project = Project.objects.get(id=project_id)
+        return project.datasets.filter(id=self.id).exists()
 
     def spawn_conversion_task(
         self,

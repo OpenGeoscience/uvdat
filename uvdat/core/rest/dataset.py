@@ -14,9 +14,9 @@ class DatasetViewSet(ModelViewSet):
     serializer_class = uvdat_serializers.DatasetSerializer
 
     def get_queryset(self):
-        context_id = self.request.query_params.get('context')
-        if context_id:
-            return Dataset.objects.filter(context__id=context_id)
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            return Dataset.objects.filter(project__id=project_id)
         else:
             return Dataset.objects.all()
 
@@ -65,7 +65,7 @@ class DatasetViewSet(ModelViewSet):
     @action(detail=True, methods=['get'])
     def gcc(self, request, **kwargs):
         dataset = self.get_object()
-        context_id = request.query_params.get('context')
+        project_id = request.query_params.get('project')
         exclude_nodes = request.query_params.get('exclude_nodes', [])
         exclude_nodes = exclude_nodes.split(',')
         exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
@@ -81,5 +81,5 @@ class DatasetViewSet(ModelViewSet):
             results.sort(key=lambda r: len(r.get('excluded')), reverse=True)
             gcc = results[0].get('gcc')
             excluded = results[0].get('excluded')
-            add_gcc_chart_datum(dataset, context_id, excluded, len(gcc))
+            add_gcc_chart_datum(dataset, project_id, excluded, len(gcc))
             return HttpResponse(json.dumps(gcc), status=200)
