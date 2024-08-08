@@ -1,9 +1,9 @@
 from django.contrib.gis.db import models as geo_models
 from django.db import models
 
-from .context import Context
 from .dataset import Dataset
 from .map_layers import VectorMapLayer
+from .project import Project
 
 
 class SourceRegion(models.Model):
@@ -12,8 +12,8 @@ class SourceRegion(models.Model):
     metadata = models.JSONField(blank=True, null=True)
     boundary = geo_models.MultiPolygonField()
 
-    def is_in_context(self, context_id):
-        return self.dataset.is_in_context(context_id)
+    def is_in_project(self, project_id):
+        return self.dataset.is_in_project(project_id)
 
     class Meta:
         constraints = [
@@ -28,7 +28,9 @@ class DerivedRegion(models.Model):
         INTERSECTION = 'INTERSECTION', 'Intersection'
 
     name = models.CharField(max_length=255)
-    context = models.ForeignKey(Context, on_delete=models.CASCADE, related_name='derived_regions')
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='derived_regions', null=True
+    )
     metadata = models.JSONField(blank=True, null=True)
     boundary = geo_models.MultiPolygonField()
 
@@ -43,8 +45,8 @@ class DerivedRegion(models.Model):
     # They need their own reference to a map representation
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.PROTECT)
 
-    def is_in_context(self, context_id):
-        return self.context.id == int(context_id)
+    def is_in_project(self, project_id):
+        return self.project.id == int(project_id)
 
     def get_map_layers(self):
         return [
@@ -57,6 +59,6 @@ class DerivedRegion(models.Model):
 
     class Meta:
         constraints = [
-            # We enforce name uniqueness across contexts
-            models.UniqueConstraint(name='unique-derived-region-name', fields=['context', 'name'])
+            # We enforce name uniqueness across projects
+            models.UniqueConstraint(name='unique-derived-region-name', fields=['project', 'name'])
         ]

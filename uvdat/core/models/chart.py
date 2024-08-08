@@ -1,20 +1,20 @@
 from django.db import models
 
-from .context import Context
+from .project import Project
 
 
 class Chart(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
-    context = models.ForeignKey(Context, on_delete=models.CASCADE, related_name='charts')
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='charts', null=True)
     metadata = models.JSONField(blank=True, null=True)
 
     chart_data = models.JSONField(blank=True, null=True)
     chart_options = models.JSONField(blank=True, null=True)
     editable = models.BooleanField(default=False)
 
-    def is_in_context(self, context_id):
-        return self.context.id == context_id
+    def is_in_project(self, project_id):
+        return self.project.id == project_id
 
     def spawn_conversion_task(
         self,

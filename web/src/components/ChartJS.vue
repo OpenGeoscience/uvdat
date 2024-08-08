@@ -13,7 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import RecursiveTable from "./RecursiveTable.vue";
-import { clearChart, getContextCharts } from "@/api/rest";
+import { clearChart, getProjectCharts } from "@/api/rest";
 import { ChartOptions } from "@/types";
 
 ChartJS.register(
@@ -152,7 +152,7 @@ export default {
       if (!currentChart.value) return;
       clearChart(currentChart.value.id).then(() => {
         if (!currentChart.value) return;
-        getContextCharts(currentChart.value.context).then((charts) => {
+        getProjectCharts(currentChart.value.project).then((charts) => {
           if (!currentChart.value) return;
           availableCharts.value = charts;
           const currentChartId = currentChart.value.id;

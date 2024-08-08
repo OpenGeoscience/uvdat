@@ -13,10 +13,10 @@ class Command(BaseCommand):
             type=str,
             help='Target city to fetch roads from (e.g. "Boston, MA")',
         )
-        parser.add_argument('--context_id', nargs='?', type=int, const=1)
+        parser.add_argument('--project_id', nargs='?', type=int, const=1)
 
     def handle(self, *args, **kwargs):
         city = kwargs['city']
-        context_id = kwargs['context_id']
-        print(f'Populating context {context_id} with roads for {city}...')
-        load_roads(context_id, city)
+        project_id = kwargs['project_id']
+        print(f'Populating project {project_id} with roads for {city}...')
+        load_roads(project_id, city)

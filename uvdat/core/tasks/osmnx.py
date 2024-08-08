@@ -2,12 +2,12 @@ from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
 import osmnx
 
-from uvdat.core.models import Context, Dataset, Network, NetworkEdge, NetworkNode, VectorMapLayer
+from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode, Project, VectorMapLayer
 from uvdat.core.tasks.map_layers import save_vector_features
 from uvdat.core.tasks.networks import geojson_from_network
 
 
-def get_or_create_road_dataset(context, location):
+def get_or_create_road_dataset(project, location):
     dataset, created = Dataset.objects.get_or_create(
         name=f'{location} Road Network',
         description='Roads and intersections retrieved from OpenStreetMap via OSMnx',
@@ -15,7 +15,7 @@ def get_or_create_road_dataset(context, location):
         category='transportation',
     )
     if created:
-        context.datasets.add(dataset)
+        project.datasets.add(dataset)
 
     print('Clearing previous results...')
     Network.objects.filter(dataset=dataset).delete()
@@ -31,9 +31,9 @@ def metadata_for_row(row):
 
 
 @shared_task
-def load_roads(context_id, location):
-    context = Context.objects.get(id=context_id)
-    dataset = get_or_create_road_dataset(context, location)
+def load_roads(project_id, location):
+    project = Project.objects.get(id=project_id)
+    dataset = get_or_create_road_dataset(project, location)
     network = Network.objects.create(
         dataset=dataset, category='roads', metadata={'source': 'Fetched with OSMnx.'}
     )

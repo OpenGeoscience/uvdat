@@ -3,13 +3,13 @@ import pytest
 
 from uvdat.core.models import (
     Chart,
-    Context,
     Dataset,
     DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
     NetworkNode,
+    Project,
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
@@ -35,7 +35,7 @@ def test_populate():
     )
 
     assert Chart.objects.all().count() == 1
-    assert Context.objects.all().count() == 2
+    assert Project.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
     assert DerivedRegion.objects.all().count() == 0
     assert FileItem.objects.all().count() == 7

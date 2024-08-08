@@ -18,8 +18,8 @@ class AbstractMapLayer(TimeStampedModel):
     default_style = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
 
-    def is_in_context(self, context_id):
-        return self.dataset.is_in_context(context_id)
+    def is_in_project(self, project_id):
+        return self.dataset.is_in_project(project_id)
 
     class Meta:
         abstract = True

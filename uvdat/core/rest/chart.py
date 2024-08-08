@@ -13,9 +13,9 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
 
     def get_queryset(self, **kwargs):
         request = self.request
-        context_id = request.query_params.get('context')
-        if context_id:
-            return Chart.objects.filter(context__id=context_id)
+        project_id = request.query_params.get('project')
+        if project_id:
+            return Chart.objects.filter(project__id=project_id)
         return Chart.objects.all()
 
     def validate_editable(self, chart, func, *args, **kwargs):

@@ -18,8 +18,8 @@ class FileItem(TimeStampedModel):
     metadata = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
 
-    def is_in_context(self, context_id):
-        return self.dataset.is_in_context(context_id)
+    def is_in_project(self, project_id):
+        return self.dataset.is_in_project(project_id)
 
     def download(self):
         # TODO: download

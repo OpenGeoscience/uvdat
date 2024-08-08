@@ -5,8 +5,8 @@ import * as olProj from "ol/proj";
 import { watch } from "vue";
 
 import {
-  availableContexts,
-  currentContext,
+  availableProjects,
+  currentProject,
   availableDatasets,
   selectedDatasets,
   currentDataset,
@@ -35,12 +35,12 @@ import {
 } from "./store";
 import { Dataset } from "./types";
 import {
-  getContextDatasets,
-  getContexts,
+  getProjectDatasets,
+  getProjects,
   getDataset,
-  getContextCharts,
-  getContextSimulationTypes,
-  getContextDerivedRegions,
+  getProjectCharts,
+  getProjectSimulationTypes,
+  getProjectDerivedRegions,
 } from "@/api/rest";
 
 export function clearState() {
@@ -76,19 +76,19 @@ export function getMap() {
   return map.value;
 }
 
-export function loadContexts() {
+export function loadProjects() {
   clearState();
-  getContexts().then((data) => {
-    availableContexts.value = data;
+  getProjects().then((data) => {
+    availableProjects.value = data;
   });
 }
 
 export function clearMap() {
   let center = [0, 30];
   let zoom = 1;
-  if (currentContext.value) {
-    center = currentContext.value.default_map_center;
-    zoom = currentContext.value.default_map_zoom;
+  if (currentProject.value) {
+    center = currentProject.value.default_map_center;
+    zoom = currentProject.value.default_map_zoom;
   }
   getMap().setView(
     new View({
@@ -107,38 +107,38 @@ export function clearMap() {
 }
 
 export function loadDatasets() {
-  if (!currentContext.value) return;
+  if (!currentProject.value) return;
   availableDatasets.value = undefined;
-  getContextDatasets(currentContext.value.id).then((data: Dataset[]) => {
+  getProjectDatasets(currentProject.value.id).then((data: Dataset[]) => {
     availableDatasets.value = data;
   });
 }
 
 export function loadCharts() {
-  if (!currentContext.value) return;
+  if (!currentProject.value) return;
   availableCharts.value = undefined;
   currentChart.value = undefined;
-  getContextCharts(currentContext.value.id).then((charts) => {
+  getProjectCharts(currentProject.value.id).then((charts) => {
     availableCharts.value = charts;
   });
 }
 
 export function loadSimulationTypes() {
-  if (!currentContext.value) return;
+  if (!currentProject.value) return;
   availableSimulationTypes.value = undefined;
   currentSimulationType.value = undefined;
-  getContextSimulationTypes(currentContext.value.id).then((sims) => {
+  getProjectSimulationTypes(currentProject.value.id).then((sims) => {
     availableSimulationTypes.value = sims;
   });
 }
 
 export async function loadDerivedRegions() {
-  if (!currentContext.value) {
+  if (!currentProject.value) {
     return;
   }
 
-  availableDerivedRegions.value = await getContextDerivedRegions(
-    currentContext.value.id
+  availableDerivedRegions.value = await getProjectDerivedRegions(
+    currentProject.value.id
   );
 }
 
@@ -153,13 +153,13 @@ export function cancelRegionGrouping() {
 export function pollForProcessingDataset(datasetId: number) {
   // fetch dataset every 10 seconds until it is not in a processing state
   polls.value[datasetId] = setInterval(() => {
-    const currentVersion = currentContext.value?.datasets.find(
+    const currentVersion = currentProject.value?.datasets.find(
       (d) => d.id === datasetId
     );
-    if (currentContext.value && currentVersion?.processing) {
+    if (currentProject.value && currentVersion?.processing) {
       getDataset(datasetId).then((newVersion) => {
-        if (currentContext.value && !newVersion.processing) {
-          currentContext.value.datasets = currentContext.value.datasets.map(
+        if (currentProject.value && !newVersion.processing) {
+          currentProject.value.datasets = currentProject.value.datasets.map(
             (d) => (d.id === datasetId ? newVersion : d)
           );
         }
@@ -171,7 +171,7 @@ export function pollForProcessingDataset(datasetId: number) {
   }, 10000);
 }
 
-watch(currentContext, () => {
+watch(currentProject, () => {
   clearState();
   clearMap();
   loadDatasets();

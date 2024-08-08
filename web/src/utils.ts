@@ -3,14 +3,14 @@ import { Overlay } from "ol";
 import ImageStyle from "ol/style/Image.js";
 
 import {
-  getContextCharts,
+  getProjectCharts,
   getDatasetNetwork,
   getNetworkGCC,
   getRasterData,
 } from "@/api/rest";
 import {
   rasterTooltip,
-  currentContext,
+  currentProject,
   deactivatedNodes,
   currentNetworkGCC,
   availableCharts,
@@ -159,14 +159,14 @@ export function createStyle(args: {
 }
 
 export function deactivatedNodesUpdated() {
-  if (currentContext.value && currentNetworkDataset.value) {
+  if (currentProject.value && currentNetworkDataset.value) {
     currentNetworkGCC.value = undefined;
     getNetworkGCC(
       currentNetworkDataset.value.id,
-      currentContext.value.id,
+      currentProject.value.id,
       deactivatedNodes.value
     ).then((gcc) => {
-      if (!currentContext.value) return;
+      if (!currentProject.value) return;
       currentNetworkGCC.value = gcc;
       if (currentNetworkMapLayer.value) {
         styleVectorOpenLayer(currentNetworkMapLayer.value, {
@@ -176,7 +176,7 @@ export function deactivatedNodesUpdated() {
       }
 
       // update chart
-      getContextCharts(currentContext.value.id).then((charts) => {
+      getProjectCharts(currentProject.value.id).then((charts) => {
         availableCharts.value = charts;
         if (currentChart.value) {
           currentChart.value = charts.find(

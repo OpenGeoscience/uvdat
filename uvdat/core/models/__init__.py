@@ -1,15 +1,15 @@
 from .chart import Chart
-from .context import Context
 from .dataset import Dataset
 from .file_item import FileItem
 from .map_layers import RasterMapLayer, VectorFeature, VectorMapLayer
 from .networks import Network, NetworkEdge, NetworkNode
+from .project import Project
 from .regions import DerivedRegion, SourceRegion
 from .simulations import SimulationResult
 
 __all__ = [
     Chart,
-    Context,
+    Project,
     Dataset,
     FileItem,
     RasterMapLayer,

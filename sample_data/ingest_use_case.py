@@ -8,7 +8,7 @@ from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile
 import requests
 
-from uvdat.core.models import Chart, Context, Dataset, FileItem
+from uvdat.core.models import Chart, Project, Dataset, FileItem
 
 from .use_cases.boston_floods import ingest as boston_floods_ingest
 from .use_cases.new_york_energy import ingest as new_york_energy_ingest
@@ -54,26 +54,26 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
             new_file_item.file.save(file_path, ContentFile(f.read()))
 
 
-def ingest_contexts(use_case):
-    context_file_path = USE_CASE_FOLDER / use_case / 'contexts.json'
-    if context_file_path.exists():
-        print('Creating Context objects...')
-        with open(context_file_path) as contexts_json:
-            data = json.load(contexts_json)
-            for context in data:
-                print('\t- ', context['name'])
-                existing = Context.objects.filter(name=context['name'])
+def ingest_projects(use_case):
+    project_file_path = USE_CASE_FOLDER / use_case / 'projects.json'
+    if project_file_path.exists():
+        print('Creating Project objects...')
+        with open(project_file_path) as projects_json:
+            data = json.load(projects_json)
+            for project in data:
+                print('\t- ', project['name'])
+                existing = Project.objects.filter(name=project['name'])
                 if existing.count():
-                    context_for_setting = existing.first()
+                    project_for_setting = existing.first()
                 else:
-                    context_for_setting = Context.objects.create(
-                        name=context['name'],
-                        default_map_center=Point(*context['default_map_center']),
-                        default_map_zoom=context['default_map_zoom'],
+                    project_for_setting = Project.objects.create(
+                        name=project['name'],
+                        default_map_center=Point(*project['default_map_center']),
+                        default_map_zoom=project['default_map_zoom'],
                     )
-                    print('\t', f'Context {context_for_setting.name} created.')
+                    print('\t', f'Project {project_for_setting.name} created.')
 
-                context_for_setting.datasets.set(Dataset.objects.filter(name__in=context['datasets']))
+                project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
 
 
 def ingest_charts(use_case):
@@ -91,7 +91,7 @@ def ingest_charts(use_case):
                     new_chart = Chart.objects.create(
                         name=chart['name'],
                         description=chart['description'],
-                        context=Context.objects.get(name=chart['context']),
+                        project=Project.objects.get(name=chart['project']),
                         chart_options=chart.get('chart_options'),
                         metadata=chart.get('metadata'),
                         editable=chart.get('editable', False),
@@ -162,5 +162,5 @@ def ingest_use_case(use_case_name, include_large=False, dataset_indexes=None):
         include_large=include_large,
         dataset_indexes=dataset_indexes,
     )
-    ingest_contexts(use_case=use_case_name)
+    ingest_projects(use_case=use_case_name)
     ingest_charts(use_case=use_case_name)

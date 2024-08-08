@@ -4,7 +4,7 @@ import {
   selectedSourceRegions,
   regionGroupingType,
   regionGroupingActive,
-  currentContext,
+  currentProject,
 } from "@/store";
 import {
   cancelRegionGrouping as _cancelRegionGrouping,
@@ -32,11 +32,11 @@ export default {
         throw new Error("Region grouping type is null");
       }
 
-      const context = currentContext.value;
-      if (context) {
+      const project = currentProject.value;
+      if (project) {
         await postDerivedRegion(
           newRegionName.value,
-          context.id,
+          project.id,
           selectedSourceRegions.value.map((reg) => reg.id),
           regionGroupingType.value
         );

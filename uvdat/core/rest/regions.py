@@ -32,9 +32,9 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
         return super().get_serializer_class()
 
     def get_queryset(self):
-        context_id = self.request.query_params.get('context')
-        if context_id:
-            return DerivedRegion.objects.filter(context__id=context_id)
+        project_id = self.request.query_params.get('project')
+        if project_id:
+            return DerivedRegion.objects.filter(project__id=project_id)
         else:
             return DerivedRegion.objects.all()
 
@@ -58,7 +58,7 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
             data = serializer.validated_data
             derived_region = create_derived_region(
                 name=data['name'],
-                context=data['context'],
+                project=data['project'],
                 region_ids=data['regions'],
                 operation=data['operation'],
             )
