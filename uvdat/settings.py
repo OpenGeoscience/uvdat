@@ -20,6 +20,8 @@ class UvdatMixin(ConfigMixin):
 
     BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
+    SESSION_COOKIE_AGE = 3
+
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first
@@ -34,10 +36,12 @@ class UvdatMixin(ConfigMixin):
             's3_file_field',
         ]
 
-        # Disable authentication requirements for REST
-        # TODO: configure authentication and remove this workaround
-        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
-        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
+            'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        ]
+        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
+            'rest_framework.permissions.IsAuthenticated'
+        ]
 
         # Re-configure the database for PostGIS
         db_parts = urlparse(os.environ['DJANGO_DATABASE_URL'])

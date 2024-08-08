@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.auth.models import User
 from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
@@ -17,6 +18,11 @@ from uvdat.core.models import (
     SourceRegion,
     VectorMapLayer,
 )
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
 
 
 class ContextSerializer(serializers.ModelSerializer):
