@@ -5,6 +5,15 @@ export interface Network {
   edges: NetworkEdge[];
 }
 
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_superuser: boolean;
+}
+
 export interface Dataset {
   id: number;
   name: string;

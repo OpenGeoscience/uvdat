@@ -1,15 +1,15 @@
 <script lang="ts">
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, watch, onMounted, computed } from "vue";
 import {
+  currentUser,
   currentError,
   currentContext,
   currentDataset,
   availableContexts,
-  loading,
   currentChart,
   currentSimulationType,
-  showMapBaseLayer,
 } from "./store";
+import { oauthClient, logout } from "./api/auth";
 import { loadContexts } from "./storeFunctions";
 import { updateBaseLayer } from "@/layers";
 import Map from "./components/map/Map.vue";
@@ -27,21 +27,37 @@ export default defineComponent({
     SimulationsPanel,
   },
   setup() {
-    const drawer = ref(true);
+    const drawer = ref(false);
+    const showError = computed(() => currentError.value !== undefined);
 
-    onMounted(loadContexts);
+    function onReady() {
+      if (currentUser.value) {
+        loadContexts();
+      }
+    }
+
+    const login = () => {
+      oauthClient.redirectToLogin();
+    };
+
+    onMounted(onReady);
+    watch(currentUser, onReady);
+    watch(currentContext, () => {
+      drawer.value = currentContext.value !== undefined;
+    });
 
     return {
+      login,
+      logout,
+      currentUser,
       drawer,
       currentContext,
       currentDataset,
       availableContexts,
-      loading,
       currentError,
+      showError,
       currentChart,
       currentSimulationType,
-      showMapBaseLayer,
-      updateBaseLayer,
     };
   },
 });
@@ -49,38 +65,70 @@ export default defineComponent({
 
 <template>
   <v-app>
-    <v-overlay v-model="loading" absolute class="align-center justify-center">
-      <v-progress-circular
-        indeterminate
-        color="white"
-        size="60"
-      ></v-progress-circular>
+    <v-overlay
+      :model-value="!currentUser"
+      absolute
+      persistent
+      :opacity="0.8"
+      class="align-center justify-center"
+    >
+      <v-btn @click="login"> Log in to Continue </v-btn>
+    </v-overlay>
+    <v-overlay
+      v-if="currentUser"
+      :model-value="showError"
+      absolute
+      :opacity="0.8"
+      class="align-center justify-center"
+    >
+      <v-card class="pa-3">
+        <v-btn
+          icon
+          variant="flat"
+          @click.stop="currentError = undefined"
+          class="pa-3"
+          style="float: right"
+        >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+        <v-card-title> Error: </v-card-title>
+        <v-card-text>
+          {{ currentError }}
+        </v-card-text>
+      </v-card>
     </v-overlay>
     <v-app-bar app prominent>
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon
+        v-if="currentContext"
+        @click.stop="drawer = !drawer"
+      />
       <v-toolbar-title>UVDAT</v-toolbar-title>
       <v-spacer />
-      {{ currentError }}
-      <v-spacer />
-      <v-list-item>
-        <v-select
-          label="Study Context"
-          v-model="currentContext"
-          :items="availableContexts"
-          item-title="name"
-          density="compact"
-          return-object
-          :style="{ marginTop: '15px' }"
-        />
-      </v-list-item>
-      <v-checkbox
-        v-model="showMapBaseLayer"
-        @change="updateBaseLayer"
-        true-icon="mdi-map-check"
-        false-icon="mdi-map-outline"
-        style="max-width: 50px"
-        hide-details
+      <v-select
+        label="Study Context"
+        v-model="currentContext"
+        :items="availableContexts"
+        item-title="name"
+        density="compact"
+        return-object
+        style="margin-top: 15px"
       />
+      <v-spacer />
+      <div v-if="currentUser" class="px-3">
+        {{ currentUser.first_name }}
+        <v-btn icon>
+          <v-icon>mdi-logout</v-icon>
+          <v-dialog activator="parent" max-width="300">
+            <template v-slot:default="{ isActive }">
+              <v-card class="pa-3">
+                <v-card-title>Log out?</v-card-title>
+                <v-btn @click="isActive.value = false" text="Cancel" />
+                <v-btn @click="logout" color="red" text="Confirm" />
+              </v-card>
+            </template>
+          </v-dialog>
+        </v-btn>
+      </div>
     </v-app-bar>
     <v-navigation-drawer
       v-if="currentContext"

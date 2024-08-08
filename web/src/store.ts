@@ -1,5 +1,6 @@
 import { reactive, ref } from "vue";
 import {
+  User,
   Context,
   Chart,
   Dataset,
@@ -64,6 +65,6 @@ export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 
 // ETC
-export const loading = ref<boolean>(false);
+export const currentUser = ref<User>();
 export const currentError = ref<string>();
 export const polls = ref<Record<number, number>>({});

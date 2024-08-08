@@ -5,6 +5,7 @@ import "vuetify/styles";
 import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
+import { restoreLogin } from "./api/auth";
 
 import "@mdi/font/css/materialdesignicons.css";
 
@@ -13,4 +14,4 @@ const vuetify = createVuetify({
   directives,
 });
 
-createApp(App).use(vuetify).mount("#app");
+restoreLogin().then(createApp(App).use(vuetify).mount("#app"));

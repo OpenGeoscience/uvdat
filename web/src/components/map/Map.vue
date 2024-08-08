@@ -2,7 +2,13 @@
 <script lang="ts">
 import { Map, IControl, Popup, ControlPosition } from "maplibre-gl";
 import { onMounted, ref } from "vue";
-import { map, showMapTooltip, tooltipOverlay, clickedFeature } from "@/store";
+import {
+  map,
+  showMapTooltip,
+  tooltipOverlay,
+  clickedFeature,
+  showMapBaseLayer,
+} from "@/store";
 import { clearMap } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -142,6 +148,7 @@ export default {
       regiongrouping,
       tooltip,
       showMapTooltip,
+      showMapBaseLayer,
     };
   },
 };
@@ -149,6 +156,16 @@ export default {
 
 <template>
   <div id="mapContainer" class="map">
+    <div class="base-layer-control">
+      <v-btn icon>
+        <v-checkbox
+          v-model="showMapBaseLayer"
+          true-icon="mdi-map-check"
+          false-icon="mdi-map-outline"
+          style="margin-top: -4px"
+        />
+      </v-btn>
+    </div>
     <div ref="activelayers" class="maplibregl-ctrl active-layers-control">
       <ActiveLayers />
     </div>
@@ -201,5 +218,13 @@ export default {
   padding: 10px 20px;
   word-break: break-word;
   text-wrap: wrap;
+}
+
+.base-layer-control {
+  float: right;
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  z-index: 2;
 }
 </style>

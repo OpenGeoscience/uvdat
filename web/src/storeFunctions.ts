@@ -27,7 +27,6 @@ import {
   currentNetworkDatasetLayer,
   currentNetworkGCC,
   deactivatedNodes,
-  loading,
   currentError,
   tooltipOverlay,
   clickedFeatureCandidates,
@@ -68,7 +67,6 @@ export function clearState() {
   currentNetworkDatasetLayer.value = undefined;
   deactivatedNodes.value = [];
   currentNetworkGCC.value = undefined;
-  loading.value = false;
   currentError.value = undefined;
   polls.value = {};
 }
@@ -91,26 +89,19 @@ export function loadContexts() {
   clearState();
   getContexts().then((data) => {
     availableContexts.value = data;
-    if (data.length) {
-      currentContext.value = data[0];
-    }
-    if (currentContext.value?.datasets) {
-      currentContext.value?.datasets.forEach((d) => {
-        if (d.processing) {
-          pollForProcessingDataset(d.id);
-        }
-      });
-    }
   });
 }
 
 export function clearMap() {
-  if (!currentContext.value) {
-    return;
+  let center: [number, number] = [0, 30];
+  let zoom = 1;
+  if (currentContext.value) {
+    center = currentContext.value.default_map_center;
+    zoom = currentContext.value.default_map_zoom;
   }
   const map = getMap();
-  map.setCenter(currentContext.value.default_map_center);
-  map.setZoom(currentContext.value.default_map_zoom);
+  map.setCenter(center);
+  map.setZoom(zoom);
 }
 
 export function loadDatasets() {
