@@ -6,6 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from uvdat.core.rest import (
+    UserViewSet,
     ChartViewSet,
     ContextViewSet,
     DatasetViewSet,
@@ -28,6 +29,7 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+router.register(r'users', UserViewSet, basename='users')
 router.register(r'contexts', ContextViewSet, basename='contexts')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'files', FileItemViewSet, basename='files')

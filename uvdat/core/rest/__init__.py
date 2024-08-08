@@ -6,6 +6,7 @@ from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .network import NetworkEdgeViewSet, NetworkNodeViewSet, NetworkViewSet
 from .regions import DerivedRegionViewSet, SourceRegionViewSet
 from .simulations import SimulationViewSet
+from .user import UserViewSet
 
 __all__ = [
     ContextViewSet,
@@ -20,4 +21,5 @@ __all__ = [
     SourceRegionViewSet,
     DerivedRegionViewSet,
     SimulationViewSet,
+    UserViewSet,
 ]
