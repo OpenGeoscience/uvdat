@@ -31,7 +31,6 @@ import {
   currentNetworkMapLayer,
   currentNetworkGCC,
   deactivatedNodes,
-  loading,
   currentError,
 } from "./store";
 import { Dataset } from "./types";
@@ -66,7 +65,6 @@ export function clearState() {
   currentNetworkMapLayer.value = undefined;
   deactivatedNodes.value = [];
   currentNetworkGCC.value = undefined;
-  loading.value = false;
   currentError.value = undefined;
   polls.value = {};
 }
@@ -82,27 +80,20 @@ export function loadContexts() {
   clearState();
   getContexts().then((data) => {
     availableContexts.value = data;
-    if (data.length) {
-      currentContext.value = data[0];
-    }
-    if (currentContext.value?.datasets) {
-      currentContext.value?.datasets.forEach((d) => {
-        if (d.processing) {
-          pollForProcessingDataset(d.id);
-        }
-      });
-    }
   });
 }
 
 export function clearMap() {
-  if (!currentContext.value) {
-    return;
+  let center = [0, 30];
+  let zoom = 1;
+  if (currentContext.value) {
+    center = currentContext.value.default_map_center;
+    zoom = currentContext.value.default_map_zoom;
   }
   getMap().setView(
     new View({
-      center: olProj.fromLonLat(currentContext.value.default_map_center),
-      zoom: currentContext.value.default_map_zoom,
+      center: olProj.fromLonLat(center),
+      zoom,
     })
   );
   getMap().setLayers([

@@ -8,6 +8,7 @@ import {
   clickedFeature,
   clickedMapLayer,
   rasterTooltip,
+  showMapBaseLayer,
 } from "@/store";
 import { getMap, clearMap } from "@/storeFunctions";
 import { displayRasterTooltip } from "@/utils";
@@ -18,7 +19,7 @@ import Control from "ol/control/Control";
 import RegionGrouping from "./RegionGrouping.vue";
 import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
-import { getOrCreateLayerFromID } from "@/layers";
+import { getOrCreateLayerFromID, updateBaseLayer } from "@/layers";
 
 export default {
   components: {
@@ -112,6 +113,8 @@ export default {
       regiongrouping,
       tooltip,
       showMapTooltip,
+      showMapBaseLayer,
+      updateBaseLayer,
     };
   },
 };
@@ -119,6 +122,17 @@ export default {
 
 <template>
   <div id="mapContainer" class="map">
+    <div class="base-layer-control">
+      <v-btn icon>
+        <v-checkbox
+          v-model="showMapBaseLayer"
+          @change="updateBaseLayer"
+          true-icon="mdi-map-check"
+          false-icon="mdi-map-outline"
+          style="margin-top: -4px"
+        />
+      </v-btn>
+    </div>
     <div ref="activelayers" class="active-layers-control">
       <ActiveLayers />
     </div>
@@ -164,7 +178,6 @@ export default {
   padding: 10px 20px;
   word-break: break-word;
 }
-
 .active-layers-control {
   float: left;
   position: relative;
@@ -176,5 +189,12 @@ export default {
   position: absolute;
   bottom: 2%;
   left: 3%;
+}
+.base-layer-control {
+  float: right;
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  z-index: 2;
 }
 </style>
