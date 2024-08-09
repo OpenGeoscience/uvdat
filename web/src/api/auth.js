@@ -1,5 +1,5 @@
 import axios from "axios";
-import OauthClient from "@girder/oauth-client";
+import OauthClient from "@resonant/oauth-client";
 import { currentError, currentUser, currentProject } from "@/store";
 import { clearState, clearMap } from "@/storeFunctions";
 
