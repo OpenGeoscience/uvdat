@@ -15,6 +15,15 @@ class SourceRegion(models.Model):
     def is_in_project(self, project_id):
         return self.dataset.is_in_project(project_id)
 
+    def readable_by(self, user):
+        return self.dataset.readable_by(user)
+
+    def editable_by(self, user):
+        return self.dataset.editable_by(user)
+
+    def deletable_by(self, user):
+        return self.dataset.deletable_by(user)
+
     class Meta:
         constraints = [
             # We enforce name uniqueness across datasets
@@ -47,6 +56,15 @@ class DerivedRegion(models.Model):
 
     def is_in_project(self, project_id):
         return self.project.id == int(project_id)
+
+    def readable_by(self, user):
+        return self.project.readable_by(user)
+
+    def editable_by(self, user):
+        return self.project.editable_by(user)
+
+    def deletable_by(self, user):
+        return self.project.deletable_by(user)
 
     def get_map_layers(self):
         return [

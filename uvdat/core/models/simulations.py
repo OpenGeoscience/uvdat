@@ -27,6 +27,15 @@ class SimulationResult(TimeStampedModel):
     def is_in_project(self, project_id):
         return self.project.id == int(project_id)
 
+    def readable_by(self, user):
+        return self.project.readable_by(user)
+
+    def editable_by(self, user):
+        return self.project.editable_by(user)
+
+    def deletable_by(self, user):
+        return self.project.deletable_by(user)
+
     def get_simulation_type(self):
         if not self.simulation_type or self.simulation_type not in AVAILABLE_SIMULATIONS:
             raise ValueError(f'Simulation type not found: {self.simulation_type}')

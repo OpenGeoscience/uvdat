@@ -13,6 +13,15 @@ class Network(models.Model):
     def is_in_project(self, project_id):
         return self.dataset.is_in_project(project_id)
 
+    def readable_by(self, user):
+        return self.dataset.readable_by(user)
+
+    def editable_by(self, user):
+        return self.dataset.editable_by(user)
+
+    def deletable_by(self, user):
+        return self.dataset.deletable_by(user)
+
     def get_graph(self):
         from uvdat.core.tasks.networks import get_network_graph
 
@@ -36,6 +45,15 @@ class NetworkNode(models.Model):
 
     def is_in_project(self, project_id):
         return self.network.is_in_project(project_id)
+
+    def readable_by(self, user):
+        return self.network.readable_by(user)
+
+    def editable_by(self, user):
+        return self.network.editable_by(user)
+
+    def deletable_by(self, user):
+        return self.network.deletable_by(user)
 
     def get_adjacent_nodes(self) -> models.QuerySet:
         entering_node_ids = (
@@ -65,3 +83,12 @@ class NetworkEdge(models.Model):
 
     def is_in_project(self, project_id):
         return self.network.is_in_project(project_id)
+
+    def readable_by(self, user):
+        return self.network.readable_by(user)
+
+    def editable_by(self, user):
+        return self.network.editable_by(user)
+
+    def deletable_by(self, user):
+        return self.network.deletable_by(user)

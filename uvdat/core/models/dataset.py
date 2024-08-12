@@ -22,6 +22,15 @@ class Dataset(models.Model):
         project = Project.objects.get(id=project_id)
         return project.datasets.filter(id=self.id).exists()
 
+    def readable_by(self, user):
+        return True
+
+    def editable_by(self, user):
+        return user.is_superuser
+
+    def deletable_by(self, user):
+        return user.is_superuser
+
     def spawn_conversion_task(
         self,
         style_options=None,
