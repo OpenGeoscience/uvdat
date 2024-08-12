@@ -3,10 +3,11 @@ import json
 from django.http import HttpResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
-from rest_framework.viewsets import GenericViewSet, mixins
+from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import DerivedRegion, SourceRegion
 from uvdat.core.tasks.regions import DerivedRegionCreationError, create_derived_region
+from uvdat.core.rest.filter import AccessControl
 
 from .serializers import (
     DerivedRegionCreationSerializer,
@@ -16,14 +17,16 @@ from .serializers import (
 )
 
 
-class SourceRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+class SourceRegionViewSet(ModelViewSet):
     queryset = SourceRegion.objects.all()
     serializer_class = SourceRegionSerializer
+    filter_backends = [AccessControl]
 
 
-class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
+class DerivedRegionViewSet(ModelViewSet):
     queryset = DerivedRegion.objects.all()
     serializer_class = DerivedRegionListSerializer
+    filter_backends = [AccessControl]
 
     def get_serializer_class(self):
         if self.detail:

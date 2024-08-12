@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.rest.filter import AccessControl
 from uvdat.core.rest.serializers import (
     RasterMapLayerSerializer,
     VectorMapLayerDetailSerializer,
@@ -72,6 +73,7 @@ SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
     queryset = RasterMapLayer.objects.select_related('dataset').all()
     serializer_class = RasterMapLayerSerializer
+    filter_backends = [AccessControl]
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
     @action(
@@ -89,6 +91,7 @@ class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
 class VectorMapLayerViewSet(ModelViewSet):
     queryset = VectorMapLayer.objects.select_related('dataset').all()
     serializer_class = VectorMapLayerSerializer
+    filter_backends = [AccessControl]
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

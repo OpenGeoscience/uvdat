@@ -5,11 +5,13 @@ from rest_framework.viewsets import ModelViewSet
 from uvdat.core.models import Project
 from uvdat.core.rest.serializers import ProjectSerializer
 from uvdat.core.tasks.osmnx import load_roads
+from uvdat.core.rest.filter import AccessControl
 
 
 class ProjectViewSet(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    filter_backends = [AccessControl]
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

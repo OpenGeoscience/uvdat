@@ -6,19 +6,21 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset, NetworkEdge, NetworkNode
-from uvdat.core.rest import serializers as uvdat_serializers
+from uvdat.core.rest.serializers import (
+    DatasetSerializer,
+    RasterMapLayerSerializer,
+    VectorMapLayerSerializer,
+    NetworkEdgeSerializer,
+    NetworkNodeSerializer,
+)
+from uvdat.core.rest.filter import AccessControl
 from uvdat.core.tasks.chart import add_gcc_chart_datum
 
 
 class DatasetViewSet(ModelViewSet):
-    serializer_class = uvdat_serializers.DatasetSerializer
-
-    def get_queryset(self):
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            return Dataset.objects.filter(project__id=project_id)
-        else:
-            return Dataset.objects.all()
+    queryset = Dataset.objects.all()
+    serializer_class = DatasetSerializer
+    filter_backends = [AccessControl]
 
     @action(detail=True, methods=['get'])
     def map_layers(self, request, **kwargs):
@@ -27,10 +29,10 @@ class DatasetViewSet(ModelViewSet):
 
         # Set serializer based on dataset type
         if dataset.dataset_type == Dataset.DatasetType.RASTER:
-            serializer = uvdat_serializers.RasterMapLayerSerializer(map_layers, many=True)
+            serializer = RasterMapLayerSerializer(map_layers, many=True)
         elif dataset.dataset_type == Dataset.DatasetType.VECTOR:
             # Set serializer
-            serializer = uvdat_serializers.VectorMapLayerSerializer(map_layers, many=True)
+            serializer = VectorMapLayerSerializer(map_layers, many=True)
         else:
             raise NotImplementedError(f'Dataset Type {dataset.dataset_type}')
 
@@ -51,11 +53,11 @@ class DatasetViewSet(ModelViewSet):
             networks.append(
                 {
                     'nodes': [
-                        uvdat_serializers.NetworkNodeSerializer(n).data
+                        NetworkNodeSerializer(n).data
                         for n in NetworkNode.objects.filter(network=network)
                     ],
                     'edges': [
-                        uvdat_serializers.NetworkEdgeSerializer(e).data
+                        NetworkEdgeSerializer(e).data
                         for e in NetworkEdge.objects.filter(network=network)
                     ],
                 }
