@@ -16,6 +16,7 @@ import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
 import SimulationsPanel from "./components/SimulationsPanel.vue";
+import ProjectConfig from "./components/ProjectConfig.vue";
 
 export default defineComponent({
   components: {
@@ -24,6 +25,7 @@ export default defineComponent({
     OptionsDrawerContents,
     ChartJS,
     SimulationsPanel,
+    ProjectConfig,
   },
   setup() {
     const drawer = ref(false);
@@ -103,6 +105,7 @@ export default defineComponent({
       />
       <v-toolbar-title>UVDAT</v-toolbar-title>
       <v-spacer />
+      <ProjectConfig />
       <v-select
         label="Select Project"
         v-model="currentProject"

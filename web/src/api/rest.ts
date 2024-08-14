@@ -16,6 +16,31 @@ export async function getProjects(): Promise<Project[]> {
   return (await apiClient.get("projects")).data.results;
 }
 
+export async function createProject(
+  name: string,
+  default_map_center: number[],
+  default_map_zoom: number
+): Promise<Project> {
+  return (
+    await apiClient.post("projects/", {
+      name,
+      default_map_center,
+      default_map_zoom,
+    })
+  ).data;
+}
+
+export async function patchProject(
+  projectId: number,
+  data: object
+): Promise<Project> {
+  return await apiClient.patch(`projects/${projectId}/`, data);
+}
+
+export async function deleteProject(projectId: number): Promise<Project> {
+  return await apiClient.delete(`projects/${projectId}/`).data;
+}
+
 export async function getProjectDatasets(
   projectId: number
 ): Promise<Dataset[]> {

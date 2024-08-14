@@ -104,6 +104,17 @@ export function setMapCenter() {
   map.jumpTo({ center, zoom });
 }
 
+export function getCurrentMapPosition() {
+  const map = getMap();
+  let center = [0, 0];
+  let zoom = map.getZoom();
+  const centerLngLat = map.getCenter();
+  if (centerLngLat) center = [centerLngLat.lat, centerLngLat.lng];
+  if (zoom) zoom = Math.floor(zoom);
+  else zoom = 1;
+  return { center, zoom };
+}
+
 export function loadDatasets() {
   if (!currentProject.value) return;
   availableDatasets.value = undefined;
