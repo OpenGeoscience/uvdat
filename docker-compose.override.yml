@@ -10,6 +10,7 @@ services:
     env_file: ./dev/.env.docker-compose
     environment:
       # ensure these match the web container
+      - DJANGO_HOMEPAGE_REDIRECT_URL=http://localhost:8080/
       - VUE_APP_BASE_URL=http://localhost:8080/
       - VUE_APP_OAUTH_CLIENT_ID=cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj
     volumes:

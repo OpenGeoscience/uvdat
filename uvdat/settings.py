@@ -12,6 +12,7 @@ from composed_configuration import (
     ProductionBaseConfiguration,
     TestingBaseConfiguration,
 )
+from configurations import values
 
 
 class UvdatMixin(ConfigMixin):
@@ -22,6 +23,8 @@ class UvdatMixin(ConfigMixin):
 
     # Override default signup sheet to ask new users for first and last name
     ACCOUNT_FORMS = {'signup': 'uvdat.core.rest.accounts.AccountSignupForm'}
+
+    HOMEPAGE_REDIRECT_URL = values.URLValue(environ_required=True)
 
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
@@ -51,6 +52,7 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
+    path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),  # type: ignore
 ]
 
 if settings.DEBUG:
