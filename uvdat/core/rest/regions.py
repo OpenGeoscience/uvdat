@@ -21,12 +21,14 @@ class SourceRegionViewSet(ModelViewSet):
     queryset = SourceRegion.objects.all()
     serializer_class = SourceRegionSerializer
     filter_backends = [AccessControl]
+    lookup_field = "id"
 
 
 class DerivedRegionViewSet(ModelViewSet):
     queryset = DerivedRegion.objects.all()
     serializer_class = DerivedRegionListSerializer
     filter_backends = [AccessControl]
+    lookup_field = "id"
 
     def get_serializer_class(self):
         if self.detail:

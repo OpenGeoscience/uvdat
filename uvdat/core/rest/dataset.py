@@ -21,6 +21,7 @@ class DatasetViewSet(ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     filter_backends = [AccessControl]
+    lookup_field = "id"
 
     @action(detail=True, methods=['get'])
     def map_layers(self, request, **kwargs):

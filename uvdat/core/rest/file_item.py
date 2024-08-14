@@ -9,3 +9,4 @@ class FileItemViewSet(ModelViewSet):
     queryset = FileItem.objects.all()
     serializer_class = FileItemSerializer
     filter_backends = [AccessControl]
+    lookup_field = "id"

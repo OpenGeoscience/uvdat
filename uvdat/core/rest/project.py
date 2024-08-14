@@ -12,6 +12,10 @@ class ProjectViewSet(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     filter_backends = [AccessControl]
+    lookup_field = "id"
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

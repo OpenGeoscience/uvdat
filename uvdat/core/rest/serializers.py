@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth.models import User
+from django.contrib.gis.geos import Point
 from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
@@ -28,14 +29,21 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
-    owner = UserSerializer(allow_null=True)
-    collaborators = UserSerializer(many=True)
-    followers = UserSerializer(many=True)
+    owner = UserSerializer(allow_null=True, required=False)
+    collaborators = UserSerializer(many=True, required=False)
+    followers = UserSerializer(many=True, required=False)
 
     def get_center(self, obj):
         # Web client expects Lon, Lat
         if obj.default_map_center:
             return [obj.default_map_center.y, obj.default_map_center.x]
+
+    def to_internal_value(self, data):
+        center = data.get('default_map_center')
+        data =  super().to_internal_value(data)
+        if isinstance(center, list):
+            data['default_map_center'] = Point(center[1], center[0])
+        return data
 
     class Meta:
         model = Project

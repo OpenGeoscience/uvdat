@@ -11,6 +11,7 @@ class ChartViewSet(ModelViewSet):
     queryset = Chart.objects.all()
     serializer_class = ChartSerializer
     filter_backends = [AccessControl]
+    lookup_field = "id"
 
     def validate_editable(self, chart, func, *args, **kwargs):
         if chart.editable:
