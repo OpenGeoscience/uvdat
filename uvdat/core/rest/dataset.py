@@ -6,14 +6,14 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset, NetworkEdge, NetworkNode
+from uvdat.core.rest.filter import AccessControl
 from uvdat.core.rest.serializers import (
     DatasetSerializer,
-    RasterMapLayerSerializer,
-    VectorMapLayerSerializer,
     NetworkEdgeSerializer,
     NetworkNodeSerializer,
+    RasterMapLayerSerializer,
+    VectorMapLayerSerializer,
 )
-from uvdat.core.rest.filter import AccessControl
 from uvdat.core.tasks.chart import add_gcc_chart_datum
 
 
@@ -21,7 +21,7 @@ class DatasetViewSet(ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
 
     @action(detail=True, methods=['get'])
     def map_layers(self, request, **kwargs):

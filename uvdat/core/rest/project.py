@@ -3,16 +3,16 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Project
+from uvdat.core.rest.filter import AccessControl
 from uvdat.core.rest.serializers import ProjectSerializer
 from uvdat.core.tasks.osmnx import load_roads
-from uvdat.core.rest.filter import AccessControl
 
 
 class ProjectViewSet(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)

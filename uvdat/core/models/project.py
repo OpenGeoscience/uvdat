@@ -16,7 +16,10 @@ class Project(models.Model):
 
     def readable_by(self, user):
         return (
-            user.is_superuser or user == self.owner or user in self.collaborators.all() or user in self.followers.all()
+            user.is_superuser
+            or user == self.owner
+            or user in self.collaborators.all()
+            or user in self.followers.all()
         )
 
     def editable_by(self, user):

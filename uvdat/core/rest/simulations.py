@@ -65,7 +65,7 @@ class SimulationViewSet(ModelViewSet):
     queryset = SimulationResult.objects.all()
     serializer_class = uvdat_serializers.SimulationResultSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
 
     @action(
         detail=False,

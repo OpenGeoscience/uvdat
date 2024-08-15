@@ -1,5 +1,6 @@
 from rest_framework.filters import BaseFilterBackend
 
+
 class AccessControl(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         project_id = request.query_params.get('project')

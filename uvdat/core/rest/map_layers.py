@@ -74,7 +74,7 @@ class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
     queryset = RasterMapLayer.objects.select_related('dataset').all()
     serializer_class = RasterMapLayerSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
     @action(
@@ -93,7 +93,7 @@ class VectorMapLayerViewSet(ModelViewSet):
     queryset = VectorMapLayer.objects.select_related('dataset').all()
     serializer_class = VectorMapLayerSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

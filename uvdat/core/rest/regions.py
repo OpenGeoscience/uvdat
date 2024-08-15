@@ -6,8 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import DerivedRegion, SourceRegion
-from uvdat.core.tasks.regions import DerivedRegionCreationError, create_derived_region
 from uvdat.core.rest.filter import AccessControl
+from uvdat.core.tasks.regions import DerivedRegionCreationError, create_derived_region
 
 from .serializers import (
     DerivedRegionCreationSerializer,
@@ -21,14 +21,14 @@ class SourceRegionViewSet(ModelViewSet):
     queryset = SourceRegion.objects.all()
     serializer_class = SourceRegionSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
 
 
 class DerivedRegionViewSet(ModelViewSet):
     queryset = DerivedRegion.objects.all()
     serializer_class = DerivedRegionListSerializer
     filter_backends = [AccessControl]
-    lookup_field = "id"
+    lookup_field = 'id'
 
     def get_serializer_class(self):
         if self.detail:
