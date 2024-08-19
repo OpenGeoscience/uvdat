@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## v0.1.0 (2024-08-19)
+
+### Feature
+
+* feat: pin dependency versions in `setup.py` ([`2f3b671`](https://github.com/OpenGeoscience/uvdat/commit/2f3b671a2a84ffbbe0905a07c0988a6418bdbe67))
+
+### Test
+
+* test: try different docker compose action ([`05442e7`](https://github.com/OpenGeoscience/uvdat/commit/05442e783dfe91bc0353d718a5c13cc74a5ad674))
+
+### Unknown
+
+* Merge pull request #47 from OpenGeoscience/freeze-deps
+
+Pin dependency versions ([`c40ca74`](https://github.com/OpenGeoscience/uvdat/commit/c40ca74b1c0a2de6c6f37bdf48760d3edd828b71))
+
+* Merge pull request #48 from OpenGeoscience/ci-action
+
+Change docker compose GH Action ([`f6f7e57`](https://github.com/OpenGeoscience/uvdat/commit/f6f7e5763f23ff91139c9de69c1ce0d5d4f59c22))
+
+* Merge pull request #38 from OpenGeoscience/osmnx-roads
+
+Add endpoint to pull road network from osmnx ([`fbda461`](https://github.com/OpenGeoscience/uvdat/commit/fbda461c94a55202f3b178b1add38cfc3189500d))
+
+* Reorder imports in `osmnx.py` ([`8721125`](https://github.com/OpenGeoscience/uvdat/commit/8721125536cbbcf8b75a01c21e4e05c3973365a4))
+
+* Implement as both REST endpoint and management command ([`8378cc1`](https://github.com/OpenGeoscience/uvdat/commit/8378cc113d1bc170f6ce62df2190fe8a993511f7))
+
+* Rebase migrations ([`96e3167`](https://github.com/OpenGeoscience/uvdat/commit/96e316783c1f5f40ce4096e9651b61e56323277e))
+
+* Remove edge name duplicate logic ([`cf81818`](https://github.com/OpenGeoscience/uvdat/commit/cf8181831e982d055e4b81d5829834a6a32c51d7))
+
+* Apply style changes ([`713d421`](https://github.com/OpenGeoscience/uvdat/commit/713d421e931f772874481ece4a22da24046de423))
+
+* Move load_roads to an API endpoint on the Context model ([`4dc8082`](https://github.com/OpenGeoscience/uvdat/commit/4dc80823d081ffcfa1f7fc9e6155f455976d8c9b))
+
+* Add osmnx cache folder to gitignore ([`903d5b0`](https://github.com/OpenGeoscience/uvdat/commit/903d5b04ba3ab5fcca924742a78d20bd76b6b0cc))
+
+* Allow duplicate node/edge names (same roads can exist in multiple cities) ([`fe464bf`](https://github.com/OpenGeoscience/uvdat/commit/fe464bfebbaab82507f24cf5e856c7301f36ce97))
+
+* Add a management command to pull road network from osmnx ([`0c29401`](https://github.com/OpenGeoscience/uvdat/commit/0c294012998142af2fbfd71b3746b24d213327a8))
+
+* Merge pull request #43 from OpenGeoscience/postgis-vector-tiles
+
+Generate vector tiles dynamically from extracted features ([`a85b7d1`](https://github.com/OpenGeoscience/uvdat/commit/a85b7d1e891c65c48db869fb88b22f5e4233d070))
+
+* Fix import formatting ([`d88e5ce`](https://github.com/OpenGeoscience/uvdat/commit/d88e5ceba31eba3b2493b1f9dd3adaa41027bf45))
+
+* Fix type inconsistencies ([`0bf5975`](https://github.com/OpenGeoscience/uvdat/commit/0bf59753fb4f94b648a1d524e1faca3695ccb672))
+
+* Save vector features after map layer modification ([`714187d`](https://github.com/OpenGeoscience/uvdat/commit/714187d72ddd5e0117153d3a334a1e23041f53e8))
+
+* Add admin class for VectorFeature ([`bab350a`](https://github.com/OpenGeoscience/uvdat/commit/bab350a841db2ded8ab3ee1b7a744cae51de949e))
+
+* Fix vector feature imports ([`dce8516`](https://github.com/OpenGeoscience/uvdat/commit/dce851636f4173021f54263947b4a52f297cc066))
+
+* Move save_vector_features to create_vector_map_layer ([`d854226`](https://github.com/OpenGeoscience/uvdat/commit/d854226069a55c55cb302e54214a426b2deb9615))
+
+* Squash migrations ([`25ce2b7`](https://github.com/OpenGeoscience/uvdat/commit/25ce2b7d0a990b8dc1a64202e977cfe7132356aa))
+
+* Remove VectorTile and use of tile_extents ([`d4041cf`](https://github.com/OpenGeoscience/uvdat/commit/d4041cf76e002769f1ffaca8f70635ce846b3b6a))
+
+* Remove use of OL tileUrlFunction ([`41e6bc5`](https://github.com/OpenGeoscience/uvdat/commit/41e6bc5c4f4aec9f8672535525a99dab4f08f0b7))
+
+* Generate vector tiles dynamically from extracted features ([`90bd64f`](https://github.com/OpenGeoscience/uvdat/commit/90bd64f61e001f17cce2194cf041a906d9b51360))
+
 ## v0.0.0 (2024-06-20)
 
 ### Unknown
@@ -8,24 +74,6 @@
 
 Publishing server code as Docker image ([`bca73f4`](https://github.com/OpenGeoscience/uvdat/commit/bca73f45874b41e9695876180684be7a739191a7))
 
-* Merge pull request #37 from OpenGeoscience/update-readme
-
-Create a docs folder and improve README ([`b371373`](https://github.com/OpenGeoscience/uvdat/commit/b371373c1f81ec56b868ff04e6d0d26215be05fa))
-
-* Remove uvdat_flow image ([`3dbeb10`](https://github.com/OpenGeoscience/uvdat/commit/3dbeb102a3f77a454cbf1d0f92b7f5c63036ba1c))
-
-* Merge pull request #42 from OpenGeoscience/dev-improvements
-
-Dev improvements ([`ed7d9d9`](https://github.com/OpenGeoscience/uvdat/commit/ed7d9d95cba33e0dc476539c8e612c9829abb1a3))
-
-* Add support for direnv ([`3edba6b`](https://github.com/OpenGeoscience/uvdat/commit/3edba6bf970e0d656e5742f1e621080c5cf20426))
-
-* Use env vars for database connection info ([`81eaef9`](https://github.com/OpenGeoscience/uvdat/commit/81eaef92bcc2042e1e439a9bf8a8c0e24559b057))
-
-* Add ruff config to pyproject.toml ([`328ef55`](https://github.com/OpenGeoscience/uvdat/commit/328ef556dd65e9d42f2d681ac48235a6ccd08892))
-
-* Move heavy import to within function ([`e3c4443`](https://github.com/OpenGeoscience/uvdat/commit/e3c44438c39be0786827430f5dcc5446808ab0a1))
-
 * Add python semantic versioning step to generate tag for image ([`52ba359`](https://github.com/OpenGeoscience/uvdat/commit/52ba359fb4ae0a8c1a551f1123d287bbfeb2f3bd))
 
 * Prepend tag with registry URL ([`2546276`](https://github.com/OpenGeoscience/uvdat/commit/25462766a452cb3c5929c952c6615848717a15b6))
@@ -33,6 +81,12 @@ Dev improvements ([`ed7d9d9`](https://github.com/OpenGeoscience/uvdat/commit/ed7
 * Modify image name (must be all lowercase) ([`bf55c7b`](https://github.com/OpenGeoscience/uvdat/commit/bf55c7b039b8018769041b5b32b7cfa76d1b5422))
 
 * Modify Dockerfile for portability and add publishing workflow ([`46cd17f`](https://github.com/OpenGeoscience/uvdat/commit/46cd17fdd57336bb6517ffc30c3a0522b1cf0727))
+
+* Merge pull request #37 from OpenGeoscience/update-readme
+
+Create a docs folder and improve README ([`b371373`](https://github.com/OpenGeoscience/uvdat/commit/b371373c1f81ec56b868ff04e6d0d26215be05fa))
+
+* Remove uvdat_flow image ([`3dbeb10`](https://github.com/OpenGeoscience/uvdat/commit/3dbeb102a3f77a454cbf1d0f92b7f5c63036ba1c))
 
 * Fix typo in &#34;representations&#34; ([`1012c94`](https://github.com/OpenGeoscience/uvdat/commit/1012c949269aeaa0e1286b8b33cafd0ebc89f751))
 
@@ -48,6 +102,18 @@ Signed-off-by: Anne Haley &lt;anne.haley@kitware.com&gt; ([`3a60b97`](https://gi
 
 * Create a docs folder and improve README ([`4222b7b`](https://github.com/OpenGeoscience/uvdat/commit/4222b7b52ab5d90713a822d76592bbf5fd964b08))
 
+* Merge pull request #42 from OpenGeoscience/dev-improvements
+
+Dev improvements ([`ed7d9d9`](https://github.com/OpenGeoscience/uvdat/commit/ed7d9d95cba33e0dc476539c8e612c9829abb1a3))
+
+* Add support for direnv ([`3edba6b`](https://github.com/OpenGeoscience/uvdat/commit/3edba6bf970e0d656e5742f1e621080c5cf20426))
+
+* Use env vars for database connection info ([`81eaef9`](https://github.com/OpenGeoscience/uvdat/commit/81eaef92bcc2042e1e439a9bf8a8c0e24559b057))
+
+* Add ruff config to pyproject.toml ([`328ef55`](https://github.com/OpenGeoscience/uvdat/commit/328ef556dd65e9d42f2d681ac48235a6ccd08892))
+
+* Move heavy import to within function ([`e3c4443`](https://github.com/OpenGeoscience/uvdat/commit/e3c44438c39be0786827430f5dcc5446808ab0a1))
+
 * Merge pull request #30 from OpenGeoscience/model-redesign
 
 Model redesign ([`72000c2`](https://github.com/OpenGeoscience/uvdat/commit/72000c27c4f6eaae96ba9c2c7d60244800e53782))
@@ -59,6 +125,16 @@ Model redesign ([`72000c2`](https://github.com/OpenGeoscience/uvdat/commit/72000
 * Use `selectedDerivedRegions` storage instead of `isDerivedRegionSelected` function ([`dfe4c74`](https://github.com/OpenGeoscience/uvdat/commit/dfe4c7412974a057a4acfaac94a7a624ae80bffc))
 
 * Merge remote-tracking branch &#39;origin/master&#39; into model-redesign ([`6459e75`](https://github.com/OpenGeoscience/uvdat/commit/6459e753f0cbec9dba8773453cc3f0be77397aaa))
+
+* Merge pull request #32 from OpenGeoscience/fix-active-layers ([`8a91613`](https://github.com/OpenGeoscience/uvdat/commit/8a916130c8c0044359b206ecd7e97737d40e3e1c))
+
+* Add css rule to prevent checkbox label overflow ([`90be5c3`](https://github.com/OpenGeoscience/uvdat/commit/90be5c3dc53b3126fd6ec4fb04bd3ccb13b07d04))
+
+* Fix raster slider and colormap behavior ([`dddefa1`](https://github.com/OpenGeoscience/uvdat/commit/dddefa17d68a5127f64b4ae30dd9af6e887fb3f8))
+
+* Fix bug surrounding layer removal in options panel ([`02a2b90`](https://github.com/OpenGeoscience/uvdat/commit/02a2b900941d6a7442734132f6a9216bcfdbdaa7))
+
+* Use computed getter/setter for vue-draggable ([`2d3c247`](https://github.com/OpenGeoscience/uvdat/commit/2d3c2475c3f0770aa02f6a26712e9661f63181ee))
 
 * Merge pull request #33 from OpenGeoscience/ci-testing
 
@@ -185,10 +261,6 @@ needed but not posted to PyPI yet ([`4c3917e`](https://github.com/OpenGeoscience
 
 * Rename DataSources to MapLayers ([`87d8195`](https://github.com/OpenGeoscience/uvdat/commit/87d819566a53d246550b4b9bd012a9c1abca0f47))
 
-* Merge pull request #32 from OpenGeoscience/fix-active-layers ([`8a91613`](https://github.com/OpenGeoscience/uvdat/commit/8a916130c8c0044359b206ecd7e97737d40e3e1c))
-
-* Add css rule to prevent checkbox label overflow ([`90be5c3`](https://github.com/OpenGeoscience/uvdat/commit/90be5c3dc53b3126fd6ec4fb04bd3ccb13b07d04))
-
 * Update populate script and conversion tasks ([`bdcece6`](https://github.com/OpenGeoscience/uvdat/commit/bdcece69c8d3728bc8d6347252f3e0f437c027bf))
 
 * Fix Chart-FileItem relationship ([`cd31d9e`](https://github.com/OpenGeoscience/uvdat/commit/cd31d9ed44a7931831970de895aaf4642f0a9215))
@@ -197,13 +269,7 @@ needed but not posted to PyPI yet ([`4c3917e`](https://github.com/OpenGeoscience
 
 * Small changes to some fields ([`3e6b67f`](https://github.com/OpenGeoscience/uvdat/commit/3e6b67f84f49ae6c126218a9d3b3d907a9a81c98))
 
-* Fix raster slider and colormap behavior ([`dddefa1`](https://github.com/OpenGeoscience/uvdat/commit/dddefa17d68a5127f64b4ae30dd9af6e887fb3f8))
-
-* Fix bug surrounding layer removal in options panel ([`02a2b90`](https://github.com/OpenGeoscience/uvdat/commit/02a2b900941d6a7442734132f6a9216bcfdbdaa7))
-
 * Another design iteration ([`aaa1c7f`](https://github.com/OpenGeoscience/uvdat/commit/aaa1c7fa7fab9518d6daba57da7c1932245a6117))
-
-* Use computed getter/setter for vue-draggable ([`2d3c247`](https://github.com/OpenGeoscience/uvdat/commit/2d3c2475c3f0770aa02f6a26712e9661f63181ee))
 
 * Various design changes ([`d28edfa`](https://github.com/OpenGeoscience/uvdat/commit/d28edfab1f62f0ba98a036b9f75473ec7fb31295))
 
@@ -329,12 +395,6 @@ Co-authored-by: Jacob Nesbitt &lt;jjnesbitt2@gmail.com&gt; ([`08bbc1c`](https://
 
 * Optimize construct_edge_list ([`476273f`](https://github.com/OpenGeoscience/uvdat/commit/476273f23864859f4140e599eda42bf9366a0008))
 
-* Merge pull request #20 from OpenGeoscience/simulations-pane
-
-Simulations pane ([`d7ecc06`](https://github.com/OpenGeoscience/uvdat/commit/d7ecc0671b34861a35e88140c2d0abfbd5cd6873))
-
-* Use UniqueConstraint instead of unique_together ([`c992c06`](https://github.com/OpenGeoscience/uvdat/commit/c992c067515f0fc9ca009ff08aca34a2cf360f90))
-
 * Implement other recovery modes with Jack&#39;s centrality measures function ([`c48ad15`](https://github.com/OpenGeoscience/uvdat/commit/c48ad159cc3eae913acf75b10a110b724e4c2892))
 
 * Update Node Animation component ([`fea8537`](https://github.com/OpenGeoscience/uvdat/commit/fea8537bfdc760a4282f73974804c39c895b55c0))
@@ -342,6 +402,12 @@ Simulations pane ([`d7ecc06`](https://github.com/OpenGeoscience/uvdat/commit/d7e
 * Abstract Simulation Result display for compatibility with new Simulation type ([`9903f87`](https://github.com/OpenGeoscience/uvdat/commit/9903f876bc4ec5d8a53e6595d7d30824746c2533))
 
 * Add a Simulation type for recovery scenarios, implement random only ([`7c5e14c`](https://github.com/OpenGeoscience/uvdat/commit/7c5e14c84e1ba353dc1996c33bd00291abbf6781))
+
+* Merge pull request #20 from OpenGeoscience/simulations-pane
+
+Simulations pane ([`d7ecc06`](https://github.com/OpenGeoscience/uvdat/commit/d7ecc0671b34861a35e88140c2d0abfbd5cd6873))
+
+* Use UniqueConstraint instead of unique_together ([`c992c06`](https://github.com/OpenGeoscience/uvdat/commit/c992c067515f0fc9ca009ff08aca34a2cf360f90))
 
 * Require network mode enabled  for network failure animation ([`c1c5661`](https://github.com/OpenGeoscience/uvdat/commit/c1c5661ef927ed498067a207b8ad866cd4a17f0b))
 
@@ -419,23 +485,23 @@ Layer Visibility Logic ([`812f3dd`](https://github.com/OpenGeoscience/uvdat/comm
 
 * Clear raster tooltip on change current Dataset ([`8422f96`](https://github.com/OpenGeoscience/uvdat/commit/8422f9667408c2e14cdf236cdbaf8b419fb386e3))
 
-* Merge pull request #13 from OpenGeoscience/charts
-
-Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b1a9bd923c1d0fcfc46a9f594390))
-
 * Fix bug noted by @AlmightyYakob ([`5977575`](https://github.com/OpenGeoscience/uvdat/commit/597757570f9ddcccc5c068fe16b54f3bf3930d1f))
-
-* Fix refresh charts button propagation ([`5d43f9a`](https://github.com/OpenGeoscience/uvdat/commit/5d43f9adba4055b3bfcfacd7a16550180ae36254))
-
-* Move refresh charts icon button ([`362b759`](https://github.com/OpenGeoscience/uvdat/commit/362b7599b6cb4d229b1dd677c00ba3dcbb6d41ec))
-
-* Change parent classes of ChartViewSet ([`62e167b`](https://github.com/OpenGeoscience/uvdat/commit/62e167b86a343b3a6f1ea87efdd2c60811c02213))
 
 * Fix layer visibility logic ([`5c9f289`](https://github.com/OpenGeoscience/uvdat/commit/5c9f289a184f055a187593b6839085f12623c288))
 
 * Add an icon button to show/hide map base layer ([`28a4c13`](https://github.com/OpenGeoscience/uvdat/commit/28a4c13c3eede3e66f4ae0aab6c1ce2cb0da3ddc))
 
 * Consolidate layer visibility logic to one utils function ([`33878c1`](https://github.com/OpenGeoscience/uvdat/commit/33878c10650cbde7f22eeb9b9017f4a1171eda35))
+
+* Merge pull request #13 from OpenGeoscience/charts
+
+Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b1a9bd923c1d0fcfc46a9f594390))
+
+* Fix refresh charts button propagation ([`5d43f9a`](https://github.com/OpenGeoscience/uvdat/commit/5d43f9adba4055b3bfcfacd7a16550180ae36254))
+
+* Move refresh charts icon button ([`362b759`](https://github.com/OpenGeoscience/uvdat/commit/362b7599b6cb4d229b1dd677c00ba3dcbb6d41ec))
+
+* Change parent classes of ChartViewSet ([`62e167b`](https://github.com/OpenGeoscience/uvdat/commit/62e167b86a343b3a6f1ea87efdd2c60811c02213))
 
 * Allow user to clear data from charts where clearable=True ([`9993789`](https://github.com/OpenGeoscience/uvdat/commit/9993789a730106c22e6c1454287c2e95346a9b0a))
 
@@ -446,10 +512,6 @@ Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b
 * Add download button for chart data ([`f72ea6d`](https://github.com/OpenGeoscience/uvdat/commit/f72ea6d5fb9d9f6cd8141288e718d6f15d601e42))
 
 * GCC chart - use fixed y range and don&#39;t use temporal resets ([`b78f124`](https://github.com/OpenGeoscience/uvdat/commit/b78f12447f653bdf35925e6290d28f3e99798a71))
-
-* Merge pull request #12 from OpenGeoscience/regions ([`be9fc48`](https://github.com/OpenGeoscience/uvdat/commit/be9fc483d6768a8cfcfbd0fc11e49905bf61843f))
-
-* Refactor displayFeatureTooltip to include regions ([`6c8584f`](https://github.com/OpenGeoscience/uvdat/commit/6c8584f910f7ec955d6d5175f7bb17af197a4496))
 
 * Minor client fixes ([`d9e9df8`](https://github.com/OpenGeoscience/uvdat/commit/d9e9df824bc91a8f867833086c5c1a9f66e526c1))
 
@@ -469,10 +531,6 @@ Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b
 
 * Merge branch &#39;regions&#39; into charts ([`afab630`](https://github.com/OpenGeoscience/uvdat/commit/afab6307836190d42a60a3faf5ed61cd95da1d09))
 
-* Fetch regions directly instead of using vector tiles ([`9aebd8d`](https://github.com/OpenGeoscience/uvdat/commit/9aebd8d89b5b80ad4479aacfed4a445d7f05c729))
-
-* Add &#34;Zoom to Region&#34; button to map tooltip ([`090243c`](https://github.com/OpenGeoscience/uvdat/commit/090243c25fdae36bc9c6eb107a74537cc91cea56))
-
 * Make metadata display table recursive for nested objects ([`e204702`](https://github.com/OpenGeoscience/uvdat/commit/e204702af394eba922da0635dd59ab682146e245))
 
 * Add gcc charts ([`5e32289`](https://github.com/OpenGeoscience/uvdat/commit/5e32289e61e06e447c8272f407c986483bdd93ed))
@@ -488,6 +546,14 @@ Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b
 * Add a chart view mode to UI and use Vue-ChartJS to show selected chart data ([`aa7e147`](https://github.com/OpenGeoscience/uvdat/commit/aa7e14770affb8765b8b46c96704f906166716de))
 
 * Add a chart model and save a chart from tide level dataset ([`3315967`](https://github.com/OpenGeoscience/uvdat/commit/33159670c7982bdeb36c7a7fa391a37956b11e0b))
+
+* Merge pull request #12 from OpenGeoscience/regions ([`be9fc48`](https://github.com/OpenGeoscience/uvdat/commit/be9fc483d6768a8cfcfbd0fc11e49905bf61843f))
+
+* Refactor displayFeatureTooltip to include regions ([`6c8584f`](https://github.com/OpenGeoscience/uvdat/commit/6c8584f910f7ec955d6d5175f7bb17af197a4496))
+
+* Fetch regions directly instead of using vector tiles ([`9aebd8d`](https://github.com/OpenGeoscience/uvdat/commit/9aebd8d89b5b80ad4479aacfed4a445d7f05c729))
+
+* Add &#34;Zoom to Region&#34; button to map tooltip ([`090243c`](https://github.com/OpenGeoscience/uvdat/commit/090243c25fdae36bc9c6eb107a74537cc91cea56))
 
 * Reformat displayFeatureTooltip function ([`50aa728`](https://github.com/OpenGeoscience/uvdat/commit/50aa728349c2d59249e517b4b7440859ee981c6e))
 
@@ -515,10 +581,6 @@ UI updates ([`28b4a53`](https://github.com/OpenGeoscience/uvdat/commit/28b4a537c
 
 Deactivate nodes ([`6b7f741`](https://github.com/OpenGeoscience/uvdat/commit/6b7f74184be2725b87cd1a71f650f682b5c9f84e))
 
-* Merge pull request #9 from OpenGeoscience/city-blocks
-
-City blocks dataset ([`191360a`](https://github.com/OpenGeoscience/uvdat/commit/191360a2d14b28d936a199fff9604d22bc7d99bc))
-
 * Show GCC when deactivated nodes list changes ([`2b2b4fd`](https://github.com/OpenGeoscience/uvdat/commit/2b2b4fdac959c26ac78878c4b8ec41fcbee90576))
 
 * Fix feature display bugs ([`a51fe32`](https://github.com/OpenGeoscience/uvdat/commit/a51fe32faae715b156fd5d5899d97cd7c150bede))
@@ -527,15 +589,19 @@ City blocks dataset ([`191360a`](https://github.com/OpenGeoscience/uvdat/commit/
 
 * Merge branch &#39;raster-tooltip&#39; into deactivate-nodes ([`c1ea7cb`](https://github.com/OpenGeoscience/uvdat/commit/c1ea7cb7c1d7823b568af43c0181e108eae32bc4))
 
+* Create a separate tooltip function called when raster tooltip is enabled ([`3b40787`](https://github.com/OpenGeoscience/uvdat/commit/3b40787d2828b83fbce4fa14a4741d7147660c1b))
+
+* Fill in network_gcc method ([`df17fde`](https://github.com/OpenGeoscience/uvdat/commit/df17fde490149a3869021986678309d7f6a185af))
+
+* Merge pull request #9 from OpenGeoscience/city-blocks
+
+City blocks dataset ([`191360a`](https://github.com/OpenGeoscience/uvdat/commit/191360a2d14b28d936a199fff9604d22bc7d99bc))
+
 * Fix some styling bugs ([`36b2d68`](https://github.com/OpenGeoscience/uvdat/commit/36b2d6808aaf3ccb22cb1c4c4d7f3a183dd16e82))
 
 * Add styling to color blocks ([`3179555`](https://github.com/OpenGeoscience/uvdat/commit/3179555149fc5c90d6d216cc6fcd8a0656ac6f99))
 
 * Ingest geoJSON type for city Blocks dataset ([`2f5539b`](https://github.com/OpenGeoscience/uvdat/commit/2f5539bd7cea281951145b293c0897afdbf5cd18))
-
-* Fill in network_gcc method ([`df17fde`](https://github.com/OpenGeoscience/uvdat/commit/df17fde490149a3869021986678309d7f6a185af))
-
-* Create a separate tooltip function called when raster tooltip is enabled ([`3b40787`](https://github.com/OpenGeoscience/uvdat/commit/3b40787d2828b83fbce4fa14a4741d7147660c1b))
 
 * Merge pull request #8 from OpenGeoscience/blank-analysis-task
 
@@ -563,23 +629,23 @@ Tide level dataset ([`e232745`](https://github.com/OpenGeoscience/uvdat/commit/e
 
 Network vis ([`4564085`](https://github.com/OpenGeoscience/uvdat/commit/4564085e390f4938df4930ec6915ccf0711448f8))
 
+* Add functions to show dataset as a network representation ([`712e0cc`](https://github.com/OpenGeoscience/uvdat/commit/712e0cc47a3b62a07b715e7f1952ae67573f1f4c))
+
+* Add endpoint to fetch network nodes for a dataset ([`8550d44`](https://github.com/OpenGeoscience/uvdat/commit/8550d44a44cdc5301b1035f6efbba1b1c8a43dea))
+
 * Merge pull request #5 from OpenGeoscience/more-colormaps
 
 Add more colormap options and use terrain as default ([`0f81001`](https://github.com/OpenGeoscience/uvdat/commit/0f8100161fcae54bb36ebc798079262867effd9b))
 
-* Add functions to show dataset as a network representation ([`712e0cc`](https://github.com/OpenGeoscience/uvdat/commit/712e0cc47a3b62a07b715e7f1952ae67573f1f4c))
+* More colormaps ([`d5e9804`](https://github.com/OpenGeoscience/uvdat/commit/d5e9804bc9f34b5803e6911f8d70a82e07e1bb68))
 
-* Add endpoint to fetch network nodes for a dataset ([`8550d44`](https://github.com/OpenGeoscience/uvdat/commit/8550d44a44cdc5301b1035f6efbba1b1c8a43dea))
+* Add more colormap options and use terrain as default ([`5f0624a`](https://github.com/OpenGeoscience/uvdat/commit/5f0624a0f9eef067a4018f46d355840178d9cbf3))
 
 * Merge pull request #4 from OpenGeoscience/network-nodes
 
 Network nodes ([`6d011fd`](https://github.com/OpenGeoscience/uvdat/commit/6d011fdf6475fd6c07b54184b6ff9ebba9e2900c))
 
 * Update boston subway dataset url (point to cleaned version) ([`95ae2b5`](https://github.com/OpenGeoscience/uvdat/commit/95ae2b58c36417287e4541e7092064a193f4cda9))
-
-* More colormaps ([`d5e9804`](https://github.com/OpenGeoscience/uvdat/commit/d5e9804bc9f34b5803e6911f8d70a82e07e1bb68))
-
-* Add more colormap options and use terrain as default ([`5f0624a`](https://github.com/OpenGeoscience/uvdat/commit/5f0624a0f9eef067a4018f46d355840178d9cbf3))
 
 * Add DC Metro Dataset ([`c27f2bb`](https://github.com/OpenGeoscience/uvdat/commit/c27f2bbd8eb85609ef82f8906fd187dae6e7385d))
 
@@ -625,11 +691,11 @@ Options panel ([`5415191`](https://github.com/OpenGeoscience/uvdat/commit/541519
 
 * Add raster visualization options ([`1701e90`](https://github.com/OpenGeoscience/uvdat/commit/1701e90163823527318266c88f9870f1bceeb950))
 
+* Create basic options panel ([`ba1e500`](https://github.com/OpenGeoscience/uvdat/commit/ba1e500c670d555cf620e8070a512e1e628d80a1))
+
 * Merge pull request #2 from OpenGeoscience/raster-coloration
 
 Raster client-side coloration ([`98f793b`](https://github.com/OpenGeoscience/uvdat/commit/98f793b33a11b391a2743c95442d45813f94e012))
-
-* Create basic options panel ([`ba1e500`](https://github.com/OpenGeoscience/uvdat/commit/ba1e500c670d555cf620e8070a512e1e628d80a1))
 
 * Remove normalization; maintain original values ([`18d06da`](https://github.com/OpenGeoscience/uvdat/commit/18d06da3671b4aad2c7e86e4d44bf814876e5a32))
 
