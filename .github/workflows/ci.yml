@@ -6,7 +6,6 @@ on:
       - master
 
 jobs:
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -26,34 +25,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: adambirds/docker-compose-action@v1.3.0
+      - uses: hoverkraft-tech/compose-action@v2.0.1
         with:
           compose-file: |
             docker-compose.yml
             docker-compose.override.yml
-          services: |
-            django
-            celery
-            postgres
-            minio
-            rabbitmq
-          test-container: django
-          test-command: "tox -e test"
+      - run: |
+          docker compose exec django tox -e test
 
   check-migrations:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: adambirds/docker-compose-action@v1.3.0
+      - uses: hoverkraft-tech/compose-action@v2.0.1
         with:
           compose-file: |
             docker-compose.yml
             docker-compose.override.yml
-          services: |
-            django
-            celery
-            postgres
-            minio
-            rabbitmq
-          test-container: django
-          test-command: "tox -e check-migrations"
+      - run: |
+          docker compose exec django tox -e check-migrations
