@@ -46,21 +46,21 @@ class DatasetViewSet(ModelViewSet):
     @action(detail=True, methods=['get'])
     def network(self, request, **kwargs):
         dataset = self.get_object()
-        return HttpResponse(
-            json.dumps(
+        networks = []
+        for network in dataset.networks.all():
+            networks.append([
                 {
                     'nodes': [
                         uvdat_serializers.NetworkNodeSerializer(n).data
-                        for n in NetworkNode.objects.filter(network__dataset=dataset)
+                        for n in NetworkNode.objects.filter(network=network)
                     ],
                     'edges': [
                         uvdat_serializers.NetworkEdgeSerializer(e).data
-                        for e in NetworkEdge.objects.filter(network__dataset=dataset)
+                        for e in NetworkEdge.objects.filter(network=network)
                     ],
                 }
-            ),
-            status=200,
-        )
+            ])
+        return HttpResponse(json.dumps(networks), status=200)
 
     @action(detail=True, methods=['get'])
     def gcc(self, request, **kwargs):

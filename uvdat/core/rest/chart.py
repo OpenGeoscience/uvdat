@@ -12,8 +12,7 @@ class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
     serializer_class = ChartSerializer
 
     def get_queryset(self, **kwargs):
-        request = self.request
-        context_id = request.query_params.get('context')
+        context_id = self.request.query_params.get('context')
         if context_id:
             return Chart.objects.filter(context__id=context_id)
         return Chart.objects.all()

@@ -7,7 +7,6 @@ from uvdat.core.models import Context, Dataset
 
 @pytest.mark.django_db
 def test_load_roads():
-
     context = Context.objects.create(
         name='Road Test', default_map_zoom=10, default_map_center=Point(42, -71)
     )
