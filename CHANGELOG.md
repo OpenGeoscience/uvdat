@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## v0.2.0 (2024-08-21)
+
+### Feature
+
+* feat: Add rest viewsets for file item and network models ([`53e54e5`](https://github.com/OpenGeoscience/uvdat/commit/53e54e5dfdb6c530f8238e7be671afb2dbcc13d0))
+
+### Fix
+
+* fix: remove old name reference ([`bfd69c2`](https://github.com/OpenGeoscience/uvdat/commit/bfd69c2f7fd8e16cd8e39424d03f22f72c21bc9f))
+
+* fix: undo change to expected number of contexts ([`48fe642`](https://github.com/OpenGeoscience/uvdat/commit/48fe642555bbfe995f57151ccfe5a99ebdf6349e))
+
+* fix: Small bug fixes ([`87279bc`](https://github.com/OpenGeoscience/uvdat/commit/87279bce6a19bec2f4979c7f381913734ad9d655))
+
+### Refactor
+
+* refactor: apply suggested changes ([`f50de69`](https://github.com/OpenGeoscience/uvdat/commit/f50de697a5dc8abb7e98b00d17b233cf69fa82a1))
+
+### Style
+
+* style: reformat with black ([`431537b`](https://github.com/OpenGeoscience/uvdat/commit/431537b5e495be578f2a30c588d3a893e7ac4413))
+
+* style: Lint fixes ([`d7c6ef6`](https://github.com/OpenGeoscience/uvdat/commit/d7c6ef6f6bb2915305a495e649a07cf02456b1cc))
+
+### Test
+
+* test: Update OSMnx test expected number of nodes and edges ([`95c8c8a`](https://github.com/OpenGeoscience/uvdat/commit/95c8c8a729538bc515676c8600a35f28a2612dab))
+
+### Unknown
+
+* Merge pull request #46 from OpenGeoscience/model-changes
+
+Networks &amp; File Items ([`79e6ca7`](https://github.com/OpenGeoscience/uvdat/commit/79e6ca7b145a6e2477fcac210fba5f59ae94a0d8))
+
+* Add Network model; allow multiple networks on a single dataset ([`6e0e132`](https://github.com/OpenGeoscience/uvdat/commit/6e0e132d5024518e99c462df4aac286f3c8f68d0))
+
+* Make file_item relation optional (a MapLayer can exist on a Dataset without a FileItem) ([`4c480f6`](https://github.com/OpenGeoscience/uvdat/commit/4c480f60aae3a93332b23ae65d890f2bf82adbc1))
+
 ## v0.1.0 (2024-08-19)
 
 ### Feature
