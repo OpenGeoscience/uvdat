@@ -213,8 +213,8 @@ def geojson_from_network(dataset):
     return new_geodata.to_json()
 
 
-def vector_features_from_network(network):
-    map_layer, created = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
+def create_vector_features_from_network(network):
+    map_layer, _ = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
     VectorFeature.objects.bulk_create(
         [
             VectorFeature(

@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from django.contrib.gis.geos import GEOSGeometry, Point, LineString
 from uvdat.core.models import Dataset, Network, NetworkNode, NetworkEdge, VectorMapLayer, VectorFeature, SourceRegion
-from uvdat.core.tasks.networks import vector_features_from_network
+from uvdat.core.tasks.networks import create_vector_features_from_network
 
 from .interpret_network import interpret_group
 
@@ -173,7 +173,7 @@ def create_consolidated_network(dataset, **kwargs):
         ], batch_size=1000)
 
         print(f'\t\t{network.nodes.count()} nodes created, {network.edges.count()} edges created.')
-        vector_features_from_network(network)
+        create_vector_features_from_network(network)
 
     print(f'\t\t{dataset.networks.count()} separate networks created.')
     print(f'\tCompleted in {(datetime.now() - start).total_seconds()} seconds.')

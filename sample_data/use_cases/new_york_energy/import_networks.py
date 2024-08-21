@@ -9,7 +9,7 @@ from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point, LineString
 from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorMapLayer
-from uvdat.core.tasks.networks import vector_features_from_network
+from uvdat.core.tasks.networks import create_vector_features_from_network
 
 
 TOLERANCE_METERS = 15
@@ -74,7 +74,7 @@ def create_network(dataset, network_name, geodata):
     not_connected.delete()
 
     NetworkEdge.objects.bulk_create(edges, batch_size=1000)
-    vector_features_from_network(network)
+    create_vector_features_from_network(network)
     print(f'\t\tCreated {network.nodes.count()} nodes and {network.edges.count()} edges.')
 
 
