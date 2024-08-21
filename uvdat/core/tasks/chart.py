@@ -4,7 +4,7 @@ from celery import shared_task
 import pandas
 from webcolors import name_to_hex
 
-from uvdat.core.models import Chart, Context, NetworkNode
+from uvdat.core.models import Chart, NetworkNode, Project
 
 
 @shared_task
