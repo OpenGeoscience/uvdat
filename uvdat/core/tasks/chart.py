@@ -4,7 +4,7 @@ from celery import shared_task
 import pandas
 from webcolors import name_to_hex
 
-from uvdat.core.models import Chart, Context
+from uvdat.core.models import Chart, Context, NetworkNode
 
 
 @shared_task
@@ -63,7 +63,7 @@ def get_gcc_chart(dataset, context_id):
                 'chart_title': 'Size of Greatest Connected Component over Period',
                 'x_title': 'Step when Excluded Nodes Changed',
                 'y_title': 'Number of Nodes',
-                'y_range': [0, dataset.network_nodes.count()],
+                'y_range': [0, NetworkNode.objects.filter(network__dataset=dataset).count()],
             },
         )
         print('\t', f'Chart {chart.name} created.')

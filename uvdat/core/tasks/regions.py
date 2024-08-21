@@ -101,7 +101,7 @@ def create_source_regions(vector_map_layer, region_options):
             name=name,
             boundary=GEOSGeometry(str(geometry)),
             metadata=properties,
-            dataset=vector_map_layer.file_item.dataset,
+            dataset=vector_map_layer.dataset,
         )
         region.save()
         region_count += 1

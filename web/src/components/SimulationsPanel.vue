@@ -96,7 +96,7 @@ export default {
                 | VectorMapLayer
                 | RasterMapLayer
                 | undefined;
-            } else if (selectedOption.file_item && selectedOption.type) {
+            } else if (selectedOption.index && selectedOption.type) {
               // Object is layer
               mapLayer = await getOrCreateLayerFromID(
                 selectedOption.id,
@@ -155,7 +155,7 @@ export default {
     watch(activeResult, () => {
       if (activeResult.value) {
         populateActiveResultInputs();
-        if (!activeResult.value.output_data) {
+        if (!outputPoll.value && !activeResult.value.output_data) {
           outputPoll.value = setInterval(pollForActiveResultOutput, 3000);
         }
       }
