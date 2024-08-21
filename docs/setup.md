@@ -8,7 +8,10 @@
    b. Run `docker-compose run --rm django ./manage.py createsuperuser`
      and follow the prompts to create your own user.
 
-   c. Run `docker-compose run --rm django ./manage.py populate` to use sample data.
+   c. Run `docker-compose run --rm django ./manage.py makeclient` to create a client Application object for authentication.
+
+   d. Run `docker-compose run --rm django ./manage.py populate` to use sample data.
+
 
 ### Run Application
 1. Run `docker-compose up`.
