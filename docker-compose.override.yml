@@ -38,6 +38,8 @@ services:
       ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
+    environment:
+      - DJANGO_HOMEPAGE_REDIRECT_URL=http://localhost:8080/
     env_file: ./dev/.env.docker-compose
     volumes:
       - .:/opt/uvdat-server
