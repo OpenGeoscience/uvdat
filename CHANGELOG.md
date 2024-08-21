@@ -1,5 +1,61 @@
 # CHANGELOG
 
+## v0.3.0 (2024-08-21)
+
+### Feature
+
+* feat: Add import script to load county networks from exported geojson files ([`0bb90a4`](https://github.com/OpenGeoscience/uvdat/commit/0bb90a432686168797fbde5c5a4f3ba935208027))
+
+### Fix
+
+* fix: remove unintentional quotes ([`296dc78`](https://github.com/OpenGeoscience/uvdat/commit/296dc7865d37dc0bbed1e0838e29a6df31793589))
+
+* fix: filter properties upon import (key and value must exist) ([`e2c7549`](https://github.com/OpenGeoscience/uvdat/commit/e2c754949ff2ca66e7b67bdca4c9fb55f4aadbcb))
+
+* fix: remove other usages of module reference for nysdp datasets ([`ee55020`](https://github.com/OpenGeoscience/uvdat/commit/ee550201c20bd724d02a7d736a8807d88afb001b))
+
+* fix: ingest contexts before charts ([`df98b5d`](https://github.com/OpenGeoscience/uvdat/commit/df98b5d72ac16471c55127e58327d1b587089276))
+
+* fix: `network.dataset` -&gt; `dataset` ([`f859588`](https://github.com/OpenGeoscience/uvdat/commit/f859588f1e5d4142dec8c2c40db4974757ed48f4))
+
+* fix: only delete old map layers at beginning of dataset ingest ([`d71c90a`](https://github.com/OpenGeoscience/uvdat/commit/d71c90a73d9ff28ab4adddfc2f5478bf01efa904))
+
+* fix: Small bug fixes ([`478f58a`](https://github.com/OpenGeoscience/uvdat/commit/478f58a1f2d2e2b757a4058e4a14679e7ee7203a))
+
+* fix: Improve speed and accuracy of network interpretation algorithm ([`29650e7`](https://github.com/OpenGeoscience/uvdat/commit/29650e70397b367d066e23e575441330b31368f5))
+
+### Refactor
+
+* refactor: Rename `vector_features_from_network` -&gt; `create_vector_features_from_network` ([`a287c78`](https://github.com/OpenGeoscience/uvdat/commit/a287c78f0ba11aa945792c39899a94955b66fa67))
+
+* refactor: create ingest modules with `convert_dataset` function for each use case ([`48a769d`](https://github.com/OpenGeoscience/uvdat/commit/48a769d0511dee3dbf929b779ca198885d00b15c))
+
+* refactor: remove unnecessary string casting ([`fb2cb07`](https://github.com/OpenGeoscience/uvdat/commit/fb2cb073be55d6fd22e78376fc22978efc660c60))
+
+### Style
+
+* style: Additional style fixes ([`3f18006`](https://github.com/OpenGeoscience/uvdat/commit/3f180067ba6ee44ff9c0f7a9d6ac06840180d09e))
+
+* style: Reformat with tox ([`0f985c9`](https://github.com/OpenGeoscience/uvdat/commit/0f985c96452d0fa834b371f990b045af85e4d29c))
+
+### Test
+
+* test: adjust expected number of contexts in populate test ([`11c2c83`](https://github.com/OpenGeoscience/uvdat/commit/11c2c8315b49076709ab9bd46cdda90e549ab690))
+
+### Unknown
+
+* Merge pull request #45 from OpenGeoscience/use_cases
+
+Add New York Energy use case to populate script ([`221fdf2`](https://github.com/OpenGeoscience/uvdat/commit/221fdf26e44e65a8514bee814de1562cb857517b))
+
+* wip: interpret network from vector features ([`0257833`](https://github.com/OpenGeoscience/uvdat/commit/02578334512437121fcec1f27aeff45b00b2041c))
+
+* Add a function to consolidate nysdp features ([`d499531`](https://github.com/OpenGeoscience/uvdat/commit/d4995314b02ff50b30cb633f4dca8dc09a9af0ed))
+
+* Add module-based dataset loading ([`48e0a22`](https://github.com/OpenGeoscience/uvdat/commit/48e0a2249c8b4331f56d3b3c35a1561c4dbf023d))
+
+* Reorganize sample_data folder to accomodate multiple use cases ([`cfa32a8`](https://github.com/OpenGeoscience/uvdat/commit/cfa32a87f5425578ba886540ad081391c797cdc7))
+
 ## v0.2.0 (2024-08-21)
 
 ### Feature
