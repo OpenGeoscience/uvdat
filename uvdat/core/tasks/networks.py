@@ -6,7 +6,7 @@ import networkx as nx
 import numpy
 import shapely
 
-from uvdat.core.models import Network, NetworkEdge, NetworkNode
+from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature, VectorMapLayer
 
 NODE_RECOVERY_MODES = [
     'random',
@@ -211,6 +211,35 @@ def geojson_from_network(dataset):
     new_geodata = geopandas.GeoDataFrame.from_features(new_feature_set)
     print('\t', f'GeoJSON feature set created for {total_nodes} nodes and {total_edges} edges.')
     return new_geodata.to_json()
+
+
+def create_vector_features_from_network(network):
+    map_layer, _ = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
+    VectorFeature.objects.bulk_create(
+        [
+            VectorFeature(
+                map_layer=map_layer,
+                geometry=node.location,
+                properties=dict(node_id=node.id, **node.metadata),
+            )
+            for node in network.nodes.all()
+        ]
+    )
+    VectorFeature.objects.bulk_create(
+        [
+            VectorFeature(
+                map_layer=map_layer,
+                geometry=edge.line_geometry,
+                properties=dict(
+                    edge_id=edge.id,
+                    from_node_id=edge.from_node.id,
+                    to_node_id=edge.to_node.id,
+                    **edge.metadata,
+                ),
+            )
+            for edge in network.edges.all()
+        ]
+    )
 
 
 def get_network_graph(network):
