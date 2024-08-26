@@ -18,9 +18,12 @@ import { getDataObjectForMapLayer } from "@/layers";
 
 export default {
   setup() {
+    // const dataObjectForClickedMapLayer = computed(() => {
+    //   if (!clickedMapLayer.value) return undefined;
+    //   return getDataObjectForMapLayer(clickedMapLayer.value) as DerivedRegion;
+    // });
     const dataObjectForClickedMapLayer = computed(() => {
-      if (!clickedMapLayer.value) return undefined;
-      return getDataObjectForMapLayer(clickedMapLayer.value) as DerivedRegion;
+      return {};
     });
 
     const clickedFeatureProperties = computed(() => {
@@ -36,14 +39,14 @@ export default {
         "edge_id",
       ]);
       return Object.fromEntries(
-        Object.entries(clickedFeature.value.getProperties()).filter(
+        Object.entries(clickedFeature.value.properties).filter(
           ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
         )
       );
     });
 
     const clickedRegion = computed(() => {
-      const props = clickedFeature.value?.getProperties();
+      const props = clickedFeature.value?.properties;
       const regionId = props?.region_id;
       const regionName = props?.region_name;
       const regionDatasetId = props?.dataset_id;
@@ -244,7 +247,7 @@ export default {
     </div>
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
-    <div v-else-if="clickedFeature.getProperties().node_id" class="pa-2">
+    <div v-else-if="clickedFeature.properties.node_id" class="pa-2">
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>

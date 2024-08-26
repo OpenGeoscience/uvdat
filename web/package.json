@@ -14,7 +14,7 @@
     "axios": "^1.4.0",
     "buffer": "^6.0.3",
     "core-js": "^3.8.3",
-    "maplibre-gl": "^2.4.0",
+    "maplibre-gl": "^4.6.0",
     "ol": "^7.3.0",
     "openlayers": "^4.6.5",
     "shpjs": "^4.0.4",

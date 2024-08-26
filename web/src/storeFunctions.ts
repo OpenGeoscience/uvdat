@@ -33,6 +33,7 @@ import {
   deactivatedNodes,
   loading,
   currentError,
+  availableMapLayers,
 } from "./store";
 import { Dataset } from "./types";
 import {
@@ -99,20 +100,20 @@ export function clearMap() {
   if (!currentContext.value) {
     return;
   }
-  getMap().setView(
-    new View({
-      center: olProj.fromLonLat(currentContext.value.default_map_center),
-      zoom: currentContext.value.default_map_zoom,
-    })
-  );
-  getMap().setLayers([
-    new TileLayer({
-      source: new OSM(),
-      properties: {
-        baseLayer: true,
-      },
-    }),
-  ]);
+  const map = getMap();
+  map.setCenter(currentContext.value.default_map_center);
+  map.setZoom(currentContext.value.default_map_zoom);
+
+  console.log('--', availableMapLayers.value);
+
+  // getMap().setLayers([
+  //   new TileLayer({
+  //     source: new OSM(),
+  //     properties: {
+  //       baseLayer: true,
+  //     },
+  //   }),
+  // ]);
 }
 
 export function loadDatasets() {

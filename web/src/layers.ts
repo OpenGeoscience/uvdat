@@ -2,8 +2,9 @@ import MVT from "ol/format/MVT";
 import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
-import VectorTileSource from "ol/source/VectorTile";
+import { DataDrivenPropertyValueSpecification, RasterTileSource, TypedStyleLayer, VectorTileSource } from 'maplibre-gl'
 import { Circle, Stroke, Style } from "ol/style";
+import { Map } from 'maplibre-gl'
 import { Feature } from "ol";
 
 import { ref } from "vue";
@@ -30,26 +31,72 @@ import {
   deactivatedNodes,
   availableMapLayers,
   selectedDerivedRegions,
+  map,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
 const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 
-export function createOpenLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
-  let openLayer: VectorTileLayer | TileLayer<XYZSource>;
+
+const defaultAnnotationColor = 'black';
+const getAnnotationColor = () => {
+  const result = [];
+  result.push('case');
+
+  // Check if the 'colors' field exists and use the first color
+  result.push(['has', 'colors']);
+  result.push([
+    'let',
+    'firstColor',
+    ['slice', ['get', 'colors'], 0, 7], // assuming each color is in the format '#RRGGBB'
+    ['to-color', ['var', 'firstColor']]
+  ]);
+
+  // Check if the 'color' field exists and match specific values
+  result.push(['has', 'color']);
+  result.push([
+    'match',
+    ['get', 'color'],
+    'light blue', '#ADD8E6',
+    'dark blue', '#00008B',
+    // add other color mappings here
+    ['get', 'color'] // if the color is already in a valid format
+  ]);
+
+  // Default annotation color if none of the above conditions are met
+  result.push(defaultAnnotationColor);
+
+  return result as DataDrivenPropertyValueSpecification<string>;
+};
+
+export function generateMapLayerId(mapLayer: VectorMapLayer | RasterMapLayer, type: string): string {
+  if (isVectorMapLayer(mapLayer)) {
+    return `map-layer-${mapLayer.id}-vector-tile-${type}`;
+  }
+
+  if (isRasterMapLayer(mapLayer)) {
+    return `map-layer-${mapLayer.id}-raster-tile`;
+  }
+
+  throw new Error('Unsupported map layer type');
+}
+
+
+export function createMapLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+  let layer: TypedStyleLayer;
 
   if (isVectorMapLayer(mapLayer)) {
-    openLayer = createVectorOpenLayer(mapLayer);
+    layer = createVectorTileLayer(map.value!, mapLayer);
   } else if (isRasterMapLayer(mapLayer)) {
-    openLayer = createRasterOpenLayer(mapLayer);
-    mapLayer.openlayer = openLayer;
+    layer = createRasterTileLayer(map.value!, mapLayer);
+    mapLayer.openlayer = layer;
     styleRasterOpenLayer(mapLayer.openlayer, {});
     cacheRasterData(mapLayer.id);
   } else {
     throw new Error("Unsupported map layer type.");
   }
 
-  openLayer.setZIndex(selectedMapLayers.value.length);
+  // layer.setZIndex(selectedMapLayers.value.length);
 
   // Check for existing layer
   const existingLayer = _mapLayerManager.value.find(
@@ -59,7 +106,7 @@ export function createOpenLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
     _mapLayerManager.value.push(mapLayer);
   }
 
-  return openLayer;
+  return layer;
 }
 
 export async function getOrCreateLayerFromID(
@@ -84,27 +131,49 @@ export async function getOrCreateLayerFromID(
   }
 
   // Create open layer and return
-  mapLayer.openlayer = createOpenLayer(mapLayer);
+  mapLayer.openlayer = createMapLayer(mapLayer);
   return mapLayer;
 }
 
-export function createVectorOpenLayer(mapLayer: VectorMapLayer) {
+export function createVectorTileLayer(map: Map, mapLayer: VectorMapLayer) {
   const defaultColors = `${randomColor()},#ffffff`;
-  return new VectorTileLayer({
-    properties: {
+
+  const sourceId = `vector-tile-source-${mapLayer.id}`;
+  map.addSource(sourceId, {
+    type: 'vector',
+    tiles: [`${baseURL}vectors/${mapLayer.id}/tiles/{z}/{x}/{y}/`],
+  })
+
+  const layerId = generateMapLayerId(mapLayer, 'line');
+  map.addLayer({
+    id: layerId,
+    type: 'line',
+    source: sourceId,
+    "source-layer": 'default',
+    metadata: {
       id: mapLayer.id,
       type: mapLayer.type,
     },
-    style: (feature) =>
-      createStyle({
-        type: feature.getGeometry()?.getType(),
-        colors: feature.getProperties().colors || defaultColors,
-      }),
-    source: new VectorTileSource({
-      format: new MVT(),
-      url: `${baseURL}vectors/${mapLayer.id}/tiles/{z}/{x}/{y}/`,
-    }),
+    paint: {
+      "line-color": getAnnotationColor(),
+    },
   });
+
+  const layerId2 = generateMapLayerId(mapLayer, 'circle');
+  map.addLayer({
+    id: layerId2,
+    type: "circle",
+    source: sourceId,
+    "source-layer": "default",
+    paint: {
+      'circle-color': getAnnotationColor(),
+    }
+  });
+
+
+
+  console.log("-sss--", map.getLayer(layerId));
+  return map.getLayer(layerId) as TypedStyleLayer;
 }
 
 export function styleVectorOpenLayer(
@@ -185,19 +254,31 @@ export function styleVectorOpenLayer(
   }
 }
 
-export function createRasterOpenLayer(mapLayer: RasterMapLayer) {
-  return new TileLayer({
-    properties: {
+export function createRasterTileLayer(map: Map, mapLayer: RasterMapLayer) {
+  const sourceId = `raster-tile-source-${mapLayer.id}`;
+  map.addSource(sourceId, {
+    type: 'raster',
+    tiles: [],
+  })
+
+  const layerId = generateMapLayerId(mapLayer, 'raster');
+  map.addLayer({
+    id: layerId,
+    type: 'raster',
+    source: sourceId,
+    // "source-layer": 'default',
+    metadata: {
       id: mapLayer.id,
       type: mapLayer.type,
       default_style: mapLayer.default_style,
     },
-    source: new XYZSource(),
   });
+
+  return map.getLayer(layerId) as TypedStyleLayer;
 }
 
 export function styleRasterOpenLayer(
-  openLayer: TileLayer<XYZSource>,
+  openLayer: TypedStyleLayer,
   options: {
     colormap?: {
       palette?: string;
@@ -206,38 +287,42 @@ export function styleRasterOpenLayer(
     nodata?: number;
   }
 ) {
-  const layerProperties = openLayer.getProperties();
-  const defaultStyle = layerProperties.default_style;
+  const layerProperties = openLayer.metadata as Record<string, unknown>
+  const defaultStyle = layerProperties.default_style as Record<string, unknown> | undefined;
   const colormapPalette =
-    options?.colormap?.palette || defaultStyle.palette || "terrain";
-  const colormapRange = options?.colormap?.range || defaultStyle.data_range;
-  const nodataValue = options.nodata || defaultStyle.transparency_threshold;
+    (options?.colormap?.palette || defaultStyle?.palette || "terrain") as string;
+  const colormapRange = options?.colormap?.range || defaultStyle?.data_range;
+  const nodataValue = options.nodata || defaultStyle?.transparency_threshold;
 
   const tileParams: Record<string, string> = {
     projection: "EPSG:3857",
     band: "1",
   };
-  if (colormapPalette) tileParams.palette = colormapPalette;
+  if (colormapPalette) {
+    tileParams.palette = colormapPalette;
+  }
   if (colormapRange?.length == 2) {
     tileParams.min = colormapRange[0];
     tileParams.max = colormapRange[1];
   }
-  if (nodataValue) tileParams.nodata = nodataValue;
-  openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
+  if (nodataValue) {
+    tileParams.nodata = nodataValue;
+  }
+  // openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
   const tileParamString = new URLSearchParams(tileParams).toString();
-  openLayer
-    .getSource()
-    ?.setUrl(
-      `${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`
-    );
+
+  const source = map.value!.getSource(openLayer.source) as RasterTileSource;
+  source.setTiles([`${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
 }
 
-export function findExistingOpenLayer(
+export function findExistingLayer(
   mapLayer: VectorMapLayer | RasterMapLayer | undefined
 ) {
   if (mapLayer === undefined) {
     throw new Error(`Could not find existing openlayer for undefined layer`);
   }
+
+  // const layerId = generateMapLayerId(mapLayer, 'line');
 
   // Find existing on map
   return getMap()
@@ -255,7 +340,7 @@ export function isMapLayerVisible(
     throw new Error(`Could not determine visibility of undefined layer`);
   }
 
-  const existing = findExistingOpenLayer(mapLayer);
+  const existing = findExistingLayer(mapLayer);
   if (!existing) return false;
   return existing.getVisible();
 }
@@ -267,8 +352,9 @@ export function toggleMapLayer(
     throw new Error(`Could not toggle undefined layer`);
   }
 
-  const existing = findExistingOpenLayer(mapLayer);
+  const existing = findExistingLayer(mapLayer);
   if (existing) {
+    // map.getLayer(layerId)!.setLayoutProperty('visibility', 'none');
     existing.setVisible(!existing.getVisible());
   } else {
     getMap().addLayer(mapLayer.openlayer);

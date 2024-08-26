@@ -10,7 +10,7 @@ import {
   RasterMapLayer,
 } from "./types.js";
 // import { MapLayer } from "@/data";
-import { Map as olMap, Feature } from "ol";
+import { Map, MapGeoJSONFeature } from "maplibre-gl";
 
 // Context
 export const availableContexts = ref<Context[]>([]);
@@ -22,13 +22,13 @@ export const selectedDatasets = ref<Dataset[]>([]);
 export const currentDataset = ref<Dataset>();
 
 // Map
-export const map = ref<olMap>();
+export const map = ref<Map>();
 export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
 export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
-export const clickedFeature = ref<Feature>();
+export const clickedFeature = ref<MapGeoJSONFeature>();
 export const rasterTooltip = ref();
 
 // Charts & Simulations

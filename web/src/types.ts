@@ -43,7 +43,7 @@ export interface DerivedRegion {
 export interface Context {
   id: number;
   name: string;
-  default_map_center: number[];
+  default_map_center: [number, number];
   default_map_zoom: number;
   datasets: Dataset[];
   created: string;
