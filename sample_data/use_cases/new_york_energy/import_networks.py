@@ -92,7 +92,7 @@ def perform_import(dataset, **kwargs):
                     filenames = zip_archive.namelist()
                     for filename in filenames:
                         if filename.endswith('.json'):
-                            network_name = filename.split('/')[-1].replace('.json', '')
+                            network_name = filename.split('/')[-1].replace('.json', '').title()
                             content = zip_archive.open(filename).read()
                             geodata = json.loads(content)
                             create_network(dataset, network_name, geodata)

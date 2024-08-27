@@ -36,7 +36,7 @@
         "category": "energy",
         "files": [
             {
-                "url": "https://data.kitware.com/api/v1/item/66a7bdab0ea2cce8e698b958/download",
+                "url": "https://data.kitware.com/api/v1/item/66cdd8a6886c56bdc7e282a4/download",
                 "path": "nyc/networks.zip"
             }
         ]
