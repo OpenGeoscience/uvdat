@@ -79,7 +79,7 @@ def create_network(dataset, network_name, geodata):
 
 
 def perform_import(dataset, **kwargs):
-    print('\tEstimated time: 90 minutes.')
+    print('\tEstimated time: 45 minutes.')
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
     VectorMapLayer.objects.filter(dataset=dataset).delete()
