@@ -2,7 +2,7 @@ import MVT from "ol/format/MVT";
 import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
-import { DataDrivenPropertyValueSpecification, RasterTileSource, TypedStyleLayer, VectorTileSource } from 'maplibre-gl'
+import { DataDrivenPropertyValueSpecification, LayerSpecification, RasterTileSource, TypedStyleLayer, VectorTileSource } from 'maplibre-gl'
 import { Circle, Stroke, Style } from "ol/style";
 import { Map } from 'maplibre-gl'
 import { Feature } from "ol";
@@ -69,7 +69,7 @@ const getAnnotationColor = () => {
   return result as DataDrivenPropertyValueSpecification<string>;
 };
 
-export function generateMapLayerId(mapLayer: VectorMapLayer | RasterMapLayer, type: string): string {
+export function generateMapLayerId(mapLayer: VectorMapLayer | RasterMapLayer, type: LayerSpecification['type']): string {
   if (isVectorMapLayer(mapLayer)) {
     return `map-layer-${mapLayer.id}-vector-tile-${type}`;
   }
@@ -172,8 +172,10 @@ export function createVectorTileLayer(map: Map, mapLayer: VectorMapLayer) {
 
 
 
-  console.log("-sss--", map.getLayer(layerId));
-  return map.getLayer(layerId) as TypedStyleLayer;
+  const layer = map.getLayer(layerId)!;
+  layer.setLayoutProperty('visibility', 'visible');
+
+  return layer;
 }
 
 export function styleVectorOpenLayer(
@@ -315,22 +317,27 @@ export function styleRasterOpenLayer(
   source.setTiles([`${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
 }
 
-export function findExistingLayer(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
-) {
+export function findExistingMapLayers(mapLayer: VectorMapLayer | RasterMapLayer) {
   if (mapLayer === undefined) {
     throw new Error(`Could not find existing openlayer for undefined layer`);
   }
 
-  // const layerId = generateMapLayerId(mapLayer, 'line');
+  const isDefined = (value: unknown): value is {} | null => value !== undefined;
 
   // Find existing on map
-  return getMap()
-    .getLayers()
-    .getArray()
-    .find((l) => {
-      return l.getProperties().id === mapLayer.id;
-    });
+  const map = getMap();
+
+  // TODO: Try to improve on forced non-null assertion, maplibre's types don't make this easy
+  const layers = map.getLayersOrder().map((id: string) => map.getLayer(id)!);
+
+  return layers.filter(
+    (layer) => (
+      isDefined(layer.metadata)
+      && layer.metadata !== null
+      && 'id' in layer.metadata
+      && layer.metadata.id === mapLayer.id
+    )
+  );
 }
 
 export function isMapLayerVisible(
@@ -340,9 +347,13 @@ export function isMapLayerVisible(
     throw new Error(`Could not determine visibility of undefined layer`);
   }
 
-  const existing = findExistingLayer(mapLayer);
-  if (!existing) return false;
-  return existing.getVisible();
+  const existing = findExistingMapLayers(mapLayer);
+  if (!existing.length) {
+    return false;
+  }
+
+  // TODO: This is tricky as it's not longer a binary value
+  return existing.some((layer) => layer.getLayoutProperty('visibility') !== 'none')
 }
 
 export function toggleMapLayer(
@@ -352,17 +363,23 @@ export function toggleMapLayer(
     throw new Error(`Could not toggle undefined layer`);
   }
 
-  const existing = findExistingLayer(mapLayer);
+  const existing = findExistingMapLayers(mapLayer);
   if (existing) {
+    existing.forEach((layer) => {
+      console.log("--", layer.getLayoutProperty('visibility'));
+      const enabled = layer.getLayoutProperty('visibility') !== 'none'
+      const value = enabled ? 'none' : 'visible';
+      layer.setLayoutProperty('visibility', value);
+    });
     // map.getLayer(layerId)!.setLayoutProperty('visibility', 'none');
-    existing.setVisible(!existing.getVisible());
+    // existing.setVisible(!existing.getVisible());
   } else {
     getMap().addLayer(mapLayer.openlayer);
   }
 
-  if (isVectorMapLayer(mapLayer) && mapLayer.metadata?.network) {
-    styleVectorOpenLayer(mapLayer, { showGCC: true, translucency: "55" });
-  }
+  // if (isVectorMapLayer(mapLayer) && mapLayer.metadata?.network) {
+  //   styleVectorOpenLayer(mapLayer, { showGCC: true, translucency: "55" });
+  // }
   updateVisibleMapLayers();
 }
 
