@@ -24,6 +24,7 @@ import {
   getDatasetLayerForDataObject,
   toggleDatasetLayer,
   getOrCreateLayerFromID,
+  updateVisibleMapLayers,
 } from "@/layers";
 
 export default {
@@ -85,8 +86,7 @@ export default {
         dataset.map_layers !== undefined &&
         dataset.current_layer_index !== undefined
       ) {
-        const { id, type } = dataset.map_layers[dataset.current_layer_index];
-        const datasetLayer = await getOrCreateLayerFromID(id, type);
+        const datasetLayer = dataset.map_layers[dataset.current_layer_index]
         toggleDatasetLayer(datasetLayer);
       }
     }

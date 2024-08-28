@@ -2,7 +2,7 @@ import MVT from "ol/format/MVT";
 import TileLayer from "ol/layer/Tile";
 import XYZSource from "ol/source/XYZ.js";
 import VectorTileLayer from "ol/layer/VectorTile";
-import { DataDrivenPropertyValueSpecification, LayerSpecification, RasterTileSource, TypedStyleLayer, VectorTileSource } from 'maplibre-gl'
+import { DataDrivenPropertyValueSpecification, LayerSpecification, RasterTileSource, TypedStyleLayer } from 'maplibre-gl'
 import { Circle, Stroke, Style } from "ol/style";
 import { Map } from 'maplibre-gl'
 import { Feature } from "ol";
@@ -67,6 +67,19 @@ const getAnnotationColor = () => {
   result.push(defaultAnnotationColor);
 
   return result as DataDrivenPropertyValueSpecification<string>;
+};
+const getLineWidth = () => {
+  const result = [];
+  result.push('interpolate');
+  result.push(['linear']);
+  result.push(['zoom']);
+  result.push(5); result.push(10);
+  result.push(7); result.push(5);
+  result.push(10); result.push(5);
+  result.push(14); result.push(2);
+
+  return result as DataDrivenPropertyValueSpecification<number>;
+
 };
 
 export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, type: LayerSpecification['type']): string {
@@ -154,8 +167,14 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
       id: datasetLayer.id,
       type: datasetLayer.type,
     },
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+      visibility: 'visible',
+    },
     paint: {
       "line-color": getAnnotationColor(),
+      "line-width": getLineWidth(),
     },
   });
 
@@ -164,17 +183,21 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
     id: layerId2,
     type: "circle",
     source: sourceId,
+    metadata: {
+      id: datasetLayer.id,
+      type: datasetLayer.type,
+    },
     "source-layer": "default",
     paint: {
       'circle-color': getAnnotationColor(),
-    }
+    },
+    layout: {
+      visibility: 'visible',
+    },
   });
 
-
-
+  // TODO: Return all layers
   const layer = map.getLayer(layerId)!;
-  layer.setLayoutProperty('visibility', 'visible');
-
   return layer;
 }
 
@@ -356,6 +379,18 @@ export function isDatasetLayerVisible(
   return mapLayers.some((layer) => layer.getLayoutProperty('visibility') !== 'none')
 }
 
+
+export function toggleDatasetLayerVisibility(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+  const mapLayers = findExistingMapLayers(datasetLayer);
+  mapLayers.forEach((layer) => {
+    const enabled = layer.getLayoutProperty('visibility') !== 'none'
+    const value = enabled ? 'none' : 'visible';
+
+    // Use map.setLayoutProperty to ensure redraw of map
+    getMap().setLayoutProperty(layer.id, 'visibility', value);
+  });
+}
+
 export function toggleDatasetLayer(
   datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined
 ) {
@@ -363,24 +398,19 @@ export function toggleDatasetLayer(
     throw new Error(`Could not toggle undefined layer`);
   }
 
-  const mapLayers = findExistingMapLayers(datasetLayer);
-  if (mapLayers) {
-    mapLayers.forEach((layer) => {
-      console.log("--", layer.getLayoutProperty('visibility'));
-      const enabled = layer.getLayoutProperty('visibility') !== 'none'
-      const value = enabled ? 'none' : 'visible';
-      layer.setLayoutProperty('visibility', value);
-    });
-    // map.getLayer(layerId)!.setLayoutProperty('visibility', 'none');
-    // existing.setVisible(!existing.getVisible());
-  } else {
-    getMap().addLayer(datasetLayer.openlayer);
+  const existingDatasetLayer = _datasetLayerManager.value.find(
+    (l) => l.id === datasetLayer.id && l.type === datasetLayer.type
+  );
+
+  // If layer doesn't exist, create map layer and update visible layers, to ensure it's stored in state correctly.
+  if (!existingDatasetLayer) {
+    createMapLayer(datasetLayer);
+    updateVisibleMapLayers();
+    return;
   }
 
-  // if (isVectorDatasetLayer(datasetLayer) && datasetLayer.metadata?.network) {
-  //   styleVectorOpenLayer(datasetLayer, { showGCC: true, translucency: "55" });
-  // }
-  updateVisibleMapLayers();
+  // Only call this if the layer already exists, as otherwise it will have the opposite effect
+  toggleDatasetLayerVisibility(datasetLayer);
 }
 
 export function getDataObjectForDatasetLayer(
