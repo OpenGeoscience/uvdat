@@ -16,12 +16,12 @@ import {
   availableCharts,
   currentChart,
   currentNetworkDataset,
-  currentNetworkMapLayer,
+  currentNetworkDatasetLayer,
   availableDatasets,
 } from "@/store";
-import { Dataset, DerivedRegion, RasterData, VectorMapLayer } from "./types";
+import { Dataset, DerivedRegion, RasterData, VectorDatasetLayer } from "./types";
 import { Ref } from "vue";
-import { isMapLayerVisible, styleVectorOpenLayer } from "./layers";
+import { isDatasetLayerVisible, styleVectorOpenLayer } from "./layers";
 
 export const rasterColormaps = [
   "terrain",
@@ -168,8 +168,8 @@ export function deactivatedNodesUpdated() {
     ).then((gcc) => {
       if (!currentContext.value) return;
       currentNetworkGCC.value = gcc;
-      if (currentNetworkMapLayer.value) {
-        styleVectorOpenLayer(currentNetworkMapLayer.value, {
+      if (currentNetworkDatasetLayer.value) {
+        styleVectorOpenLayer(currentNetworkDatasetLayer.value, {
           showGCC: true,
           translucency: "55",
         });
@@ -204,13 +204,13 @@ export function fetchDatasetNetwork(dataset: Dataset) {
 export function toggleNodeActive(
   nodeId: number,
   dataset: Dataset | DerivedRegion | undefined,
-  mapLayer: VectorMapLayer | undefined
+  datasetLayer: VectorDatasetLayer | undefined
 ) {
-  if (!dataset || !mapLayer || !isMapLayerVisible(mapLayer)) return;
+  if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) return;
   dataset = dataset as Dataset;
   if (!dataset.network) fetchDatasetNetwork(dataset);
   currentNetworkDataset.value = dataset as Dataset;
-  currentNetworkMapLayer.value = mapLayer as VectorMapLayer;
+  currentNetworkDatasetLayer.value = datasetLayer as VectorDatasetLayer;
   if (deactivatedNodes.value.includes(nodeId)) {
     deactivatedNodes.value = deactivatedNodes.value.filter((v) => v !== nodeId);
   } else {

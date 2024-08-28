@@ -12,8 +12,8 @@ import {
   currentDataset,
   map,
   showMapTooltip,
-  selectedMapLayers,
-  clickedMapLayer,
+  selectedDatasetLayers,
+  clickedDatasetLayer,
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
@@ -28,12 +28,12 @@ import {
   availableDerivedRegions,
   selectedDerivedRegions,
   currentNetworkDataset,
-  currentNetworkMapLayer,
+  currentNetworkDatasetLayer,
   currentNetworkGCC,
   deactivatedNodes,
   loading,
   currentError,
-  availableMapLayers,
+  availableDatasetLayers,
 } from "./store";
 import { Dataset } from "./types";
 import {
@@ -49,8 +49,8 @@ export function clearState() {
   availableDatasets.value = undefined;
   selectedDatasets.value = [];
   currentDataset.value = undefined;
-  selectedMapLayers.value = [];
-  clickedMapLayer.value = undefined;
+  selectedDatasetLayers.value = [];
+  clickedDatasetLayer.value = undefined;
   showMapBaseLayer.value = true;
   clickedFeature.value = undefined;
   rasterTooltip.value = undefined;
@@ -64,7 +64,7 @@ export function clearState() {
   regionGroupingActive.value = false;
   regionGroupingType.value = undefined;
   currentNetworkDataset.value = undefined;
-  currentNetworkMapLayer.value = undefined;
+  currentNetworkDatasetLayer.value = undefined;
   deactivatedNodes.value = [];
   currentNetworkGCC.value = undefined;
   loading.value = false;
@@ -104,7 +104,7 @@ export function clearMap() {
   map.setCenter(currentContext.value.default_map_center);
   map.setZoom(currentContext.value.default_map_zoom);
 
-  console.log('--', availableMapLayers.value);
+  console.log('--', availableDatasetLayers.value);
 
   // getMap().setLayers([
   //   new TileLayer({

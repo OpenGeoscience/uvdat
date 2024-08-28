@@ -11,12 +11,12 @@ import { ref } from "vue";
 import {
   Dataset,
   DerivedRegion,
-  RasterMapLayer,
-  isRasterMapLayer,
-  VectorMapLayer,
-  isVectorMapLayer,
+  RasterDatasetLayer,
+  isRasterDatasetLayer,
+  VectorDatasetLayer,
+  isVectorDatasetLayer,
 } from "./types";
-import { getMapLayer } from "./api/rest";
+import { getDatasetLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
 import { cacheRasterData, createStyle, randomColor } from "./utils";
@@ -26,16 +26,16 @@ import {
   availableDerivedRegions,
   currentNetworkGCC,
   selectedDatasets,
-  selectedMapLayers,
+  selectedDatasetLayers,
   showMapBaseLayer,
   deactivatedNodes,
-  availableMapLayers,
+  availableDatasetLayers,
   selectedDerivedRegions,
   map,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
-const _mapLayerManager = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
+const _datasetLayerManager = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
 
 
 const defaultAnnotationColor = 'black';
@@ -69,97 +69,97 @@ const getAnnotationColor = () => {
   return result as DataDrivenPropertyValueSpecification<string>;
 };
 
-export function generateMapLayerId(mapLayer: VectorMapLayer | RasterMapLayer, type: LayerSpecification['type']): string {
-  if (isVectorMapLayer(mapLayer)) {
-    return `map-layer-${mapLayer.id}-vector-tile-${type}`;
+export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, type: LayerSpecification['type']): string {
+  if (isVectorDatasetLayer(datasetLayer)) {
+    return `map-layer-${datasetLayer.id}-vector-tile-${type}`;
   }
 
-  if (isRasterMapLayer(mapLayer)) {
-    return `map-layer-${mapLayer.id}-raster-tile`;
+  if (isRasterDatasetLayer(datasetLayer)) {
+    return `map-layer-${datasetLayer.id}-raster-tile`;
   }
 
   throw new Error('Unsupported map layer type');
 }
 
 
-export function createMapLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+export function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
   let layer: TypedStyleLayer;
 
-  if (isVectorMapLayer(mapLayer)) {
-    layer = createVectorTileLayer(map.value!, mapLayer);
-  } else if (isRasterMapLayer(mapLayer)) {
-    layer = createRasterTileLayer(map.value!, mapLayer);
-    mapLayer.openlayer = layer;
-    styleRasterOpenLayer(mapLayer.openlayer, {});
-    cacheRasterData(mapLayer.id);
+  if (isVectorDatasetLayer(datasetLayer)) {
+    layer = createVectorTileLayer(map.value!, datasetLayer);
+  } else if (isRasterDatasetLayer(datasetLayer)) {
+    layer = createRasterTileLayer(map.value!, datasetLayer);
+    datasetLayer.openlayer = layer;
+    styleRasterMapLayer(datasetLayer.openlayer, {});
+    cacheRasterData(datasetLayer.id);
   } else {
     throw new Error("Unsupported map layer type.");
   }
 
-  // layer.setZIndex(selectedMapLayers.value.length);
+  // layer.setZIndex(selectedDatasetLayers.value.length);
 
   // Check for existing layer
-  const existingLayer = _mapLayerManager.value.find(
-    (l) => l.id === mapLayer.id && l.type === mapLayer.type
+  const existingLayer = _datasetLayerManager.value.find(
+    (l) => l.id === datasetLayer.id && l.type === datasetLayer.type
   );
   if (!existingLayer) {
-    _mapLayerManager.value.push(mapLayer);
+    _datasetLayerManager.value.push(datasetLayer);
   }
 
   return layer;
 }
 
 export async function getOrCreateLayerFromID(
-  mapLayerId: number | undefined,
-  mapLayerType: string | undefined
-): Promise<VectorMapLayer | RasterMapLayer | undefined> {
-  if (mapLayerId === undefined || mapLayerType === undefined) {
+  datasetLayerId: number | undefined,
+  datasetLayerType: string | undefined
+): Promise<VectorDatasetLayer | RasterDatasetLayer | undefined> {
+  if (datasetLayerId === undefined || datasetLayerType === undefined) {
     throw new Error(`Could not get or create openLayer for undefined layer`);
   }
 
-  const cachedMapLayer = _mapLayerManager.value.find((l) => {
-    return l.id === mapLayerId && l.type === mapLayerType;
+  const cachedDatasetLayer = _datasetLayerManager.value.find((l) => {
+    return l.id === datasetLayerId && l.type === datasetLayerType;
   });
-  if (cachedMapLayer) return cachedMapLayer;
+  if (cachedDatasetLayer) return cachedDatasetLayer;
 
   // Grab map layer from available or by fetching
-  let mapLayer = availableMapLayers.value.find(
-    (l) => l.id === mapLayerId && l.type === mapLayerType
+  let datasetLayer = availableDatasetLayers.value.find(
+    (l) => l.id === datasetLayerId && l.type === datasetLayerType
   );
-  if (!mapLayer) {
-    mapLayer = await getMapLayer(mapLayerId, mapLayerType);
+  if (!datasetLayer) {
+    datasetLayer = await getDatasetLayer(datasetLayerId, datasetLayerType);
   }
 
   // Create open layer and return
-  mapLayer.openlayer = createMapLayer(mapLayer);
-  return mapLayer;
+  datasetLayer.openlayer = createMapLayer(datasetLayer);
+  return datasetLayer;
 }
 
-export function createVectorTileLayer(map: Map, mapLayer: VectorMapLayer) {
+export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer) {
   const defaultColors = `${randomColor()},#ffffff`;
 
-  const sourceId = `vector-tile-source-${mapLayer.id}`;
+  const sourceId = `vector-tile-source-${datasetLayer.id}`;
   map.addSource(sourceId, {
     type: 'vector',
-    tiles: [`${baseURL}vectors/${mapLayer.id}/tiles/{z}/{x}/{y}/`],
+    tiles: [`${baseURL}vectors/${datasetLayer.id}/tiles/{z}/{x}/{y}/`],
   })
 
-  const layerId = generateMapLayerId(mapLayer, 'line');
+  const layerId = generateMapLayerId(datasetLayer, 'line');
   map.addLayer({
     id: layerId,
     type: 'line',
     source: sourceId,
     "source-layer": 'default',
     metadata: {
-      id: mapLayer.id,
-      type: mapLayer.type,
+      id: datasetLayer.id,
+      type: datasetLayer.type,
     },
     paint: {
       "line-color": getAnnotationColor(),
     },
   });
 
-  const layerId2 = generateMapLayerId(mapLayer, 'circle');
+  const layerId2 = generateMapLayerId(datasetLayer, 'circle');
   map.addLayer({
     id: layerId2,
     type: "circle",
@@ -179,13 +179,13 @@ export function createVectorTileLayer(map: Map, mapLayer: VectorMapLayer) {
 }
 
 export function styleVectorOpenLayer(
-  mapLayer: VectorMapLayer,
+  datasetLayer: VectorDatasetLayer,
   options: {
     showGCC?: boolean;
     translucency?: string;
   } = {}
 ) {
-  const { openlayer } = mapLayer;
+  const { openlayer } = datasetLayer;
   if (openlayer) {
     const layerStyleFunction = openlayer.getStyle();
     openlayer.setStyle((feature: Feature) => {
@@ -256,30 +256,30 @@ export function styleVectorOpenLayer(
   }
 }
 
-export function createRasterTileLayer(map: Map, mapLayer: RasterMapLayer) {
-  const sourceId = `raster-tile-source-${mapLayer.id}`;
+export function createRasterTileLayer(map: Map, datasetLayer: RasterDatasetLayer) {
+  const sourceId = `raster-tile-source-${datasetLayer.id}`;
   map.addSource(sourceId, {
     type: 'raster',
     tiles: [],
   })
 
-  const layerId = generateMapLayerId(mapLayer, 'raster');
+  const layerId = generateMapLayerId(datasetLayer, 'raster');
   map.addLayer({
     id: layerId,
     type: 'raster',
     source: sourceId,
     // "source-layer": 'default',
     metadata: {
-      id: mapLayer.id,
-      type: mapLayer.type,
-      default_style: mapLayer.default_style,
+      id: datasetLayer.id,
+      type: datasetLayer.type,
+      default_style: datasetLayer.default_style,
     },
   });
 
   return map.getLayer(layerId) as TypedStyleLayer;
 }
 
-export function styleRasterOpenLayer(
+export function styleRasterMapLayer(
   openLayer: TypedStyleLayer,
   options: {
     colormap?: {
@@ -317,8 +317,8 @@ export function styleRasterOpenLayer(
   source.setTiles([`${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
 }
 
-export function findExistingMapLayers(mapLayer: VectorMapLayer | RasterMapLayer) {
-  if (mapLayer === undefined) {
+export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+  if (datasetLayer === undefined) {
     throw new Error(`Could not find existing openlayer for undefined layer`);
   }
 
@@ -335,37 +335,37 @@ export function findExistingMapLayers(mapLayer: VectorMapLayer | RasterMapLayer)
       isDefined(layer.metadata)
       && layer.metadata !== null
       && 'id' in layer.metadata
-      && layer.metadata.id === mapLayer.id
+      && layer.metadata.id === datasetLayer.id
     )
   );
 }
 
-export function isMapLayerVisible(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+export function isDatasetLayerVisible(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined
 ): boolean {
-  if (mapLayer === undefined) {
+  if (datasetLayer === undefined) {
     throw new Error(`Could not determine visibility of undefined layer`);
   }
 
-  const existing = findExistingMapLayers(mapLayer);
-  if (!existing.length) {
+  const mapLayers = findExistingMapLayers(datasetLayer);
+  if (!mapLayers.length) {
     return false;
   }
 
   // TODO: This is tricky as it's not longer a binary value
-  return existing.some((layer) => layer.getLayoutProperty('visibility') !== 'none')
+  return mapLayers.some((layer) => layer.getLayoutProperty('visibility') !== 'none')
 }
 
-export function toggleMapLayer(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+export function toggleDatasetLayer(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined
 ) {
-  if (mapLayer === undefined) {
+  if (datasetLayer === undefined) {
     throw new Error(`Could not toggle undefined layer`);
   }
 
-  const existing = findExistingMapLayers(mapLayer);
-  if (existing) {
-    existing.forEach((layer) => {
+  const mapLayers = findExistingMapLayers(datasetLayer);
+  if (mapLayers) {
+    mapLayers.forEach((layer) => {
       console.log("--", layer.getLayoutProperty('visibility'));
       const enabled = layer.getLayoutProperty('visibility') !== 'none'
       const value = enabled ? 'none' : 'visible';
@@ -374,66 +374,66 @@ export function toggleMapLayer(
     // map.getLayer(layerId)!.setLayoutProperty('visibility', 'none');
     // existing.setVisible(!existing.getVisible());
   } else {
-    getMap().addLayer(mapLayer.openlayer);
+    getMap().addLayer(datasetLayer.openlayer);
   }
 
-  // if (isVectorMapLayer(mapLayer) && mapLayer.metadata?.network) {
-  //   styleVectorOpenLayer(mapLayer, { showGCC: true, translucency: "55" });
+  // if (isVectorDatasetLayer(datasetLayer) && datasetLayer.metadata?.network) {
+  //   styleVectorOpenLayer(datasetLayer, { showGCC: true, translucency: "55" });
   // }
   updateVisibleMapLayers();
 }
 
-export function getDataObjectForMapLayer(
-  mapLayer: VectorMapLayer | RasterMapLayer | undefined
+export function getDataObjectForDatasetLayer(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined
 ): Dataset | DerivedRegion | undefined {
   // Data Object refers to the original object for which this map layer was created.
   // Can either be a Dataset or a DerivedRegion.
-  if (mapLayer === undefined) {
+  if (datasetLayer === undefined) {
     throw new Error(`Could not get data object for undefined layer`);
   }
 
-  if (mapLayer.derived_region_id) {
+  if (datasetLayer.derived_region_id) {
     return availableDerivedRegions.value?.find(
-      (r) => r.id === mapLayer.derived_region_id
+      (r) => r.id === datasetLayer.derived_region_id
     );
-  } else if (mapLayer.dataset_id) {
+  } else if (datasetLayer.dataset_id) {
     const dataset = availableDatasets.value?.find(
-      (d) => d.id === mapLayer.dataset_id
+      (d) => d.id === datasetLayer.dataset_id
     );
     if (dataset) {
       dataset.current_layer_index =
-        dataset?.map_layers?.find(({ id }) => id === mapLayer.id)?.index || 0;
+        dataset?.map_layers?.find(({ id }) => id === datasetLayer.id)?.index || 0;
     }
     return dataset;
   }
   return undefined;
 }
 
-export async function getMapLayerForDataObject(
+export async function getDatasetLayerForDataObject(
   dataObject: Dataset | DerivedRegion | undefined,
   layerIndex = 0
-): Promise<VectorMapLayer | RasterMapLayer | undefined> {
+): Promise<VectorDatasetLayer | RasterDatasetLayer | undefined> {
   // Data Object refers to the original object for which this map layer was created.
   // Can either be a Dataset or a DerivedRegion.
   if (dataObject === undefined) {
     throw new Error(`Could not get map layer for undefined data object`);
   }
-  const mapLayer = dataObject.map_layers?.find(
+  const datasetLayer = dataObject.map_layers?.find(
     ({ index }) => index === layerIndex
   );
-  if (!mapLayer) {
+  if (!datasetLayer) {
     throw new Error(
-      `No map layer with index ${layerIndex} exists for ${dataObject}.`
+      `No dataset layer with index ${layerIndex} exists for ${dataObject}.`
     );
   }
   dataObject.current_layer_index = layerIndex;
-  return await getOrCreateLayerFromID(mapLayer.id, mapLayer.type);
+  return await getOrCreateLayerFromID(datasetLayer.id, datasetLayer.type);
 }
 
 export function updateVisibleMapLayers() {
-  selectedMapLayers.value = _mapLayerManager.value.filter(isMapLayerVisible);
+  selectedDatasetLayers.value = _datasetLayerManager.value.filter(isDatasetLayerVisible);
 
-  selectedMapLayers.value.sort(
+  selectedDatasetLayers.value.sort(
     (a, b) => b.openlayer.getZIndex() - a.openlayer.getZIndex()
   );
 
@@ -441,8 +441,8 @@ export function updateVisibleMapLayers() {
     selectedDatasets.value = [];
   } else {
     selectedDatasets.value = availableDatasets.value.filter((d) => {
-      return selectedMapLayers.value.some(
-        (l) => getDataObjectForMapLayer(l) === d
+      return selectedDatasetLayers.value.some(
+        (l) => getDataObjectForDatasetLayer(l) === d
       );
     });
   }
@@ -450,8 +450,8 @@ export function updateVisibleMapLayers() {
   // Set selected derived regions
   const available = availableDerivedRegions.value || [];
   selectedDerivedRegions.value = available.filter((d) => {
-    return selectedMapLayers.value.some(
-      (l) => getDataObjectForMapLayer(l) === d
+    return selectedDatasetLayers.value.some(
+      (l) => getDataObjectForDatasetLayer(l) === d
     );
   });
 }

@@ -6,7 +6,7 @@ import {
   map,
   showMapTooltip,
   clickedFeature,
-  clickedMapLayer,
+  clickedDatasetLayer,
   rasterTooltip,
 } from "@/store";
 import { getMap, clearMap } from "@/storeFunctions";
@@ -43,15 +43,15 @@ export default {
       // If nothing clicked, reset values and return
       if (!res) {
         showMapTooltip.value = false;
-        clickedMapLayer.value = undefined;
+        clickedDatasetLayer.value = undefined;
         clickedFeature.value = undefined;
       } else {
         const [feature, openlayer] = res;
         const props = openlayer.getProperties();
-        const mapLayer = await getOrCreateLayerFromID(props.id, props.type);
+        const datasetLayer = await getOrCreateLayerFromID(props.id, props.type);
 
-        if (mapLayer) {
-          clickedMapLayer.value = mapLayer;
+        if (datasetLayer) {
+          clickedDatasetLayer.value = datasetLayer;
           clickedFeature.value = feature;
           // Show tooltip and set position
           showMapTooltip.value = true;
@@ -133,16 +133,19 @@ export default {
 
 <style scoped>
 @import "~ol/ol.css";
+
 .map {
   height: 100%;
   width: 100%;
   position: relative;
 }
+
 @keyframes spinner {
   to {
     transform: rotate(360deg);
   }
 }
+
 .spinner:after {
   content: "";
   box-sizing: border-box;
@@ -158,6 +161,7 @@ export default {
   border-top-color: rgba(0, 0, 0, 0.6);
   animation: spinner 0.6s linear infinite;
 }
+
 .tooltip {
   background-color: white;
   border-radius: 5px;
@@ -171,6 +175,7 @@ export default {
   top: 2%;
   left: 3%;
 }
+
 .region-grouping-control {
   float: left;
   position: absolute;

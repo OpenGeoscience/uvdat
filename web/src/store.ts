@@ -6,8 +6,8 @@ import {
   DerivedRegion,
   SourceRegion,
   SimulationType,
-  VectorMapLayer,
-  RasterMapLayer,
+  VectorDatasetLayer,
+  RasterDatasetLayer,
 } from "./types.js";
 // import { MapLayer } from "@/data";
 import { Map, MapGeoJSONFeature } from "maplibre-gl";
@@ -23,9 +23,9 @@ export const currentDataset = ref<Dataset>();
 
 // Map
 export const map = ref<Map>();
-export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
-export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
-export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
+export const availableDatasetLayers = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
+export const selectedDatasetLayers = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
+export const clickedDatasetLayer = ref<VectorDatasetLayer | RasterDatasetLayer>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
 export const clickedFeature = ref<MapGeoJSONFeature>();
@@ -46,7 +46,7 @@ export const regionGroupingType = ref<"intersection" | "union" | undefined>();
 
 // Network
 export const currentNetworkDataset = ref<Dataset>();
-export const currentNetworkMapLayer = ref<VectorMapLayer>();
+export const currentNetworkDatasetLayer = ref<VectorDatasetLayer>();
 export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 

@@ -7,8 +7,8 @@ import {
   Chart,
   SimulationType,
   DerivedRegion,
-  VectorMapLayer,
-  RasterMapLayer,
+  VectorDatasetLayer,
+  RasterDatasetLayer,
 } from "@/types";
 
 export async function getContexts(): Promise<Context[]> {
@@ -43,9 +43,9 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}`)).data;
 }
 
-export async function getDatasetMapLayers(
+export async function getDatasetLayers(
   datasetId: number
-): Promise<(VectorMapLayer | RasterMapLayer)[]> {
+): Promise<(VectorDatasetLayer | RasterDatasetLayer)[]> {
   return (await apiClient.get(`datasets/${datasetId}/map_layers`)).data;
 }
 
@@ -71,11 +71,11 @@ export async function getNetworkGCC(
   ).data;
 }
 
-export async function getMapLayer(
-  mapLayerId: number,
-  mapLayerType: string
-): Promise<VectorMapLayer | RasterMapLayer> {
-  return (await apiClient.get(`${mapLayerType}s/${mapLayerId}`)).data;
+export async function getDatasetLayer(
+  datasetLayerId: number,
+  datasetLayerType: string
+): Promise<VectorDatasetLayer | RasterDatasetLayer> {
+  return (await apiClient.get(`${datasetLayerType}s/${datasetLayerId}`)).data;
 }
 
 export async function getRasterData(layerId: number): Promise<RasterData> {

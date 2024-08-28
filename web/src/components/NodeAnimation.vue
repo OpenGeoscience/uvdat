@@ -2,14 +2,14 @@
 import { ref, watch, computed, onMounted } from "vue";
 import {
   currentNetworkDataset,
-  currentNetworkMapLayer,
+  currentNetworkDatasetLayer,
   deactivatedNodes,
   selectedDatasets,
-  selectedMapLayers,
+  selectedDatasetLayers,
 } from "@/store";
 import { deactivatedNodesUpdated, fetchDatasetNetwork } from "@/utils";
-import { getMapLayerForDataObject } from "@/layers";
-import { isVectorMapLayer } from "@/types";
+import { getDatasetLayerForDataObject } from "@/layers";
+import { isVectorDatasetLayer } from "@/types";
 
 export default {
   props: {
@@ -46,11 +46,11 @@ export default {
         fetchDatasetNetwork(currentNetworkDataset.value);
       }
       if (currentNetworkDataset.value) {
-        const mapLayer = await getMapLayerForDataObject(
+        const datasetLayer = await getDatasetLayerForDataObject(
           currentNetworkDataset.value
         );
-        if (isVectorMapLayer(mapLayer)) {
-          currentNetworkMapLayer.value = mapLayer;
+        if (isVectorDatasetLayer(datasetLayer)) {
+          currentNetworkDatasetLayer.value = datasetLayer;
         }
       }
     }
@@ -100,8 +100,8 @@ export default {
 
     return {
       currentNetworkDataset,
-      currentNetworkMapLayer,
-      selectedMapLayers,
+      currentNetworkDatasetLayer,
+      selectedDatasetLayers,
       nodeChanges,
       currentTick,
       seconds,
@@ -114,27 +114,18 @@ export default {
 </script>
 
 <template>
-  <div
-    v-if="
-      !currentNetworkDataset ||
-      !currentNetworkMapLayer ||
-      !selectedMapLayers.includes(currentNetworkMapLayer)
-    "
-  >
+  <div v-if="
+    !currentNetworkDataset ||
+    !currentNetworkDatasetLayer ||
+    !selectedDatasetLayers.includes(currentNetworkDatasetLayer)
+  ">
     Show network dataset layer to begin.
   </div>
   <div v-else class="d-flex" style="align-items: center">
     <v-btn @click="play" icon="mdi-play" variant="text" />
     <v-btn @click="pause" icon="mdi-pause" variant="text" />
     <v-btn @click="rewind" icon="mdi-rewind" variant="text" />
-    <v-slider
-      v-model="currentTick"
-      show-ticks="always"
-      tick-size="5"
-      min="0"
-      step="1"
-      :max="nodeChanges.length"
-      hide-details
-    />
+    <v-slider v-model="currentTick" show-ticks="always" tick-size="5" min="0" step="1" :max="nodeChanges.length"
+      hide-details />
   </div>
 </template>

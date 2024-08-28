@@ -1,15 +1,15 @@
 <script lang="ts">
 import { ref, watch } from "vue";
 import draggable from "vuedraggable";
-import { currentDataset, selectedMapLayers } from "@/store";
+import { currentDataset, selectedDatasetLayers } from "@/store";
 import { updateVisibleMapLayers, clearMapLayers } from "@/layers";
 import {
-  RasterMapLayer,
-  VectorMapLayer,
+  RasterDatasetLayer,
+  VectorDatasetLayer,
   Dataset,
   DerivedRegion,
 } from "@/types";
-import { getDataObjectForMapLayer } from "@/layers";
+import { getDataObjectForDatasetLayer } from "@/layers";
 
 export default {
   components: {
@@ -18,57 +18,50 @@ export default {
   setup() {
     const layerMenuActive = ref(false);
 
-    function labelForLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+    function labelForLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
       const dataObject: Dataset | DerivedRegion | undefined =
-        getDataObjectForMapLayer(mapLayer);
+        getDataObjectForDatasetLayer(datasetLayer);
       if (dataObject) {
         let ret = dataObject.name;
         if (dataObject.map_layers && dataObject.map_layers.length > 1) {
-          ret += ` (Layer ${mapLayer.index})`;
+          ret += ` (Layer ${datasetLayer.index})`;
         }
         return ret;
       }
       return "Unnamed Layer";
     }
 
-    async function setCurrentDataset(layer: VectorMapLayer | RasterMapLayer) {
-      currentDataset.value = getDataObjectForMapLayer(layer) as Dataset;
+    async function setCurrentDataset(layer: VectorDatasetLayer | RasterDatasetLayer) {
+      currentDataset.value = getDataObjectForDatasetLayer(layer) as Dataset;
     }
 
-    function reorderMapLayers() {
-      selectedMapLayers.value.forEach((mapLayer, index) => {
-        mapLayer.openlayer.setZIndex(selectedMapLayers.value.length - index);
+    function reorderDatasetLayers() {
+      selectedDatasetLayers.value.forEach((datasetLayer, index) => {
+        datasetLayer.openlayer.setZIndex(selectedDatasetLayers.value.length - index);
       });
       updateVisibleMapLayers();
     }
 
-    watch(selectedMapLayers, () => {
-      layerMenuActive.value = !!selectedMapLayers.value.length;
+    watch(selectedDatasetLayers, () => {
+      layerMenuActive.value = !!selectedDatasetLayers.value.length;
     });
 
     return {
       layerMenuActive,
-      selectedMapLayers,
+      selectedDatasetLayers,
       labelForLayer,
       clearMapLayers,
-      reorderMapLayers,
+      reorderDatasetLayers,
       setCurrentDataset,
-      getDataObjectForMapLayer,
+      getDataObjectForDatasetLayer,
     };
   },
 };
 </script>
 
 <template>
-  <v-menu
-    v-model="layerMenuActive"
-    persistent
-    attach
-    no-click-animation
-    :close-on-content-click="false"
-    location="bottom"
-    class="mx-2"
-  >
+  <v-menu v-model="layerMenuActive" persistent attach no-click-animation :close-on-content-click="false"
+    location="bottom" class="mx-2">
     <template v-slot:activator="{ props }">
       <v-btn icon v-bind="props" class="mx-2">
         <v-icon>mdi-layers</v-icon>
@@ -77,31 +70,17 @@ export default {
     <v-card rounded="lg" class="mt-2">
       <v-card-title style="min-width: 250px">
         Active Layers
-        <v-tooltip
-          v-if="selectedMapLayers.length"
-          text="Remove All Layers"
-          location="bottom"
-        >
+        <v-tooltip v-if="selectedDatasetLayers.length" text="Remove All Layers" location="bottom">
           <template v-slot:activator="{ props }">
-            <v-icon v-bind="props" @click="clearMapLayers" style="float: right"
-              >mdi-playlist-remove</v-icon
-            >
+            <v-icon v-bind="props" @click="clearMapLayers" style="float: right">mdi-playlist-remove</v-icon>
           </template>
         </v-tooltip>
       </v-card-title>
-      <div v-if="!selectedMapLayers.length" class="pa-4">No layers active.</div>
-      <draggable
-        v-model="selectedMapLayers"
-        @change="reorderMapLayers"
-        item-key="id"
-      >
+      <div v-if="!selectedDatasetLayers.length" class="pa-4">No layers active.</div>
+      <draggable v-model="selectedDatasetLayers" @change="reorderDatasetLayers" item-key="id">
         <template #item="{ element }">
           <v-card class="px-3 py-1">
-            <v-tooltip
-              v-if="selectedMapLayers.length"
-              text="Reorder Layers"
-              location="bottom"
-            >
+            <v-tooltip v-if="selectedDatasetLayers.length" text="Reorder Layers" location="bottom">
               <template v-slot:activator="{ props }">
                 <v-icon v-bind="props">mdi-drag-horizontal-variant</v-icon>
               </template>
@@ -109,18 +88,9 @@ export default {
 
             {{ labelForLayer(element) }}
 
-            <v-tooltip
-              v-if="selectedMapLayers.length"
-              text="Open Layer Options"
-              location="bottom"
-            >
+            <v-tooltip v-if="selectedDatasetLayers.length" text="Open Layer Options" location="bottom">
               <template v-slot:activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  size="small"
-                  class="expand-icon ml-2"
-                  @click="setCurrentDataset(element)"
-                >
+                <v-icon v-bind="props" size="small" class="expand-icon ml-2" @click="setCurrentDataset(element)">
                   mdi-cog
                 </v-icon>
               </template>

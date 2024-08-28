@@ -8,7 +8,7 @@ export interface Dataset {
   processing: boolean;
   metadata: object;
   dataset_type: "vector" | "raster";
-  map_layers?: (VectorMapLayer | RasterMapLayer)[];
+  map_layers?: (VectorDatasetLayer | RasterDatasetLayer)[];
   current_layer_index?: number;
   network: {
     nodes: NetworkNode[];
@@ -81,7 +81,7 @@ export interface NetworkEdge {
   to_node: number;
 }
 
-export interface AbstractMapLayer {
+export interface AbstractDatasetLayer {
   id: number;
   name: string;
   file_item?: {
@@ -104,12 +104,12 @@ export function isNonNullObject(obj: unknown): obj is object {
   return typeof obj === "object" && obj !== null;
 }
 
-export interface RasterMapLayer extends AbstractMapLayer {
+export interface RasterDatasetLayer extends AbstractDatasetLayer {
   cloud_optimized_geotiff: string;
   type: "raster";
 }
 
-export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
+export function isRasterDatasetLayer(obj: unknown): obj is RasterDatasetLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "raster";
 }
 
@@ -123,11 +123,11 @@ export interface RasterData {
   data: number[][];
 }
 
-export interface VectorMapLayer extends AbstractMapLayer {
+export interface VectorDatasetLayer extends AbstractDatasetLayer {
   type: "vector";
 }
 
-export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
+export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
 }
 

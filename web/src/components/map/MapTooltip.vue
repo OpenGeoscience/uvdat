@@ -1,28 +1,28 @@
 <script lang="ts">
 import { computed, watch } from "vue";
 import {
-  clickedMapLayer,
+  clickedDatasetLayer,
   deactivatedNodes,
   regionGroupingActive,
   regionGroupingType,
   clickedFeature,
   selectedSourceRegions,
-  selectedMapLayers,
+  selectedDatasetLayers,
   selectedDatasets,
 } from "@/store";
 import { getMap, cancelRegionGrouping } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
 import type { DerivedRegion, SourceRegion } from "@/types";
 import { SimpleGeometry } from "ol/geom";
-import { getDataObjectForMapLayer } from "@/layers";
+import { getDataObjectForDatasetLayer } from "@/layers";
 
 export default {
   setup() {
-    // const dataObjectForClickedMapLayer = computed(() => {
-    //   if (!clickedMapLayer.value) return undefined;
-    //   return getDataObjectForMapLayer(clickedMapLayer.value) as DerivedRegion;
+    // const dataObjectForClickedDatasetLayer = computed(() => {
+    //   if (!clickedDatasetLayer.value) return undefined;
+    //   return getDataObjectForDatasetLayer(clickedDatasetLayer.value) as DerivedRegion;
     // });
-    const dataObjectForClickedMapLayer = computed(() => {
+    const dataObjectForClickedDatasetLayer = computed(() => {
       return {};
     });
 
@@ -100,7 +100,7 @@ export default {
 
     // Ensure that if any regions of the currently selected datasets are
     // de-selected, their regions are removed from the selection
-    watch(selectedMapLayers, () => {
+    watch(selectedDatasetLayers, () => {
       // Filter out any regions from un-selected data sources
       selectedSourceRegions.value = selectedSourceRegions.value.filter(
         (region) =>
@@ -129,8 +129,8 @@ export default {
     }
 
     return {
-      dataObjectForClickedMapLayer,
-      clickedMapLayer,
+      dataObjectForClickedDatasetLayer,
+      clickedDatasetLayer,
       regionGroupingActive,
       clickedFeature,
       clickedFeatureProperties,
@@ -149,16 +149,16 @@ export default {
 </script>
 
 <template>
-  <div v-if="dataObjectForClickedMapLayer && clickedFeature">
+  <div v-if="dataObjectForClickedDatasetLayer && clickedFeature">
     <!-- Render for Derived Regions -->
-    <div v-if="dataObjectForClickedMapLayer.source_regions">
-      <v-row no-gutters>ID: {{ dataObjectForClickedMapLayer.id }} </v-row>
-      <v-row no-gutters> Name: {{ dataObjectForClickedMapLayer.name }} </v-row>
+    <div v-if="dataObjectForClickedDatasetLayer.source_regions">
+      <v-row no-gutters>ID: {{ dataObjectForClickedDatasetLayer.id }} </v-row>
+      <v-row no-gutters> Name: {{ dataObjectForClickedDatasetLayer.name }} </v-row>
       <v-row no-gutters>
-        Source Region IDs: {{ dataObjectForClickedMapLayer.source_regions }}
+        Source Region IDs: {{ dataObjectForClickedDatasetLayer.source_regions }}
       </v-row>
       <v-row no-gutters>
-        Creation Operation: {{ dataObjectForClickedMapLayer.operation }}
+        Creation Operation: {{ dataObjectForClickedDatasetLayer.operation }}
       </v-row>
     </div>
     <!-- Render for Source Regions -->
@@ -166,25 +166,14 @@ export default {
       <v-row no-gutters>ID: {{ clickedRegion.id }}</v-row>
       <v-row no-gutters>Name: {{ clickedRegion.name }}</v-row>
       <v-row>
-        <v-btn
-          class="my-1"
-          variant="outlined"
-          block
-          prepend-icon="mdi-vector-square"
-          @click="zoomToRegion"
-          >Zoom To Region</v-btn
-        >
+        <v-btn class="my-1" variant="outlined" block prepend-icon="mdi-vector-square" @click="zoomToRegion">Zoom To
+          Region</v-btn>
       </v-row>
 
       <template v-if="regionGroupingActive && clickedRegion">
         <template v-if="clickedRegionIsGrouped">
           <v-row>
-            <v-btn
-              variant="outlined"
-              block
-              class="my-1"
-              @click="removeRegionFromGrouping"
-            >
+            <v-btn variant="outlined" block class="my-1" @click="removeRegionFromGrouping">
               <template v-slot:prepend>
                 <v-icon>
                   {{
@@ -200,12 +189,7 @@ export default {
         </template>
         <template v-else>
           <v-row>
-            <v-btn
-              variant="outlined"
-              block
-              class="my-1"
-              @click="selectedSourceRegions.push(clickedRegion)"
-            >
+            <v-btn variant="outlined" block class="my-1" @click="selectedSourceRegions.push(clickedRegion)">
               <template v-slot:prepend>
                 <v-icon>
                   {{
@@ -222,24 +206,14 @@ export default {
       </template>
       <template v-else>
         <v-row>
-          <v-btn
-            variant="outlined"
-            block
-            class="my-1"
-            prepend-icon="mdi-vector-intersection"
-            @click="beginRegionGrouping('intersection')"
-          >
+          <v-btn variant="outlined" block class="my-1" prepend-icon="mdi-vector-intersection"
+            @click="beginRegionGrouping('intersection')">
             Begin region intersection
           </v-btn>
         </v-row>
         <v-row>
-          <v-btn
-            variant="outlined"
-            block
-            class="my-1"
-            prepend-icon="mdi-vector-union"
-            @click="beginRegionGrouping('union')"
-          >
+          <v-btn variant="outlined" block class="my-1" prepend-icon="mdi-vector-union"
+            @click="beginRegionGrouping('union')">
             Begin region union
           </v-btn>
         </v-row>
@@ -251,30 +225,22 @@ export default {
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
-      <v-btn
-        variant="outlined"
-        v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)"
-        @click="
-          toggleNodeActive(
-            clickedFeature.getProperties().node_id,
-            dataObjectForClickedMapLayer,
-            clickedMapLayer
-          )
-        "
-      >
+      <v-btn variant="outlined" v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)" @click="
+        toggleNodeActive(
+          clickedFeature.getProperties().node_id,
+          dataObjectForClickedDatasetLayer,
+          clickedDatasetLayer
+        )
+        ">
         Reactivate Node
       </v-btn>
-      <v-btn
-        variant="outlined"
-        @click="
-          toggleNodeActive(
-            clickedFeature.getProperties().node_id,
-            dataObjectForClickedMapLayer,
-            clickedMapLayer
-          )
-        "
-        v-else
-      >
+      <v-btn variant="outlined" @click="
+        toggleNodeActive(
+          clickedFeature.getProperties().node_id,
+          dataObjectForClickedDatasetLayer,
+          clickedDatasetLayer
+        )
+        " v-else>
         Deactivate Node
       </v-btn>
     </div>

@@ -3,16 +3,16 @@ import { ref, watch } from "vue";
 import {
   currentSimulationType,
   currentContext,
-  selectedMapLayers,
+  selectedDatasetLayers,
 } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { RasterMapLayer, SimulationResult, VectorMapLayer } from "@/types";
+import { RasterDatasetLayer, SimulationResult, VectorDatasetLayer } from "@/types";
 import {
-  getMapLayerForDataObject,
+  getDatasetLayerForDataObject,
   getOrCreateLayerFromID,
-  isMapLayerVisible,
-  toggleMapLayer,
+  isDatasetLayerVisible,
+  toggleDatasetLayer,
 } from "@/layers";
 
 export default {
@@ -26,7 +26,7 @@ export default {
       {
         key: string;
         viewable: boolean;
-        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
         value: { name: string };
       }[]
     >([]);
@@ -89,16 +89,16 @@ export default {
             (o: { id: number }) => o === argValue || o.id === argValue
           );
           if (selectedOption) {
-            let mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+            let datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
             if (selectedOption.map_layers) {
               // Object has layers
-              mapLayer = (await getMapLayerForDataObject(selectedOption)) as
-                | VectorMapLayer
-                | RasterMapLayer
+              datasetLayer = (await getDatasetLayerForDataObject(selectedOption)) as
+                | VectorDatasetLayer
+                | RasterDatasetLayer
                 | undefined;
             } else if (selectedOption.index && selectedOption.type) {
               // Object is layer
-              mapLayer = await getOrCreateLayerFromID(
+              datasetLayer = await getOrCreateLayerFromID(
                 selectedOption.id,
                 selectedOption.type
               );
@@ -106,8 +106,8 @@ export default {
             return {
               key: argName.replaceAll("_", " "),
               value: selectedOption,
-              mapLayer,
-              viewable: mapLayer && !isMapLayerVisible(mapLayer),
+              datasetLayer,
+              viewable: datasetLayer && !isDatasetLayerVisible(datasetLayer),
             };
           }
         })
@@ -115,7 +115,7 @@ export default {
       activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
         key: string;
         viewable: boolean;
-        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
         value: { name: string };
       }[];
     }
@@ -161,7 +161,7 @@ export default {
       }
     });
 
-    watch(selectedMapLayers, populateActiveResultInputs);
+    watch(selectedDatasetLayers, populateActiveResultInputs);
 
     return {
       currentSimulationType,
@@ -175,7 +175,7 @@ export default {
       inputSelectionRules,
       run,
       timestampToTitle,
-      toggleMapLayer,
+      toggleDatasetLayer,
     };
   },
 };
@@ -186,12 +186,7 @@ export default {
     <div style="position: absolute; right: 0">
       <v-tooltip text="Close" location="bottom">
         <template v-slot:activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon="mdi-close"
-            variant="plain"
-            @click="currentSimulationType = undefined"
-          />
+          <v-btn v-bind="props" icon="mdi-close" variant="plain" @click="currentSimulationType = undefined" />
         </template>
       </v-tooltip>
     </div>
@@ -206,67 +201,39 @@ export default {
       <v-window-item value="new">
         <v-form class="pa-3" @submit.prevent ref="inputForm">
           <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
-          <v-select
-            v-for="arg in currentSimulationType.args"
-            v-model="selectedInputs[arg.name]"
-            v-bind="arg"
-            :key="arg.name"
-            :label="arg.name.replaceAll('_', ' ')"
-            :rules="inputSelectionRules"
-            :items="arg.options"
-            item-value="id"
-            item-title="name"
-            density="compact"
-            hide-details="auto"
-            class="my-1"
-          />
+          <v-select v-for="arg in currentSimulationType.args" v-model="selectedInputs[arg.name]" v-bind="arg"
+            :key="arg.name" :label="arg.name.replaceAll('_', ' ')" :rules="inputSelectionRules" :items="arg.options"
+            item-value="id" item-title="name" density="compact" hide-details="auto" class="my-1" />
           <v-btn @click="run" style="width: 100%" variant="tonal">
             Run Simulation
           </v-btn>
         </v-form>
       </v-window-item>
       <v-window-item value="old">
-        <div
-          v-if="availableResults && availableResults.length === 0"
-          style="width: 100%; text-align: center"
-          class="pa-3"
-        >
+        <div v-if="availableResults && availableResults.length === 0" style="width: 100%; text-align: center"
+          class="pa-3">
           No previous runs of this simulation type exist.
         </div>
         <v-expansion-panels v-else v-model="activeResult" variant="accordion">
-          <v-expansion-panel
-            v-for="result in availableResults"
-            :key="result.id"
-            :value="result"
-            :title="timestampToTitle(result.modified)"
-          >
+          <v-expansion-panel v-for="result in availableResults" :key="result.id" :value="result"
+            :title="timestampToTitle(result.modified)">
             <v-expansion-panel-text>
               <v-table>
                 <tbody>
-                  <tr
-                    v-for="arg in activeResultInputs"
-                    v-bind="arg"
-                    :key="arg.key"
-                  >
+                  <tr v-for="arg in activeResultInputs" v-bind="arg" :key="arg.key">
                     <td>{{ arg.key }}</td>
                     <td>{{ arg.value.name || arg.value }}</td>
                     <td>
-                      <v-btn
-                        @click="toggleMapLayer(arg.mapLayer)"
-                        v-if="arg.viewable"
-                      >
+                      <v-btn @click="toggleDatasetLayer(arg.datasetLayer)" v-if="arg.viewable">
                         Show on Map
                       </v-btn>
                     </td>
                   </tr>
                 </tbody>
               </v-table>
-              <div
-                v-if="
-                  !result.output_data && !result.error_message && outputPoll
-                "
-                style="width: 100%; text-align: center"
-              >
+              <div v-if="
+                !result.output_data && !result.error_message && outputPoll
+              " style="width: 100%; text-align: center">
                 <v-progress-circular indeterminate />
                 Waiting for simulation to complete...
               </div>
@@ -276,18 +243,12 @@ export default {
               </div>
               <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
-                <div
-                  v-if="currentSimulationType.output_type == 'node_animation'"
-                  class="pa-5"
-                >
+                <div v-if="currentSimulationType.output_type == 'node_animation'" class="pa-5">
                   <div v-if="result.output_data.node_failures?.length === 0">
                     No nodes are affected in this scenario.
                   </div>
-                  <node-animation
-                    v-else
-                    :nodeFailures="result.output_data.node_failures"
-                    :nodeRecoveries="result.output_data.node_recoveries"
-                  />
+                  <node-animation v-else :nodeFailures="result.output_data.node_failures"
+                    :nodeRecoveries="result.output_data.node_recoveries" />
                 </div>
                 <div v-else>
                   Unknown simulation output type
