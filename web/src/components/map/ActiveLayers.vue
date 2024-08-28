@@ -2,7 +2,7 @@
 import { ref, watch } from "vue";
 import draggable from "vuedraggable";
 import { currentDataset, selectedDatasetLayers } from "@/store";
-import { updateVisibleMapLayers, clearMapLayers } from "@/layers";
+import { updateVisibleMapLayers, clearMapLayers, generateMapLayerId, findExistingMapLayers } from "@/layers";
 import {
   RasterDatasetLayer,
   VectorDatasetLayer,
@@ -10,6 +10,7 @@ import {
   DerivedRegion,
 } from "@/types";
 import { getDataObjectForDatasetLayer } from "@/layers";
+import { getMap } from "@/storeFunctions";
 
 export default {
   components: {
@@ -36,9 +37,20 @@ export default {
     }
 
     function reorderDatasetLayers() {
-      selectedDatasetLayers.value.forEach((datasetLayer, index) => {
-        datasetLayer.openlayer.setZIndex(selectedDatasetLayers.value.length - index);
+      const map = getMap();
+
+      /**
+       * Traverse dataset layers in reverse order, since calling moveLayer with no arguments
+       * appends it to the end of the list, and in this context, we want the first element
+       * in selectedDatasetLayers to be rendered last.
+      */
+      selectedDatasetLayers.value.toReversed().forEach((datasetLayer) => {
+        const layers = findExistingMapLayers(datasetLayer);
+        layers.forEach((layer) => {
+          map.moveLayer(layer.id);
+        });
       });
+
       updateVisibleMapLayers();
     }
 

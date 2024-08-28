@@ -109,8 +109,6 @@ export function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetL
     throw new Error("Unsupported map layer type.");
   }
 
-  // layer.setZIndex(selectedDatasetLayers.value.length);
-
   // Check for existing layer
   const existingLayer = _datasetLayerManager.value.find(
     (l) => l.id === datasetLayer.id && l.type === datasetLayer.type
@@ -405,12 +403,13 @@ export function toggleDatasetLayer(
   // If layer doesn't exist, create map layer and update visible layers, to ensure it's stored in state correctly.
   if (!existingDatasetLayer) {
     createMapLayer(datasetLayer);
-    updateVisibleMapLayers();
-    return;
+  } else {
+    // Only call this if the layer already exists, as otherwise it will have the opposite effect
+    toggleDatasetLayerVisibility(datasetLayer);
   }
 
-  // Only call this if the layer already exists, as otherwise it will have the opposite effect
-  toggleDatasetLayerVisibility(datasetLayer);
+  // This must be called to update selectedDatasetLayers
+  updateVisibleMapLayers();
 }
 
 export function getDataObjectForDatasetLayer(
@@ -460,12 +459,24 @@ export async function getDatasetLayerForDataObject(
   return await getOrCreateLayerFromID(datasetLayer.id, datasetLayer.type);
 }
 
+/**
+ * TODO: Clean up this function and separate out concerns, because it's awful
+ * First, this function is being used to pick up changes in _datasetLayerManager and propogate them to selectedDatasetLayers. This needs to be fixed.
+ * Second, it's being used to set selectedDatasets and selectedDerivedRegions. Also fix this.
+ * Third, it's being used to set the order of `selectedDatasetLayers` from the map data. This is the most okay thing here,
+ *    but it should really be the other way around. The map layers should be set from the selected dataset layers.
+ */
 export function updateVisibleMapLayers() {
   selectedDatasetLayers.value = _datasetLayerManager.value.filter(isDatasetLayerVisible);
 
-  selectedDatasetLayers.value.sort(
-    (a, b) => b.openlayer.getZIndex() - a.openlayer.getZIndex()
-  );
+  // Separate dataset map layers from background layers provided by map tiler.
+  const datasetMapLayers = getMap().getLayersOrder().map((id) => getMap().getLayer(id)!).filter((layer) => layer?.metadata?.id !== undefined);
+
+  // Create mapping from dataset layer ID to it's highest map index (the highest index of any of its layers)
+  const indexMap = datasetMapLayers.reduce((acc, cur, index) => ({ ...acc, [cur.metadata.id]: index }), {}) as Record<number, number>;
+
+  // Because
+  selectedDatasetLayers.value.sort((a, b) => indexMap[b.id] - indexMap[a.id])
 
   if (!availableDatasets.value) {
     selectedDatasets.value = [];
