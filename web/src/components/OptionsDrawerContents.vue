@@ -2,6 +2,7 @@
 import { ref, watch, computed, onMounted } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
 import {
+  findExistingMapLayers,
   getDatasetLayerForDataObject,
   isDatasetLayerVisible,
   styleRasterMapLayer,
@@ -14,6 +15,34 @@ import {
   VectorDatasetLayer,
   isVectorDatasetLayer,
 } from "@/types";
+import { getMap } from "@/storeFunctions";
+
+
+function getDatasetLayerOpacity(layer: VectorDatasetLayer | RasterDatasetLayer) {
+  const mapLayers = findExistingMapLayers(layer);
+  const opacities = mapLayers.map((layer) => {
+    const opacityProperty = `${layer.type}-opacity`;
+    const opacity = layer.getPaintProperty(opacityProperty) as number | undefined;
+    return opacity || 1.0;
+  });
+
+  // Ensure all layers have the same opacity value or error
+  const consistentOpacity = opacities.every((v) => v === opacities[0]);
+  if (!consistentOpacity) {
+    const allLayerIds = mapLayers.map((layer) => layer.id).join(', ');
+    throw new Error(`Inconsistent opacity values in map layers ${allLayerIds}`);
+  }
+
+  return opacities[0];
+}
+
+function getDatasetLayerProperties(layer: VectorDatasetLayer | RasterDatasetLayer) {
+  return {
+    ...layer.default_style,
+    ...layer.metadata,
+  } as Record<string | number, unknown>;
+}
+
 
 export default {
   setup() {
@@ -24,67 +53,80 @@ export default {
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
     const applyToAll = ref<boolean>(false);
+
+    // TODO: Determine what to use this for
     const zIndex = ref<number>();
 
     const currentLayerName = computed(() => {
       return currentDatasetLayer.value?.name;
     });
 
-    function getCurrentDatasetLayer() {
-      if (currentDataset.value) {
-        getDatasetLayerForDataObject(
-          currentDataset.value,
-          currentDataset.value?.current_layer_index
-        ).then((datasetLayer) => {
-          if (zIndex.value !== undefined) {
-            datasetLayer?.openlayer.setZIndex(zIndex.value);
-          }
-          if (!isDatasetLayerVisible(datasetLayer)) {
-            toggleDatasetLayer(datasetLayer);
-          }
-
-          currentDatasetLayer.value = datasetLayer as
-            | VectorDatasetLayer
-            | RasterDatasetLayer
-            | undefined;
-
-          populateRefs();
-        });
-      } else {
+    function updateCurrentDatasetLayer() {
+      if (currentDataset.value?.map_layers === undefined) {
         currentDatasetLayer.value = undefined;
+        return;
       }
+
+      if (currentDataset.value.current_layer_index === undefined) {
+        throw new Error('Dataset layer index not set!');
+      }
+
+      const layer = currentDataset.value.map_layers[currentDataset.value.current_layer_index];
+      if (!isDatasetLayerVisible(layer)) {
+        toggleDatasetLayer(layer);
+      }
+      currentDatasetLayer.value = layer;
+
+      // Ensure refs are set after layer change
+      populateRefs();
     }
 
     function populateRefs() {
-      if (currentDatasetLayer.value?.openlayer) {
-        const openlayer = currentDatasetLayer.value.openlayer;
-        zIndex.value = openlayer.getZIndex();
-        if (applyToAll.value) {
-          updateLayerOpacity();
-          updateColormap();
-        } else {
-          currentDatasetLayerIndex.value = currentDatasetLayer.value.index;
-          opacity.value = openlayer.getOpacity();
-          const layerProperties = openlayer.getProperties();
-          const defaultStyle = layerProperties.default_style;
-          const { min, max, palette } = layerProperties;
-
-          if (defaultStyle) {
-            colormap.value = palette || defaultStyle.palette || "terrain";
-            layerRange.value =
-              defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
-            if (min && max) {
-              colormapRange.value = [min, max];
-            } else {
-              colormapRange.value = layerRange.value;
-            }
-          }
-        }
-      } else {
+      if (!currentDatasetLayer.value) {
         opacity.value = 1;
         colormap.value = "terrain";
         layerRange.value = [];
         colormapRange.value = [];
+
+        return;
+      }
+
+      const mapLayers = findExistingMapLayers(currentDatasetLayer.value);
+      const opacities = mapLayers.map((layer) => {
+        const opacityProperty = `${layer.type}-opacity`;
+        return layer.getPaintProperty(opacityProperty) || 1.0;
+      });
+
+      // Ensure all layers have the same opacity value or error
+      const consistentOpacity = opacities.every((v) => v === opacities[0]);
+      if (!consistentOpacity) {
+        const allLayerIds = mapLayers.map((layer) => layer.id).join(', ');
+        throw new Error(`Inconsistent opacity values in map layers ${allLayerIds}`);
+      }
+
+      // TODO: apply to all
+      if (applyToAll.value) {
+        updateLayerOpacity();
+        updateColormap();
+        return;
+      }
+
+      currentDatasetLayerIndex.value = currentDatasetLayer.value.index;
+      opacity.value = getDatasetLayerOpacity(currentDatasetLayer.value);
+
+      // Raster specific
+      const layerProperties = getDatasetLayerProperties(currentDatasetLayer.value);
+      const defaultStyle = layerProperties.default_style;
+      const { min, max, palette } = layerProperties;
+      if (defaultStyle) {
+        colormap.value = palette || defaultStyle.palette || "terrain";
+        layerRange.value =
+          defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
+        if (min && max) {
+          colormapRange.value = [min, max];
+        } else {
+          colormapRange.value = layerRange.value;
+        }
       }
     }
 
@@ -107,21 +149,31 @@ export default {
         // turn off layer at previous index
         toggleDatasetLayer(currentDatasetLayer.value);
         currentDataset.value.current_layer_index = currentDatasetLayerIndex.value;
-        getCurrentDatasetLayer();
+        updateCurrentDatasetLayer();
       }
     }
 
     function updateLayerOpacity() {
-      if (currentDatasetLayer.value?.openlayer === undefined) return;
-      currentDatasetLayer.value?.openlayer.setOpacity(opacity.value);
+      if (currentDatasetLayer.value === undefined) {
+        return;
+      }
+
+      const map = getMap();
+      const layers = findExistingMapLayers(currentDatasetLayer.value);
+      layers.forEach((layer) => {
+        // The opacity paint property depends on the layer type
+        const opacityProperty = `${layer.type}-opacity`;
+
+        // Use map.setPaintProperty instead of layer.setPaintProperty to ensure it redraws properly
+        map.setPaintProperty(layer.id, opacityProperty, opacity.value);
+      });
     }
 
     function updateColormap() {
-      if (
-        currentDatasetLayer.value?.openlayer === undefined ||
-        currentDatasetLayer.value.type !== "raster"
-      )
+      if (currentDatasetLayer.value?.type !== "raster") {
         return;
+      }
+
       styleRasterMapLayer(currentDatasetLayer.value.openlayer, {
         colormap: {
           palette: colormap.value,
@@ -142,9 +194,9 @@ export default {
     watch(colormap, updateColormap);
     watch(opacity, updateLayerOpacity);
 
-    watch(currentDataset, getCurrentDatasetLayer);
+    watch(currentDataset, updateCurrentDatasetLayer);
     watch(currentDatasetLayerIndex, updateLayerShown);
-    onMounted(getCurrentDatasetLayer);
+    onMounted(updateCurrentDatasetLayer);
 
     return {
       currentDatasetLayerIndex,
