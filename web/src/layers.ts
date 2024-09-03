@@ -96,14 +96,11 @@ export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterData
 
 
 export function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
-  let layer: TypedStyleLayer;
-
   if (isVectorDatasetLayer(datasetLayer)) {
-    layer = createVectorTileLayer(map.value!, datasetLayer);
+    createVectorTileLayer(map.value!, datasetLayer);
   } else if (isRasterDatasetLayer(datasetLayer)) {
-    layer = createRasterTileLayer(map.value!, datasetLayer);
-    datasetLayer.openlayer = layer;
-    styleRasterMapLayer(datasetLayer.openlayer, {});
+    createRasterTileLayer(map.value!, datasetLayer);
+    styleRasterDatasetLayer(datasetLayer, {});
     cacheRasterData(datasetLayer.id);
   } else {
     throw new Error("Unsupported map layer type.");
@@ -116,8 +113,6 @@ export function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetL
   if (!existingLayer) {
     _datasetLayerManager.value.push(datasetLayer);
   }
-
-  return layer;
 }
 
 export async function getOrCreateLayerFromID(
@@ -142,7 +137,7 @@ export async function getOrCreateLayerFromID(
   }
 
   // Create open layer and return
-  datasetLayer.openlayer = createMapLayer(datasetLayer);
+  createMapLayer(datasetLayer);
   return datasetLayer;
 }
 
@@ -300,8 +295,8 @@ export function createRasterTileLayer(map: Map, datasetLayer: RasterDatasetLayer
   return map.getLayer(layerId) as TypedStyleLayer;
 }
 
-export function styleRasterMapLayer(
-  openLayer: TypedStyleLayer,
+export function styleRasterDatasetLayer(
+  rasterLayer: RasterDatasetLayer,
   options: {
     colormap?: {
       palette?: string;
@@ -310,7 +305,7 @@ export function styleRasterMapLayer(
     nodata?: number;
   }
 ) {
-  const layerProperties = openLayer.metadata as Record<string, unknown>
+  const layerProperties = rasterLayer.metadata as Record<string, unknown>
   const defaultStyle = layerProperties.default_style as Record<string, unknown> | undefined;
   const colormapPalette =
     (options?.colormap?.palette || defaultStyle?.palette || "terrain") as string;
@@ -324,17 +319,24 @@ export function styleRasterMapLayer(
   if (colormapPalette) {
     tileParams.palette = colormapPalette;
   }
-  if (colormapRange?.length == 2) {
+  if (Array.isArray(colormapRange) && colormapRange?.length == 2) {
     tileParams.min = colormapRange[0];
     tileParams.max = colormapRange[1];
   }
-  if (nodataValue) {
+  if (typeof nodataValue === 'string') {
     tileParams.nodata = nodataValue;
   }
   // openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
   const tileParamString = new URLSearchParams(tileParams).toString();
 
-  const source = map.value!.getSource(openLayer.source) as RasterTileSource;
+  const mapLayers = findExistingMapLayers(rasterLayer);
+  if (!mapLayers.length) {
+    throw new Error(`No map layers found for raster dataset layer ${rasterLayer.id}`);
+  }
+
+  // Set source tiles url
+  const sourceLayerId = mapLayers[0].source;
+  const source = map.value!.getSource(sourceLayerId) as RasterTileSource;
   source.setTiles([`${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
 }
 

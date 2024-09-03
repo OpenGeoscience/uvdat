@@ -95,9 +95,6 @@ export interface AbstractDatasetLayer {
   index: number;
   dataset_id?: number;
   derived_region_id?: number;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  openlayer?: any;
 }
 
 export function isNonNullObject(obj: unknown): obj is object {

@@ -5,7 +5,7 @@ import {
   findExistingMapLayers,
   getDatasetLayerForDataObject,
   isDatasetLayerVisible,
-  styleRasterMapLayer,
+  styleRasterDatasetLayer,
   toggleDatasetLayer,
 } from "@/layers";
 import { currentDataset, deactivatedNodes, rasterTooltip } from "@/store";
@@ -174,7 +174,7 @@ export default {
         return;
       }
 
-      styleRasterMapLayer(currentDatasetLayer.value.openlayer, {
+      styleRasterDatasetLayer(currentDatasetLayer.value, {
         colormap: {
           palette: colormap.value,
           range: colormapRange.value,
