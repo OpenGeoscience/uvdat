@@ -381,14 +381,20 @@ export function isDatasetLayerVisible(
 }
 
 
-export function toggleDatasetLayerVisibility(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+export function toggleDatasetLayerVisibility(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, moveLayer: boolean = true) {
   const mapLayers = findExistingMapLayers(datasetLayer);
+  const map = getMap();
   mapLayers.forEach((layer) => {
-    const enabled = layer.getLayoutProperty('visibility') !== 'none'
-    const value = enabled ? 'none' : 'visible';
+    const enable = layer.getLayoutProperty('visibility') === 'none'
+    const value = enable ? 'visible' : 'none';
+
+    // Move layer to top of layers if it's being enabled
+    if (enable && moveLayer) {
+      map.moveLayer(layer.id);
+    }
 
     // Use map.setLayoutProperty to ensure redraw of map
-    getMap().setLayoutProperty(layer.id, 'visibility', value);
+    map.setLayoutProperty(layer.id, 'visibility', value);
   });
 }
 
