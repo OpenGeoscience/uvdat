@@ -19,7 +19,7 @@ import {
   selectedSourceRegions,
   regionGroupingActive,
   regionGroupingType,
-  rasterTooltip,
+  rasterTooltipEnabled,
   polls,
   availableCharts,
   currentChart,
@@ -54,7 +54,7 @@ export function clearState() {
   clickedDatasetLayer.value = undefined;
   showMapBaseLayer.value = true;
   clickedFeature.value = undefined;
-  rasterTooltip.value = undefined;
+  rasterTooltipEnabled.value = false;
   availableCharts.value = undefined;
   currentChart.value = undefined;
   availableSimulationTypes.value = undefined;
@@ -196,5 +196,5 @@ watch(currentContext, () => {
   loadDerivedRegions();
 });
 watch(currentDataset, () => {
-  rasterTooltip.value = undefined;
+  rasterTooltipEnabled.value = false;
 });

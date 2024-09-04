@@ -83,12 +83,12 @@ export async function getRasterData(layerId: number): Promise<RasterData> {
   const data = (
     await apiClient.get(`rasters/${layerId}/raster-data/${resolution}`)
   ).data;
-  const { sourceBounds } = (
+  const { bounds } = (
     await apiClient.get(`rasters/${layerId}/info/metadata`)
   ).data;
   return {
     data,
-    sourceBounds,
+    sourceBounds: bounds,
   };
 }
 

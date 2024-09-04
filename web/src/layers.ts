@@ -18,7 +18,7 @@ import {
 import { getDatasetLayer } from "./api/rest";
 import { getMap, getTooltip } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
-import { cacheRasterData, createStyle, randomColor } from "./utils";
+import { cacheRasterData, createStyle, setRasterTooltipValue, randomColor, rasterTooltipDataCache, valueAtCursor } from "./utils";
 import {
   availableDatasets,
   currentDataset,
@@ -33,6 +33,8 @@ import {
   map,
   clickedFeature,
   showMapTooltip,
+  tooltipOverlay,
+  rasterTooltipValue,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
@@ -113,26 +115,27 @@ const getRegionLineWidth = () => {
   return result as DataDrivenPropertyValueSpecification<number>;
 };
 
-export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, type: LayerSpecification['type']): string {
+export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, type: LayerSpecification['type'], suffix: string = ''): string {
+  const suffixStr = suffix ? `-${suffix}` : '';
   if (isVectorDatasetLayer(datasetLayer)) {
-    return `map-layer-${datasetLayer.id}-vector-tile-${type}`;
+    return `map-layer-${datasetLayer.id}-vector-tile-${type}${suffixStr}`;
   }
 
   if (isRasterDatasetLayer(datasetLayer)) {
-    return `map-layer-${datasetLayer.id}-raster-tile`;
+    return `map-layer-${datasetLayer.id}-raster-tile-${type}${suffixStr}`;
   }
 
   throw new Error('Unsupported map layer type');
 }
 
 
-export function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+export async function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
   if (isVectorDatasetLayer(datasetLayer)) {
     createVectorTileLayer(datasetLayer);
   } else if (isRasterDatasetLayer(datasetLayer)) {
     createRasterTileLayer(map.value!, datasetLayer);
     styleRasterDatasetLayer(datasetLayer, {});
-    cacheRasterData(datasetLayer.id);
+    cacheRasterData(datasetLayer);
   } else {
     throw new Error("Unsupported map layer type.");
   }
@@ -385,23 +388,73 @@ export function createRasterTileLayer(map: Map, datasetLayer: RasterDatasetLayer
   const sourceId = `raster-tile-source-${datasetLayer.id}`;
   map.addSource(sourceId, {
     type: 'raster',
-    tiles: [],
-  })
+    tiles: [],  // tile source is set later
+  });
 
   const layerId = generateMapLayerId(datasetLayer, 'raster');
   map.addLayer({
     id: layerId,
     type: 'raster',
     source: sourceId,
-    // "source-layer": 'default',
     metadata: {
       id: datasetLayer.id,
       type: datasetLayer.type,
       default_style: datasetLayer.default_style,
     },
   });
+}
 
-  return map.getLayer(layerId) as UserLayer;
+export function createRasterLayerPolygonMask(rasterLayer: RasterDatasetLayer) {
+  const cached = rasterTooltipDataCache[rasterLayer.id];
+  if (!cached) {
+    throw new Error("DATA NOT FOUND");
+  }
+
+  const { sourceBounds } = cached;
+  const { xmin, xmax, ymin, ymax } = sourceBounds;
+  const sourceId2 = `raster-tile-source-${rasterLayer.id}-invisible-bounds`
+
+  const map = getMap();
+  map.addSource(sourceId2, {
+    type: 'geojson',
+    data: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [xmin, ymin],  // same coordinate to close the polygon
+          [xmin, ymax],
+          [xmax, ymax],
+          [xmax, ymin],
+          [xmin, ymin],  // same coordinate to close the polygon
+        ]
+      ]
+    }
+  });
+
+  const layerId = generateMapLayerId(rasterLayer, 'raster', 'polygon-mask');
+  map.addLayer({
+    id: layerId,
+    type: 'fill',
+    source: sourceId2,
+    paint: {
+      "fill-opacity": 0,
+    },
+  });
+
+  // If moving over layer, display tooltip
+  map.on("mousemove", layerId, (e) => {
+    setRasterTooltipValue(e, rasterLayer.id);
+  });
+
+  // If layer is left, remove it
+  map.on("mouseleave", layerId, (e) => {
+    rasterTooltipValue.value = undefined;
+
+    // Only disable the map tooltip if there's not a feature currently being shown
+    if (!clickedFeature.value) {
+      showMapTooltip.value = false;
+    }
+  });
 }
 
 export function styleRasterDatasetLayer(
@@ -415,7 +468,7 @@ export function styleRasterDatasetLayer(
   }
 ) {
   const layerProperties = rasterLayer.metadata as Record<string, unknown>
-  const defaultStyle = layerProperties.default_style as Record<string, unknown> | undefined;
+  const defaultStyle = rasterLayer.default_style as Record<string, unknown> | undefined;
   const colormapPalette =
     (options?.colormap?.palette || defaultStyle?.palette || "terrain") as string;
   const colormapRange = options?.colormap?.range || defaultStyle?.data_range;
@@ -446,25 +499,25 @@ export function styleRasterDatasetLayer(
   // Set source tiles url
   const sourceLayerId = mapLayers[0].source;
   const source = map.value!.getSource(sourceLayerId) as RasterTileSource;
-  source.setTiles([`${baseURL}rasters/${layerProperties.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
+  source.setTiles([`${baseURL}rasters/${rasterLayer.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
 }
 
-export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
-  if (datasetLayer === undefined) {
-    throw new Error(`Could not find existing openlayer for undefined layer`);
-  }
-
+export function findExistingMapLayersWithId(id: number) {
   // TODO: Try to improve on forced non-null assertion, maplibre's types don't make this easy
   const map = getMap();
   const layers = map.getLayersOrder().map((id: string) => map.getLayer(id)!);
   const filtered = layers.filter(
     (layer) => (
       isUserLayer(layer)
-      && layer.metadata.id === datasetLayer.id
+      && layer.metadata.id === id
     )
   );
 
   return filtered as UserLayer[];
+}
+
+export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+  return findExistingMapLayersWithId(datasetLayer.id);
 }
 
 export function isDatasetLayerVisible(
@@ -501,7 +554,7 @@ export function toggleDatasetLayerVisibility(datasetLayer: VectorDatasetLayer | 
   });
 }
 
-export function toggleDatasetLayer(
+export async function toggleDatasetLayer(
   datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined
 ) {
   if (datasetLayer === undefined) {
@@ -514,7 +567,7 @@ export function toggleDatasetLayer(
 
   // If layer doesn't exist, create map layer and update visible layers, to ensure it's stored in state correctly.
   if (!existingDatasetLayer) {
-    createMapLayer(datasetLayer);
+    await createMapLayer(datasetLayer);
   } else {
     // Only call this if the layer already exists, as otherwise it will have the opposite effect
     toggleDatasetLayerVisibility(datasetLayer);

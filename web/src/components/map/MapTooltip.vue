@@ -1,12 +1,14 @@
 <script lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import {
   clickedDatasetLayer,
   deactivatedNodes,
   clickedFeature,
   selectedSourceRegions,
+  rasterTooltipEnabled,
+  rasterTooltipValue,
 } from "@/store";
-import { getMap } from "@/storeFunctions";
+import { getMap, getTooltip } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
@@ -71,6 +73,26 @@ export default {
       map.fitBounds(bbox);
     }
 
+    // Handle behavior of raster data tooltip display
+    watch(rasterTooltipValue, (val) => {
+      // Give feature clicks priority
+      if (clickedFeature.value || !rasterTooltipEnabled.value) {
+        return;
+      }
+
+      // Remove from map if set to undefined
+      const tooltip = getTooltip();
+      if (val === undefined) {
+        tooltip.remove()
+        return;
+      }
+
+      // Set position and display
+      const { pos } = val;
+      tooltip.setLngLat(pos);
+      tooltip.addTo(getMap());
+    });
+
     return {
       dataObjectForClickedDatasetLayer,
       clickedDatasetLayer,
@@ -81,6 +103,8 @@ export default {
       deactivatedNodes,
       toggleNodeActive,
       zoomToRegion,
+      rasterTooltipEnabled,
+      rasterTooltipValue,
     };
   },
 };
@@ -100,7 +124,7 @@ export default {
     </div>
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
-    <div v-else-if="clickedFeature.properties.node_id" class="pa-2">
+    <div v-else-if="clickedFeature.properties.node_id">
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
@@ -128,6 +152,16 @@ export default {
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
+    </div>
+  </div>
+
+  <!-- Check for raster tooltip data after, to give clicked features priority -->
+  <div v-else-if="rasterTooltipEnabled && rasterTooltipValue">
+    <div v-if="rasterTooltipValue.text === ''">
+      waiting for data...
+    </div>
+    <div v-else>
+      <span>{{ rasterTooltipValue.text }}</span>
     </div>
   </div>
 </template>

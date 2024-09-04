@@ -9,7 +9,7 @@ import {
   getRasterData,
 } from "@/api/rest";
 import {
-  rasterTooltip,
+  rasterTooltipEnabled,
   currentContext,
   deactivatedNodes,
   currentNetworkGCC,
@@ -18,10 +18,14 @@ import {
   currentNetworkDataset,
   currentNetworkDatasetLayer,
   availableDatasets,
+  rasterTooltipValue,
+  showMapTooltip,
 } from "@/store";
-import { Dataset, DerivedRegion, RasterData, VectorDatasetLayer } from "./types";
+import { Dataset, DerivedRegion, RasterData, RasterDatasetLayer, VectorDatasetLayer } from "./types";
 import { Ref } from "vue";
-import { isDatasetLayerVisible, styleVectorOpenLayer } from "./layers";
+import { createRasterLayerPolygonMask, findExistingMapLayers, findExistingMapLayersWithId, isDatasetLayerVisible, styleVectorOpenLayer } from "./layers";
+import { MapLayerMouseEvent, Popup } from "maplibre-gl";
+import { getMap, getTooltip } from "./storeFunctions";
 
 export const rasterColormaps = [
   "terrain",
@@ -45,55 +49,76 @@ export const rasterColormaps = [
   "gray",
 ];
 
-const rasterTooltipDataCache: Record<number, RasterData | undefined> = {};
+export const rasterTooltipDataCache: Record<number, RasterData | undefined> = {};
 
-export function cacheRasterData(layerId: number) {
-  if (!rasterTooltipDataCache[layerId]) {
-    rasterTooltipDataCache[layerId] = undefined;
-    getRasterData(layerId).then((data) => {
-      rasterTooltipDataCache[layerId] = data;
-    });
+export async function cacheRasterData(layer: RasterDatasetLayer) {
+  if (rasterTooltipDataCache[layer.id] !== undefined) {
+    return;
   }
+
+  const data = await getRasterData(layer.id);
+  rasterTooltipDataCache[layer.id] = data;
+
+  // This will allow the raster tooltip to display data
+  createRasterLayerPolygonMask(layer)
 }
 
-export function displayRasterTooltip(
-  evt: { coordinate: number[] },
-  tooltip: Ref<HTMLElement>,
-  overlay: Overlay
-) {
-  if (rasterTooltip.value) {
-    const cached = rasterTooltipDataCache[rasterTooltip.value];
-    if (cached) {
-      const { data, sourceBounds } = cached;
-      if (data && data.length > 0) {
-        const xProportion =
-          (evt.coordinate[0] - sourceBounds.xmin) /
-          (sourceBounds.xmax - sourceBounds.xmin);
-        let yProportion =
-          (evt.coordinate[1] - sourceBounds.ymin) /
-          (sourceBounds.ymax - sourceBounds.ymin);
-        yProportion = 1 - yProportion;
-        if (
-          xProportion < 0 ||
-          yProportion < 0 ||
-          xProportion > 1 ||
-          yProportion > 1
-        ) {
-          tooltip.value.style.display = "none";
-        } else {
-          const xIndex = Math.round(xProportion * data[0].length);
-          const yIndex = Math.round(yProportion * data.length);
-          const value = data[yIndex][xIndex];
-          tooltip.value.innerHTML = `~ ${Math.round(value)} m`;
-          tooltip.value.style.display = "";
-        }
-      } else {
-        tooltip.value.innerHTML = "waiting for data...";
-        tooltip.value.style.display = "";
-      }
-      overlay.setPosition(evt.coordinate);
-    }
+export function valueAtCursor(evt: MapLayerMouseEvent, datasetLayerId: number): number | undefined {
+  const cached = rasterTooltipDataCache[datasetLayerId];
+  if (!cached) {
+    return;
   }
+
+  const { data, sourceBounds } = cached;
+  if (!(data && data.length > 0)) {
+    return;
+  }
+
+  // Check if out of bounds in longitude (X)
+  if (evt.lngLat.lng < sourceBounds.xmin || evt.lngLat.lng > sourceBounds.xmax) {
+    return;
+  }
+
+  // Check if out of bounds in latitude (Y)
+  if (evt.lngLat.lat < sourceBounds.ymin || evt.lngLat.lat > sourceBounds.ymax) {
+    return;
+  }
+
+  // Convert lat/lng to array indices
+  const xProportion = (evt.lngLat.lng - sourceBounds.xmin) / (sourceBounds.xmax - sourceBounds.xmin);
+  const yProportion = 1 - (
+    (evt.lngLat.lat - sourceBounds.ymin) / (sourceBounds.ymax - sourceBounds.ymin)
+  );
+
+  // Use floor, as otherwise rounding up can reach out of bounds
+  const xIndex = Math.floor(xProportion * data[0].length);
+  const yIndex = Math.floor(yProportion * data.length);
+
+  return data[yIndex][xIndex];
+}
+
+
+export function setRasterTooltipValue(evt: MapLayerMouseEvent, datasetLayerId: number) {
+  // If the toggle to show the tooltip is disabled, we show nothing.
+  if (!rasterTooltipEnabled.value) {
+    return;
+  }
+
+  // Start with empty data
+  rasterTooltipValue.value = undefined;
+
+  // Convert lat/lng to data array index
+  const value = valueAtCursor(evt, datasetLayerId);
+  if (value === undefined) {
+    return;
+  }
+
+  // Add to map and enable, since we have data to display
+  rasterTooltipValue.value = {
+    pos: evt.lngLat,
+    text: `~ ${Math.round(value)} m`,
+  };
+  showMapTooltip.value = true;
 }
 
 export function randomColor() {

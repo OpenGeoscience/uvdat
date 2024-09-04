@@ -83,6 +83,22 @@ export interface NetworkEdge {
   to_node: number;
 }
 
+
+export interface DefaultStyle {
+  // Both
+  palette?: string;
+
+  // Raster
+  data_range?: [number, number];
+  transparency_threshold?: number;
+  trim_distribution_percentage?: number;
+
+  // Vector
+  color_delimiter?: string;
+  color_property?: string;
+  outline?: string;
+}
+
 export interface AbstractDatasetLayer {
   id: number;
   name: string;
@@ -93,7 +109,8 @@ export interface AbstractDatasetLayer {
   metadata?: {
     network?: boolean;
   };
-  default_style?: object;
+  // default_style: Record<string, unknown> | DefaultStyle;
+  default_style: DefaultStyle;
   index: number;
   dataset_id?: number;
   derived_region_id?: number;

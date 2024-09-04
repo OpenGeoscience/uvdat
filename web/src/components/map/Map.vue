@@ -1,15 +1,13 @@
 <script lang="ts">
-import { Map, IControl, Popup, MapLayerMouseEvent, ControlPosition } from 'maplibre-gl';
-import { Ref, onMounted, ref, watch } from "vue";
+import { Map, IControl, Popup, ControlPosition } from 'maplibre-gl';
+import { Ref, onMounted, ref } from "vue";
 import {
     map,
     showMapTooltip,
-    rasterTooltip,
     tooltipOverlay,
     clickedFeature,
 } from "@/store";
-import { getMap, clearMap, getTooltip } from "@/storeFunctions";
-import { displayRasterTooltip } from "@/utils";
+import { clearMap, getTooltip } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import RegionGrouping from "./RegionGrouping.vue";
@@ -77,14 +75,6 @@ export default {
                 mapContainer.classList.remove("spinner");
             });
 
-            // TODO: Convert to work with new setup
-            // newMap.on("pointermove", (e) => {
-            //     if (tooltip.value !== undefined) {
-            //         displayRasterTooltip(e, tooltip.value, tooltipOverlay.value!);
-            //     }
-            // });
-
-
             /**
              * This is called on every click, and technically hides the tooltip on every click.
              * However, if a feature layer is clicked, that event is fired after this one, and the
@@ -117,7 +107,6 @@ export default {
             // Add tooltip overlay
             tooltipOverlay.value = new Popup({
                 anchor: 'bottom-left',
-                offset: [10, 0],
                 closeOnClick: false,
                 maxWidth: 'none',
                 closeButton: true,
@@ -126,11 +115,6 @@ export default {
             // Link overlay ref to dom, allowing for modification elsewhere
             tooltipOverlay.value.setDOMContent(tooltip.value);
         }
-
-        watch(rasterTooltip, () => {
-            tooltip.value!.innerHTML = "";
-            tooltip.value!.style.display = "none";
-        });
 
         onMounted(() => {
             createMap();
@@ -155,7 +139,7 @@ export default {
         <!-- <div ref="regiongrouping" class=" maplibregl-ctrl region-grouping-control">
             <RegionGrouping />
         </div> -->
-        <div id="map-tooltip" ref="tooltip" class="tooltip" v-show="showMapTooltip">
+        <div id="map-tooltip" ref="tooltip" class="tooltip pa-0" v-show="showMapTooltip">
             <MapTooltip />
         </div>
     </div>

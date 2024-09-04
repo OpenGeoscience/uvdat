@@ -8,7 +8,7 @@ import {
   styleRasterDatasetLayer,
   toggleDatasetLayer,
 } from "@/layers";
-import { currentDataset, deactivatedNodes, rasterTooltip } from "@/store";
+import { currentDataset, deactivatedNodes, rasterTooltipEnabled } from "@/store";
 import {
   NetworkNode,
   RasterDatasetLayer,
@@ -91,8 +91,9 @@ export default {
         return;
       }
 
-      // TODO: apply to all
-      if (applyToAll.value) {
+      // TODO: multi-layer datasets bug out if applyToAll is false
+      const multiLayer = (currentDataset.value?.map_layers?.length || 0) > 1;
+      if (multiLayer && applyToAll.value) {
         updateLayerOpacity();
         updateColormap();
         return;
@@ -102,18 +103,20 @@ export default {
       opacity.value = getDatasetLayerOpacity(currentDatasetLayer.value);
 
       // Raster specific
-      const layerProperties = getDatasetLayerProperties(currentDatasetLayer.value);
-      const defaultStyle = layerProperties.default_style;
+      const layerProperties = currentDatasetLayer.value.metadata;
+      const defaultStyle = currentDatasetLayer.value.default_style;
+      if (!defaultStyle) {
+        return;
+      }
+
+      // TODO: Clean up
       const { min, max, palette } = layerProperties;
-      if (defaultStyle) {
-        colormap.value = palette || defaultStyle.palette || "terrain";
-        layerRange.value =
-          defaultStyle.data_range.map((v: number) => Math.round(v)) || [];
-        if (min && max) {
-          colormapRange.value = [min, max];
-        } else {
-          colormapRange.value = layerRange.value;
-        }
+      colormap.value = palette || defaultStyle.palette || "terrain";
+      layerRange.value = defaultStyle.data_range?.map((v: number) => Math.round(v)) || [];
+      if (min && max) {
+        colormapRange.value = [min, max];
+      } else {
+        colormapRange.value = layerRange.value;
       }
     }
 
@@ -181,8 +184,6 @@ export default {
       )?.name;
     }
 
-    // Use deep watcher to catch inputs from number fields alongside sliders
-    watch(colormapRange, updateColormap, { deep: true });
     watch(colormap, updateColormap);
     watch(opacity, updateLayerOpacity);
 
@@ -201,10 +202,11 @@ export default {
       layerRange,
       colormapRange,
       applyToAll,
-      rasterTooltip,
+      rasterTooltipEnabled,
       deactivatedNodes,
       activateNode,
       getNetworkNodeName,
+      updateColormap,
     };
   },
 };
@@ -245,18 +247,19 @@ export default {
           Color map range
         </v-card-text>
 
-        <v-range-slider v-if="colormapRange" v-model="colormapRange" :min="layerRange[0]" :max="layerRange[1]"
-          :step="1">
+        <!-- Call updateColormap manually to avoid too many requests when sliding -->
+        <v-range-slider v-if="colormapRange" v-model="colormapRange" @end="updateColormap" :min="layerRange[0]"
+          :max="layerRange[1]" :step="1">
           <template v-slot:prepend>
-            <input v-model="colormapRange[0]" class="pa-1" hide-details dense type="number" style="width: 60px"
-              :min="layerRange[0]" :max="layerRange[1]" />
+            <input v-model="colormapRange[0]" @input="updateColormap" class="pa-1" hide-details dense type="number"
+              style="width: 60px" :min="layerRange[0]" :max="layerRange[1]" />
           </template>
           <template v-slot:append>
-            <input v-model="colormapRange[1]" class="pa-1" hide-details dense type="number" style="width: 60px"
-              :min="layerRange[0]" :max="layerRange[1]" />
+            <input v-model="colormapRange[1]" @input="updateColormap" class="pa-1" hide-details dense type="number"
+              style="width: 60px" :min="layerRange[0]" :max="layerRange[1]" />
           </template>
         </v-range-slider>
-        <v-switch v-model="rasterTooltip" :value="currentDatasetLayer?.id" label="Show value tooltip" />
+        <v-switch v-model="rasterTooltipEnabled" :value="currentDatasetLayer?.id" label="Show value tooltip" />
       </div>
 
       <div v-if="currentDataset && currentDataset.network">
