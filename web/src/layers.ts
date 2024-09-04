@@ -154,7 +154,7 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
 
   const layerId = generateMapLayerId(datasetLayer, 'line');
   map.addLayer({
-    id: layerId,
+    id: generateMapLayerId(datasetLayer, 'line'),
     type: 'line',
     source: sourceId,
     "source-layer": 'default',
@@ -173,9 +173,8 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
     },
   });
 
-  const layerId2 = generateMapLayerId(datasetLayer, 'circle');
   map.addLayer({
-    id: layerId2,
+    id: generateMapLayerId(datasetLayer, 'circle'),
     type: "circle",
     source: sourceId,
     metadata: {
@@ -183,17 +182,17 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
       type: datasetLayer.type,
     },
     "source-layer": "default",
+    // Only render point geometries. Otherwise it will add a circle at the vertices of all lines
+    "filter": ["==", ["geometry-type"], "Point"],
     paint: {
       'circle-color': getAnnotationColor(),
+      'circle-stroke-width': getLineWidth(),
+      // 'circle-stroke-color': getAnnotationColor(),
     },
     layout: {
       visibility: 'visible',
     },
   });
-
-  // TODO: Return all layers
-  const layer = map.getLayer(layerId)!;
-  return layer;
 }
 
 export function styleVectorOpenLayer(
