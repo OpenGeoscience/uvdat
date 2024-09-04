@@ -144,13 +144,24 @@ export async function getOrCreateLayerFromID(
   return datasetLayer;
 }
 
+export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer) {
+  const defaultColors = `${randomColor()},#ffffff`;
 
-function createRegionLayer(map: Map, datasetLayer: VectorDatasetLayer, sourceId: string,) {
+  const sourceId = `vector-tile-source-${datasetLayer.id}`;
+  map.addSource(sourceId, {
+    type: 'vector',
+    tiles: [`${baseURL}vectors/${datasetLayer.id}/tiles/{z}/{x}/{y}/`],
+  });
+
+  const startingOpacity = ['region', 'flood'].includes(datasetLayer.dataset_category) ? 0.6 : 1;
+
+  // Add fill layer, filtered to polygon geometries
   map.addLayer({
     id: generateMapLayerId(datasetLayer, 'fill'),
     type: 'fill',
     source: sourceId,
     "source-layer": 'default',
+    "filter": ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
     metadata: {
       id: datasetLayer.id,
       type: datasetLayer.type,
@@ -160,10 +171,11 @@ function createRegionLayer(map: Map, datasetLayer: VectorDatasetLayer, sourceId:
     },
     paint: {
       "fill-color": getAnnotationColor(),
-      "fill-opacity": 0.6,
+      "fill-opacity": startingOpacity,
     },
   });
 
+  // Add line layer
   map.addLayer({
     id: generateMapLayerId(datasetLayer, 'line'),
     type: 'line',
@@ -181,46 +193,12 @@ function createRegionLayer(map: Map, datasetLayer: VectorDatasetLayer, sourceId:
     paint: {
       "line-color": getAnnotationColor(),
       "line-width": getLineWidth(),
-      "line-opacity": 0.6,
-    },
-  });
-}
-
-export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer) {
-  const defaultColors = `${randomColor()},#ffffff`;
-
-  const sourceId = `vector-tile-source-${datasetLayer.id}`;
-  map.addSource(sourceId, {
-    type: 'vector',
-    tiles: [`${baseURL}vectors/${datasetLayer.id}/tiles/{z}/{x}/{y}/`],
-  })
-
-  if (datasetLayer.dataset_category === 'region') {
-    createRegionLayer(map, datasetLayer, sourceId);
-    return;
-  }
-
-  // Create line and circle layer
-  map.addLayer({
-    id: generateMapLayerId(datasetLayer, 'line'),
-    type: 'line',
-    source: sourceId,
-    "source-layer": 'default',
-    metadata: {
-      id: datasetLayer.id,
-      type: datasetLayer.type,
-    },
-    layout: {
-      "line-join": "round",
-      "line-cap": "round",
-      visibility: 'visible',
-    },
-    paint: {
-      "line-color": getAnnotationColor(),
-      "line-width": getLineWidth(),
+      "line-opacity": startingOpacity,
     },
   });
 
+  // Add circle layer, filtered to point geometries. If not filtered,
+  // this will add a circle at the vertices of all lines
   map.addLayer({
     id: generateMapLayerId(datasetLayer, 'circle'),
     type: "circle",
@@ -230,11 +208,11 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
       type: datasetLayer.type,
     },
     "source-layer": "default",
-    // Only render point geometries. Otherwise it will add a circle at the vertices of all lines
-    "filter": ["==", ["geometry-type"], "Point"],
+    "filter": ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
     paint: {
       'circle-color': getAnnotationColor(),
       'circle-stroke-width': getLineWidth(),
+      'circle-opacity': startingOpacity,
       // 'circle-stroke-color': getAnnotationColor(),
     },
     layout: {
