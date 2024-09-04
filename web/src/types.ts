@@ -1,3 +1,5 @@
+import { Map } from 'maplibre-gl';
+
 export interface Dataset {
   id: number;
   name: string;
@@ -126,6 +128,18 @@ export interface VectorDatasetLayer extends AbstractDatasetLayer {
 
 export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
+}
+
+export type StyleLayer = NonNullable<ReturnType<Map['getLayer']>>;
+export interface UserLayer extends StyleLayer {
+  metadata: {
+    id: string;
+    type: 'vector' | 'raster';
+  }
+}
+
+export function isUserLayer(layer: StyleLayer): layer is UserLayer {
+  return isNonNullObject(layer.metadata) && 'id' in layer.metadata && layer.metadata.id !== undefined;
 }
 
 export interface VectorTile {

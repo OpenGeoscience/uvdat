@@ -15,6 +15,8 @@ import {
   isRasterDatasetLayer,
   VectorDatasetLayer,
   isVectorDatasetLayer,
+  isNonNullObject,
+  isUserLayer,
 } from "./types";
 import { getDatasetLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
@@ -479,7 +481,7 @@ export function updateVisibleMapLayers() {
   selectedDatasetLayers.value = _datasetLayerManager.value.filter(isDatasetLayerVisible);
 
   // Separate dataset map layers from background layers provided by map tiler.
-  const datasetMapLayers = getMap().getLayersOrder().map((id) => getMap().getLayer(id)!).filter((layer) => layer?.metadata?.id !== undefined);
+  const datasetMapLayers = getMap().getLayersOrder().map((id) => getMap().getLayer(id)!).filter((layer) => isUserLayer(layer));
 
   // Create mapping from dataset layer ID to it's highest map index (the highest index of any of its layers)
   const indexMap = datasetMapLayers.reduce((acc, cur, index) => ({ ...acc, [cur.metadata.id]: index }), {}) as Record<number, number>;
@@ -510,12 +512,9 @@ export function updateBaseLayer() {
   const map = getMap();
   map.getLayersOrder().forEach((id) => {
     const layer = map.getLayer(id);
-    if (layer === undefined) {
-      return;
-    }
 
-    // Only operate on base layers, not layers we defined ourselves
-    if (layer.metadata?.id !== undefined) {
+    // Operate only on base layers
+    if (layer === undefined || isUserLayer(layer)) {
       return;
     }
 
@@ -528,12 +527,9 @@ export function clearMapLayers() {
   const map = getMap();
   map.getLayersOrder().forEach((id) => {
     const layer = map.getLayer(id);
-    if (layer === undefined) {
-      return;
-    }
 
-    // Only operate on uvdat layers, not base layers
-    if (layer.metadata?.id === undefined) {
+    // Operate only on user layers
+    if (layer === undefined || !isUserLayer(layer)) {
       return;
     }
 
