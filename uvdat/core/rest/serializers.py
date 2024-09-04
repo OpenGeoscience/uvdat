@@ -92,12 +92,20 @@ class RasterMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSeri
 
 
 class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+    dataset_category = serializers.SerializerMethodField()
+
+    def get_dataset_category(self, obj: VectorMapLayer):
+        if obj.dataset is None:
+            raise Exception('map layer with null dataset!')
+
+        return obj.dataset.category
+
     class Meta:
         model = VectorMapLayer
         exclude = ['geojson_file']
 
 
-class VectorMapLayerDetailSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+class VectorMapLayerDetailSerializer(VectorMapLayerSerializer):
     derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
 
     def get_derived_region_id(self, obj):

@@ -225,7 +225,7 @@ export default {
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
-      <v-btn variant="outlined" v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)" @click="
+      <!-- <v-btn variant="outlined" v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)" @click="
         toggleNodeActive(
           clickedFeature.getProperties().node_id,
           dataObjectForClickedDatasetLayer,
@@ -242,7 +242,7 @@ export default {
         )
         " v-else>
         Deactivate Node
-      </v-btn>
+      </v-btn> -->
     </div>
     <!-- Render for all other features -->
     <div v-else>

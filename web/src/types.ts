@@ -97,6 +97,7 @@ export interface AbstractDatasetLayer {
   index: number;
   dataset_id?: number;
   derived_region_id?: number;
+  dataset_category: string;
 }
 
 export function isNonNullObject(obj: unknown): obj is object {

@@ -73,6 +73,7 @@ export default {
             //     layer,
             // ]) as [Feature, Layer] | undefined;
 
+            const map = getMap();
             tooltipOverlay.remove()
             clickedFeature.value = undefined;
             showMapTooltip.value = false;
@@ -82,10 +83,9 @@ export default {
 
             const feature = e.features[0];
             clickedFeature.value = feature;
-            console.log('---', feature);
             tooltipOverlay.setLngLat(e.lngLat);
             showMapTooltip.value = true;
-            tooltipOverlay.addTo(map.value!)
+            tooltipOverlay.addTo(map)
 
 
             // tooltip.value!.innerHTML = "<h1>HEYY</h1>";

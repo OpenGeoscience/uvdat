@@ -104,8 +104,6 @@ export function clearMap() {
   map.setCenter(currentContext.value.default_map_center);
   map.setZoom(currentContext.value.default_map_zoom);
 
-  console.log('--', availableDatasetLayers.value);
-
   // getMap().setLayers([
   //   new TileLayer({
   //     source: new OSM(),

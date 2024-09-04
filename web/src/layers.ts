@@ -143,6 +143,48 @@ export async function getOrCreateLayerFromID(
   return datasetLayer;
 }
 
+
+function createRegionLayer(map: Map, datasetLayer: VectorDatasetLayer, sourceId: string,) {
+  map.addLayer({
+    id: generateMapLayerId(datasetLayer, 'fill'),
+    type: 'fill',
+    source: sourceId,
+    "source-layer": 'default',
+    metadata: {
+      id: datasetLayer.id,
+      type: datasetLayer.type,
+    },
+    layout: {
+      visibility: 'visible',
+    },
+    paint: {
+      "fill-color": getAnnotationColor(),
+      "fill-opacity": 0.6,
+    },
+  });
+
+  map.addLayer({
+    id: generateMapLayerId(datasetLayer, 'line'),
+    type: 'line',
+    source: sourceId,
+    "source-layer": 'default',
+    metadata: {
+      id: datasetLayer.id,
+      type: datasetLayer.type,
+    },
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+      visibility: 'visible',
+    },
+    paint: {
+      "line-color": getAnnotationColor(),
+      "line-width": getLineWidth(),
+      "line-opacity": 0.6,
+    },
+  });
+}
+
 export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer) {
   const defaultColors = `${randomColor()},#ffffff`;
 
@@ -152,7 +194,12 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
     tiles: [`${baseURL}vectors/${datasetLayer.id}/tiles/{z}/{x}/{y}/`],
   })
 
-  const layerId = generateMapLayerId(datasetLayer, 'line');
+  if (datasetLayer.dataset_category === 'region') {
+    createRegionLayer(map, datasetLayer, sourceId);
+    return;
+  }
+
+  // Create line and circle layer
   map.addLayer({
     id: generateMapLayerId(datasetLayer, 'line'),
     type: 'line',
