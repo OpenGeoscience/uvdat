@@ -34,6 +34,7 @@ import {
   loading,
   currentError,
   availableDatasetLayers,
+  tooltipOverlay,
 } from "./store";
 import { Dataset } from "./types";
 import {
@@ -77,6 +78,13 @@ export function getMap() {
     throw new Error("Map not yet initialized!");
   }
   return map.value;
+}
+
+export function getTooltip() {
+  if (tooltipOverlay.value === undefined) {
+    throw new Error("Tooltip not yet initialized!");
+  }
+  return tooltipOverlay.value;
 }
 
 export function loadContexts() {

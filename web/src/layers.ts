@@ -1,8 +1,4 @@
-import MVT from "ol/format/MVT";
-import TileLayer from "ol/layer/Tile";
-import XYZSource from "ol/source/XYZ.js";
-import VectorTileLayer from "ol/layer/VectorTile";
-import { DataDrivenPropertyValueSpecification, LayerSpecification, RasterTileSource, TypedStyleLayer } from 'maplibre-gl'
+import { DataDrivenPropertyValueSpecification, LayerSpecification, MapLayerMouseEvent, RasterTileSource } from 'maplibre-gl'
 import { Circle, Stroke, Style } from "ol/style";
 import { Map } from 'maplibre-gl'
 import { Feature } from "ol";
@@ -20,7 +16,7 @@ import {
   UserLayer,
 } from "./types";
 import { getDatasetLayer } from "./api/rest";
-import { getMap } from "./storeFunctions";
+import { getMap, getTooltip } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
 import { cacheRasterData, createStyle, randomColor } from "./utils";
 import {
@@ -35,6 +31,8 @@ import {
   availableDatasetLayers,
   selectedDerivedRegions,
   map,
+  clickedFeature,
+  showMapTooltip,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
@@ -100,7 +98,7 @@ export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterData
 
 export function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
   if (isVectorDatasetLayer(datasetLayer)) {
-    createVectorTileLayer(map.value!, datasetLayer);
+    createVectorTileLayer(datasetLayer);
   } else if (isRasterDatasetLayer(datasetLayer)) {
     createRasterTileLayer(map.value!, datasetLayer);
     styleRasterDatasetLayer(datasetLayer, {});
@@ -144,8 +142,51 @@ export async function getOrCreateLayerFromID(
   return datasetLayer;
 }
 
-export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer) {
+
+export function handleLayerClick(e: MapLayerMouseEvent) {
+  const map = getMap();
+  const tooltip = getTooltip();
+
+  tooltip.remove()
+  clickedFeature.value = undefined;
+  showMapTooltip.value = false;
+  if (!e.features) {
+    return;
+  }
+
+  const feature = e.features[0];
+  clickedFeature.value = feature;
+  tooltip.setLngLat(e.lngLat);
+  showMapTooltip.value = true;
+  tooltip.addTo(map)
+
+  // TODO: Rectify below code
+  // If nothing clicked, reset values and return
+  // if (!res) {
+  //     showMapTooltip.value = false;
+  //     clickedDatasetLayer.value = undefined;
+  //     clickedFeature.value = undefined;
+  // } else {
+  //     const [feature, openlayer] = res;
+  //     const props = openlayer.getProperties();
+  //     const datasetLayer = await getOrCreateLayerFromID(props.id, props.type);
+
+  //     if (datasetLayer) {
+  //         clickedDatasetLayer.value = datasetLayer;
+  //         clickedFeature.value = feature;
+  //         // Show tooltip and set position
+  //         showMapTooltip.value = true;
+  //         tooltipOverlay.setPosition(e.coordinate);
+  //         tooltip.value.style.display = "";
+  //     }
+  // }
+}
+
+
+export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
   const defaultColors = `${randomColor()},#ffffff`;
+
+  const map = getMap();
 
   const sourceId = `vector-tile-source-${datasetLayer.id}`;
   map.addSource(sourceId, {
@@ -156,8 +197,9 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
   const startingOpacity = ['region', 'flood'].includes(datasetLayer.dataset_category) ? 0.6 : 1;
 
   // Add fill layer, filtered to polygon geometries
+  const fillLayerId = generateMapLayerId(datasetLayer, 'fill');
   map.addLayer({
-    id: generateMapLayerId(datasetLayer, 'fill'),
+    id: fillLayerId,
     type: 'fill',
     source: sourceId,
     "source-layer": 'default',
@@ -176,8 +218,9 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
   });
 
   // Add line layer
+  const lineLayerId = generateMapLayerId(datasetLayer, 'line');
   map.addLayer({
-    id: generateMapLayerId(datasetLayer, 'line'),
+    id: lineLayerId,
     type: 'line',
     source: sourceId,
     "source-layer": 'default',
@@ -197,10 +240,12 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
     },
   });
 
+
   // Add circle layer, filtered to point geometries. If not filtered,
   // this will add a circle at the vertices of all lines
+  const circleLayerId = generateMapLayerId(datasetLayer, 'circle');
   map.addLayer({
-    id: generateMapLayerId(datasetLayer, 'circle'),
+    id: circleLayerId,
     type: "circle",
     source: sourceId,
     metadata: {
@@ -219,6 +264,11 @@ export function createVectorTileLayer(map: Map, datasetLayer: VectorDatasetLayer
       visibility: 'visible',
     },
   });
+
+  // Add events to map
+  map.on('click', fillLayerId, handleLayerClick);
+  map.on('click', lineLayerId, handleLayerClick);
+  map.on('click', circleLayerId, handleLayerClick);
 }
 
 export function styleVectorOpenLayer(
@@ -320,7 +370,7 @@ export function createRasterTileLayer(map: Map, datasetLayer: RasterDatasetLayer
     },
   });
 
-  return map.getLayer(layerId) as TypedStyleLayer;
+  return map.getLayer(layerId) as UserLayer;
 }
 
 export function styleRasterDatasetLayer(

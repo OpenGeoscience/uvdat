@@ -10,7 +10,7 @@ import {
   RasterDatasetLayer,
 } from "./types.js";
 // import { MapLayer } from "@/data";
-import { Map, MapGeoJSONFeature } from "maplibre-gl";
+import { Map, MapGeoJSONFeature, Popup } from "maplibre-gl";
 
 // Context
 export const availableContexts = ref<Context[]>([]);
@@ -28,6 +28,7 @@ export const selectedDatasetLayers = ref<(VectorDatasetLayer | RasterDatasetLaye
 export const clickedDatasetLayer = ref<VectorDatasetLayer | RasterDatasetLayer>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
+export const tooltipOverlay = ref<Popup>();
 export const clickedFeature = ref<MapGeoJSONFeature>();
 export const rasterTooltip = ref();
 

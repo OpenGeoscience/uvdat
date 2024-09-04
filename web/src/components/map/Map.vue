@@ -4,18 +4,18 @@ import { Ref, onMounted, ref, watch } from "vue";
 import {
     map,
     showMapTooltip,
-    clickedFeature,
-    clickedDatasetLayer,
     rasterTooltip,
+    tooltipOverlay,
+    clickedFeature,
 } from "@/store";
-import { getMap, clearMap } from "@/storeFunctions";
+import { getMap, clearMap, getTooltip } from "@/storeFunctions";
 import { displayRasterTooltip } from "@/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import RegionGrouping from "./RegionGrouping.vue";
 import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
-import { getOrCreateLayerFromID } from "@/layers";
+import { getOrCreateLayerFromID, handleLayerClick } from "@/layers";
 
 
 class VueMapControl implements IControl {
@@ -63,55 +63,6 @@ export default {
         const regiongrouping = ref<HTMLElement>();
         const activelayers = ref<HTMLElement>();
 
-        let tooltipOverlay: Popup
-
-        // async function handleMapClick(e: MapBrowserEvent<MouseEvent>) {
-        async function handleMapClick(e: MapLayerMouseEvent) {
-            // Retrieve first clicked feature, and its layer
-            // let res = getMap().forEachFeatureAtPixel(e.pixel, (feature, layer) => [
-            //     feature,
-            //     layer,
-            // ]) as [Feature, Layer] | undefined;
-
-            const map = getMap();
-            tooltipOverlay.remove()
-            clickedFeature.value = undefined;
-            showMapTooltip.value = false;
-            if (!e.features) {
-                return;
-            }
-
-            const feature = e.features[0];
-            clickedFeature.value = feature;
-            tooltipOverlay.setLngLat(e.lngLat);
-            showMapTooltip.value = true;
-            tooltipOverlay.addTo(map)
-
-
-            // tooltip.value!.innerHTML = "<h1>HEYY</h1>";
-            // showMapTooltip.value = true;
-
-            // If nothing clicked, reset values and return
-            // if (!res) {
-            //     showMapTooltip.value = false;
-            //     clickedDatasetLayer.value = undefined;
-            //     clickedFeature.value = undefined;
-            // } else {
-            //     const [feature, openlayer] = res;
-            //     const props = openlayer.getProperties();
-            //     const datasetLayer = await getOrCreateLayerFromID(props.id, props.type);
-
-            //     if (datasetLayer) {
-            //         clickedDatasetLayer.value = datasetLayer;
-            //         clickedFeature.value = feature;
-            //         // Show tooltip and set position
-            //         showMapTooltip.value = true;
-            //         tooltipOverlay.setPosition(e.coordinate);
-            //         tooltip.value.style.display = "";
-            //     }
-            // }
-        }
-
         function createMap() {
             const newMap = new Map({
                 container: "mapContainer",
@@ -119,44 +70,62 @@ export default {
                 center: [-75.5, 43.0], // Coordinates for the center of New York State
                 zoom: 7, // Initial zoom level
             });
-            // newMap.getTargetElement().classList.add("spinner");
-            // newMap.on("loadend", function () {
-            //     getMap().getTargetElement().classList.remove("spinner");
-            // });
 
-            // Handle clicks and pointer moves
-            newMap.on("click", handleMapClick);
-            // newMap.on("click", 'map-layer-1-vector-tile-line', handleMapClick);
-            newMap.on("click", 'map-layer-1-vector-tile-circle', handleMapClick);
-            // newMap.on("mouseenter", 'map-layer-1-vector-tile-circle', handleMapClick);
-            newMap.on("pointermove", (e) => {
-                displayRasterTooltip(e, tooltip, tooltipOverlay);
+            // Add spinner while loading
+            const mapContainer = document.getElementById('mapContainer')!;
+            mapContainer.classList.add("spinner");
+            newMap.on("load", () => {
+                mapContainer.classList.remove("spinner");
             });
 
+            // TODO: Convert to work with new setup
+            // newMap.on("pointermove", (e) => {
+            //     if (tooltip.value !== undefined) {
+            //         displayRasterTooltip(e, tooltip.value, tooltipOverlay.value!);
+            //     }
+            // });
+
+
+            /**
+             * This is called on every click, and technically hides the tooltip on every click.
+             * However, if a feature layer is clicked, that event is fired after this one, and the
+             * tooltip is re-enabled and rendered with the desired contents. The net result is that
+             * this only has a real effect when the base map is clicked, as that means that no other
+             * feature layer can "catch" the event, and the tooltip stays hidden.
+            */
+            newMap.on('click', (e) => {
+                clickedFeature.value = undefined;
+                showMapTooltip.value = false;
+                getTooltip().remove();
+            });
+
+            // Order is important as the following function relies on the ref being set
             map.value = newMap;
             createMapControls();
         }
 
         function createMapControls() {
-            if (map.value) {
-                // Add overlay to display region grouping
-                // map.value.addControl(new Control({ element: regiongrouping.value }));
-                // map.value.addControl(new VueMapControl(regiongrouping.value!));
-
-                // Add overlay to display active layers
-                // map.value.addControl(new Control({ element: activelayers.value }));
-                map.value.addControl(new VueMapControl(activelayers.value!));
-
-                // Add tooltip overlay
-                tooltipOverlay = new Popup({
-                    anchor: 'bottom-left',
-                    offset: [10, 0],
-                    closeOnClick: false,
-                    maxWidth: 'none',
-                    closeButton: true,
-                });
-                tooltipOverlay.setDOMContent(tooltip.value!);
+            if (!map.value || !tooltip.value || !activelayers.value) {
+                throw new Error('Map or refs not initialized!');
             }
+
+            // Add overlay to display region grouping
+            // map.value.addControl(new VueMapControl(regiongrouping.value!));
+
+            // Add overlay to display active layers
+            map.value.addControl(new VueMapControl(activelayers.value));
+
+            // Add tooltip overlay
+            tooltipOverlay.value = new Popup({
+                anchor: 'bottom-left',
+                offset: [10, 0],
+                closeOnClick: false,
+                maxWidth: 'none',
+                closeButton: true,
+            });
+
+            // Link overlay ref to dom, allowing for modification elsewhere
+            tooltipOverlay.value.setDOMContent(tooltip.value);
         }
 
         watch(rasterTooltip, () => {
@@ -187,7 +156,7 @@ export default {
         <!-- <div ref="regiongrouping" class=" maplibregl-ctrl region-grouping-control">
             <RegionGrouping />
         </div> -->
-        <div ref="tooltip" class="tooltip" v-show="showMapTooltip">
+        <div id="map-tooltip" ref="tooltip" class="tooltip" v-show="showMapTooltip">
             <MapTooltip />
         </div>
     </div>
