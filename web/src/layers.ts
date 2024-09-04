@@ -17,6 +17,7 @@ import {
   isVectorDatasetLayer,
   isNonNullObject,
   isUserLayer,
+  UserLayer,
 } from "./types";
 import { getDatasetLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
@@ -394,22 +395,17 @@ export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterD
     throw new Error(`Could not find existing openlayer for undefined layer`);
   }
 
-  const isDefined = (value: unknown): value is {} | null => value !== undefined;
-
-  // Find existing on map
-  const map = getMap();
-
   // TODO: Try to improve on forced non-null assertion, maplibre's types don't make this easy
+  const map = getMap();
   const layers = map.getLayersOrder().map((id: string) => map.getLayer(id)!);
-
-  return layers.filter(
+  const filtered = layers.filter(
     (layer) => (
-      isDefined(layer.metadata)
-      && layer.metadata !== null
-      && 'id' in layer.metadata
+      isUserLayer(layer)
       && layer.metadata.id === datasetLayer.id
     )
   );
+
+  return filtered as UserLayer[];
 }
 
 export function isDatasetLayerVisible(

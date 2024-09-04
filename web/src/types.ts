@@ -134,7 +134,7 @@ export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
 export type StyleLayer = NonNullable<ReturnType<Map['getLayer']>>;
 export interface UserLayer extends StyleLayer {
   metadata: {
-    id: string;
+    id: number;
     type: 'vector' | 'raster';
   }
 }

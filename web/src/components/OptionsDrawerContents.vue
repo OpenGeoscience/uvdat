@@ -91,19 +91,6 @@ export default {
         return;
       }
 
-      const mapLayers = findExistingMapLayers(currentDatasetLayer.value);
-      const opacities = mapLayers.map((layer) => {
-        const opacityProperty = `${layer.type}-opacity`;
-        return layer.getPaintProperty(opacityProperty) || 1.0;
-      });
-
-      // Ensure all layers have the same opacity value or error
-      const consistentOpacity = opacities.every((v) => v === opacities[0]);
-      if (!consistentOpacity) {
-        const allLayerIds = mapLayers.map((layer) => layer.id).join(', ');
-        throw new Error(`Inconsistent opacity values in map layers ${allLayerIds}`);
-      }
-
       // TODO: apply to all
       if (applyToAll.value) {
         updateLayerOpacity();
