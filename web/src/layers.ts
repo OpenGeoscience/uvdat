@@ -201,6 +201,7 @@ export function styleVectorOpenLayer(
     translucency?: string;
   } = {}
 ) {
+  // TODO: Fix
   const { openlayer } = datasetLayer;
   if (openlayer) {
     const layerStyleFunction = openlayer.getStyle();
@@ -500,26 +501,41 @@ export function updateVisibleMapLayers() {
 }
 
 export function updateBaseLayer() {
-  getMap()
-    .getLayers()
-    .getArray()
-    .forEach((l) => {
-      if (l.getProperties().id === undefined) {
-        l.setVisible(showMapBaseLayer.value);
-      }
-    });
+  const map = getMap();
+  map.getLayersOrder().forEach((id) => {
+    const layer = map.getLayer(id);
+    if (layer === undefined) {
+      return;
+    }
+
+    // Only operate on base layers, not layers we defined ourselves
+    if (layer.metadata?.id !== undefined) {
+      return;
+    }
+
+    const visibility = showMapBaseLayer.value ? 'visible' : 'none';
+    map.setLayoutProperty(layer.id, 'visibility', visibility);
+  });
 }
 
 export function clearMapLayers() {
-  getMap()
-    .getLayers()
-    .getArray()
-    .forEach((l) => {
-      // only applies to layers with ids, i.e. not the base layer
-      if (l.getProperties().id) {
-        l.setVisible(false);
-      }
-    });
+  const map = getMap();
+  map.getLayersOrder().forEach((id) => {
+    const layer = map.getLayer(id);
+    if (layer === undefined) {
+      return;
+    }
+
+    // Only operate on uvdat layers, not base layers
+    if (layer.metadata?.id === undefined) {
+      return;
+    }
+
+    // Set layer to not visible
+    map.setLayoutProperty(layer.id, 'visibility', 'none');
+  });
+
+  // Set current dataset to none and update layers
   currentDataset.value = undefined;
   updateVisibleMapLayers();
 }
