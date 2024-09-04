@@ -15,6 +15,8 @@ import { toggleNodeActive } from "@/utils";
 import type { DerivedRegion, SourceRegion } from "@/types";
 import { SimpleGeometry } from "ol/geom";
 import { getDataObjectForDatasetLayer } from "@/layers";
+import { MapGeoJSONFeature } from "maplibre-gl";
+import * as turf from "@turf/turf";
 
 export default {
   setup() {
@@ -74,16 +76,18 @@ export default {
     });
 
     function zoomToRegion() {
-      const geom = clickedFeature.value?.getGeometry() as SimpleGeometry;
-      if (geom === undefined) {
+      if (clickedFeature.value === undefined) {
         return;
       }
+
       // Set map zoom to match bounding box of region
       const map = getMap();
-      map.getView().fit(geom, {
-        size: map.getSize(),
-        duration: 300,
-      });
+      const bbox = turf.bbox(clickedFeature.value.geometry);
+      if (bbox.length !== 4) {
+        throw new Error('Returned bbox should have 4 elements!');
+      }
+
+      map.fitBounds(bbox);
     }
 
     function beginRegionGrouping(groupingType: "intersection" | "union") {
