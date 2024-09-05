@@ -52,7 +52,7 @@ export default {
     const colormap = ref("terrain");
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
-    const applyToAll = ref<boolean>(false);
+    const applyToAll = ref<boolean>(true);
 
     // TODO: Determine what to use this for
     const zIndex = ref<number>();
