@@ -15,7 +15,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import RegionGrouping from "./RegionGrouping.vue";
 import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
-import { getOrCreateLayerFromID, handleLayerClick } from "@/layers";
 
 
 class VueMapControl implements IControl {

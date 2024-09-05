@@ -1,21 +1,14 @@
 <script lang="ts">
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import {
   clickedDatasetLayer,
   deactivatedNodes,
-  regionGroupingActive,
-  regionGroupingType,
   clickedFeature,
   selectedSourceRegions,
-  selectedDatasetLayers,
-  selectedDatasets,
 } from "@/store";
-import { getMap, cancelRegionGrouping } from "@/storeFunctions";
+import { getMap } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
-import type { DerivedRegion, SourceRegion } from "@/types";
-import { SimpleGeometry } from "ol/geom";
-import { getDataObjectForDatasetLayer } from "@/layers";
-import { MapGeoJSONFeature } from "maplibre-gl";
+import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 
 export default {
@@ -63,18 +56,6 @@ export default {
       return undefined;
     });
 
-    const clickedRegionIsGrouped = computed(() => {
-      if (clickedRegion.value === undefined) {
-        return false;
-      }
-
-      return (
-        selectedSourceRegions.value.find(
-          (region) => region.id === clickedRegion.value?.id
-        ) !== undefined
-      );
-    });
-
     function zoomToRegion() {
       if (clickedFeature.value === undefined) {
         return;
@@ -90,138 +71,32 @@ export default {
       map.fitBounds(bbox);
     }
 
-    function beginRegionGrouping(groupingType: "intersection" | "union") {
-      if (clickedRegion.value === undefined) {
-        throw new Error("Began region grouping with no selected region");
-      }
-
-      regionGroupingActive.value = true;
-      regionGroupingType.value = groupingType;
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      selectedSourceRegions.value = [clickedRegion.value];
-    }
-
-    // Ensure that if any regions of the currently selected datasets are
-    // de-selected, their regions are removed from the selection
-    watch(selectedDatasetLayers, () => {
-      // Filter out any regions from un-selected data sources
-      selectedSourceRegions.value = selectedSourceRegions.value.filter(
-        (region) =>
-          region.dataset_id &&
-          selectedDatasets.value.map((d) => d.id).includes(region.dataset_id)
-      );
-      // Check if the list is now empty
-      if (selectedSourceRegions.value.length === 0) {
-        cancelRegionGrouping();
-      }
-    });
-
-    function removeRegionFromGrouping() {
-      if (clickedRegion.value?.id === undefined) {
-        throw new Error("Tried to remove non-existent region from grouping");
-      }
-
-      selectedSourceRegions.value = selectedSourceRegions.value.filter(
-        (region) => region.id !== clickedRegion.value?.id
-      );
-
-      // Check if that element was the last removed
-      if (selectedSourceRegions.value.length === 0) {
-        cancelRegionGrouping();
-      }
-    }
-
     return {
       dataObjectForClickedDatasetLayer,
       clickedDatasetLayer,
-      regionGroupingActive,
       clickedFeature,
       clickedFeatureProperties,
       clickedRegion,
       selectedSourceRegions,
-      clickedRegionIsGrouped,
-      regionGroupingType,
       deactivatedNodes,
       toggleNodeActive,
       zoomToRegion,
-      removeRegionFromGrouping,
-      beginRegionGrouping,
     };
   },
 };
 </script>
 
 <template>
-  <div v-if="dataObjectForClickedDatasetLayer && clickedFeature">
-    <!-- Render for Derived Regions -->
-    <div v-if="dataObjectForClickedDatasetLayer.source_regions">
-      <v-row no-gutters>ID: {{ dataObjectForClickedDatasetLayer.id }} </v-row>
-      <v-row no-gutters> Name: {{ dataObjectForClickedDatasetLayer.name }} </v-row>
-      <v-row no-gutters>
-        Source Region IDs: {{ dataObjectForClickedDatasetLayer.source_regions }}
-      </v-row>
-      <v-row no-gutters>
-        Creation Operation: {{ dataObjectForClickedDatasetLayer.operation }}
-      </v-row>
-    </div>
+  <div v-if="clickedFeature">
     <!-- Render for Source Regions -->
-    <div v-else-if="clickedRegion">
+    <div v-if="clickedRegion">
       <v-row no-gutters>ID: {{ clickedRegion.id }}</v-row>
       <v-row no-gutters>Name: {{ clickedRegion.name }}</v-row>
       <v-row>
-        <v-btn class="my-1" variant="outlined" block prepend-icon="mdi-vector-square" @click="zoomToRegion">Zoom To
-          Region</v-btn>
+        <v-btn class="my-1" variant="outlined" block prepend-icon="mdi-vector-square" @click="zoomToRegion">
+          Zoom To Region
+        </v-btn>
       </v-row>
-
-      <template v-if="regionGroupingActive && clickedRegion">
-        <template v-if="clickedRegionIsGrouped">
-          <v-row>
-            <v-btn variant="outlined" block class="my-1" @click="removeRegionFromGrouping">
-              <template v-slot:prepend>
-                <v-icon>
-                  {{
-                    regionGroupingType === "intersection"
-                      ? "mdi-vector-intersection"
-                      : "mdi-vector-union"
-                  }}
-                </v-icon>
-              </template>
-              Ungroup Region
-            </v-btn>
-          </v-row>
-        </template>
-        <template v-else>
-          <v-row>
-            <v-btn variant="outlined" block class="my-1" @click="selectedSourceRegions.push(clickedRegion)">
-              <template v-slot:prepend>
-                <v-icon>
-                  {{
-                    regionGroupingType === "intersection"
-                      ? "mdi-vector-intersection"
-                      : "mdi-vector-union"
-                  }}
-                </v-icon>
-              </template>
-              Add region to grouping
-            </v-btn>
-          </v-row>
-        </template>
-      </template>
-      <template v-else>
-        <v-row>
-          <v-btn variant="outlined" block class="my-1" prepend-icon="mdi-vector-intersection"
-            @click="beginRegionGrouping('intersection')">
-            Begin region intersection
-          </v-btn>
-        </v-row>
-        <v-row>
-          <v-btn variant="outlined" block class="my-1" prepend-icon="mdi-vector-union"
-            @click="beginRegionGrouping('union')">
-            Begin region union
-          </v-btn>
-        </v-row>
-      </template>
     </div>
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
