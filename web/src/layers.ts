@@ -256,9 +256,10 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
     "filter": ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
     paint: {
       'circle-color': getAnnotationColor(),
-      'circle-stroke-width': getLineWidth(),
       'circle-opacity': startingOpacity,
-      // 'circle-stroke-color': getAnnotationColor(),
+      'circle-stroke-width': getLineWidth(),
+      'circle-stroke-color': getAnnotationColor(),
+      'circle-stroke-opacity': startingOpacity,
     },
     layout: {
       visibility: 'visible',

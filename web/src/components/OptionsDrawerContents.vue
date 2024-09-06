@@ -153,6 +153,11 @@ export default {
 
         // Use map.setPaintProperty instead of layer.setPaintProperty to ensure it redraws properly
         map.setPaintProperty(layer.id, opacityProperty, opacity.value);
+
+        // Circle layers also have a stroke opacity property
+        if (layer.type === 'circle') {
+          map.setPaintProperty(layer.id, 'circle-stroke-opacity', opacity.value);
+        }
       });
     }
 
