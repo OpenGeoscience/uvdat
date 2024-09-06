@@ -39,7 +39,6 @@ import CircleStyle from "ol/style/Circle";
 const _datasetLayerManager = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
 
 
-const defaultAnnotationColor = 'black';
 const getAnnotationColor = () => {
   const result = [];
   result.push('case');
@@ -65,22 +64,53 @@ const getAnnotationColor = () => {
   ]);
 
   // Default annotation color if none of the above conditions are met
-  result.push(defaultAnnotationColor);
+  result.push(randomColor());
 
   return result as DataDrivenPropertyValueSpecification<string>;
 };
+
+const getCircleRadius = () => {
+  const result = [];
+  result.push('interpolate');
+  result.push(['linear']);
+  result.push(['zoom']);
+
+  // Static until zoom 7, that increases as you zoom in past there
+  result.push(1); result.push(5);
+  result.push(7); result.push(5);
+  result.push(22); result.push(10);
+
+  return result as DataDrivenPropertyValueSpecification<number>;
+}
+
 const getLineWidth = () => {
   const result = [];
   result.push('interpolate');
   result.push(['linear']);
   result.push(['zoom']);
+
+  // Large stroke width zoomed out, that decreases as you zoom in
   result.push(5); result.push(10);
   result.push(7); result.push(5);
   result.push(10); result.push(5);
-  result.push(14); result.push(2);
 
   return result as DataDrivenPropertyValueSpecification<number>;
 
+};
+
+const getRegionLineWidth = () => {
+  const result = [];
+  result.push('interpolate');
+  result.push(['linear']);
+  result.push(['zoom']);
+
+  // Small stroke width zoomed out, that increases as you zoom in
+  result.push(1); result.push(1);
+  result.push(10); result.push(1);
+  result.push(14); result.push(2);
+  result.push(22); result.push(10);
+
+  return result as DataDrivenPropertyValueSpecification<number>;
 };
 
 export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, type: LayerSpecification['type']): string {
@@ -235,7 +265,7 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
     },
     paint: {
       "line-color": getAnnotationColor(),
-      "line-width": getLineWidth(),
+      "line-width": datasetLayer.dataset_category === "region" ? getRegionLineWidth() : getLineWidth(),
       "line-opacity": startingOpacity,
     },
   });
@@ -257,7 +287,7 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
     paint: {
       'circle-color': getAnnotationColor(),
       'circle-opacity': startingOpacity,
-      'circle-stroke-width': getLineWidth(),
+      'circle-radius': getCircleRadius(),
       'circle-stroke-color': getAnnotationColor(),
       'circle-stroke-opacity': startingOpacity,
     },
