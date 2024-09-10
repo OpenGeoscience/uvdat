@@ -79,7 +79,7 @@ def create_network(dataset, network_name, geodata):
 
 
 def perform_import(dataset, **kwargs):
-    print('\tEstimated time: 90 minutes.')
+    print('\tEstimated time: 45 minutes.')
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
     VectorMapLayer.objects.filter(dataset=dataset).delete()
@@ -92,7 +92,7 @@ def perform_import(dataset, **kwargs):
                     filenames = zip_archive.namelist()
                     for filename in filenames:
                         if filename.endswith('.json'):
-                            network_name = filename.split('/')[-1].replace('.json', '')
+                            network_name = filename.split('/')[-1].replace('.json', '').title()
                             content = zip_archive.open(filename).read()
                             geodata = json.loads(content)
                             create_network(dataset, network_name, geodata)
