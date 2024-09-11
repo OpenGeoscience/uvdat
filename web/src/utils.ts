@@ -1,5 +1,4 @@
 import { Fill, Stroke, Circle, Style } from "ol/style.js";
-import { Overlay } from "ol";
 import ImageStyle from "ol/style/Image.js";
 
 import {
@@ -22,10 +21,8 @@ import {
   showMapTooltip,
 } from "@/store";
 import { Dataset, DerivedRegion, RasterData, RasterDatasetLayer, VectorDatasetLayer } from "./types";
-import { Ref } from "vue";
-import { createRasterLayerPolygonMask, findExistingMapLayers, findExistingMapLayersWithId, isDatasetLayerVisible, styleVectorOpenLayer } from "./layers";
-import { MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getMap, getTooltip } from "./storeFunctions";
+import { createRasterLayerPolygonMask, isDatasetLayerVisible, styleVectorOpenLayer } from "./layers";
+import { MapLayerMouseEvent } from "maplibre-gl";
 
 export const rasterColormaps = [
   "terrain",

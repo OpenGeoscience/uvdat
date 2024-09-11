@@ -29,8 +29,14 @@ export const clickedDatasetLayer = ref<VectorDatasetLayer | RasterDatasetLayer>(
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
 export const tooltipOverlay = ref<Popup>();
-export const clickedFeature = ref<MapGeoJSONFeature>();
 export const rasterTooltipEnabled = ref(false);
+
+interface ClickedFeatureData {
+  pos: LngLatLike;
+  feature: MapGeoJSONFeature;
+}
+export const clickedFeature = ref<ClickedFeatureData>();
+
 
 interface RasterTooltipData {
   pos: LngLatLike;

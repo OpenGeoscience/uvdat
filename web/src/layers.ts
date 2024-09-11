@@ -16,7 +16,7 @@ import {
   UserLayer,
 } from "./types";
 import { getDatasetLayer } from "./api/rest";
-import { getMap, getTooltip } from "./storeFunctions";
+import { getMap } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
 import { cacheRasterData, createStyle, setRasterTooltipValue, randomColor, rasterTooltipDataCache, valueAtCursor } from "./utils";
 import {
@@ -177,42 +177,22 @@ export async function getOrCreateLayerFromID(
 
 
 export function handleLayerClick(e: MapLayerMouseEvent) {
-  const map = getMap();
-  const tooltip = getTooltip();
-
-  tooltip.remove()
-  clickedFeature.value = undefined;
-  showMapTooltip.value = false;
+  // If nothing clicked, reset values and return
   if (!e.features) {
+    clickedFeature.value = undefined;
+    showMapTooltip.value = false;
     return;
   }
 
   const feature = e.features[0];
-  clickedFeature.value = feature;
-  tooltip.setLngLat(e.lngLat);
+  clickedFeature.value = {
+    feature,
+    pos: e.lngLat,
+  };
   showMapTooltip.value = true;
-  tooltip.addTo(map)
 
-  // TODO: Rectify below code
-  // If nothing clicked, reset values and return
-  // if (!res) {
-  //     showMapTooltip.value = false;
-  //     clickedDatasetLayer.value = undefined;
-  //     clickedFeature.value = undefined;
-  // } else {
-  //     const [feature, openlayer] = res;
-  //     const props = openlayer.getProperties();
-  //     const datasetLayer = await getOrCreateLayerFromID(props.id, props.type);
-
-  //     if (datasetLayer) {
-  //         clickedDatasetLayer.value = datasetLayer;
-  //         clickedFeature.value = feature;
-  //         // Show tooltip and set position
-  //         showMapTooltip.value = true;
-  //         tooltipOverlay.setPosition(e.coordinate);
-  //         tooltip.value.style.display = "";
-  //     }
-  // }
+  // TODO: Fix this
+  // clickedDatasetLayer.value = datasetLayer;
 }
 
 
@@ -502,22 +482,20 @@ export function styleRasterDatasetLayer(
   source.setTiles([`${baseURL}rasters/${rasterLayer.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
 }
 
-export function findExistingMapLayersWithId(id: number) {
-  // TODO: Try to improve on forced non-null assertion, maplibre's types don't make this easy
+export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
   const map = getMap();
+
+  // Use non-null assertion, since we know layers returned from getLayersOrder will be found
   const layers = map.getLayersOrder().map((id: string) => map.getLayer(id)!);
   const filtered = layers.filter(
     (layer) => (
       isUserLayer(layer)
-      && layer.metadata.id === id
+      && layer.metadata.id === datasetLayer.id
+      && layer.metadata.type === datasetLayer.type
     )
   );
 
   return filtered as UserLayer[];
-}
-
-export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
-  return findExistingMapLayersWithId(datasetLayer.id);
 }
 
 export function isDatasetLayerVisible(

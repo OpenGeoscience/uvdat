@@ -7,7 +7,7 @@ import {
     tooltipOverlay,
     clickedFeature,
 } from "@/store";
-import { clearMap, getTooltip } from "@/storeFunctions";
+import { clearMap } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import RegionGrouping from "./RegionGrouping.vue";
@@ -85,7 +85,6 @@ export default {
             newMap.on('click', (e) => {
                 clickedFeature.value = undefined;
                 showMapTooltip.value = false;
-                getTooltip().remove();
             });
 
             // Order is important as the following function relies on the ref being set

@@ -7,10 +7,11 @@ import {
   selectedSourceRegions,
   rasterTooltipEnabled,
   rasterTooltipValue,
+  selectedDatasetLayers,
 } from "@/store";
 import { getMap, getTooltip } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
-import type { SourceRegion } from "@/types";
+import type { SourceRegion, UserLayer } from "@/types";
 import * as turf from "@turf/turf";
 
 export default {
@@ -36,14 +37,14 @@ export default {
         "edge_id",
       ]);
       return Object.fromEntries(
-        Object.entries(clickedFeature.value.properties).filter(
+        Object.entries(clickedFeature.value.feature.properties).filter(
           ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
         )
       );
     });
 
     const clickedRegion = computed(() => {
-      const props = clickedFeature.value?.properties;
+      const props = clickedFeature.value?.feature?.properties;
       const regionId = props?.region_id;
       const regionName = props?.region_name;
       const regionDatasetId = props?.dataset_id;
@@ -65,7 +66,7 @@ export default {
 
       // Set map zoom to match bounding box of region
       const map = getMap();
-      const bbox = turf.bbox(clickedFeature.value.geometry);
+      const bbox = turf.bbox(clickedFeature.value.feature.geometry);
       if (bbox.length !== 4) {
         throw new Error('Returned bbox should have 4 elements!');
       }
@@ -73,24 +74,37 @@ export default {
       map.fitBounds(bbox);
     }
 
-    // Handle behavior of raster data tooltip display
-    watch(rasterTooltipValue, (val) => {
-      // Give feature clicks priority
-      if (clickedFeature.value || !rasterTooltipEnabled.value) {
+    // Check if the layer associated with the clicked feature is still selected
+    watch(selectedDatasetLayers, (selectedLayers) => {
+      if (clickedFeature.value === undefined) {
         return;
       }
 
-      // Remove from map if set to undefined
+      const layer = clickedFeature.value.feature.layer as UserLayer;
+      const match = selectedLayers.find((dsLayer) => dsLayer.id === layer.metadata.id && dsLayer.type === layer.metadata.type);
+      if (match === undefined) {
+        clickedFeature.value = undefined;
+      }
+    });
+
+    // Handle clicked features and raster tooltip behavior.
+    // Feature clicks are given tooltip priority.
+    watch([clickedFeature, rasterTooltipValue], ([featureData, rasterTooltipData]) => {
       const tooltip = getTooltip();
-      if (val === undefined) {
-        tooltip.remove()
+      if (featureData === undefined && rasterTooltipData === undefined) {
+        tooltip.remove();
         return;
       }
 
-      // Set position and display
-      const { pos } = val;
-      tooltip.setLngLat(pos);
-      tooltip.addTo(getMap());
+      // Set tooltip position. Give feature clicks priority
+      if (featureData !== undefined) {
+        tooltip.setLngLat(featureData.pos);
+      } else if (rasterTooltipData !== undefined) {
+        tooltip.setLngLat(rasterTooltipData.pos);
+      }
+
+      // This makes the tooltip visible
+      tooltip.addTo(getMap())
     });
 
     return {
@@ -105,6 +119,7 @@ export default {
       zoomToRegion,
       rasterTooltipEnabled,
       rasterTooltipValue,
+      selectedDatasetLayers,
     };
   },
 };
@@ -124,7 +139,7 @@ export default {
     </div>
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
-    <div v-else-if="clickedFeature.properties.node_id">
+    <div v-else-if="clickedFeature.feature.properties.node_id">
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
