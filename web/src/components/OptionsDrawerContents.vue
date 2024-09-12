@@ -102,22 +102,21 @@ export default {
       currentDatasetLayerIndex.value = currentDatasetLayer.value.index;
       opacity.value = getDatasetLayerOpacity(currentDatasetLayer.value);
 
+      // Process raster refs, if necessary
+      if (currentDatasetLayer.value.type !== 'raster') {
+        return;
+      }
+
       // Raster specific
-      const layerProperties = currentDatasetLayer.value.metadata;
       const defaultStyle = currentDatasetLayer.value.default_style;
       if (!defaultStyle) {
         return;
       }
 
-      // TODO: Clean up
-      const { min, max, palette } = layerProperties;
-      colormap.value = palette || defaultStyle.palette || "terrain";
+      // Populate raster refs, if necessary
+      colormap.value = defaultStyle.palette || "terrain";
       layerRange.value = defaultStyle.data_range?.map((v: number) => Math.round(v)) || [];
-      if (min && max) {
-        colormapRange.value = [min, max];
-      } else {
-        colormapRange.value = layerRange.value;
-      }
+      colormapRange.value = layerRange.value;
     }
 
     function activateNode(deactivated: number) {
