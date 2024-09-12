@@ -131,8 +131,8 @@ export default {
     <div v-if="clickedRegion">
       <v-row no-gutters>ID: {{ clickedRegion.id }}</v-row>
       <v-row no-gutters>Name: {{ clickedRegion.name }}</v-row>
-      <v-row>
-        <v-btn class="my-1" variant="outlined" block prepend-icon="mdi-vector-square" @click="zoomToRegion">
+      <v-row no-gutters>
+        <v-btn class="my-1" variant="outlined" prepend-icon="mdi-vector-square" @click="zoomToRegion">
           Zoom To Region
         </v-btn>
       </v-row>
