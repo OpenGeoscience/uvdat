@@ -31,6 +31,7 @@ export default defineComponent({
   setup() {
     const drawer = ref(true);
     const showError = computed(() => currentError.value !== undefined);
+    const version = process.env.VUE_APP_VERSION;
 
     function onReady() {
       if (currentUser.value) {
@@ -49,6 +50,7 @@ export default defineComponent({
     return {
       login,
       logout,
+      version,
       currentUser,
       drawer,
       currentProject,
@@ -103,7 +105,12 @@ export default defineComponent({
         @click.stop="drawer = !drawer"
         v-if="!projectConfigMode"
       />
-      <v-toolbar-title>UVDAT</v-toolbar-title>
+      <v-toolbar-title>
+        UVDAT
+        <v-card-subtitle style="display: inline-block; vertical-align: bottom">
+          {{ version }}
+        </v-card-subtitle>
+      </v-toolbar-title>
       <v-spacer />
       <div v-if="currentUser" class="px-3">
         {{ currentUser.first_name }}
