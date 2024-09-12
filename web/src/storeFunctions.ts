@@ -1,7 +1,3 @@
-import View from "ol/View.js";
-import TileLayer from "ol/layer/Tile.js";
-import OSM from "ol/source/OSM.js";
-import * as olProj from "ol/proj";
 import { watch } from "vue";
 
 import {
@@ -33,10 +29,10 @@ import {
   deactivatedNodes,
   loading,
   currentError,
-  availableDatasetLayers,
   tooltipOverlay,
+  clickedFeatureCandidates,
 } from "./store";
-import { Dataset } from "./types";
+import { ClickedFeatureData, Dataset, isUserLayer } from "./types";
 import {
   getContextDatasets,
   getContexts,
@@ -45,6 +41,7 @@ import {
   getContextSimulationTypes,
   getContextDerivedRegions,
 } from "@/api/rest";
+import { datasetLayerFromMapLayerID, styleNetworkVectorTileLayer } from "./layers";
 
 export function clearState() {
   availableDatasets.value = undefined;
@@ -187,6 +184,22 @@ export function pollForProcessingDataset(datasetId: number) {
   }, 10000);
 }
 
+/**
+ * If a network analysis is going on, reset it to its starting state.
+ */
+export function clearCurrentNetwork() {
+  const datasetLayer = currentNetworkDatasetLayer.value;
+
+  currentNetworkDataset.value = undefined;
+  currentNetworkDatasetLayer.value = undefined;
+  deactivatedNodes.value = [];
+  currentNetworkGCC.value = undefined;
+
+  if (datasetLayer !== undefined) {
+    styleNetworkVectorTileLayer(datasetLayer)
+  }
+}
+
 watch(currentContext, () => {
   clearState();
   clearMap();
@@ -197,4 +210,42 @@ watch(currentContext, () => {
 });
 watch(currentDataset, () => {
   rasterTooltipEnabled.value = false;
+});
+
+
+export function clearClickedFeatureData() {
+  clickedFeature.value = undefined;
+  showMapTooltip.value = false;
+  clickedDatasetLayer.value = undefined;
+}
+
+// See all of the clicked features, and display the one that's at the highest layer
+watch(clickedFeatureCandidates, (features) => {
+  if (!features.length) {
+    return;
+  }
+
+  const map = getMap();
+  const layerIds = map.getLayersOrder();
+  const featureLayerIDs = new Set(features.map((f) => f.feature.layer.id));
+
+  // Find the highest layer that was clicked
+  const selectedLayerID = layerIds.toReversed().find((id) => {
+    return featureLayerIDs.has(id);
+  });
+  const selectedFeature = features.find((f) => f.feature.layer.id === selectedLayerID);
+
+  // If none found, just reset values
+  if (selectedLayerID === undefined || selectedFeature === undefined) {
+    clearClickedFeatureData();
+    return;
+  }
+
+  // Set new values
+  clickedFeature.value = selectedFeature;
+  showMapTooltip.value = true;
+  clickedDatasetLayer.value = datasetLayerFromMapLayerID(selectedFeature.feature.layer.id);
+
+  // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
+  clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
 });

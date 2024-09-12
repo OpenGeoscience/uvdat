@@ -8,14 +8,14 @@ import {
   styleRasterDatasetLayer,
   toggleDatasetLayer,
 } from "@/layers";
-import { currentDataset, deactivatedNodes, rasterTooltipEnabled } from "@/store";
+import { currentDataset, currentNetworkDataset, deactivatedNodes, rasterTooltipEnabled } from "@/store";
 import {
   NetworkNode,
   RasterDatasetLayer,
   VectorDatasetLayer,
   isVectorDatasetLayer,
 } from "@/types";
-import { getMap } from "@/storeFunctions";
+import { clearCurrentNetwork, getMap } from "@/storeFunctions";
 
 
 function getDatasetLayerOpacity(layer: VectorDatasetLayer | RasterDatasetLayer) {
@@ -34,13 +34,6 @@ function getDatasetLayerOpacity(layer: VectorDatasetLayer | RasterDatasetLayer) 
   }
 
   return opacities[0];
-}
-
-function getDatasetLayerProperties(layer: VectorDatasetLayer | RasterDatasetLayer) {
-  return {
-    ...layer.default_style,
-    ...layer.metadata,
-  } as Record<string | number, unknown>;
 }
 
 
@@ -100,7 +93,14 @@ export default {
       }
 
       currentDatasetLayerIndex.value = currentDatasetLayer.value.index;
-      opacity.value = getDatasetLayerOpacity(currentDatasetLayer.value);
+
+      // If performing network operations, set the opacity back to 1, so that when finished, it acts as expected
+      // Network operations modify the opacity itself, so it's disabled
+      if (currentNetworkDataset.value) {
+        opacity.value = 1;
+      } else {
+        opacity.value = getDatasetLayerOpacity(currentDatasetLayer.value);
+      }
 
       // Process raster refs, if necessary
       if (currentDatasetLayer.value.type !== 'raster') {
@@ -120,13 +120,15 @@ export default {
     }
 
     function activateNode(deactivated: number) {
-      if (isVectorDatasetLayer(currentDatasetLayer.value)) {
-        toggleNodeActive(
-          deactivated,
-          currentDataset.value,
-          currentDatasetLayer.value
-        );
+      if (!currentDataset.value || !isVectorDatasetLayer(currentDatasetLayer.value)) {
+        return;
       }
+
+      toggleNodeActive(
+        deactivated,
+        currentDataset.value,
+        currentDatasetLayer.value
+      );
     }
 
     async function updateLayerShown() {
@@ -177,10 +179,21 @@ export default {
     }
 
     function getNetworkNodeName(nodeId: number) {
-      if (!currentDataset.value) return "";
+      if (!currentDataset.value) {
+        return "";
+      }
+
       return currentDataset.value.network?.nodes?.find(
         (n: NetworkNode) => n.id === nodeId
       )?.name;
+    }
+
+    function resetNetwork() {
+      clearCurrentNetwork();
+
+      // Since opacity has been modified as a part of the network
+      // GCC simulation, reset it back to 1 once finished
+      opacity.value = 1;
     }
 
     watch(colormap, updateColormap);
@@ -194,6 +207,7 @@ export default {
       currentDatasetLayerIndex,
       currentDatasetLayer,
       currentDataset,
+      currentNetworkDataset,
       currentLayerName,
       rasterColormaps,
       opacity,
@@ -206,6 +220,7 @@ export default {
       activateNode,
       getNetworkNodeName,
       updateColormap,
+      resetNetwork,
     };
   },
 };
@@ -238,7 +253,11 @@ export default {
     </div>
 
     <div class="pa-2">
-      <v-slider label="Opacity" v-model="opacity" dense min="0" max="1" step="0.05" />
+      <!-- Only show opacity slider if not performing network operations -->
+      <v-btn v-if="currentNetworkDataset" @click="resetNetwork" class="mb-2">
+        Reset network
+      </v-btn>
+      <v-slider v-else label="Opacity" v-model="opacity" dense min="0" max="1" step="0.05" />
 
       <div v-if="currentDatasetLayer?.type === 'raster'">
         <v-select v-model="colormap" dense :items="rasterColormaps" label="Color map" />

@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import {
   Context,
   Chart,
@@ -8,6 +8,8 @@ import {
   SimulationType,
   VectorDatasetLayer,
   RasterDatasetLayer,
+  ClickedFeatureData,
+  RasterTooltipData,
 } from "./types.js";
 // import { MapLayer } from "@/data";
 import { LngLatLike, Map, MapGeoJSONFeature, Popup } from "maplibre-gl";
@@ -31,17 +33,9 @@ export const showMapTooltip = ref(false);
 export const tooltipOverlay = ref<Popup>();
 export const rasterTooltipEnabled = ref(false);
 
-interface ClickedFeatureData {
-  pos: LngLatLike;
-  feature: MapGeoJSONFeature;
-}
+// Features
+export const clickedFeatureCandidates = reactive<ClickedFeatureData[]>([]);
 export const clickedFeature = ref<ClickedFeatureData>();
-
-
-interface RasterTooltipData {
-  pos: LngLatLike;
-  text: string;
-}
 export const rasterTooltipValue = ref<RasterTooltipData | undefined>();
 
 // Charts & Simulations

@@ -1,4 +1,4 @@
-import { DataDrivenPropertyValueSpecification, LayerSpecification, MapLayerMouseEvent, RasterTileSource } from 'maplibre-gl'
+import { CircleLayerSpecification, DataDrivenPropertyValueSpecification, LayerSpecification, LineLayerSpecification, MapGeoJSONFeature, MapLayerMouseEvent, RasterTileSource } from 'maplibre-gl'
 import { Circle, Stroke, Style } from "ol/style";
 import { Map } from 'maplibre-gl'
 import { Feature } from "ol";
@@ -35,6 +35,8 @@ import {
   showMapTooltip,
   tooltipOverlay,
   rasterTooltipValue,
+  clickedDatasetLayer,
+  clickedFeatureCandidates,
 } from "./store";
 import CircleStyle from "ol/style/Circle";
 
@@ -83,6 +85,77 @@ const getCircleRadius = () => {
   result.push(22); result.push(10);
 
   return result as DataDrivenPropertyValueSpecification<number>;
+}
+
+function getCircleStyle() {
+  const style: CircleLayerSpecification['paint'] = {};
+
+  // TODO: Set fallback opacity to existing value
+  style['circle-opacity'] = [
+    "case",
+    ["in", ["get", "node_id"], ["literal", deactivatedNodes.value]],
+    0.2,
+    1,
+  ];
+  style['circle-stroke-opacity'] = [
+    "case",
+    ["in", ["get", "node_id"], ["literal", deactivatedNodes.value]],
+    0.2,
+    1,
+  ];
+
+  const gcc = currentNetworkGCC.value || [];
+  style['circle-stroke-color'] = [
+    "case",
+    // If node is part of GCC, set its stroke color to yellow
+    ["in", ["get", "node_id"], ["literal", gcc]],
+    'yellow',
+
+    // else, set it to its normal color
+    [
+      "case",
+      ['has', 'colors'],
+      [
+        'let',
+        'firstColor',
+        ['slice', ['get', 'colors'], 0, 7], // assuming each color is in the format '#RRGGBB'
+        ['to-color', ['var', 'firstColor']]
+      ],
+      'black' // fallback if no color is specified on feature
+    ]
+  ];
+  return style;
+}
+
+function getLineStyle() {
+  const style: LineLayerSpecification['paint'] = {};
+  const gcc = currentNetworkGCC.value || [];
+
+  style['line-color'] = [
+    "case",
+    [
+      "all",
+      // If node is part of GCC, set its stroke color to yellow
+      ["in", ["get", "from_node_id"], ["literal", gcc]],
+      ["in", ["get", "to_node_id"], ["literal", gcc]],
+    ],
+    'yellow',
+
+    // else, set it to its normal color
+    [
+      "case",
+      ['has', 'colors'],
+      [
+        'let',
+        'firstColor',
+        ['slice', ['get', 'colors'], 0, 7], // assuming each color is in the format '#RRGGBB'
+        ['to-color', ['var', 'firstColor']]
+      ],
+      'black' // fallback if no color is specified on feature
+    ]
+  ]
+
+  return style;
 }
 
 const getLineWidth = () => {
@@ -177,22 +250,17 @@ export async function getOrCreateLayerFromID(
 
 
 export function handleLayerClick(e: MapLayerMouseEvent) {
-  // If nothing clicked, reset values and return
   if (!e.features) {
-    clickedFeature.value = undefined;
-    showMapTooltip.value = false;
     return;
   }
 
+  // While multiple features may be clicked in the same layer, just choose the first one.
+  // Our functions operate at the granularity of a single layer, so it would make no difference.
   const feature = e.features[0];
-  clickedFeature.value = {
+  clickedFeatureCandidates.push({
     feature,
     pos: e.lngLat,
-  };
-  showMapTooltip.value = true;
-
-  // TODO: Fix this
-  // clickedDatasetLayer.value = datasetLayer;
+  });
 }
 
 
@@ -255,7 +323,8 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
 
 
   // Add circle layer, filtered to point geometries. If not filtered,
-  // this will add a circle at the vertices of all lines
+  // this will add a circle at the vertices of all lines.
+  // This should be added LAST, as it has click priority over the other layer types.
   const circleLayerId = generateMapLayerId(datasetLayer, 'circle');
   map.addLayer({
     id: circleLayerId,
@@ -270,9 +339,10 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
     paint: {
       'circle-color': getAnnotationColor(),
       'circle-opacity': startingOpacity,
-      'circle-radius': getCircleRadius(),
       'circle-stroke-color': getAnnotationColor(),
       'circle-stroke-opacity': startingOpacity,
+      'circle-stroke-width': 2,
+      'circle-radius': getCircleRadius(),
     },
     layout: {
       visibility: 'visible',
@@ -285,83 +355,37 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
   map.on('click', circleLayerId, handleLayerClick);
 }
 
-export function styleVectorOpenLayer(
+export function styleNetworkVectorTileLayer(
   datasetLayer: VectorDatasetLayer,
   options: {
     showGCC?: boolean;
     translucency?: string;
   } = {}
 ) {
-  // TODO: Fix
-  const { openlayer } = datasetLayer;
-  if (openlayer) {
-    const layerStyleFunction = openlayer.getStyle();
-    openlayer.setStyle((feature: Feature) => {
-      const oldStyle = layerStyleFunction(feature);
-      let newStyle = oldStyle;
-      if (options.showGCC && currentNetworkGCC.value) {
-        const featureProps = feature.getProperties();
-        const { node_id, from_node_id, to_node_id } = featureProps;
-        let highlight = false;
-        let translucent = false;
-        if (node_id) {
-          if (deactivatedNodes.value.includes(node_id)) translucent = true;
-          if (currentNetworkGCC.value.includes(node_id)) highlight = true;
-        } else if (from_node_id && to_node_id) {
-          if (
-            currentNetworkGCC.value.includes(from_node_id) ||
-            currentNetworkGCC.value.includes(to_node_id)
-          ) {
-            highlight = true;
-          }
-        }
-
-        if (translucent) {
-          newStyle = oldStyle.map((s: Style) => {
-            const stroke = s.getStroke();
-            const image = s.getImage();
-            const circle = image as CircleStyle;
-
-            let strokeColor = stroke?.getColor()?.toString().substring(0, 7);
-            let circleColor = circle
-              ?.getFill()
-              ?.getColor()
-              ?.toString()
-              .substring(0, 7);
-            if (translucent && options.translucency) {
-              if (strokeColor) strokeColor += options.translucency;
-              if (circleColor) circleColor += options.translucency;
-            } else {
-              if (strokeColor) strokeColor += "ff";
-              if (circleColor) circleColor += "ff";
-            }
-            if (strokeColor) stroke.setColor(strokeColor);
-            if (circleColor) circle.getFill().setColor(circleColor);
-            return s;
-          });
-        }
-
-        if (highlight) {
-          const highlightStroke = new Stroke({
-            color: "yellow",
-            width: 8,
-          });
-          newStyle.push(
-            new Style({
-              zIndex: 0,
-              stroke: highlightStroke,
-              image: new Circle({
-                stroke: highlightStroke,
-                radius: 8,
-              }),
-            })
-          );
-        }
-      }
-
-      return newStyle;
-    });
+  const mapLayers = findExistingMapLayers(datasetLayer);
+  if (!mapLayers.length) {
+    throw new Error(`No map layers found for dataset layer ${datasetLayer.id}`);
   }
+
+  const circleLayer = mapLayers.find((l) => l.type === 'circle');
+  const lineLayer = mapLayers.find((l) => l.type === 'line');
+  if (!circleLayer || !lineLayer) {
+    throw new Error(`line and circle layers not found in dataset layer ${datasetLayer.id}`);
+  }
+
+  const map = getMap();
+
+  // Set circle layer style
+  const circleStyle = getCircleStyle();
+  Object.entries(circleStyle).forEach(([key, value]) => {
+    map.setPaintProperty(circleLayer.id, key, value);
+  });
+
+  // Set line layer style
+  const newLineStyle = getLineStyle();
+  Object.entries(newLineStyle).forEach(([key, value]) => {
+    map.setPaintProperty(lineLayer.id, key, value);
+  });
 }
 
 export function createRasterTileLayer(map: Map, datasetLayer: RasterDatasetLayer) {
@@ -496,6 +520,22 @@ export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterD
   );
 
   return filtered as UserLayer[];
+}
+
+export function datasetLayerFromMapLayerID(id: string): VectorDatasetLayer | RasterDatasetLayer | undefined {
+  const map = getMap();
+  const layer = map.getLayer(id);
+  if (layer === undefined) {
+    throw new Error(`Map layer with ID ${id} not found!`);
+  }
+
+  if (!isUserLayer(layer)) {
+    throw new Error(`Map layer with ID ${id} missing user layer properties!`);
+  }
+
+  return selectedDatasetLayers.value.find(
+    (dsl) => dsl.id === layer.metadata.id && dsl.type === layer.metadata.type
+  );
 }
 
 export function isDatasetLayerVisible(

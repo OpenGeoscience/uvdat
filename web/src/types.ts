@@ -1,21 +1,22 @@
-import { Map } from 'maplibre-gl';
+import { LngLatLike, Map, MapGeoJSONFeature } from 'maplibre-gl';
+
+
+export interface Network {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}
 
 export interface Dataset {
   id: number;
   name: string;
   description: string;
   category: string;
-  created: string;
-  modified: string;
   processing: boolean;
-  metadata: object;
-  dataset_type: "vector" | "raster";
+  metadata: Record<string, unknown>;
+  dataset_type: "VECTOR" | "RASTER";
   map_layers?: (VectorDatasetLayer | RasterDatasetLayer)[];
   current_layer_index?: number;
-  network: {
-    nodes: NetworkNode[];
-    edges: NetworkEdge[];
-  };
+  network?: Network;
 }
 
 export interface SourceRegion {
@@ -62,10 +63,20 @@ export interface Feature {
   };
 }
 
+export interface ClickedFeatureData {
+  pos: LngLatLike;
+  feature: MapGeoJSONFeature;
+}
+
+export interface RasterTooltipData {
+  pos: LngLatLike;
+  text: string;
+}
+
 export interface NetworkNode {
   id: number;
   name: string;
-  dataset: number;
+  network: number;
   metadata: object;
   capacity: number | null;
   location: number[];
@@ -74,7 +85,7 @@ export interface NetworkNode {
 export interface NetworkEdge {
   id: number;
   name: string;
-  dataset: number;
+  network: number;
   metadata: object;
   capacity: number | null;
   line_geopmetry: object;
@@ -99,6 +110,11 @@ export interface DefaultStyle {
   outline?: string;
 }
 
+export interface DatasetLayerMetadata {
+  network?: boolean;
+  [key: string]: unknown;
+}
+
 export interface AbstractDatasetLayer {
   id: number;
   name: string;
@@ -106,9 +122,7 @@ export interface AbstractDatasetLayer {
     id: number;
     name: string;
   };
-  metadata?: {
-    network?: boolean;
-  };
+  metadata: DatasetLayerMetadata;
   // default_style: Record<string, unknown> | DefaultStyle;
   default_style: DefaultStyle;
   index: number;

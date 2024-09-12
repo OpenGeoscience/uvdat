@@ -8,10 +8,11 @@ import {
   rasterTooltipEnabled,
   rasterTooltipValue,
   selectedDatasetLayers,
+  availableDatasets,
 } from "@/store";
 import { getMap, getTooltip } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
-import type { SourceRegion, UserLayer } from "@/types";
+import type { SourceRegion, UserLayer, VectorDatasetLayer } from "@/types";
 import * as turf from "@turf/turf";
 
 export default {
@@ -107,6 +108,31 @@ export default {
       tooltip.addTo(getMap())
     });
 
+    const clickedFeatureIsDeactivatedNode = computed(() => (
+      clickedFeature.value
+      && deactivatedNodes.value.includes(clickedFeature.value.feature.properties.node_id)
+    ));
+
+    function toggleNodeHandler() {
+      if (clickedFeature.value === undefined) {
+        throw new Error('Clicked node is undefined!');
+      }
+
+      const dataset = availableDatasets.value?.find(
+        (d) => d.id === clickedDatasetLayer.value?.dataset_id
+      );
+      if (dataset) {
+        dataset.current_layer_index =
+          dataset?.map_layers?.find(({ id }) => id === clickedDatasetLayer.value?.id)?.index || 0;
+      }
+
+      toggleNodeActive(
+        clickedFeature.value.feature.properties.node_id,
+        dataset!,
+        clickedDatasetLayer.value as VectorDatasetLayer,
+      );
+    }
+
     return {
       dataObjectForClickedDatasetLayer,
       clickedDatasetLayer,
@@ -115,11 +141,12 @@ export default {
       clickedRegion,
       selectedSourceRegions,
       deactivatedNodes,
-      toggleNodeActive,
+      toggleNodeHandler,
       zoomToRegion,
       rasterTooltipEnabled,
       rasterTooltipValue,
       selectedDatasetLayers,
+      clickedFeatureIsDeactivatedNode,
     };
   },
 };
@@ -143,24 +170,14 @@ export default {
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
-      <!-- <v-btn variant="outlined" v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)" @click="
-        toggleNodeActive(
-          clickedFeature.getProperties().node_id,
-          dataObjectForClickedDatasetLayer,
-          clickedDatasetLayer
-        )
-        ">
-        Reactivate Node
+      <v-btn variant="outlined" @click="toggleNodeHandler">
+        <template v-if="clickedFeatureIsDeactivatedNode">
+          Reactivate Node
+        </template>
+        <template v-else>
+          Deactivate Node
+        </template>
       </v-btn>
-      <v-btn variant="outlined" @click="
-        toggleNodeActive(
-          clickedFeature.getProperties().node_id,
-          dataObjectForClickedDatasetLayer,
-          clickedDatasetLayer
-        )
-        " v-else>
-        Deactivate Node
-      </v-btn> -->
     </div>
     <!-- Render for all other features -->
     <div v-else>

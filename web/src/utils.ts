@@ -21,7 +21,7 @@ import {
   showMapTooltip,
 } from "@/store";
 import { Dataset, DerivedRegion, RasterData, RasterDatasetLayer, VectorDatasetLayer } from "./types";
-import { createRasterLayerPolygonMask, isDatasetLayerVisible, styleVectorOpenLayer } from "./layers";
+import { createRasterLayerPolygonMask, isDatasetLayerVisible, styleNetworkVectorTileLayer } from "./layers";
 import { MapLayerMouseEvent } from "maplibre-gl";
 
 export const rasterColormaps = [
@@ -181,56 +181,69 @@ export function createStyle(args: {
 }
 
 export function deactivatedNodesUpdated() {
-  if (currentContext.value && currentNetworkDataset.value) {
-    currentNetworkGCC.value = undefined;
-    getNetworkGCC(
-      currentNetworkDataset.value.id,
-      currentContext.value.id,
-      deactivatedNodes.value
-    ).then((gcc) => {
-      if (!currentContext.value) return;
-      currentNetworkGCC.value = gcc;
-      if (currentNetworkDatasetLayer.value) {
-        styleVectorOpenLayer(currentNetworkDatasetLayer.value, {
-          showGCC: true,
-          translucency: "55",
-        });
-      }
-
-      // update chart
-      getContextCharts(currentContext.value.id).then((charts) => {
-        availableCharts.value = charts;
-        if (currentChart.value) {
-          currentChart.value = charts.find(
-            (c) => c.id === currentChart.value?.id
-          );
-        }
-      });
-    });
+  if (!(currentContext.value && currentNetworkDataset.value)) {
+    return;
   }
+
+  currentNetworkGCC.value = undefined;
+  getNetworkGCC(
+    currentNetworkDataset.value.id,
+    currentContext.value.id,
+    deactivatedNodes.value
+  ).then((gcc) => {
+    if (!currentContext.value) { return; }
+    currentNetworkGCC.value = gcc;
+
+    if (currentNetworkDatasetLayer.value) {
+      styleNetworkVectorTileLayer(currentNetworkDatasetLayer.value, {
+        showGCC: true,
+        translucency: "55",
+      });
+    }
+
+    // update chart
+    getContextCharts(currentContext.value.id).then((charts) => {
+      availableCharts.value = charts;
+      if (currentChart.value) {
+        currentChart.value = charts.find(
+          (c) => c.id === currentChart.value?.id
+        );
+      }
+    });
+  });
 }
 
 export function fetchDatasetNetwork(dataset: Dataset) {
   getDatasetNetwork(dataset.id).then((data) => {
+    // TODO: Handle datasets with multiple networks
+    const network = data[0];
+
+    // Assign this network data to its dataset
+    // Do this by mapping to ensure the change is propogated
     availableDatasets.value = availableDatasets.value?.map((d) => {
       if (d.id === dataset.id) {
-        return Object.assign(d, { network: data });
-      } else return d;
+        d.network = network;
+      }
+
+      return d;
     });
+
+    // Set the dataset currently performing network operations on
     currentNetworkDataset.value = availableDatasets.value?.find(
       (d) => d.id === dataset.id
     );
   });
 }
 
-export function toggleNodeActive(
-  nodeId: number,
-  dataset: Dataset | DerivedRegion | undefined,
-  datasetLayer: VectorDatasetLayer | undefined
-) {
-  if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) return;
-  dataset = dataset as Dataset;
-  if (!dataset.network) fetchDatasetNetwork(dataset);
+export function toggleNodeActive(nodeId: number, dataset: Dataset, datasetLayer: VectorDatasetLayer) {
+  if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) {
+    return;
+  }
+
+  if (!dataset.network) {
+    fetchDatasetNetwork(dataset);
+  }
+
   currentNetworkDataset.value = dataset as Dataset;
   currentNetworkDatasetLayer.value = datasetLayer as VectorDatasetLayer;
   if (deactivatedNodes.value.includes(nodeId)) {

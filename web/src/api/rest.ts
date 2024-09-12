@@ -9,6 +9,7 @@ import {
   DerivedRegion,
   VectorDatasetLayer,
   RasterDatasetLayer,
+  Network,
 } from "@/types";
 
 export async function getContexts(): Promise<Context[]> {
@@ -55,8 +56,9 @@ export async function convertDataset(datasetId: number): Promise<Dataset> {
 
 export async function getDatasetNetwork(
   datasetId: number
-): Promise<NetworkNode[]> {
-  return (await apiClient.get(`datasets/${datasetId}/network`)).data;
+): Promise<Network[]> {
+  // TODO: Figure out why this is a double nested array
+  return (await apiClient.get(`datasets/${datasetId}/network`)).data[0];
 }
 
 export async function getNetworkGCC(
