@@ -63,7 +63,31 @@ export default {
         function createMap() {
             const newMap = new Map({
                 container: "mapContainer",
-                style: `https://api.maptiler.com/maps/basic-v2/style.json?key=${process.env.VUE_APP_MAPTILER_KEY}`,
+                style: {
+                    version: 8,
+                    sources: {
+                        osm: {
+                            type: 'raster',
+                            tiles: [
+                                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                            ],
+                            tileSize: 256,
+                            attribution: '© OpenStreetMap contributors'
+                        }
+                    },
+                    layers: [
+                        {
+                            id: 'osm-tiles',
+                            type: 'raster',
+                            source: 'osm',
+                            minzoom: 0,
+                            // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
+                            maxzoom: 22 + 1,
+                        }
+                    ]
+                },
                 center: [-75.5, 43.0], // Coordinates for the center of New York State
                 zoom: 7, // Initial zoom level
             });
