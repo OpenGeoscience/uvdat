@@ -145,8 +145,6 @@ export default {
 </template>
 
 <style scoped>
-@import "~ol/ol.css";
-
 .map {
     height: 100%;
     width: 100%;

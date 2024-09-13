@@ -1,6 +1,3 @@
-import { Fill, Stroke, Circle, Style } from "ol/style.js";
-import ImageStyle from "ol/style/Image.js";
-
 import {
   getContextCharts,
   getDatasetNetwork,
@@ -126,58 +123,6 @@ export function randomColor() {
       .padStart(6, "0")
       .slice(0, 6)
   );
-}
-
-export function createStyle(args: {
-  colors: string | undefined;
-  type: string | undefined;
-}) {
-  let colors = ["#00000022"];
-  if (args.colors) {
-    colors = args.colors.split(",");
-  }
-  if (!args.type) {
-    return new Style();
-  }
-  if (args.type.includes("Polygon")) {
-    let stroke = undefined;
-    if (colors.length > 1) {
-      stroke = new Stroke({
-        color: colors[1],
-        width: 5,
-      });
-    }
-    return new Style({
-      fill: new Fill({
-        color: colors[0].length > 7 ? colors[0] : colors[0] + "bb",
-      }),
-      stroke,
-    });
-  } else {
-    return colors.map((colorHex, index) => {
-      const styleSpec: {
-        zIndex: number;
-        image?: ImageStyle;
-        stroke?: Stroke;
-      } = {
-        zIndex: colors.length - index,
-      };
-      if (args.type?.includes("Point")) {
-        styleSpec.image = new Circle({
-          radius: 5 + 2 * index,
-          fill: new Fill({
-            color: colorHex,
-          }),
-        });
-      } else if (args.type?.includes("Line")) {
-        styleSpec.stroke = new Stroke({
-          color: colorHex,
-          width: 3 + 2 * index,
-        });
-      }
-      return new Style(styleSpec);
-    });
-  }
 }
 
 export function deactivatedNodesUpdated() {

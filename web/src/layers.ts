@@ -1,7 +1,5 @@
 import { CircleLayerSpecification, DataDrivenPropertyValueSpecification, LayerSpecification, LineLayerSpecification, MapGeoJSONFeature, MapLayerMouseEvent, RasterTileSource } from 'maplibre-gl'
-import { Circle, Stroke, Style } from "ol/style";
 import { Map } from 'maplibre-gl'
-import { Feature } from "ol";
 
 import { ref } from "vue";
 import {
@@ -18,7 +16,7 @@ import {
 import { getDatasetLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
-import { cacheRasterData, createStyle, setRasterTooltipValue, randomColor, rasterTooltipDataCache, valueAtCursor } from "./utils";
+import { cacheRasterData, setRasterTooltipValue, randomColor, rasterTooltipDataCache, valueAtCursor } from "./utils";
 import {
   availableDatasets,
   currentDataset,
@@ -38,7 +36,6 @@ import {
   clickedDatasetLayer,
   clickedFeatureCandidates,
 } from "./store";
-import CircleStyle from "ol/style/Circle";
 
 const _datasetLayerManager = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
 
