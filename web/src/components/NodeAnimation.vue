@@ -114,18 +114,27 @@ export default {
 </script>
 
 <template>
-  <div v-if="
-    !currentNetworkDataset ||
-    !currentNetworkDatasetLayer ||
-    !selectedDatasetLayers.includes(currentNetworkDatasetLayer)
-  ">
+  <div
+    v-if="
+      !currentNetworkDataset ||
+      !currentNetworkDatasetLayer ||
+      !selectedDatasetLayers.includes(currentNetworkDatasetLayer)
+    "
+  >
     Show network dataset layer to begin.
   </div>
   <div v-else class="d-flex" style="align-items: center">
     <v-btn @click="play" icon="mdi-play" variant="text" />
     <v-btn @click="pause" icon="mdi-pause" variant="text" />
     <v-btn @click="rewind" icon="mdi-rewind" variant="text" />
-    <v-slider v-model="currentTick" show-ticks="always" tick-size="5" min="0" step="1" :max="nodeChanges.length"
-      hide-details />
+    <v-slider
+      v-model="currentTick"
+      show-ticks="always"
+      tick-size="5"
+      min="0"
+      step="1"
+      :max="nodeChanges.length"
+      hide-details
+    />
   </div>
 </template>

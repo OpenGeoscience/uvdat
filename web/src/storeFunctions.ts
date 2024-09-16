@@ -32,7 +32,7 @@ import {
   tooltipOverlay,
   clickedFeatureCandidates,
 } from "./store";
-import { ClickedFeatureData, Dataset, isUserLayer } from "./types";
+import { Dataset } from "./types";
 import {
   getContextDatasets,
   getContexts,
@@ -41,7 +41,10 @@ import {
   getContextSimulationTypes,
   getContextDerivedRegions,
 } from "@/api/rest";
-import { datasetLayerFromMapLayerID, styleNetworkVectorTileLayer } from "./layers";
+import {
+  datasetLayerFromMapLayerID,
+  styleNetworkVectorTileLayer,
+} from "./layers";
 
 export function clearState() {
   availableDatasets.value = undefined;
@@ -196,7 +199,7 @@ export function clearCurrentNetwork() {
   currentNetworkGCC.value = undefined;
 
   if (datasetLayer !== undefined) {
-    styleNetworkVectorTileLayer(datasetLayer)
+    styleNetworkVectorTileLayer(datasetLayer);
   }
 }
 
@@ -211,7 +214,6 @@ watch(currentContext, () => {
 watch(currentDataset, () => {
   rasterTooltipEnabled.value = false;
 });
-
 
 export function clearClickedFeatureData() {
   clickedFeature.value = undefined;
@@ -233,7 +235,9 @@ watch(clickedFeatureCandidates, (features) => {
   const selectedLayerID = layerIds.toReversed().find((id) => {
     return featureLayerIDs.has(id);
   });
-  const selectedFeature = features.find((f) => f.feature.layer.id === selectedLayerID);
+  const selectedFeature = features.find(
+    (f) => f.feature.layer.id === selectedLayerID
+  );
 
   // If none found, just reset values
   if (selectedLayerID === undefined || selectedFeature === undefined) {
@@ -242,9 +246,14 @@ watch(clickedFeatureCandidates, (features) => {
   }
 
   // Set new values
+  // TypeScript complains about this type being too complex for some reason.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   clickedFeature.value = selectedFeature;
   showMapTooltip.value = true;
-  clickedDatasetLayer.value = datasetLayerFromMapLayerID(selectedFeature.feature.layer.id);
+  clickedDatasetLayer.value = datasetLayerFromMapLayerID(
+    selectedFeature.feature.layer.id
+  );
 
   // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
   clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);

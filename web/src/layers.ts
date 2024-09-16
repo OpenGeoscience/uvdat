@@ -1,5 +1,12 @@
-import { CircleLayerSpecification, DataDrivenPropertyValueSpecification, LayerSpecification, LineLayerSpecification, MapGeoJSONFeature, MapLayerMouseEvent, RasterTileSource } from 'maplibre-gl'
-import { Map } from 'maplibre-gl'
+import {
+  CircleLayerSpecification,
+  DataDrivenPropertyValueSpecification,
+  LayerSpecification,
+  LineLayerSpecification,
+  MapLayerMouseEvent,
+  RasterTileSource,
+} from "maplibre-gl";
+import { Map } from "maplibre-gl";
 
 import { ref } from "vue";
 import {
@@ -9,14 +16,18 @@ import {
   isRasterDatasetLayer,
   VectorDatasetLayer,
   isVectorDatasetLayer,
-  isNonNullObject,
   isUserLayer,
   UserLayer,
 } from "./types";
 import { getDatasetLayer } from "./api/rest";
 import { getMap } from "./storeFunctions";
 import { baseURL } from "@/api/auth";
-import { cacheRasterData, setRasterTooltipValue, randomColor, rasterTooltipDataCache, valueAtCursor } from "./utils";
+import {
+  cacheRasterData,
+  setRasterTooltipValue,
+  randomColor,
+  rasterTooltipDataCache,
+} from "./utils";
 import {
   availableDatasets,
   currentDataset,
@@ -28,40 +39,40 @@ import {
   deactivatedNodes,
   availableDatasetLayers,
   selectedDerivedRegions,
-  map,
   clickedFeature,
   showMapTooltip,
-  tooltipOverlay,
   rasterTooltipValue,
-  clickedDatasetLayer,
   clickedFeatureCandidates,
 } from "./store";
 
-const _datasetLayerManager = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
-
+const _datasetLayerManager = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>(
+  []
+);
 
 const getAnnotationColor = () => {
   const result = [];
-  result.push('case');
+  result.push("case");
 
   // Check if the 'colors' field exists and use the first color
-  result.push(['has', 'colors']);
+  result.push(["has", "colors"]);
   result.push([
-    'let',
-    'firstColor',
-    ['slice', ['get', 'colors'], 0, 7], // assuming each color is in the format '#RRGGBB'
-    ['to-color', ['var', 'firstColor']]
+    "let",
+    "firstColor",
+    ["slice", ["get", "colors"], 0, 7], // assuming each color is in the format '#RRGGBB'
+    ["to-color", ["var", "firstColor"]],
   ]);
 
   // Check if the 'color' field exists and match specific values
-  result.push(['has', 'color']);
+  result.push(["has", "color"]);
   result.push([
-    'match',
-    ['get', 'color'],
-    'light blue', '#ADD8E6',
-    'dark blue', '#00008B',
+    "match",
+    ["get", "color"],
+    "light blue",
+    "#ADD8E6",
+    "dark blue",
+    "#00008B",
     // add other color mappings here
-    ['get', 'color'] // if the color is already in a valid format
+    ["get", "color"], // if the color is already in a valid format
   ]);
 
   // Default annotation color if none of the above conditions are met
@@ -72,29 +83,32 @@ const getAnnotationColor = () => {
 
 const getCircleRadius = () => {
   const result = [];
-  result.push('interpolate');
-  result.push(['linear']);
-  result.push(['zoom']);
+  result.push("interpolate");
+  result.push(["linear"]);
+  result.push(["zoom"]);
 
   // Static until zoom 7, that increases as you zoom in past there
-  result.push(1); result.push(5);
-  result.push(7); result.push(5);
-  result.push(22); result.push(10);
+  result.push(1);
+  result.push(5);
+  result.push(7);
+  result.push(5);
+  result.push(22);
+  result.push(10);
 
   return result as DataDrivenPropertyValueSpecification<number>;
-}
+};
 
 function getCircleStyle() {
-  const style: CircleLayerSpecification['paint'] = {};
+  const style: CircleLayerSpecification["paint"] = {};
 
   // TODO: Set fallback opacity to existing value
-  style['circle-opacity'] = [
+  style["circle-opacity"] = [
     "case",
     ["in", ["get", "node_id"], ["literal", deactivatedNodes.value]],
     0.2,
     1,
   ];
-  style['circle-stroke-opacity'] = [
+  style["circle-stroke-opacity"] = [
     "case",
     ["in", ["get", "node_id"], ["literal", deactivatedNodes.value]],
     0.2,
@@ -102,33 +116,33 @@ function getCircleStyle() {
   ];
 
   const gcc = currentNetworkGCC.value || [];
-  style['circle-stroke-color'] = [
+  style["circle-stroke-color"] = [
     "case",
     // If node is part of GCC, set its stroke color to yellow
     ["in", ["get", "node_id"], ["literal", gcc]],
-    'yellow',
+    "yellow",
 
     // else, set it to its normal color
     [
       "case",
-      ['has', 'colors'],
+      ["has", "colors"],
       [
-        'let',
-        'firstColor',
-        ['slice', ['get', 'colors'], 0, 7], // assuming each color is in the format '#RRGGBB'
-        ['to-color', ['var', 'firstColor']]
+        "let",
+        "firstColor",
+        ["slice", ["get", "colors"], 0, 7], // assuming each color is in the format '#RRGGBB'
+        ["to-color", ["var", "firstColor"]],
       ],
-      'black' // fallback if no color is specified on feature
-    ]
+      "black", // fallback if no color is specified on feature
+    ],
   ];
   return style;
 }
 
 function getLineStyle() {
-  const style: LineLayerSpecification['paint'] = {};
+  const style: LineLayerSpecification["paint"] = {};
   const gcc = currentNetworkGCC.value || [];
 
-  style['line-color'] = [
+  style["line-color"] = [
     "case",
     [
       "all",
@@ -136,57 +150,67 @@ function getLineStyle() {
       ["in", ["get", "from_node_id"], ["literal", gcc]],
       ["in", ["get", "to_node_id"], ["literal", gcc]],
     ],
-    'yellow',
+    "yellow",
 
     // else, set it to its normal color
     [
       "case",
-      ['has', 'colors'],
+      ["has", "colors"],
       [
-        'let',
-        'firstColor',
-        ['slice', ['get', 'colors'], 0, 7], // assuming each color is in the format '#RRGGBB'
-        ['to-color', ['var', 'firstColor']]
+        "let",
+        "firstColor",
+        ["slice", ["get", "colors"], 0, 7], // assuming each color is in the format '#RRGGBB'
+        ["to-color", ["var", "firstColor"]],
       ],
-      'black' // fallback if no color is specified on feature
-    ]
-  ]
+      "black", // fallback if no color is specified on feature
+    ],
+  ];
 
   return style;
 }
 
 const getLineWidth = () => {
   const result = [];
-  result.push('interpolate');
-  result.push(['linear']);
-  result.push(['zoom']);
+  result.push("interpolate");
+  result.push(["linear"]);
+  result.push(["zoom"]);
 
   // Large stroke width zoomed out, that decreases as you zoom in
-  result.push(5); result.push(10);
-  result.push(7); result.push(5);
-  result.push(10); result.push(5);
+  result.push(5);
+  result.push(10);
+  result.push(7);
+  result.push(5);
+  result.push(10);
+  result.push(5);
 
   return result as DataDrivenPropertyValueSpecification<number>;
-
 };
 
 const getRegionLineWidth = () => {
   const result = [];
-  result.push('interpolate');
-  result.push(['linear']);
-  result.push(['zoom']);
+  result.push("interpolate");
+  result.push(["linear"]);
+  result.push(["zoom"]);
 
   // Small stroke width zoomed out, that increases as you zoom in
-  result.push(1); result.push(1);
-  result.push(10); result.push(1);
-  result.push(14); result.push(2);
-  result.push(22); result.push(10);
+  result.push(1);
+  result.push(1);
+  result.push(10);
+  result.push(1);
+  result.push(14);
+  result.push(2);
+  result.push(22);
+  result.push(10);
 
   return result as DataDrivenPropertyValueSpecification<number>;
 };
 
-export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, type: LayerSpecification['type'], suffix: string = ''): string {
-  const suffixStr = suffix ? `-${suffix}` : '';
+export function generateMapLayerId(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer,
+  type: LayerSpecification["type"],
+  suffix = ""
+): string {
+  const suffixStr = suffix ? `-${suffix}` : "";
   if (isVectorDatasetLayer(datasetLayer)) {
     return `map-layer-${datasetLayer.id}-vector-tile-${type}${suffixStr}`;
   }
@@ -195,15 +219,16 @@ export function generateMapLayerId(datasetLayer: VectorDatasetLayer | RasterData
     return `map-layer-${datasetLayer.id}-raster-tile-${type}${suffixStr}`;
   }
 
-  throw new Error('Unsupported map layer type');
+  throw new Error("Unsupported map layer type");
 }
 
-
-export async function createMapLayer(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+export async function createMapLayer(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer
+) {
   if (isVectorDatasetLayer(datasetLayer)) {
     createVectorTileLayer(datasetLayer);
   } else if (isRasterDatasetLayer(datasetLayer)) {
-    createRasterTileLayer(map.value!, datasetLayer);
+    createRasterTileLayer(getMap(), datasetLayer);
     styleRasterDatasetLayer(datasetLayer, {});
     cacheRasterData(datasetLayer);
   } else {
@@ -245,7 +270,6 @@ export async function getOrCreateLayerFromID(
   return datasetLayer;
 }
 
-
 export function handleLayerClick(e: MapLayerMouseEvent) {
   if (!e.features) {
     return;
@@ -254,40 +278,51 @@ export function handleLayerClick(e: MapLayerMouseEvent) {
   // While multiple features may be clicked in the same layer, just choose the first one.
   // Our functions operate at the granularity of a single layer, so it would make no difference.
   const feature = e.features[0];
+
+  // TypeScript complains about this type being too complex for some reason.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   clickedFeatureCandidates.push({
     feature,
     pos: e.lngLat,
   });
 }
 
-
 export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
-  const defaultColors = `${randomColor()},#ffffff`;
-
   const map = getMap();
 
   const sourceId = `vector-tile-source-${datasetLayer.id}`;
   map.addSource(sourceId, {
-    type: 'vector',
+    type: "vector",
     tiles: [`${baseURL}vectors/${datasetLayer.id}/tiles/{z}/{x}/{y}/`],
   });
 
-  const startingOpacity = ['region', 'flood'].includes(datasetLayer.dataset_category) ? 0.6 : 1;
+  const startingOpacity = ["region", "flood"].includes(
+    datasetLayer.dataset_category
+  )
+    ? 0.6
+    : 1;
 
   // Add fill layer, filtered to polygon geometries
-  const fillLayerId = generateMapLayerId(datasetLayer, 'fill');
+  const fillLayerId = generateMapLayerId(datasetLayer, "fill");
   map.addLayer({
     id: fillLayerId,
-    type: 'fill',
+    type: "fill",
     source: sourceId,
-    "source-layer": 'default',
-    "filter": ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
+    "source-layer": "default",
+    filter: [
+      "match",
+      ["geometry-type"],
+      ["Polygon", "MultiPolygon"],
+      true,
+      false,
+    ],
     metadata: {
       id: datasetLayer.id,
       type: datasetLayer.type,
     },
     layout: {
-      visibility: 'visible',
+      visibility: "visible",
     },
     paint: {
       "fill-color": getAnnotationColor(),
@@ -296,12 +331,12 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
   });
 
   // Add line layer
-  const lineLayerId = generateMapLayerId(datasetLayer, 'line');
+  const lineLayerId = generateMapLayerId(datasetLayer, "line");
   map.addLayer({
     id: lineLayerId,
-    type: 'line',
+    type: "line",
     source: sourceId,
-    "source-layer": 'default',
+    "source-layer": "default",
     metadata: {
       id: datasetLayer.id,
       type: datasetLayer.type,
@@ -309,20 +344,22 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
     layout: {
       "line-join": "round",
       "line-cap": "round",
-      visibility: 'visible',
+      visibility: "visible",
     },
     paint: {
       "line-color": getAnnotationColor(),
-      "line-width": datasetLayer.dataset_category === "region" ? getRegionLineWidth() : getLineWidth(),
+      "line-width":
+        datasetLayer.dataset_category === "region"
+          ? getRegionLineWidth()
+          : getLineWidth(),
       "line-opacity": startingOpacity,
     },
   });
 
-
   // Add circle layer, filtered to point geometries. If not filtered,
   // this will add a circle at the vertices of all lines.
   // This should be added LAST, as it has click priority over the other layer types.
-  const circleLayerId = generateMapLayerId(datasetLayer, 'circle');
+  const circleLayerId = generateMapLayerId(datasetLayer, "circle");
   map.addLayer({
     id: circleLayerId,
     type: "circle",
@@ -332,42 +369,38 @@ export function createVectorTileLayer(datasetLayer: VectorDatasetLayer) {
       type: datasetLayer.type,
     },
     "source-layer": "default",
-    "filter": ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
+    filter: ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
     paint: {
-      'circle-color': getAnnotationColor(),
-      'circle-opacity': startingOpacity,
-      'circle-stroke-color': getAnnotationColor(),
-      'circle-stroke-opacity': startingOpacity,
-      'circle-stroke-width': 2,
-      'circle-radius': getCircleRadius(),
+      "circle-color": getAnnotationColor(),
+      "circle-opacity": startingOpacity,
+      "circle-stroke-color": getAnnotationColor(),
+      "circle-stroke-opacity": startingOpacity,
+      "circle-stroke-width": 2,
+      "circle-radius": getCircleRadius(),
     },
     layout: {
-      visibility: 'visible',
+      visibility: "visible",
     },
   });
 
   // Add events to map
-  map.on('click', fillLayerId, handleLayerClick);
-  map.on('click', lineLayerId, handleLayerClick);
-  map.on('click', circleLayerId, handleLayerClick);
+  map.on("click", fillLayerId, handleLayerClick);
+  map.on("click", lineLayerId, handleLayerClick);
+  map.on("click", circleLayerId, handleLayerClick);
 }
 
-export function styleNetworkVectorTileLayer(
-  datasetLayer: VectorDatasetLayer,
-  options: {
-    showGCC?: boolean;
-    translucency?: string;
-  } = {}
-) {
+export function styleNetworkVectorTileLayer(datasetLayer: VectorDatasetLayer) {
   const mapLayers = findExistingMapLayers(datasetLayer);
   if (!mapLayers.length) {
     throw new Error(`No map layers found for dataset layer ${datasetLayer.id}`);
   }
 
-  const circleLayer = mapLayers.find((l) => l.type === 'circle');
-  const lineLayer = mapLayers.find((l) => l.type === 'line');
+  const circleLayer = mapLayers.find((l) => l.type === "circle");
+  const lineLayer = mapLayers.find((l) => l.type === "line");
   if (!circleLayer || !lineLayer) {
-    throw new Error(`line and circle layers not found in dataset layer ${datasetLayer.id}`);
+    throw new Error(
+      `line and circle layers not found in dataset layer ${datasetLayer.id}`
+    );
   }
 
   const map = getMap();
@@ -385,17 +418,20 @@ export function styleNetworkVectorTileLayer(
   });
 }
 
-export function createRasterTileLayer(map: Map, datasetLayer: RasterDatasetLayer) {
+export function createRasterTileLayer(
+  map: Map,
+  datasetLayer: RasterDatasetLayer
+) {
   const sourceId = `raster-tile-source-${datasetLayer.id}`;
   map.addSource(sourceId, {
-    type: 'raster',
-    tiles: [],  // tile source is set later
+    type: "raster",
+    tiles: [], // tile source is set later
   });
 
-  const layerId = generateMapLayerId(datasetLayer, 'raster');
+  const layerId = generateMapLayerId(datasetLayer, "raster");
   map.addLayer({
     id: layerId,
-    type: 'raster',
+    type: "raster",
     source: sourceId,
     metadata: {
       id: datasetLayer.id,
@@ -413,29 +449,29 @@ export function createRasterLayerPolygonMask(rasterLayer: RasterDatasetLayer) {
 
   const { sourceBounds } = cached;
   const { xmin, xmax, ymin, ymax } = sourceBounds;
-  const sourceId2 = `raster-tile-source-${rasterLayer.id}-invisible-bounds`
+  const sourceId2 = `raster-tile-source-${rasterLayer.id}-invisible-bounds`;
 
   const map = getMap();
   map.addSource(sourceId2, {
-    type: 'geojson',
+    type: "geojson",
     data: {
-      type: 'Polygon',
+      type: "Polygon",
       coordinates: [
         [
-          [xmin, ymin],  // same coordinate to close the polygon
+          [xmin, ymin], // same coordinate to close the polygon
           [xmin, ymax],
           [xmax, ymax],
           [xmax, ymin],
-          [xmin, ymin],  // same coordinate to close the polygon
-        ]
-      ]
-    }
+          [xmin, ymin], // same coordinate to close the polygon
+        ],
+      ],
+    },
   });
 
-  const layerId = generateMapLayerId(rasterLayer, 'raster', 'polygon-mask');
+  const layerId = generateMapLayerId(rasterLayer, "raster", "polygon-mask");
   map.addLayer({
     id: layerId,
-    type: 'fill',
+    type: "fill",
     source: sourceId2,
     paint: {
       "fill-opacity": 0,
@@ -448,7 +484,7 @@ export function createRasterLayerPolygonMask(rasterLayer: RasterDatasetLayer) {
   });
 
   // If layer is left, remove it
-  map.on("mouseleave", layerId, (e) => {
+  map.on("mouseleave", layerId, () => {
     rasterTooltipValue.value = undefined;
 
     // Only disable the map tooltip if there's not a feature currently being shown
@@ -468,10 +504,12 @@ export function styleRasterDatasetLayer(
     nodata?: number;
   }
 ) {
-  const layerProperties = rasterLayer.metadata as Record<string, unknown>
-  const defaultStyle = rasterLayer.default_style as Record<string, unknown> | undefined;
-  const colormapPalette =
-    (options?.colormap?.palette || defaultStyle?.palette || "terrain") as string;
+  const defaultStyle = rasterLayer.default_style as
+    | Record<string, unknown>
+    | undefined;
+  const colormapPalette = (options?.colormap?.palette ||
+    defaultStyle?.palette ||
+    "terrain") as string;
   const colormapRange = options?.colormap?.range || defaultStyle?.data_range;
   const nodataValue = options.nodata || defaultStyle?.transparency_threshold;
 
@@ -486,7 +524,7 @@ export function styleRasterDatasetLayer(
     tileParams.min = colormapRange[0];
     tileParams.max = colormapRange[1];
   }
-  if (typeof nodataValue === 'string') {
+  if (typeof nodataValue === "string") {
     tileParams.nodata = nodataValue;
   }
   // openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
@@ -494,32 +532,40 @@ export function styleRasterDatasetLayer(
 
   const mapLayers = findExistingMapLayers(rasterLayer);
   if (!mapLayers.length) {
-    throw new Error(`No map layers found for raster dataset layer ${rasterLayer.id}`);
+    throw new Error(
+      `No map layers found for raster dataset layer ${rasterLayer.id}`
+    );
   }
 
   // Set source tiles url
   const sourceLayerId = mapLayers[0].source;
-  const source = map.value!.getSource(sourceLayerId) as RasterTileSource;
-  source.setTiles([`${baseURL}rasters/${rasterLayer.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`])
+  const source = getMap().getSource(sourceLayerId) as RasterTileSource;
+  source.setTiles([
+    `${baseURL}rasters/${rasterLayer.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
+  ]);
 }
 
-export function findExistingMapLayers(datasetLayer: VectorDatasetLayer | RasterDatasetLayer) {
+export function findExistingMapLayers(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer
+) {
   const map = getMap();
 
   // Use non-null assertion, since we know layers returned from getLayersOrder will be found
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const layers = map.getLayersOrder().map((id: string) => map.getLayer(id)!);
   const filtered = layers.filter(
-    (layer) => (
-      isUserLayer(layer)
-      && layer.metadata.id === datasetLayer.id
-      && layer.metadata.type === datasetLayer.type
-    )
+    (layer) =>
+      isUserLayer(layer) &&
+      layer.metadata.id === datasetLayer.id &&
+      layer.metadata.type === datasetLayer.type
   );
 
   return filtered as UserLayer[];
 }
 
-export function datasetLayerFromMapLayerID(id: string): VectorDatasetLayer | RasterDatasetLayer | undefined {
+export function datasetLayerFromMapLayerID(
+  id: string
+): VectorDatasetLayer | RasterDatasetLayer | undefined {
   const map = getMap();
   const layer = map.getLayer(id);
   if (layer === undefined) {
@@ -548,16 +594,20 @@ export function isDatasetLayerVisible(
   }
 
   // TODO: This is tricky as it's not longer a binary value
-  return mapLayers.some((layer) => layer.getLayoutProperty('visibility') !== 'none')
+  return mapLayers.some(
+    (layer) => layer.getLayoutProperty("visibility") !== "none"
+  );
 }
 
-
-export function toggleDatasetLayerVisibility(datasetLayer: VectorDatasetLayer | RasterDatasetLayer, moveLayer: boolean = true) {
+export function toggleDatasetLayerVisibility(
+  datasetLayer: VectorDatasetLayer | RasterDatasetLayer,
+  moveLayer = true
+) {
   const mapLayers = findExistingMapLayers(datasetLayer);
   const map = getMap();
   mapLayers.forEach((layer) => {
-    const enable = layer.getLayoutProperty('visibility') === 'none'
-    const value = enable ? 'visible' : 'none';
+    const enable = layer.getLayoutProperty("visibility") === "none";
+    const value = enable ? "visible" : "none";
 
     // Move layer to top of layers if it's being enabled
     if (enable && moveLayer) {
@@ -565,7 +615,7 @@ export function toggleDatasetLayerVisibility(datasetLayer: VectorDatasetLayer | 
     }
 
     // Use map.setLayoutProperty to ensure redraw of map
-    map.setLayoutProperty(layer.id, 'visibility', value);
+    map.setLayoutProperty(layer.id, "visibility", value);
   });
 }
 
@@ -611,7 +661,8 @@ export function getDataObjectForDatasetLayer(
     );
     if (dataset) {
       dataset.current_layer_index =
-        dataset?.map_layers?.find(({ id }) => id === datasetLayer.id)?.index || 0;
+        dataset?.map_layers?.find(({ id }) => id === datasetLayer.id)?.index ||
+        0;
     }
     return dataset;
   }
@@ -647,16 +698,25 @@ export async function getDatasetLayerForDataObject(
  *    but it should really be the other way around. The map layers should be set from the selected dataset layers.
  */
 export function updateVisibleMapLayers() {
-  selectedDatasetLayers.value = _datasetLayerManager.value.filter(isDatasetLayerVisible);
+  selectedDatasetLayers.value = _datasetLayerManager.value.filter(
+    isDatasetLayerVisible
+  );
 
   // Separate dataset map layers from background layers provided by map tiler.
-  const datasetMapLayers = getMap().getLayersOrder().map((id) => getMap().getLayer(id)!).filter((layer) => isUserLayer(layer));
+  // Use non-null assertion, since we know getting a layer from getLayersOrder will return the layer successfully
+  const datasetMapLayers = getMap()
+    .getLayersOrder()
+    .map((id) => getMap().getLayer(id)!) // eslint-disable-line @typescript-eslint/no-non-null-assertion
+    .filter((layer) => isUserLayer(layer));
 
   // Create mapping from dataset layer ID to it's highest map index (the highest index of any of its layers)
-  const indexMap = datasetMapLayers.reduce((acc, cur, index) => ({ ...acc, [cur.metadata.id]: index }), {}) as Record<number, number>;
+  const indexMap = datasetMapLayers.reduce(
+    (acc, cur, index) => ({ ...acc, [cur.metadata.id]: index }),
+    {}
+  ) as Record<number, number>;
 
   // Because
-  selectedDatasetLayers.value.sort((a, b) => indexMap[b.id] - indexMap[a.id])
+  selectedDatasetLayers.value.sort((a, b) => indexMap[b.id] - indexMap[a.id]);
 
   if (!availableDatasets.value) {
     selectedDatasets.value = [];
@@ -687,8 +747,8 @@ export function updateBaseLayer() {
       return;
     }
 
-    const visibility = showMapBaseLayer.value ? 'visible' : 'none';
-    map.setLayoutProperty(layer.id, 'visibility', visibility);
+    const visibility = showMapBaseLayer.value ? "visible" : "none";
+    map.setLayoutProperty(layer.id, "visibility", visibility);
   });
 }
 
@@ -703,7 +763,7 @@ export function clearMapLayers() {
     }
 
     // Set layer to not visible
-    map.setLayoutProperty(layer.id, 'visibility', 'none');
+    map.setLayoutProperty(layer.id, "visibility", "none");
   });
 
   // Set current dataset to none and update layers

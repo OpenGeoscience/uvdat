@@ -12,7 +12,7 @@ import {
   RasterTooltipData,
 } from "./types.js";
 // import { MapLayer } from "@/data";
-import { LngLatLike, Map, MapGeoJSONFeature, Popup } from "maplibre-gl";
+import { Map, Popup } from "maplibre-gl";
 
 // Context
 export const availableContexts = ref<Context[]>([]);
@@ -25,9 +25,15 @@ export const currentDataset = ref<Dataset>();
 
 // Map
 export const map = ref<Map>();
-export const availableDatasetLayers = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
-export const selectedDatasetLayers = ref<(VectorDatasetLayer | RasterDatasetLayer)[]>([]);
-export const clickedDatasetLayer = ref<VectorDatasetLayer | RasterDatasetLayer>();
+export const availableDatasetLayers = ref<
+  (VectorDatasetLayer | RasterDatasetLayer)[]
+>([]);
+export const selectedDatasetLayers = ref<
+  (VectorDatasetLayer | RasterDatasetLayer)[]
+>([]);
+export const clickedDatasetLayer = ref<
+  VectorDatasetLayer | RasterDatasetLayer
+>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
 export const tooltipOverlay = ref<Popup>();

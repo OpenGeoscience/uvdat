@@ -3,12 +3,16 @@ import { ref, watch, computed, onMounted } from "vue";
 import { rasterColormaps, toggleNodeActive } from "../utils";
 import {
   findExistingMapLayers,
-  getDatasetLayerForDataObject,
   isDatasetLayerVisible,
   styleRasterDatasetLayer,
   toggleDatasetLayer,
 } from "@/layers";
-import { currentDataset, currentNetworkDataset, deactivatedNodes, rasterTooltipEnabled } from "@/store";
+import {
+  currentDataset,
+  currentNetworkDataset,
+  deactivatedNodes,
+  rasterTooltipEnabled,
+} from "@/store";
 import {
   NetworkNode,
   RasterDatasetLayer,
@@ -17,30 +21,34 @@ import {
 } from "@/types";
 import { clearCurrentNetwork, getMap } from "@/storeFunctions";
 
-
-function getDatasetLayerOpacity(layer: VectorDatasetLayer | RasterDatasetLayer) {
+function getDatasetLayerOpacity(
+  layer: VectorDatasetLayer | RasterDatasetLayer
+) {
   const mapLayers = findExistingMapLayers(layer);
   const opacities = mapLayers.map((layer) => {
     const opacityProperty = `${layer.type}-opacity`;
-    const opacity = layer.getPaintProperty(opacityProperty) as number | undefined;
+    const opacity = layer.getPaintProperty(opacityProperty) as
+      | number
+      | undefined;
     return opacity || 1.0;
   });
 
   // Ensure all layers have the same opacity value or error
   const consistentOpacity = opacities.every((v) => v === opacities[0]);
   if (!consistentOpacity) {
-    const allLayerIds = mapLayers.map((layer) => layer.id).join(', ');
+    const allLayerIds = mapLayers.map((layer) => layer.id).join(", ");
     throw new Error(`Inconsistent opacity values in map layers ${allLayerIds}`);
   }
 
   return opacities[0];
 }
 
-
 export default {
   setup() {
     const currentDatasetLayerIndex = ref(0);
-    const currentDatasetLayer = ref<VectorDatasetLayer | RasterDatasetLayer | undefined>();
+    const currentDatasetLayer = ref<
+      VectorDatasetLayer | RasterDatasetLayer | undefined
+    >();
     const opacity = ref(1);
     const colormap = ref("terrain");
     const layerRange = ref<number[]>([]);
@@ -48,7 +56,7 @@ export default {
     const applyToAll = ref<boolean>(true);
 
     // TODO: Determine what to use this for
-    const zIndex = ref<number>();
+    // const zIndex = ref<number>();
 
     const currentLayerName = computed(() => {
       return currentDatasetLayer.value?.name;
@@ -61,10 +69,13 @@ export default {
       }
 
       if (currentDataset.value.current_layer_index === undefined) {
-        throw new Error('Dataset layer index not set!');
+        throw new Error("Dataset layer index not set!");
       }
 
-      const layer = currentDataset.value.map_layers[currentDataset.value.current_layer_index];
+      const layer =
+        currentDataset.value.map_layers[
+          currentDataset.value.current_layer_index
+        ];
       if (!isDatasetLayerVisible(layer)) {
         toggleDatasetLayer(layer);
       }
@@ -103,7 +114,7 @@ export default {
       }
 
       // Process raster refs, if necessary
-      if (currentDatasetLayer.value.type !== 'raster') {
+      if (currentDatasetLayer.value.type !== "raster") {
         return;
       }
 
@@ -115,12 +126,16 @@ export default {
 
       // Populate raster refs, if necessary
       colormap.value = defaultStyle.palette || "terrain";
-      layerRange.value = defaultStyle.data_range?.map((v: number) => Math.round(v)) || [];
+      layerRange.value =
+        defaultStyle.data_range?.map((v: number) => Math.round(v)) || [];
       colormapRange.value = layerRange.value;
     }
 
     function activateNode(deactivated: number) {
-      if (!currentDataset.value || !isVectorDatasetLayer(currentDatasetLayer.value)) {
+      if (
+        !currentDataset.value ||
+        !isVectorDatasetLayer(currentDatasetLayer.value)
+      ) {
         return;
       }
 
@@ -139,7 +154,8 @@ export default {
       ) {
         // turn off layer at previous index
         toggleDatasetLayer(currentDatasetLayer.value);
-        currentDataset.value.current_layer_index = currentDatasetLayerIndex.value;
+        currentDataset.value.current_layer_index =
+          currentDatasetLayerIndex.value;
         updateCurrentDatasetLayer();
       }
     }
@@ -159,8 +175,12 @@ export default {
         map.setPaintProperty(layer.id, opacityProperty, opacity.value);
 
         // Circle layers also have a stroke opacity property
-        if (layer.type === 'circle') {
-          map.setPaintProperty(layer.id, 'circle-stroke-opacity', opacity.value);
+        if (layer.type === "circle") {
+          map.setPaintProperty(
+            layer.id,
+            "circle-stroke-opacity",
+            opacity.value
+          );
         }
       });
     }
@@ -237,16 +257,30 @@ export default {
     </v-card-subtitle>
     <v-divider class="mb-2" />
 
-    <div class="pa-2" v-if="
-      currentDatasetLayer &&
-      currentDataset?.map_layers &&
-      currentDataset?.map_layers.length > 1
-    ">
-      <v-checkbox v-model="applyToAll"
-        :label="`Apply style changes to all ${currentDataset.map_layers.length} layers in Dataset`" />
+    <div
+      class="pa-2"
+      v-if="
+        currentDatasetLayer &&
+        currentDataset?.map_layers &&
+        currentDataset?.map_layers.length > 1
+      "
+    >
+      <v-checkbox
+        v-model="applyToAll"
+        :label="`Apply style changes to all ${currentDataset.map_layers.length} layers in Dataset`"
+      />
 
-      <v-slider v-model="currentDatasetLayerIndex" label="Current Layer" :thumb-label="true" show-ticks="always"
-        :tick-size="5" dense min="0" step="1" :max="currentDataset?.map_layers.length - 1" />
+      <v-slider
+        v-model="currentDatasetLayerIndex"
+        label="Current Layer"
+        :thumb-label="true"
+        show-ticks="always"
+        :tick-size="5"
+        dense
+        min="0"
+        step="1"
+        :max="currentDataset?.map_layers.length - 1"
+      />
       <v-card-subtitle class="wrap-subtitle">
         Current layer name: {{ currentLayerName || "Untitled" }}
       </v-card-subtitle>
@@ -257,35 +291,83 @@ export default {
       <v-btn v-if="currentNetworkDataset" @click="resetNetwork" class="mb-2">
         Reset network
       </v-btn>
-      <v-slider v-else label="Opacity" v-model="opacity" dense min="0" max="1" step="0.05" />
+      <v-slider
+        v-else
+        label="Opacity"
+        v-model="opacity"
+        dense
+        min="0"
+        max="1"
+        step="0.05"
+      />
 
       <div v-if="currentDatasetLayer?.type === 'raster'">
-        <v-select v-model="colormap" dense :items="rasterColormaps" label="Color map" />
+        <v-select
+          v-model="colormap"
+          dense
+          :items="rasterColormaps"
+          label="Color map"
+        />
         <v-card-text v-if="colormapRange" class="pa-0">
           Color map range
         </v-card-text>
 
         <!-- Call updateColormap manually to avoid too many requests when sliding -->
-        <v-range-slider v-if="colormapRange" v-model="colormapRange" @end="updateColormap" :min="layerRange[0]"
-          :max="layerRange[1]" :step="1">
+        <v-range-slider
+          v-if="colormapRange"
+          v-model="colormapRange"
+          @end="updateColormap"
+          :min="layerRange[0]"
+          :max="layerRange[1]"
+          :step="1"
+        >
           <template v-slot:prepend>
-            <input v-model="colormapRange[0]" @input="updateColormap" class="pa-1" hide-details dense type="number"
-              style="width: 60px" :min="layerRange[0]" :max="layerRange[1]" />
+            <input
+              v-model="colormapRange[0]"
+              @input="updateColormap"
+              class="pa-1"
+              hide-details
+              dense
+              type="number"
+              style="width: 60px"
+              :min="layerRange[0]"
+              :max="layerRange[1]"
+            />
           </template>
           <template v-slot:append>
-            <input v-model="colormapRange[1]" @input="updateColormap" class="pa-1" hide-details dense type="number"
-              style="width: 60px" :min="layerRange[0]" :max="layerRange[1]" />
+            <input
+              v-model="colormapRange[1]"
+              @input="updateColormap"
+              class="pa-1"
+              hide-details
+              dense
+              type="number"
+              style="width: 60px"
+              :min="layerRange[0]"
+              :max="layerRange[1]"
+            />
           </template>
         </v-range-slider>
-        <v-switch v-model="rasterTooltipEnabled" :value="currentDatasetLayer?.id" label="Show value tooltip" />
+        <v-switch
+          v-model="rasterTooltipEnabled"
+          :value="currentDatasetLayer?.id"
+          label="Show value tooltip"
+        />
       </div>
 
       <div v-if="currentDataset && currentDataset.network">
         <v-expansion-panels :model-value="0" variant="accordion">
           <v-expansion-panel title="Deactivated Nodes">
-            <v-expansion-panel-text v-for="deactivated in deactivatedNodes" :key="deactivated">
+            <v-expansion-panel-text
+              v-for="deactivated in deactivatedNodes"
+              :key="deactivated"
+            >
               {{ getNetworkNodeName(deactivated) }}
-              <v-btn size="small" style="float: right" @click="activateNode(deactivated)">
+              <v-btn
+                size="small"
+                style="float: right"
+                @click="activateNode(deactivated)"
+              >
                 Activate
               </v-btn>
             </v-expansion-panel-text>

@@ -54,9 +54,7 @@ export async function convertDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}/convert`)).data;
 }
 
-export async function getDatasetNetwork(
-  datasetId: number
-): Promise<Network[]> {
+export async function getDatasetNetwork(datasetId: number): Promise<Network[]> {
   // TODO: Figure out why this is a double nested array
   return (await apiClient.get(`datasets/${datasetId}/network`)).data[0];
 }
@@ -85,9 +83,8 @@ export async function getRasterData(layerId: number): Promise<RasterData> {
   const data = (
     await apiClient.get(`rasters/${layerId}/raster-data/${resolution}`)
   ).data;
-  const { bounds } = (
-    await apiClient.get(`rasters/${layerId}/info/metadata`)
-  ).data;
+  const { bounds } = (await apiClient.get(`rasters/${layerId}/info/metadata`))
+    .data;
   return {
     data,
     sourceBounds: bounds,

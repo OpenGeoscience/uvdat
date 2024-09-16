@@ -1,5 +1,4 @@
-import { LngLatLike, Map, MapGeoJSONFeature } from 'maplibre-gl';
-
+import { LngLatLike, Map, MapGeoJSONFeature } from "maplibre-gl";
 
 export interface Network {
   nodes: NetworkNode[];
@@ -94,7 +93,6 @@ export interface NetworkEdge {
   to_node: number;
 }
 
-
 export interface DefaultStyle {
   // Both
   palette?: string;
@@ -162,16 +160,20 @@ export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
 }
 
-export type StyleLayer = NonNullable<ReturnType<Map['getLayer']>>;
+export type StyleLayer = NonNullable<ReturnType<Map["getLayer"]>>;
 export interface UserLayer extends StyleLayer {
   metadata: {
     id: number;
-    type: 'vector' | 'raster';
-  }
+    type: "vector" | "raster";
+  };
 }
 
 export function isUserLayer(layer: StyleLayer): layer is UserLayer {
-  return isNonNullObject(layer.metadata) && 'id' in layer.metadata && layer.metadata.id !== undefined;
+  return (
+    isNonNullObject(layer.metadata) &&
+    "id" in layer.metadata &&
+    layer.metadata.id !== undefined
+  );
 }
 
 export interface VectorTile {

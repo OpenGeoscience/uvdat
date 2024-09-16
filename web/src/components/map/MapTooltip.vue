@@ -69,7 +69,7 @@ export default {
       const map = getMap();
       const bbox = turf.bbox(clickedFeature.value.feature.geometry);
       if (bbox.length !== 4) {
-        throw new Error('Returned bbox should have 4 elements!');
+        throw new Error("Returned bbox should have 4 elements!");
       }
 
       map.fitBounds(bbox);
@@ -82,7 +82,11 @@ export default {
       }
 
       const layer = clickedFeature.value.feature.layer as UserLayer;
-      const match = selectedLayers.find((dsLayer) => dsLayer.id === layer.metadata.id && dsLayer.type === layer.metadata.type);
+      const match = selectedLayers.find(
+        (dsLayer) =>
+          dsLayer.id === layer.metadata.id &&
+          dsLayer.type === layer.metadata.type
+      );
       if (match === undefined) {
         clickedFeature.value = undefined;
       }
@@ -90,32 +94,38 @@ export default {
 
     // Handle clicked features and raster tooltip behavior.
     // Feature clicks are given tooltip priority.
-    watch([clickedFeature, rasterTooltipValue], ([featureData, rasterTooltipData]) => {
-      const tooltip = getTooltip();
-      if (featureData === undefined && rasterTooltipData === undefined) {
-        tooltip.remove();
-        return;
+    watch(
+      [clickedFeature, rasterTooltipValue],
+      ([featureData, rasterTooltipData]) => {
+        const tooltip = getTooltip();
+        if (featureData === undefined && rasterTooltipData === undefined) {
+          tooltip.remove();
+          return;
+        }
+
+        // Set tooltip position. Give feature clicks priority
+        if (featureData !== undefined) {
+          tooltip.setLngLat(featureData.pos);
+        } else if (rasterTooltipData !== undefined) {
+          tooltip.setLngLat(rasterTooltipData.pos);
+        }
+
+        // This makes the tooltip visible
+        tooltip.addTo(getMap());
       }
+    );
 
-      // Set tooltip position. Give feature clicks priority
-      if (featureData !== undefined) {
-        tooltip.setLngLat(featureData.pos);
-      } else if (rasterTooltipData !== undefined) {
-        tooltip.setLngLat(rasterTooltipData.pos);
-      }
-
-      // This makes the tooltip visible
-      tooltip.addTo(getMap())
-    });
-
-    const clickedFeatureIsDeactivatedNode = computed(() => (
-      clickedFeature.value
-      && deactivatedNodes.value.includes(clickedFeature.value.feature.properties.node_id)
-    ));
+    const clickedFeatureIsDeactivatedNode = computed(
+      () =>
+        clickedFeature.value &&
+        deactivatedNodes.value.includes(
+          clickedFeature.value.feature.properties.node_id
+        )
+    );
 
     function toggleNodeHandler() {
       if (clickedFeature.value === undefined) {
-        throw new Error('Clicked node is undefined!');
+        throw new Error("Clicked node is undefined!");
       }
 
       const dataset = availableDatasets.value?.find(
@@ -123,13 +133,15 @@ export default {
       );
       if (dataset) {
         dataset.current_layer_index =
-          dataset?.map_layers?.find(({ id }) => id === clickedDatasetLayer.value?.id)?.index || 0;
+          dataset?.map_layers?.find(
+            ({ id }) => id === clickedDatasetLayer.value?.id
+          )?.index || 0;
       }
 
       toggleNodeActive(
         clickedFeature.value.feature.properties.node_id,
         dataset!,
-        clickedDatasetLayer.value as VectorDatasetLayer,
+        clickedDatasetLayer.value as VectorDatasetLayer
       );
     }
 
@@ -159,7 +171,12 @@ export default {
       <v-row no-gutters>ID: {{ clickedRegion.id }}</v-row>
       <v-row no-gutters>Name: {{ clickedRegion.name }}</v-row>
       <v-row no-gutters>
-        <v-btn class="my-1" variant="outlined" prepend-icon="mdi-vector-square" @click="zoomToRegion">
+        <v-btn
+          class="my-1"
+          variant="outlined"
+          prepend-icon="mdi-vector-square"
+          @click="zoomToRegion"
+        >
           Zoom To Region
         </v-btn>
       </v-row>
@@ -174,9 +191,7 @@ export default {
         <template v-if="clickedFeatureIsDeactivatedNode">
           Reactivate Node
         </template>
-        <template v-else>
-          Deactivate Node
-        </template>
+        <template v-else> Deactivate Node </template>
       </v-btn>
     </div>
     <!-- Render for all other features -->
@@ -189,9 +204,7 @@ export default {
 
   <!-- Check for raster tooltip data after, to give clicked features priority -->
   <div v-else-if="rasterTooltipEnabled && rasterTooltipValue">
-    <div v-if="rasterTooltipValue.text === ''">
-      waiting for data...
-    </div>
+    <div v-if="rasterTooltipValue.text === ''">waiting for data...</div>
     <div v-else>
       <span>{{ rasterTooltipValue.text }}</span>
     </div>

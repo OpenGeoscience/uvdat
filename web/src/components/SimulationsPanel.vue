@@ -7,7 +7,11 @@ import {
 } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { RasterDatasetLayer, SimulationResult, VectorDatasetLayer } from "@/types";
+import {
+  RasterDatasetLayer,
+  SimulationResult,
+  VectorDatasetLayer,
+} from "@/types";
 import {
   getDatasetLayerForDataObject,
   getOrCreateLayerFromID,
@@ -89,13 +93,15 @@ export default {
             (o: { id: number }) => o === argValue || o.id === argValue
           );
           if (selectedOption) {
-            let datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
+            let datasetLayer:
+              | VectorDatasetLayer
+              | RasterDatasetLayer
+              | undefined;
             if (selectedOption.map_layers) {
               // Object has layers
-              datasetLayer = (await getDatasetLayerForDataObject(selectedOption)) as
-                | VectorDatasetLayer
-                | RasterDatasetLayer
-                | undefined;
+              datasetLayer = (await getDatasetLayerForDataObject(
+                selectedOption
+              )) as VectorDatasetLayer | RasterDatasetLayer | undefined;
             } else if (selectedOption.index && selectedOption.type) {
               // Object is layer
               datasetLayer = await getOrCreateLayerFromID(
@@ -186,7 +192,12 @@ export default {
     <div style="position: absolute; right: 0">
       <v-tooltip text="Close" location="bottom">
         <template v-slot:activator="{ props }">
-          <v-btn v-bind="props" icon="mdi-close" variant="plain" @click="currentSimulationType = undefined" />
+          <v-btn
+            v-bind="props"
+            icon="mdi-close"
+            variant="plain"
+            @click="currentSimulationType = undefined"
+          />
         </template>
       </v-tooltip>
     </div>
@@ -201,39 +212,67 @@ export default {
       <v-window-item value="new">
         <v-form class="pa-3" @submit.prevent ref="inputForm">
           <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
-          <v-select v-for="arg in currentSimulationType.args" v-model="selectedInputs[arg.name]" v-bind="arg"
-            :key="arg.name" :label="arg.name.replaceAll('_', ' ')" :rules="inputSelectionRules" :items="arg.options"
-            item-value="id" item-title="name" density="compact" hide-details="auto" class="my-1" />
+          <v-select
+            v-for="arg in currentSimulationType.args"
+            v-model="selectedInputs[arg.name]"
+            v-bind="arg"
+            :key="arg.name"
+            :label="arg.name.replaceAll('_', ' ')"
+            :rules="inputSelectionRules"
+            :items="arg.options"
+            item-value="id"
+            item-title="name"
+            density="compact"
+            hide-details="auto"
+            class="my-1"
+          />
           <v-btn @click="run" style="width: 100%" variant="tonal">
             Run Simulation
           </v-btn>
         </v-form>
       </v-window-item>
       <v-window-item value="old">
-        <div v-if="availableResults && availableResults.length === 0" style="width: 100%; text-align: center"
-          class="pa-3">
+        <div
+          v-if="availableResults && availableResults.length === 0"
+          style="width: 100%; text-align: center"
+          class="pa-3"
+        >
           No previous runs of this simulation type exist.
         </div>
         <v-expansion-panels v-else v-model="activeResult" variant="accordion">
-          <v-expansion-panel v-for="result in availableResults" :key="result.id" :value="result"
-            :title="timestampToTitle(result.modified)">
+          <v-expansion-panel
+            v-for="result in availableResults"
+            :key="result.id"
+            :value="result"
+            :title="timestampToTitle(result.modified)"
+          >
             <v-expansion-panel-text>
               <v-table>
                 <tbody>
-                  <tr v-for="arg in activeResultInputs" v-bind="arg" :key="arg.key">
+                  <tr
+                    v-for="arg in activeResultInputs"
+                    v-bind="arg"
+                    :key="arg.key"
+                  >
                     <td>{{ arg.key }}</td>
                     <td>{{ arg.value.name || arg.value }}</td>
                     <td>
-                      <v-btn @click="toggleDatasetLayer(arg.datasetLayer)" v-if="arg.viewable">
+                      <v-btn
+                        @click="toggleDatasetLayer(arg.datasetLayer)"
+                        v-if="arg.viewable"
+                      >
                         Show on Map
                       </v-btn>
                     </td>
                   </tr>
                 </tbody>
               </v-table>
-              <div v-if="
-                !result.output_data && !result.error_message && outputPoll
-              " style="width: 100%; text-align: center">
+              <div
+                v-if="
+                  !result.output_data && !result.error_message && outputPoll
+                "
+                style="width: 100%; text-align: center"
+              >
                 <v-progress-circular indeterminate />
                 Waiting for simulation to complete...
               </div>
@@ -243,12 +282,18 @@ export default {
               </div>
               <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
-                <div v-if="currentSimulationType.output_type == 'node_animation'" class="pa-5">
+                <div
+                  v-if="currentSimulationType.output_type == 'node_animation'"
+                  class="pa-5"
+                >
                   <div v-if="result.output_data.node_failures?.length === 0">
                     No nodes are affected in this scenario.
                   </div>
-                  <node-animation v-else :nodeFailures="result.output_data.node_failures"
-                    :nodeRecoveries="result.output_data.node_recoveries" />
+                  <node-animation
+                    v-else
+                    :nodeFailures="result.output_data.node_failures"
+                    :nodeRecoveries="result.output_data.node_recoveries"
+                  />
                 </div>
                 <div v-else>
                   Unknown simulation output type

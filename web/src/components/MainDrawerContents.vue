@@ -20,12 +20,7 @@ import {
 } from "../storeFunctions";
 import { Dataset, DerivedRegion } from "@/types";
 import { getDatasetLayers } from "@/api/rest";
-import {
-  getDatasetLayerForDataObject,
-  toggleDatasetLayer,
-  getOrCreateLayerFromID,
-  updateVisibleMapLayers,
-} from "@/layers";
+import { getDatasetLayerForDataObject, toggleDatasetLayer } from "@/layers";
 
 export default {
   setup() {
@@ -86,7 +81,7 @@ export default {
         dataset.map_layers !== undefined &&
         dataset.current_layer_index !== undefined
       ) {
-        const datasetLayer = dataset.map_layers[dataset.current_layer_index]
+        const datasetLayer = dataset.map_layers[dataset.current_layer_index];
         toggleDatasetLayer(datasetLayer);
       }
     }
@@ -147,28 +142,53 @@ export default {
         <div v-if="!availableDatasets" style="text-align: center; width: 100%">
           <v-progress-circular indeterminate size="30" />
         </div>
-        <v-card-subtitle v-if="availableDatasets && availableDatasets.length === 0">
+        <v-card-subtitle
+          v-if="availableDatasets && availableDatasets.length === 0"
+        >
           No Available Datasets.
         </v-card-subtitle>
-        <v-expansion-panels multiple variant="accordion" v-model="expandedDatasetGroups" v-if="
-          availableDatasets &&
-          availableDatasets.length &&
-          availableDatasets[0].id
-        ">
-          <v-expansion-panel v-for="group in availableDatasetGroups" :title="group.name" :key="group.id"
-            :value="group.name">
+        <v-expansion-panels
+          multiple
+          variant="accordion"
+          v-model="expandedDatasetGroups"
+          v-if="
+            availableDatasets &&
+            availableDatasets.length &&
+            availableDatasets[0].id
+          "
+        >
+          <v-expansion-panel
+            v-for="group in availableDatasetGroups"
+            :title="group.name"
+            :key="group.id"
+            :value="group.name"
+          >
             <v-expansion-panel-text>
-              <v-checkbox v-for="dataset in group.datasets" v-model="selectedDatasets" :value="dataset"
-                :key="dataset.name" :label="dataset.name" :disabled="dataset.processing"
-                @change="() => toggleDataset(dataset)" density="compact" hide-details>
+              <v-checkbox
+                v-for="dataset in group.datasets"
+                v-model="selectedDatasets"
+                :value="dataset"
+                :key="dataset.name"
+                :label="dataset.name"
+                :disabled="dataset.processing"
+                @change="() => toggleDataset(dataset)"
+                density="compact"
+                hide-details
+              >
                 <template v-slot:label>
                   {{ dataset.name }}
                   {{ dataset.processing ? "(processing)" : "" }}
                   <v-tooltip activator="parent" location="end" max-width="300">
                     {{ dataset.description }}
                   </v-tooltip>
-                  <v-icon v-show="selectedDatasets && selectedDatasets.includes(dataset)
-                    " size="small" class="expand-icon ml-1" @click.prevent="currentDataset = dataset">
+                  <v-icon
+                    v-show="
+                      selectedDatasets && selectedDatasets.includes(dataset)
+                    "
+                    size="small"
+                    class="expand-icon ml-1"
+                    @click.prevent="currentDataset = dataset"
+                  >
                     mdi-cog
                   </v-icon>
                 </template>
@@ -193,8 +213,16 @@ export default {
           </div>
           <v-card-subtitle> No Available Derived Regions. </v-card-subtitle>
         </template>
-        <v-checkbox v-for="region in availableDerivedRegions" v-model="selectedDerivedRegions" :value="region"
-          :key="region.id" :label="region.name" hide-details density="compact" @click="toggleDerivedRegion(region)" />
+        <v-checkbox
+          v-for="region in availableDerivedRegions"
+          v-model="selectedDerivedRegions"
+          :value="region"
+          :key="region.id"
+          :label="region.name"
+          hide-details
+          density="compact"
+          @click="toggleDerivedRegion(region)"
+        />
       </v-expansion-panel-text>
     </v-expansion-panel>
 
@@ -211,8 +239,13 @@ export default {
           No Available Charts.
         </v-card-subtitle>
         <v-list>
-          <v-list-item v-for="chart in availableCharts" :key="chart.id" :value="chart.id"
-            :active="currentChart && chart.id === currentChart.id" @click="currentChart = chart">
+          <v-list-item
+            v-for="chart in availableCharts"
+            :key="chart.id"
+            :value="chart.id"
+            :active="currentChart && chart.id === currentChart.id"
+            @click="currentChart = chart"
+          >
             {{ chart.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
               {{ chart.description }}
@@ -224,21 +257,35 @@ export default {
 
     <v-expansion-panel>
       <v-expansion-panel-title>
-        <v-icon @click.stop="loadSimulationTypes" class="mr-2">mdi-refresh</v-icon>
+        <v-icon @click.stop="loadSimulationTypes" class="mr-2"
+          >mdi-refresh</v-icon
+        >
         Available Simulations
       </v-expansion-panel-title>
       <v-expansion-panel-text>
-        <div v-if="!availableSimulationTypes" style="text-align: center; width: 100%">
+        <div
+          v-if="!availableSimulationTypes"
+          style="text-align: center; width: 100%"
+        >
           <v-progress-circular indeterminate size="30" />
         </div>
-        <v-card-subtitle v-if="
-          availableSimulationTypes && availableSimulationTypes.length === 0
-        ">
+        <v-card-subtitle
+          v-if="
+            availableSimulationTypes && availableSimulationTypes.length === 0
+          "
+        >
           No Available Simulation Types.
         </v-card-subtitle>
         <v-list>
-          <v-list-item v-for="sim in availableSimulationTypes" :key="sim.id" :value="sim.id" :active="currentSimulationType && sim.id === currentSimulationType.id
-            " @click="currentSimulationType = sim">
+          <v-list-item
+            v-for="sim in availableSimulationTypes"
+            :key="sim.id"
+            :value="sim.id"
+            :active="
+              currentSimulationType && sim.id === currentSimulationType.id
+            "
+            @click="currentSimulationType = sim"
+          >
             {{ sim.name }}
             <v-tooltip activator="parent" location="end" max-width="300">
               {{ sim.description }}

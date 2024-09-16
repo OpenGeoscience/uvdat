@@ -17,8 +17,17 @@ import {
   rasterTooltipValue,
   showMapTooltip,
 } from "@/store";
-import { Dataset, DerivedRegion, RasterData, RasterDatasetLayer, VectorDatasetLayer } from "./types";
-import { createRasterLayerPolygonMask, isDatasetLayerVisible, styleNetworkVectorTileLayer } from "./layers";
+import {
+  Dataset,
+  RasterData,
+  RasterDatasetLayer,
+  VectorDatasetLayer,
+} from "./types";
+import {
+  createRasterLayerPolygonMask,
+  isDatasetLayerVisible,
+  styleNetworkVectorTileLayer,
+} from "./layers";
 import { MapLayerMouseEvent } from "maplibre-gl";
 
 export const rasterColormaps = [
@@ -43,7 +52,8 @@ export const rasterColormaps = [
   "gray",
 ];
 
-export const rasterTooltipDataCache: Record<number, RasterData | undefined> = {};
+export const rasterTooltipDataCache: Record<number, RasterData | undefined> =
+  {};
 
 export async function cacheRasterData(layer: RasterDatasetLayer) {
   if (rasterTooltipDataCache[layer.id] !== undefined) {
@@ -54,10 +64,13 @@ export async function cacheRasterData(layer: RasterDatasetLayer) {
   rasterTooltipDataCache[layer.id] = data;
 
   // This will allow the raster tooltip to display data
-  createRasterLayerPolygonMask(layer)
+  createRasterLayerPolygonMask(layer);
 }
 
-export function valueAtCursor(evt: MapLayerMouseEvent, datasetLayerId: number): number | undefined {
+export function valueAtCursor(
+  evt: MapLayerMouseEvent,
+  datasetLayerId: number
+): number | undefined {
   const cached = rasterTooltipDataCache[datasetLayerId];
   if (!cached) {
     return;
@@ -69,20 +82,29 @@ export function valueAtCursor(evt: MapLayerMouseEvent, datasetLayerId: number): 
   }
 
   // Check if out of bounds in longitude (X)
-  if (evt.lngLat.lng < sourceBounds.xmin || evt.lngLat.lng > sourceBounds.xmax) {
+  if (
+    evt.lngLat.lng < sourceBounds.xmin ||
+    evt.lngLat.lng > sourceBounds.xmax
+  ) {
     return;
   }
 
   // Check if out of bounds in latitude (Y)
-  if (evt.lngLat.lat < sourceBounds.ymin || evt.lngLat.lat > sourceBounds.ymax) {
+  if (
+    evt.lngLat.lat < sourceBounds.ymin ||
+    evt.lngLat.lat > sourceBounds.ymax
+  ) {
     return;
   }
 
   // Convert lat/lng to array indices
-  const xProportion = (evt.lngLat.lng - sourceBounds.xmin) / (sourceBounds.xmax - sourceBounds.xmin);
-  const yProportion = 1 - (
-    (evt.lngLat.lat - sourceBounds.ymin) / (sourceBounds.ymax - sourceBounds.ymin)
-  );
+  const xProportion =
+    (evt.lngLat.lng - sourceBounds.xmin) /
+    (sourceBounds.xmax - sourceBounds.xmin);
+  const yProportion =
+    1 -
+    (evt.lngLat.lat - sourceBounds.ymin) /
+      (sourceBounds.ymax - sourceBounds.ymin);
 
   // Use floor, as otherwise rounding up can reach out of bounds
   const xIndex = Math.floor(xProportion * data[0].length);
@@ -91,8 +113,10 @@ export function valueAtCursor(evt: MapLayerMouseEvent, datasetLayerId: number): 
   return data[yIndex][xIndex];
 }
 
-
-export function setRasterTooltipValue(evt: MapLayerMouseEvent, datasetLayerId: number) {
+export function setRasterTooltipValue(
+  evt: MapLayerMouseEvent,
+  datasetLayerId: number
+) {
   // If the toggle to show the tooltip is disabled, we show nothing.
   if (!rasterTooltipEnabled.value) {
     return;
@@ -136,14 +160,13 @@ export function deactivatedNodesUpdated() {
     currentContext.value.id,
     deactivatedNodes.value
   ).then((gcc) => {
-    if (!currentContext.value) { return; }
+    if (!currentContext.value) {
+      return;
+    }
     currentNetworkGCC.value = gcc;
 
     if (currentNetworkDatasetLayer.value) {
-      styleNetworkVectorTileLayer(currentNetworkDatasetLayer.value, {
-        showGCC: true,
-        translucency: "55",
-      });
+      styleNetworkVectorTileLayer(currentNetworkDatasetLayer.value);
     }
 
     // update chart
@@ -180,7 +203,11 @@ export function fetchDatasetNetwork(dataset: Dataset) {
   });
 }
 
-export function toggleNodeActive(nodeId: number, dataset: Dataset, datasetLayer: VectorDatasetLayer) {
+export function toggleNodeActive(
+  nodeId: number,
+  dataset: Dataset,
+  datasetLayer: VectorDatasetLayer
+) {
   if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) {
     return;
   }
