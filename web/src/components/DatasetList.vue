@@ -2,8 +2,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { onMounted, ref, Ref, computed } from "vue";
 import { Dataset } from "@/types";
-import { selectedDatasets } from "../store";
+import {
+  availableDatasetLayers,
+  currentDataset,
+  selectedDatasets,
+} from "../store";
 import { getDatasetLayers } from "@/api/rest";
+import { toggleDatasetLayer } from "@/layers";
 
 export default {
   props: {
@@ -79,17 +84,36 @@ export default {
     }
 
     function toggleDatasets(show: unknown, datasets: Dataset[]) {
-      datasets.forEach((dataset) => {
+      datasets.forEach(async (dataset) => {
+        // Ensure layer index is set
+        dataset.current_layer_index = dataset.current_layer_index || 0;
+        if (dataset.map_layers === undefined) {
+          dataset.map_layers = await getDatasetLayers(dataset.id);
+          availableDatasetLayers.value = [
+            ...availableDatasetLayers.value,
+            ...dataset.map_layers,
+          ];
+        }
+        let layer = undefined;
+        if (
+          dataset.map_layers !== undefined &&
+          dataset.current_layer_index !== undefined
+        ) {
+          layer = dataset.map_layers[dataset.current_layer_index];
+        }
         if (show && !selectedIds.value.includes(dataset.id)) {
           selectedDatasets.value.push(dataset);
-        } else if (!show) {
+          if (layer) toggleDatasetLayer(layer);
+        } else if (!show && selectedIds.value.includes(dataset.id)) {
+          if (currentDataset.value?.id === dataset.id) {
+            currentDataset.value = undefined;
+          }
           selectedDatasets.value = selectedDatasets.value.filter((d) => {
             d.id != dataset.id;
           });
+          if (layer) toggleDatasetLayer(layer);
         }
       });
-      // TODO: Pair program with Jake
-      // Update map layers with selected datasets
     }
 
     onMounted(fetchAllLayers);
@@ -238,7 +262,7 @@ export default {
           <v-checkbox
             true-icon="mdi-eye-outline"
             false-icon="mdi-eye-off-outline"
-            style="display: inline-block"
+            style="flex: initial"
             density="compact"
             hide-details
             :model-value="selectedIds.includes(dataset.id)"
