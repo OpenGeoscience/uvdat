@@ -14,6 +14,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
+import { oauthClient } from "@/api/auth";
 
 class VueMapControl implements IControl {
   _vueElement: HTMLElement;
@@ -61,6 +62,16 @@ export default {
     function createMap() {
       const newMap = new Map({
         container: "mapContainer",
+        transformRequest: (url) => {
+          let headers = {};
+          if (!url.includes("openstreetmap")) {
+            headers = oauthClient?.authHeaders;
+          }
+          return {
+            url,
+            headers,
+          };
+        },
         style: {
           version: 8,
           sources: {
