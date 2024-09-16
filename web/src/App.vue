@@ -16,7 +16,6 @@ import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
 import SimulationsPanel from "./components/SimulationsPanel.vue";
-import ProjectConfig from "./components/ProjectConfig.vue";
 
 export default defineComponent({
   components: {
@@ -25,10 +24,9 @@ export default defineComponent({
     OptionsDrawerContents,
     ChartJS,
     SimulationsPanel,
-    ProjectConfig,
   },
   setup() {
-    const drawer = ref(false);
+    const drawer = ref(true);
     const showError = computed(() => currentError.value !== undefined);
 
     function onReady() {
@@ -43,9 +41,6 @@ export default defineComponent({
 
     onMounted(onReady);
     watch(currentUser, onReady);
-    watch(currentProject, () => {
-      drawer.value = currentProject.value !== undefined;
-    });
 
     return {
       login,
@@ -99,22 +94,8 @@ export default defineComponent({
       </v-card>
     </v-overlay>
     <v-app-bar app prominent>
-      <v-app-bar-nav-icon
-        v-if="currentProject"
-        @click.stop="drawer = !drawer"
-      />
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title>UVDAT</v-toolbar-title>
-      <v-spacer />
-      <ProjectConfig />
-      <v-select
-        label="Select Project"
-        v-model="currentProject"
-        :items="availableProjects"
-        item-title="name"
-        density="compact"
-        return-object
-        style="margin-top: 15px"
-      />
       <v-spacer />
       <div v-if="currentUser" class="px-3">
         {{ currentUser.first_name }}
@@ -133,10 +114,9 @@ export default defineComponent({
       </div>
     </v-app-bar>
     <v-navigation-drawer
-      v-if="currentProject"
       v-model="drawer"
       permanent
-      width="300"
+      width="350"
       class="main-area drawer"
     >
       <MainDrawerContents />
@@ -177,12 +157,12 @@ export default defineComponent({
   left: 250px;
 }
 .shifted-1 {
-  left: 300px;
-  width: calc(100% - 300px);
+  left: 350px;
+  width: calc(100% - 350px);
 }
 .shifted-2 {
-  left: 300px;
+  left: 350px;
   right: 300px;
-  width: calc(100% - 600px);
+  width: calc(100% - 650px);
 }
 </style>
