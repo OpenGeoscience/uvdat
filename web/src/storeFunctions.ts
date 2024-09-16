@@ -31,15 +31,7 @@ import {
   tooltipOverlay,
   clickedFeatureCandidates,
 } from "./store";
-import { Dataset } from "./types";
-import {
-  getProjectDatasets,
-  getProjects,
-  getDataset,
-  getProjectCharts,
-  getProjectSimulationTypes,
-  getProjectDerivedRegions,
-} from "@/api/rest";
+import { getProjects, getDataset, getProjectDerivedRegions } from "@/api/rest";
 import {
   datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
@@ -115,32 +107,6 @@ export function getCurrentMapPosition() {
   return { center, zoom };
 }
 
-export function loadDatasets() {
-  if (!currentProject.value) return;
-  availableDatasets.value = undefined;
-  getProjectDatasets(currentProject.value.id).then((data: Dataset[]) => {
-    availableDatasets.value = data;
-  });
-}
-
-export function loadCharts() {
-  if (!currentProject.value) return;
-  availableCharts.value = undefined;
-  currentChart.value = undefined;
-  getProjectCharts(currentProject.value.id).then((charts) => {
-    availableCharts.value = charts;
-  });
-}
-
-export function loadSimulationTypes() {
-  if (!currentProject.value) return;
-  availableSimulationTypes.value = undefined;
-  currentSimulationType.value = undefined;
-  getProjectSimulationTypes(currentProject.value.id).then((sims) => {
-    availableSimulationTypes.value = sims;
-  });
-}
-
 export async function loadDerivedRegions() {
   if (!currentProject.value) {
     return;
@@ -199,10 +165,6 @@ export function clearCurrentNetwork() {
 watch(currentProject, () => {
   clearState();
   setMapCenter();
-  loadDatasets();
-  loadCharts();
-  loadSimulationTypes();
-  loadDerivedRegions();
 });
 watch(currentDataset, () => {
   rasterTooltipEnabled.value = false;

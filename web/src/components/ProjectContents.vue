@@ -14,7 +14,15 @@ import {
   getProjectSimulationTypes,
 } from "@/api/rest";
 import DatasetList from "./DatasetList.vue";
-import { currentChart, currentSimulationType } from "@/store";
+import {
+  availableCharts,
+  availableDatasets,
+  availableDerivedRegions,
+  availableSimulationTypes,
+  currentChart,
+  currentSimulationType,
+} from "@/store";
+import { getDatasetLayerForDataObject, toggleDatasetLayer } from "@/layers";
 
 export default {
   components: { DatasetList },
@@ -27,10 +35,26 @@ export default {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setup(props: any) {
     const panels = [
-      { label: "Datasets", loadFunction: getProjectDatasets },
-      { label: "Regions", loadFunction: getProjectDerivedRegions },
-      { label: "Charts", loadFunction: getProjectCharts },
-      { label: "Simulations", loadFunction: getProjectSimulationTypes },
+      {
+        label: "Datasets",
+        loadFunction: getProjectDatasets,
+        storeVar: availableDatasets,
+      },
+      {
+        label: "Regions",
+        loadFunction: getProjectDerivedRegions,
+        storeVar: availableDerivedRegions,
+      },
+      {
+        label: "Charts",
+        loadFunction: getProjectCharts,
+        storeVar: availableCharts,
+      },
+      {
+        label: "Simulations",
+        loadFunction: getProjectSimulationTypes,
+        storeVar: availableSimulationTypes,
+      },
     ];
 
     const openPanels: Ref<string[]> = ref([]);
@@ -43,7 +67,9 @@ export default {
       item: Dataset | DerivedRegion | Chart | SimulationType
     ) {
       if (panelLabel == "Regions") {
-        // TODO: select region
+        getDatasetLayerForDataObject(item as DerivedRegion).then((layer) => {
+          toggleDatasetLayer(layer);
+        });
       } else if (panelLabel == "Charts") {
         currentChart.value = item as Chart;
       } else if (panelLabel == "Simulations") {
@@ -57,6 +83,7 @@ export default {
         if (openPanels.value.includes(panel.label)) {
           panel.loadFunction(props.project.id).then((data) => {
             projectContents.value[panel.label] = data;
+            panel.storeVar.value = data;
           });
         }
       });
