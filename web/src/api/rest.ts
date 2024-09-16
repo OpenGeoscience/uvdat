@@ -47,7 +47,12 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
 export async function getDatasetLayers(
   datasetId: number
 ): Promise<(VectorDatasetLayer | RasterDatasetLayer)[]> {
-  return (await apiClient.get(`datasets/${datasetId}/map_layers`)).data;
+  const layers: (VectorDatasetLayer | RasterDatasetLayer)[] = (
+    await apiClient.get(`datasets/${datasetId}/map_layers`)
+  ).data;
+
+  // Ensure they're returned in the correct order
+  return layers.toSorted((a, b) => a.index - b.index);
 }
 
 export async function convertDataset(datasetId: number): Promise<Dataset> {
