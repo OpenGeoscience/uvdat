@@ -78,9 +78,11 @@ export default {
     }
 
     watch(openPanels, () => {
-      projectContents.value = {};
       panels.forEach((panel) => {
-        if (openPanels.value.includes(panel.label)) {
+        if (
+          openPanels.value.includes(panel.label) &&
+          !projectContents.value[panel.label]?.length
+        ) {
           panel.loadFunction(props.project.id).then((data) => {
             projectContents.value[panel.label] = data;
             panel.storeVar.value = data;
