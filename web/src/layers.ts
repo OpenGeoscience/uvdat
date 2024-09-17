@@ -524,8 +524,8 @@ export function styleRasterDatasetLayer(
     tileParams.min = colormapRange[0];
     tileParams.max = colormapRange[1];
   }
-  if (typeof nodataValue === "string") {
-    tileParams.nodata = nodataValue;
+  if (nodataValue && typeof nodataValue === "number") {
+    tileParams.nodata = nodataValue.toString();
   }
   // openLayer.setProperties(Object.assign(openLayer.getProperties(), tileParams));
   const tileParamString = new URLSearchParams(tileParams).toString();
