@@ -111,15 +111,6 @@ export function clearMap() {
   const map = getMap();
   map.setCenter(currentContext.value.default_map_center);
   map.setZoom(currentContext.value.default_map_zoom);
-
-  // getMap().setLayers([
-  //   new TileLayer({
-  //     source: new OSM(),
-  //     properties: {
-  //       baseLayer: true,
-  //     },
-  //   }),
-  // ]);
 }
 
 export function loadDatasets() {

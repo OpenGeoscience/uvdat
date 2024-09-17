@@ -17,14 +17,6 @@ import * as turf from "@turf/turf";
 
 export default {
   setup() {
-    // const dataObjectForClickedDatasetLayer = computed(() => {
-    //   if (!clickedDatasetLayer.value) return undefined;
-    //   return getDataObjectForDatasetLayer(clickedDatasetLayer.value) as DerivedRegion;
-    // });
-    const dataObjectForClickedDatasetLayer = computed(() => {
-      return {};
-    });
-
     const clickedFeatureProperties = computed(() => {
       if (clickedFeature.value === undefined) {
         return {};
@@ -146,7 +138,6 @@ export default {
     }
 
     return {
-      dataObjectForClickedDatasetLayer,
       clickedDatasetLayer,
       clickedFeature,
       clickedFeatureProperties,

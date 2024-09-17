@@ -202,20 +202,4 @@ export default {
   word-break: break-word;
   text-wrap: wrap;
 }
-
-.active-layers-control {
-  /* float: left; */
-  position: relative;
-  /* position: absolute; */
-  /* z-index: 30; */
-  /* top: 10%; */
-  /* left: 3%; */
-}
-
-.region-grouping-control {
-  /* float: left; */
-  /* position: absolute; */
-  /* bottom: 2%; */
-  /* left: 3%; */
-}
 </style>
