@@ -540,6 +540,8 @@ export function styleRasterDatasetLayer(
   // Set source tiles url
   const sourceLayerId = mapLayers[0].source;
   const source = getMap().getSource(sourceLayerId) as RasterTileSource;
+
+  // This asynchronously raises an AbortError for some reason
   source.setTiles([
     `${baseURL}rasters/${rasterLayer.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`,
   ]);
