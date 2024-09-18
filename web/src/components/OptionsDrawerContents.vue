@@ -55,6 +55,13 @@ export default {
     const colormapRange = ref<number[]>([]);
     const applyToAll = ref<boolean>(true);
 
+    const allowOpacityModification = computed(
+      () =>
+        currentNetworkDataset.value &&
+        currentDataset.value &&
+        currentNetworkDataset.value.id === currentDataset.value.id
+    );
+
     // TODO: Determine what to use this for
     // const zIndex = ref<number>();
 
@@ -107,7 +114,7 @@ export default {
 
       // If performing network operations, set the opacity back to 1, so that when finished, it acts as expected
       // Network operations modify the opacity itself, so it's disabled
-      if (currentNetworkDataset.value) {
+      if (allowOpacityModification.value) {
         opacity.value = 1;
       } else {
         opacity.value = getDatasetLayerOpacity(currentDatasetLayer.value);
@@ -227,7 +234,7 @@ export default {
       currentDatasetLayerIndex,
       currentDatasetLayer,
       currentDataset,
-      currentNetworkDataset,
+      allowOpacityModification,
       currentLayerName,
       rasterColormaps,
       opacity,
@@ -288,7 +295,7 @@ export default {
 
     <div class="pa-2">
       <!-- Only show opacity slider if not performing network operations -->
-      <v-btn v-if="currentNetworkDataset" @click="resetNetwork" class="mb-2">
+      <v-btn v-if="allowOpacityModification" @click="resetNetwork" class="mb-2">
         Reset network
       </v-btn>
       <v-slider
