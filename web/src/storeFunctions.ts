@@ -33,6 +33,7 @@ import {
 } from "./store";
 import { getProjects, getDataset, getProjectDerivedRegions } from "@/api/rest";
 import {
+  clearMapLayers,
   datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
   updateBaseLayer,
@@ -165,6 +166,7 @@ export function clearCurrentNetwork() {
 watch(currentProject, () => {
   clearState();
   setMapCenter();
+  clearMapLayers();
 });
 watch(currentDataset, () => {
   rasterTooltipEnabled.value = false;
