@@ -1,14 +1,8 @@
 <script lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { onMounted, ref, Ref, computed } from "vue";
+import { onMounted, ref, Ref, computed, ComputedRef } from "vue";
 import { Dataset } from "@/types";
-import {
-  availableDatasetLayers,
-  currentDataset,
-  selectedDatasets,
-} from "../store";
 import { getDatasetLayers } from "@/api/rest";
-import { toggleDatasetLayer } from "@/layers";
 
 export default {
   props: {
@@ -16,20 +10,43 @@ export default {
       required: true,
       type: Array,
     },
-    detail: {
-      default: true,
+    selectedIds: {
+      required: true,
+      type: Array,
+    },
+    eyeIcon: {
+      default: false,
       type: Boolean,
     },
+    idPrefix: {
+      default: "",
+      type: String,
+    },
   },
-  setup(props: any) {
+  emits: ["toggleDatasets"],
+  setup(props: any, { emit }: any) {
     const groupByOptions = ["category", "dataset_type"];
     const groupByKey = ref(["category"]);
-    const filterMenuItems: Ref<Record<string, string[]>> = ref({});
-    const filters: Ref<Record<string, string[]>> = ref({});
-    const searchText = ref();
-    const selectedIds = computed(() =>
-      selectedDatasets.value.map((d2) => d2.id)
+    const filterMenuItems: ComputedRef<Record<string, string[]>> = computed(
+      () => {
+        const menuItems: Record<string, string[]> = Object.fromEntries(
+          groupByOptions.map((opt) => [opt, []])
+        );
+        props.datasets.forEach((dataset: any) => {
+          groupByOptions.forEach((opt) => {
+            const value = dataset[opt].toLowerCase();
+            if (!menuItems[opt].includes(value)) {
+              menuItems[opt].push(value);
+            }
+          });
+        });
+        return menuItems;
+      }
     );
+    const filters: Ref<Record<string, string[]>> = ref(
+      Object.fromEntries(groupByOptions.map((opt) => [opt, []]))
+    );
+    const searchText = ref();
     const filteredDatasets = computed(() => {
       return props.datasets.filter((dataset: any) => {
         const searchMatch =
@@ -66,58 +83,11 @@ export default {
       });
     }
 
-    function populateFilterMenu() {
-      filterMenuItems.value = Object.fromEntries(
-        groupByOptions.map((opt) => [opt, []])
-      );
-      filters.value = Object.fromEntries(
-        groupByOptions.map((opt) => [opt, []])
-      );
-      props.datasets.forEach((dataset: any) => {
-        groupByOptions.forEach((opt) => {
-          const value = dataset[opt].toLowerCase();
-          if (!filterMenuItems.value[opt].includes(value)) {
-            filterMenuItems.value[opt].push(value);
-          }
-        });
-      });
-    }
-
-    function toggleDatasets(show: unknown, datasets: Dataset[]) {
-      datasets.forEach(async (dataset) => {
-        // Ensure layer index is set
-        dataset.current_layer_index = dataset.current_layer_index || 0;
-        if (dataset.map_layers === undefined) {
-          dataset.map_layers = await getDatasetLayers(dataset.id);
-          availableDatasetLayers.value = [
-            ...availableDatasetLayers.value,
-            ...dataset.map_layers,
-          ];
-        }
-        let layer = undefined;
-        if (
-          dataset.map_layers !== undefined &&
-          dataset.current_layer_index !== undefined
-        ) {
-          layer = dataset.map_layers[dataset.current_layer_index];
-        }
-        if (show && !selectedIds.value.includes(dataset.id)) {
-          selectedDatasets.value.push(dataset);
-          if (layer) toggleDatasetLayer(layer);
-        } else if (!show && selectedIds.value.includes(dataset.id)) {
-          if (currentDataset.value?.id === dataset.id) {
-            currentDataset.value = undefined;
-          }
-          selectedDatasets.value = selectedDatasets.value.filter((d) => {
-            d.id != dataset.id;
-          });
-          if (layer) toggleDatasetLayer(layer);
-        }
-      });
+    function toggleDatasets(show: boolean | null, datasets: Dataset[]) {
+      emit("toggleDatasets", { show, datasets });
     }
 
     onMounted(fetchAllLayers);
-    onMounted(populateFilterMenu);
 
     return {
       groupByOptions,
@@ -125,7 +95,6 @@ export default {
       filterMenuItems,
       filters,
       datasetGroups,
-      selectedIds,
       searchText,
       toggleDatasets,
     };
@@ -134,8 +103,8 @@ export default {
 </script>
 
 <template>
-  <div class="px-1">
-    <div class="d-flex" style="align-items: center">
+  <div class="px-1" style="width: 100%">
+    <div class="d-flex position-sticky top-0" style="align-items: center">
       <v-text-field
         v-model="searchText"
         label="Search Datasets"
@@ -145,11 +114,15 @@ export default {
         append-inner-icon="mdi-magnify"
         hide-details
       />
-      <v-icon icon="mdi-filter" class="mx-1" id="filter-datasets" />
+      <v-icon
+        icon="mdi-filter"
+        class="mx-1"
+        :id="idPrefix + 'filter-datasets'"
+      />
       <v-menu
-        activator="#filter-datasets"
         open-on-hover
         :close-on-content-click="false"
+        :activator="'#' + idPrefix + 'filter-datasets'"
       >
         <v-card>
           <v-card-text style="background-color: lightgrey" class="py-2">
@@ -236,69 +209,74 @@ export default {
     <div
       v-for="groupName in Object.keys(datasetGroups)"
       :key="groupName"
-      class="group py-1"
+      class="group pa-2"
     >
       <v-checkbox
-        true-icon="mdi-eye-outline"
-        false-icon="mdi-eye-off-outline"
+        :true-icon="eyeIcon ? 'mdi-eye-outline' : undefined"
+        :false-icon="eyeIcon ? 'mdi-eye-off-outline' : undefined"
         style="display: inline-block"
         density="compact"
         hide-details
         :model-value="
           datasetGroups[groupName].every((d) => selectedIds.includes(d.id))
         "
-        @update:model-value="(v) => toggleDatasets(v, datasetGroups[groupName])"
+        @update:model-value="toggleDatasets($event, datasetGroups[groupName])"
       />
       <v-card-subtitle class="group-title capitalize text-caption px-1">
         {{ groupByKey[0].replace("_", " ") }}: {{ groupName.toLowerCase() }}
       </v-card-subtitle>
-      <div
-        v-for="dataset in datasetGroups[groupName]"
-        :key="dataset.id"
-        class="d-flex pb-3"
-        style="flex-direction: column"
-      >
-        <div class="d-flex" style="column-gap: 5px; align-items: center">
-          <v-checkbox
-            true-icon="mdi-eye-outline"
-            false-icon="mdi-eye-off-outline"
-            style="flex: initial"
-            density="compact"
-            hide-details
-            :model-value="selectedIds.includes(dataset.id)"
-            @update:model-value="(v) => toggleDatasets(v, [dataset])"
-          />
-          {{ dataset.name }}
-        </div>
-        <div
-          v-if="detail"
-          class="d-flex pl-7 pr-3"
-          style="column-gap: 5px; justify-content: space-between"
+      <v-expansion-panels multiple>
+        <v-expansion-panel
+          v-for="dataset in datasetGroups[groupName]"
+          :key="dataset.id"
+          elevation="0"
         >
-          <div>
-            <v-chip color="primary" size="x-small" class="mr-1 capitalize">
-              category: {{ dataset.category }}
-            </v-chip>
-            <v-chip color="primary" size="x-small" class="capitalize">
-              type: {{ dataset.dataset_type.toLowerCase() }}
-            </v-chip>
-          </div>
-          <span
-            v-if="dataset.map_layers"
-            class="text-caption"
-            style="color: grey"
-          >
-            <v-icon icon="mdi-layers-outline" size="small" />
-            {{ dataset.map_layers.length }}
-            <v-tooltip activator="parent" location="end">
-              Number of Layers
-            </v-tooltip>
-          </span>
-        </div>
-        <div v-if="detail" class="text-caption pl-8 pr-1" style="color: grey">
-          {{ dataset.description }}
-        </div>
-      </div>
+          <v-expansion-panel-title class="pa-0" style="column-gap: 5px">
+            <template v-slot:default="{}">
+              <v-checkbox
+                :true-icon="eyeIcon ? 'mdi-eye-outline' : undefined"
+                :false-icon="eyeIcon ? 'mdi-eye-off-outline' : undefined"
+                style="flex: initial"
+                density="compact"
+                hide-details
+                @click.stop
+                :model-value="selectedIds.includes(dataset.id)"
+                @update:model-value="toggleDatasets($event, [dataset])"
+              />
+              {{ dataset.name }}
+            </template>
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <div
+              class="d-flex pl-7 pr-3"
+              style="column-gap: 5px; justify-content: space-between"
+            >
+              <div>
+                <v-chip color="primary" size="x-small" class="mr-1 capitalize">
+                  category: {{ dataset.category }}
+                </v-chip>
+                <v-chip color="primary" size="x-small" class="capitalize">
+                  type: {{ dataset.dataset_type.toLowerCase() }}
+                </v-chip>
+              </div>
+              <span
+                v-if="dataset.map_layers"
+                class="text-caption"
+                style="color: grey"
+              >
+                <v-icon icon="mdi-layers-outline" size="small" />
+                {{ dataset.map_layers.length }}
+                <v-tooltip activator="parent" location="end">
+                  Number of Layers
+                </v-tooltip>
+              </span>
+            </div>
+            <div class="text-caption pl-8 pr-1" style="color: grey">
+              {{ dataset.description }}
+            </div>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </div>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script lang="ts">
 import { ref, computed } from "vue";
-import { availableProjects, currentProject } from "@/store";
+import { availableProjects, currentProject, projectConfigMode } from "@/store";
 import ProjectContents from "./ProjectContents.vue";
 
 export default {
@@ -17,8 +17,7 @@ export default {
     });
 
     function openProjectConfig(create = false) {
-      // TODO: open project config
-      console.log("Open project config. create=", create);
+      projectConfigMode.value = create ? "new" : true;
     }
 
     return {
@@ -58,7 +57,12 @@ export default {
       </div>
       <div class="d-flex" style="justify-content: space-between">
         <v-card-subtitle>All Projects</v-card-subtitle>
-        <v-icon icon="mdi-cog" color="primary" id="open-config" />
+        <v-icon
+          icon="mdi-cog"
+          color="primary"
+          id="open-config"
+          @click="() => openProjectConfig(false)"
+        />
         <v-tooltip activator="#open-config" location="end">
           Configure Projects
         </v-tooltip>
@@ -76,6 +80,7 @@ export default {
         v-for="project in filteredProjects"
         :key="project.id"
         :value="project"
+        style="margin-bottom: 6px"
       >
         <v-expansion-panel-title color="grey-lighten-4">
           <div>
@@ -106,9 +111,6 @@ export default {
 </template>
 
 <style>
-.v-expansion-panel {
-  margin-bottom: 6px;
-}
 .v-expansion-panel-text__wrapper {
   padding: 0 !important;
 }
@@ -119,5 +121,13 @@ export default {
 
 .expand-icon {
   float: right;
+}
+
+.v-expansion-panel-title__overlay {
+  background-color: transparent !important;
+}
+
+.v-expansion-panel:not(:first-child)::after {
+  border-top-width: 0px !important;
 }
 </style>

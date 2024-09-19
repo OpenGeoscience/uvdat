@@ -2,10 +2,11 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
 
-from uvdat.core.models import Project
+from uvdat.core.models import Dataset, Project
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import ProjectSerializer
+from uvdat.core.rest.serializers import DatasetSerializer, ProjectSerializer
 from uvdat.core.tasks.osmnx import load_roads
 
 
@@ -20,6 +21,21 @@ class ProjectViewSet(ModelViewSet):
         project: Project = serializer.save()
         user: User = self.request.user
         project.set_permissions(owner=user)
+
+    def partial_update(self, request, id):
+        project = self.get_object()
+        project.datasets.set(
+            Dataset.objects.filter(
+                id__in=request.data.get('dataset_ids')
+            )
+        )
+        project.save()
+        response = ProjectSerializer(project).data
+        response.update(datasets=[
+            DatasetSerializer(dataset).data
+            for dataset in project.datasets.all()
+        ])
+        return Response(response, status=200)
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

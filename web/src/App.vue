@@ -8,6 +8,7 @@ import {
   availableProjects,
   currentChart,
   currentSimulationType,
+  projectConfigMode,
 } from "./store";
 import { oauthClient, logout } from "./api/auth";
 import { loadProjects } from "./storeFunctions";
@@ -16,6 +17,7 @@ import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
 import SimulationsPanel from "./components/SimulationsPanel.vue";
+import ProjectConfig from "./components/ProjectConfig.vue";
 
 export default defineComponent({
   components: {
@@ -24,6 +26,7 @@ export default defineComponent({
     OptionsDrawerContents,
     ChartJS,
     SimulationsPanel,
+    ProjectConfig,
   },
   setup() {
     const drawer = ref(true);
@@ -54,6 +57,7 @@ export default defineComponent({
       showError,
       currentChart,
       currentSimulationType,
+      projectConfigMode,
     };
   },
 });
@@ -94,7 +98,10 @@ export default defineComponent({
       </v-card>
     </v-overlay>
     <v-app-bar app prominent>
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+      <v-app-bar-nav-icon
+        @click.stop="drawer = !drawer"
+        v-if="!projectConfigMode"
+      />
       <v-toolbar-title>UVDAT</v-toolbar-title>
       <v-spacer />
       <div v-if="currentUser" class="px-3">
@@ -113,35 +120,38 @@ export default defineComponent({
         </v-btn>
       </div>
     </v-app-bar>
-    <v-navigation-drawer
-      v-model="drawer"
-      permanent
-      width="350"
-      class="main-area drawer"
-    >
-      <MainDrawerContents />
-    </v-navigation-drawer>
-    <v-navigation-drawer
-      :model-value="currentDataset !== undefined"
-      permanent
-      width="300"
-      location="right"
-      class="main-area drawer"
-    >
-      <OptionsDrawerContents />
-    </v-navigation-drawer>
-    <div
-      :class="
-        drawer
-          ? currentDataset
-            ? 'main-area shifted-2'
-            : 'main-area shifted-1'
-          : 'main-area'
-      "
-    >
-      <Map />
-      <ChartJS v-if="currentChart" />
-      <SimulationsPanel v-if="currentSimulationType" />
+    <ProjectConfig v-if="projectConfigMode" />
+    <div v-else>
+      <v-navigation-drawer
+        v-model="drawer"
+        permanent
+        width="350"
+        class="main-area drawer"
+      >
+        <MainDrawerContents />
+      </v-navigation-drawer>
+      <v-navigation-drawer
+        :model-value="currentDataset !== undefined"
+        permanent
+        width="300"
+        location="right"
+        class="main-area drawer"
+      >
+        <OptionsDrawerContents />
+      </v-navigation-drawer>
+      <div
+        :class="
+          drawer
+            ? currentDataset
+              ? 'main-area shifted-2'
+              : 'main-area shifted-1'
+            : 'main-area'
+        "
+      >
+        <Map />
+        <ChartJS v-if="currentChart" />
+        <SimulationsPanel v-if="currentSimulationType" />
+      </div>
     </div>
   </v-app>
 </template>

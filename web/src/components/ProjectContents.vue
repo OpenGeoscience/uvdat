@@ -1,5 +1,5 @@
 <script lang="ts">
-import { ref, Ref, PropType, watch } from "vue";
+import { ref, Ref, PropType, watch, computed } from "vue";
 import {
   Project,
   Dataset,
@@ -8,6 +8,7 @@ import {
   SimulationType,
 } from "../types";
 import {
+  getDatasetLayers,
   getProjectCharts,
   getProjectDatasets,
   getProjectDerivedRegions,
@@ -16,11 +17,14 @@ import {
 import DatasetList from "./DatasetList.vue";
 import {
   availableCharts,
+  availableDatasetLayers,
   availableDatasets,
   availableDerivedRegions,
   availableSimulationTypes,
   currentChart,
+  currentDataset,
   currentSimulationType,
+  selectedDatasets,
 } from "@/store";
 import { getDatasetLayerForDataObject, toggleDatasetLayer } from "@/layers";
 
@@ -61,6 +65,9 @@ export default {
     const projectContents: Ref<
       Record<string, Dataset[] | Chart[] | DerivedRegion[] | SimulationType[]>
     > = ref({});
+    const selectedDatasetIds = computed(() =>
+      selectedDatasets.value.map((d2) => d2.id)
+    );
 
     function selectItem(
       panelLabel: string,
@@ -75,6 +82,45 @@ export default {
       } else if (panelLabel == "Simulations") {
         currentSimulationType.value = item as SimulationType;
       }
+    }
+
+    function toggleDatasets({
+      show,
+      datasets,
+    }: {
+      show: boolean;
+      datasets: Dataset[];
+    }) {
+      datasets.forEach(async (dataset) => {
+        // Ensure layer index is set
+        dataset.current_layer_index = dataset.current_layer_index || 0;
+        if (dataset.map_layers === undefined) {
+          dataset.map_layers = await getDatasetLayers(dataset.id);
+          availableDatasetLayers.value = [
+            ...availableDatasetLayers.value,
+            ...dataset.map_layers,
+          ];
+        }
+        let layer = undefined;
+        if (
+          dataset.map_layers !== undefined &&
+          dataset.current_layer_index !== undefined
+        ) {
+          layer = dataset.map_layers[dataset.current_layer_index];
+        }
+        if (show && !selectedDatasetIds.value.includes(dataset.id)) {
+          selectedDatasets.value.push(dataset);
+          if (layer) toggleDatasetLayer(layer);
+        } else if (!show && selectedDatasetIds.value.includes(dataset.id)) {
+          if (currentDataset.value?.id === dataset.id) {
+            currentDataset.value = undefined;
+          }
+          selectedDatasets.value = selectedDatasets.value.filter((d) => {
+            d.id != dataset.id;
+          });
+          if (layer) toggleDatasetLayer(layer);
+        }
+      });
     }
 
     watch(openPanels, () => {
@@ -95,7 +141,9 @@ export default {
       panels,
       openPanels,
       projectContents,
+      selectedDatasetIds,
       selectItem,
+      toggleDatasets,
     };
   },
 };
@@ -107,6 +155,7 @@ export default {
       v-for="panel in panels"
       :key="panel.label"
       :value="panel.label"
+      style="margin-bottom: 6px"
     >
       <v-expansion-panel-title>
         {{ panel.label }}
@@ -125,6 +174,9 @@ export default {
         <dataset-list
           v-else-if="panel.label == 'Datasets'"
           :datasets="projectContents['Datasets']"
+          :selected-ids="selectedDatasetIds"
+          :eye-icon="true"
+          @toggleDatasets="toggleDatasets"
         />
         <v-list v-else>
           <v-list-item
@@ -145,7 +197,7 @@ export default {
   </v-expansion-panels>
 </template>
 
-<style scoped>
+<style>
 .v-expansion-panel--active
   > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
   min-height: 30px;

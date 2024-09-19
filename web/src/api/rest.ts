@@ -1,5 +1,6 @@
 import { apiClient } from "./auth";
 import {
+  User,
   Project,
   Dataset,
   NetworkNode,
@@ -11,6 +12,10 @@ import {
   RasterDatasetLayer,
   Network,
 } from "@/types";
+
+export async function getUsers(): Promise<User[]> {
+  return (await apiClient.get(`users`)).data.results;
+}
 
 export async function getProjects(): Promise<Project[]> {
   return (await apiClient.get("projects")).data.results;
@@ -47,6 +52,17 @@ export async function getProjectDatasets(
   return (await apiClient.get(`datasets?project=${projectId}`)).data.results;
 }
 
+export async function setProjectDatasets(
+  projectId: number,
+  datasetIds: number[]
+): Promise<Project> {
+  return (
+    await apiClient.patch(`projects/${projectId}/`, {
+      dataset_ids: datasetIds,
+    })
+  ).data;
+}
+
 export async function getProjectCharts(projectId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?project=${projectId}`)).data.results;
 }
@@ -63,6 +79,10 @@ export async function getProjectSimulationTypes(
 ): Promise<SimulationType[]> {
   return (await apiClient.get(`simulations/available/project/${projectId}`))
     .data;
+}
+
+export async function getDatasets(): Promise<Dataset[]> {
+  return (await apiClient.get(`datasets`)).data.results;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {
