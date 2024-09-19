@@ -1,8 +1,8 @@
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from rest_framework.decorators import action
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset, Project
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
@@ -24,17 +24,17 @@ class ProjectViewSet(ModelViewSet):
 
     def partial_update(self, request, id):
         project = self.get_object()
-        project.datasets.set(
-            Dataset.objects.filter(
-                id__in=request.data.get('dataset_ids')
-            )
-        )
+        dataset_ids = request.data.pop('dataset_ids', None)
+        if dataset_ids is not None:
+            project.datasets.set(Dataset.objects.filter(id__in=dataset_ids))
+        serializer = ProjectSerializer(project, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
         project.save()
         response = ProjectSerializer(project).data
-        response.update(datasets=[
-            DatasetSerializer(dataset).data
-            for dataset in project.datasets.all()
-        ])
+        response.update(
+            datasets=[DatasetSerializer(dataset).data for dataset in project.datasets.all()]
+        )
         return Response(response, status=200)
 
     @action(detail=True, methods=['get'])

@@ -197,7 +197,7 @@ export default {
   </v-expansion-panels>
 </template>
 
-<style>
+<style scoped>
 .v-expansion-panel--active
   > .v-expansion-panel-title:not(.v-expansion-panel-title--static) {
   min-height: 30px;

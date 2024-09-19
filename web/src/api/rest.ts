@@ -39,7 +39,7 @@ export async function patchProject(
   projectId: number,
   data: object
 ): Promise<Project> {
-  return await apiClient.patch(`projects/${projectId}/`, data);
+  return (await apiClient.patch(`projects/${projectId}/`, data)).data;
 }
 
 export async function deleteProject(projectId: number): Promise<Project> {
@@ -50,17 +50,6 @@ export async function getProjectDatasets(
   projectId: number
 ): Promise<Dataset[]> {
   return (await apiClient.get(`datasets?project=${projectId}`)).data.results;
-}
-
-export async function setProjectDatasets(
-  projectId: number,
-  datasetIds: number[]
-): Promise<Project> {
-  return (
-    await apiClient.patch(`projects/${projectId}/`, {
-      dataset_ids: datasetIds,
-    })
-  ).data;
 }
 
 export async function getProjectCharts(projectId: number): Promise<Chart[]> {

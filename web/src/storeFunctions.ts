@@ -38,6 +38,7 @@ import {
   styleNetworkVectorTileLayer,
   updateBaseLayer,
 } from "./layers";
+import { Project } from "./types";
 
 export function clearState() {
   availableDatasets.value = undefined;
@@ -86,12 +87,12 @@ export function loadProjects() {
   });
 }
 
-export function setMapCenter() {
+export function setMapCenter(project: Project | undefined) {
   let center: [number, number] = [0, 30];
   let zoom = 1;
-  if (currentProject.value) {
-    center = currentProject.value.default_map_center;
-    zoom = currentProject.value.default_map_zoom;
+  if (project) {
+    center = project.default_map_center;
+    zoom = project.default_map_zoom;
   }
   const map = getMap();
   map.jumpTo({ center, zoom });
@@ -165,7 +166,7 @@ export function clearCurrentNetwork() {
 
 watch(currentProject, () => {
   clearState();
-  setMapCenter();
+  setMapCenter(currentProject.value);
   clearMapLayers();
 });
 watch(currentDataset, () => {

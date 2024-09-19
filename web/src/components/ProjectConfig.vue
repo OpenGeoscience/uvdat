@@ -1,14 +1,22 @@
 <script lang="ts">
-import { ref, Ref, computed, onMounted, ComputedRef } from "vue";
-import { availableProjects, projectConfigMode, currentProject } from "@/store";
+import { ref, Ref, computed, onMounted, ComputedRef, watch } from "vue";
+import {
+  availableProjects,
+  projectConfigMode,
+  currentProject,
+  currentUser,
+} from "@/store";
 import DatasetList from "./DatasetList.vue";
 import {
   getUsers,
   getDatasets,
   getProjectDatasets,
-  setProjectDatasets,
+  createProject,
+  deleteProject,
+  patchProject,
 } from "@/api/rest";
 import { User, Project, Dataset } from "@/types";
+import { getCurrentMapPosition, loadProjects } from "@/storeFunctions";
 
 export default {
   components: { DatasetList },
@@ -25,65 +33,81 @@ export default {
     });
     const selectedProject: Ref<Project | undefined> = ref();
     const allDatasets: Ref<Dataset[]> = ref([]);
-    const projDatasets: Ref<Dataset[]> = ref([]);
+    const projDatasets: Ref<Dataset[] | undefined> = ref();
     const projSelectedDatasetIds: Ref<number[]> = ref([]);
     const otherDatasets: ComputedRef<Dataset[]> = computed(() => {
       return allDatasets.value.filter(
-        (d1) => !projDatasets.value.map((d2) => d2.id).includes(d1.id)
+        (d1) => !projDatasets.value?.map((d2) => d2.id).includes(d1.id)
       );
     });
     const otherSelectedDatasetIds: Ref<number[]> = ref([]);
     const allUsers: Ref<User[]> = ref([]);
+    const permissions = computed(() => {
+      const ret = Object.fromEntries(
+        availableProjects.value.map((p) => {
+          let perm = "view";
+          if (
+            p.owner?.id == currentUser.value?.id ||
+            currentUser.value?.is_superuser
+          ) {
+            perm = "own";
+          } else if (
+            currentUser.value &&
+            p.collaborators.map((u) => u.id).includes(currentUser.value.id)
+          ) {
+            perm = "edit";
+          }
+          return [p.id, perm];
+        })
+      );
+      return ret;
+    });
     const saving: Ref<boolean> = ref(false);
+    const newProjectName = ref();
+    const projectToEdit: Ref<Project | undefined> = ref();
+    const projectToDelete: Ref<Project | undefined> = ref();
 
-    // const newProjectName = ref();
-    // const savedPosition = ref(false);
+    function create() {
+      const { center, zoom } = getCurrentMapPosition();
+      createProject(newProjectName.value, center, zoom).then(() => {
+        newProjectName.value = undefined;
+        projectConfigMode.value = true;
+        loadProjects();
+      });
+    }
 
-    // function create() {
-    //   const { center, zoom } = getCurrentMapPosition();
-    //   createProject(newProjectName.value, center, zoom).then(() => {
-    //     newProjectName.value = undefined;
-    //     loadProjects();
-    //   });
-    // }
+    function del() {
+      if (projectToDelete.value) {
+        deleteProject(projectToDelete.value.id).then(() => {
+          projectToDelete.value = undefined;
+          loadProjects();
+        });
+      }
+    }
 
-    // function del() {
-    //   if (currentProject.value) {
-    //     deleteProject(currentProject.value.id).then(() => {
-    //       currentProject.value = undefined;
-    //       loadProjects();
-    //     });
-    //   }
-    // }
-
-    // function savePosition() {
-    //   if (currentProject.value) {
-    //     const { center, zoom } = getCurrentMapPosition();
-    //     patchProject(currentProject.value.id, {
-    //       default_map_center: center,
-    //       default_map_zoom: zoom,
-    //     }).then((proj) => {
-    //       if (proj) {
-    //         if (currentProject.value) {
-    //           currentProject.value.default_map_center = proj.default_map_center;
-    //           currentProject.value.default_map_zoom = proj.default_map_zoom;
-    //         }
-    //         savedPosition.value = true;
-    //       }
-    //     });
-    //   }
-    // }
-
-    // watch(currentProject, () => {
-    //   newProjectName.value = undefined;
-    //   savedPosition.value = false;
-    // });
+    function saveProjectName() {
+      saving.value = true;
+      if (projectToEdit.value) {
+        patchProject(projectToEdit.value.id, {
+          name: newProjectName.value,
+        }).then(() => {
+          projectToEdit.value = undefined;
+          newProjectName.value = undefined;
+          saving.value = false;
+          loadProjects();
+        });
+      }
+    }
 
     function selectProject(v: Record<string, unknown>) {
-      getProjectDatasets(v.id as number).then((data) => {
-        projDatasets.value = data;
-      });
-      selectedProject.value = availableProjects.value.find((p) => p.id == v.id);
+      if (selectedProject.value?.id != v.id) {
+        getProjectDatasets(v.id as number).then((data) => {
+          projDatasets.value = data;
+        });
+        selectedProject.value = availableProjects.value.find(
+          (p) => p.id == v.id
+        );
+      }
     }
 
     function loadSelectedProject() {
@@ -131,31 +155,44 @@ export default {
     }
 
     function addAllSelectionToProject() {
-      saveDatasetsToProject([
-        ...projDatasets.value.map((d) => d.id),
-        ...otherSelectedDatasetIds.value,
-      ]);
-      otherSelectedDatasetIds.value = [];
+      if (projDatasets.value) {
+        saveDatasetsToProject([
+          ...projDatasets.value.map((d) => d.id),
+          ...otherSelectedDatasetIds.value,
+        ]);
+        otherSelectedDatasetIds.value = [];
+      }
     }
 
     function removeProjSelectionFromProject() {
-      saveDatasetsToProject(
-        projDatasets.value
-          .map((d) => d.id)
-          .filter((id) => !projSelectedDatasetIds.value.includes(id))
-      );
-      projSelectedDatasetIds.value = [];
+      if (projDatasets.value) {
+        saveDatasetsToProject(
+          projDatasets.value
+            .map((d) => d.id)
+            .filter((id) => !projSelectedDatasetIds.value.includes(id))
+        );
+        projSelectedDatasetIds.value = [];
+      }
     }
 
     function saveDatasetsToProject(ids: number[]) {
       saving.value = true;
       if (selectedProject.value) {
-        setProjectDatasets(selectedProject.value.id, ids).then((project) => {
+        patchProject(selectedProject.value.id, {
+          dataset_ids: ids,
+        }).then((project) => {
           projDatasets.value = project.datasets;
           saving.value = false;
         });
       }
     }
+
+    watch(selectedProject, () => {
+      projectConfigMode.value = true;
+      newProjectName.value = undefined;
+      projectToDelete.value = undefined;
+      projectToEdit.value = undefined;
+    });
 
     onMounted(() => {
       getUsers().then((data) => {
@@ -177,21 +214,20 @@ export default {
       projDatasets,
       projSelectedDatasetIds,
       allUsers,
+      permissions,
       saving,
+      newProjectName,
+      projectToEdit,
+      projectToDelete,
+      create,
+      del,
+      saveProjectName,
       selectProject,
       loadSelectedProject,
       toggleOtherDatasetSelection,
       toggleProjDatasetSelection,
       addAllSelectionToProject,
       removeProjSelectionFromProject,
-      // currentUser,
-      // availableProjects,
-      // newProjectName,
-      // savedPosition,
-      // currentTab,
-      // create,
-      // del,
-      // savePosition,
     };
   },
 };
@@ -234,7 +270,72 @@ export default {
           color="primary"
           selectable
           @click:select="selectProject"
-        />
+        >
+          <template v-slot:title="{ title, item }">
+            <v-text-field
+              v-if="projectToEdit?.id == item.id"
+              v-model="newProjectName"
+              :placeholder="item.name"
+              label="Project Name"
+              density="compact"
+              hide-details
+              autofocus
+              @keydown.stop
+              @keydown.enter="saveProjectName"
+            />
+            <span v-else>{{ title }}</span>
+          </template>
+          <template v-slot:append="{ item }">
+            <div
+              v-if="['own', 'edit'].includes(permissions[item.id])"
+              class="text-grey-darken-1"
+            >
+              <v-icon
+                icon="mdi-pencil"
+                v-if="!projectToEdit && !projectToDelete"
+                @click.stop="projectToEdit = item"
+              />
+              <v-btn
+                v-else-if="projectToEdit?.id == item.id"
+                color="primary"
+                variant="flat"
+                style="min-width: 40px; min-height: 40px"
+                :disabled="!newProjectName"
+                @click="saveProjectName"
+              >
+                <v-icon icon="mdi-content-save" />
+              </v-btn>
+            </div>
+            <div
+              v-if="['own'].includes(permissions[item.id])"
+              class="text-grey-darken-1"
+            >
+              <v-icon
+                icon="mdi-trash-can"
+                v-if="!projectToEdit && !projectToDelete"
+                @click.stop="projectToDelete = item"
+              />
+            </div>
+          </template>
+        </v-list>
+        <div class="pa-2 d-flex" v-if="projectConfigMode == 'new'">
+          <v-text-field
+            v-model="newProjectName"
+            label="Project Name"
+            density="compact"
+            autofocus
+            @keydown.enter="create"
+          />
+          <v-btn
+            color="primary"
+            variant="flat"
+            style="min-width: 40px; min-height: 40px"
+            :disabled="!newProjectName"
+            @click="create"
+          >
+            <v-icon icon="mdi-arrow-right" />
+          </v-btn>
+        </div>
         <v-btn
           v-if="selectedProject"
           class="options"
@@ -248,10 +349,9 @@ export default {
         <v-tabs v-model="currentTab" color="primary">
           <v-tab value="datasets" class="text-grey">Dataset Selection</v-tab>
           <v-tab value="users" class="text-grey">Access Control</v-tab>
-          <v-tab value="map" class="text-grey">Default Map Position</v-tab>
         </v-tabs>
         <div
-          v-if="currentTab == 'datasets' && projDatasets.length"
+          v-if="currentTab == 'datasets' && projDatasets"
           class="py-3 px-6 d-flex"
         >
           <div style="width: 30%">
@@ -308,9 +408,36 @@ export default {
           </div>
         </div>
         <div v-if="currentTab == 'users'" class="py-3 px-6">Users</div>
-        <div v-if="currentTab == 'map'" class="py-3 px-6">Map</div>
       </div>
     </v-card-text>
+    <v-dialog :model-value="!!projectToDelete" width="300">
+      <v-card v-if="projectToDelete">
+        <v-card-title class="pa-3 bg-grey-lighten-2 text-grey-darken-2">
+          Delete project
+          <v-btn
+            class="close-button transparent"
+            variant="flat"
+            icon
+            @click="projectToDelete = undefined"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          Are you sure you want to delete "{{ projectToDelete.name }}"?
+        </v-card-text>
+        <v-card-actions class="d-flex" style="justify-content: space-evenly">
+          <v-btn color="red" @click="del">Delete</v-btn>
+          <v-btn
+            color="primary"
+            @click="projectToDelete = undefined"
+            variant="tonal"
+          >
+            Cancel
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 

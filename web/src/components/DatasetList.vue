@@ -282,6 +282,9 @@ export default {
 </template>
 
 <style scoped>
+.v-list-item--active > * {
+  background: transparent !important;
+}
 .group {
   border-bottom: 1px solid lightgray;
 }
