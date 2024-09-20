@@ -44,6 +44,7 @@ export default defineComponent({
 
     onMounted(onReady);
     watch(currentUser, onReady);
+    watch(projectConfigMode, loadProjects);
 
     return {
       login,

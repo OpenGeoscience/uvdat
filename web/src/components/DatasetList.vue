@@ -1,6 +1,6 @@
 <script lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { onMounted, ref, Ref, computed, ComputedRef } from "vue";
+import { onMounted, ref, Ref, computed, ComputedRef, watch } from "vue";
 import { Dataset } from "@/types";
 import { getDatasetLayers } from "@/api/rest";
 
@@ -27,6 +27,7 @@ export default {
   setup(props: any, { emit }: any) {
     const groupByOptions = ["category", "dataset_type"];
     const groupByKey = ref(["category"]);
+    const numDatasets = computed(() => props.datasets.length);
     const filterMenuItems: ComputedRef<Record<string, string[]>> = computed(
       () => {
         const menuItems: Record<string, string[]> = Object.fromEntries(
@@ -87,6 +88,12 @@ export default {
       emit("toggleDatasets", { show, datasets });
     }
 
+    watch(numDatasets, () => {
+      filters.value = Object.fromEntries(
+        groupByOptions.map((opt) => [opt, []])
+      );
+    });
+
     onMounted(fetchAllLayers);
 
     return {
@@ -104,7 +111,11 @@ export default {
 
 <template>
   <div class="px-1" style="width: 100%">
-    <div class="d-flex position-sticky top-0" style="align-items: center">
+    <v-card
+      flat
+      class="d-flex position-sticky top-0 pa-2"
+      style="align-items: center; z-index: 2"
+    >
       <v-text-field
         v-model="searchText"
         label="Search Datasets"
@@ -205,7 +216,7 @@ export default {
           </v-list>
         </v-card>
       </v-menu>
-    </div>
+    </v-card>
     <div
       v-for="groupName in Object.keys(datasetGroups)"
       :key="groupName"

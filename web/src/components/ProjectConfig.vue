@@ -7,19 +7,19 @@ import {
   currentUser,
 } from "@/store";
 import DatasetList from "./DatasetList.vue";
+import AccessControl from "./AccessControl.vue";
 import {
-  getUsers,
   getDatasets,
   getProjectDatasets,
   createProject,
   deleteProject,
   patchProject,
 } from "@/api/rest";
-import { User, Project, Dataset } from "@/types";
+import { Project, Dataset } from "@/types";
 import { getCurrentMapPosition, loadProjects } from "@/storeFunctions";
 
 export default {
-  components: { DatasetList },
+  components: { AccessControl, DatasetList },
   setup() {
     const currentTab = ref();
     const searchText = ref();
@@ -41,11 +41,14 @@ export default {
       );
     });
     const otherSelectedDatasetIds: Ref<number[]> = ref([]);
-    const allUsers: Ref<User[]> = ref([]);
+
     const permissions = computed(() => {
       const ret = Object.fromEntries(
         availableProjects.value.map((p) => {
           let perm = "view";
+          if (p.id == selectedProject.value?.id) {
+            p = selectedProject.value;
+          }
           if (
             p.owner?.id == currentUser.value?.id ||
             currentUser.value?.is_superuser
@@ -79,13 +82,20 @@ export default {
     function del() {
       if (projectToDelete.value) {
         deleteProject(projectToDelete.value.id).then(() => {
-          projectToDelete.value = undefined;
           loadProjects();
+          if (selectedProject.value?.id == projectToDelete.value?.id) {
+            selectedProject.value = undefined;
+          }
+          projectToDelete.value = undefined;
         });
       }
     }
 
     function saveProjectName() {
+      if (!newProjectName.value) {
+        projectToEdit.value = undefined;
+        return;
+      }
       saving.value = true;
       if (projectToEdit.value) {
         patchProject(projectToEdit.value.id, {
@@ -187,6 +197,11 @@ export default {
       }
     }
 
+    function updateSelectedProject(newProjectData: Project) {
+      loadProjects();
+      selectedProject.value = newProjectData;
+    }
+
     watch(selectedProject, () => {
       projectConfigMode.value = true;
       newProjectName.value = undefined;
@@ -195,9 +210,6 @@ export default {
     });
 
     onMounted(() => {
-      getUsers().then((data) => {
-        allUsers.value = data;
-      });
       getDatasets().then((data) => {
         allDatasets.value = data;
       });
@@ -213,7 +225,6 @@ export default {
       otherSelectedDatasetIds,
       projDatasets,
       projSelectedDatasetIds,
-      allUsers,
       permissions,
       saving,
       newProjectName,
@@ -228,6 +239,7 @@ export default {
       toggleProjDatasetSelection,
       addAllSelectionToProject,
       removeProjSelectionFromProject,
+      updateSelectedProject,
     };
   },
 };
@@ -325,6 +337,7 @@ export default {
             density="compact"
             autofocus
             @keydown.enter="create"
+            @keydown.esc="projectConfigMode = true"
           />
           <v-btn
             color="primary"
@@ -336,6 +349,13 @@ export default {
             <v-icon icon="mdi-arrow-right" />
           </v-btn>
         </div>
+        <v-btn
+          v-else
+          variant="tonal"
+          width="100%"
+          @click="projectConfigMode = 'new'"
+          >+ New</v-btn
+        >
         <v-btn
           v-if="selectedProject"
           class="options"
@@ -407,7 +427,13 @@ export default {
             </v-btn>
           </div>
         </div>
-        <div v-if="currentTab == 'users'" class="py-3 px-6">Users</div>
+        <div v-if="currentTab == 'users'" class="py-3 px-6">
+          <access-control
+            :project="selectedProject"
+            :permissions="permissions"
+            @updateSelectedProject="updateSelectedProject"
+          />
+        </div>
       </div>
     </v-card-text>
     <v-dialog :model-value="!!projectToDelete" width="300">
@@ -462,6 +488,7 @@ export default {
 .options {
   position: absolute !important;
   bottom: 0px;
+  left: 0px;
   width: inherit;
 }
 .tab-content {
