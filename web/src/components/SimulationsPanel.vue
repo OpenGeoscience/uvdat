@@ -8,16 +8,13 @@ import {
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import {
+  isRasterDatasetLayer,
+  isVectorDatasetLayer,
   RasterDatasetLayer,
   SimulationResult,
   VectorDatasetLayer,
 } from "@/types";
-import {
-  getDatasetLayerForDataObject,
-  getOrCreateLayerFromID,
-  isDatasetLayerVisible,
-  toggleDatasetLayer,
-} from "@/layers";
+import { isDatasetLayerVisible, toggleDatasetLayer } from "@/layers";
 
 export default {
   components: {
@@ -92,30 +89,26 @@ export default {
           const selectedOption: any = argDef?.options.find(
             (o: { id: number }) => o === argValue || o.id === argValue
           );
-          if (selectedOption) {
-            let datasetLayer:
-              | VectorDatasetLayer
-              | RasterDatasetLayer
-              | undefined;
-            if (selectedOption.map_layers) {
-              // Object has layers
-              datasetLayer = (await getDatasetLayerForDataObject(
-                selectedOption
-              )) as VectorDatasetLayer | RasterDatasetLayer | undefined;
-            } else if (selectedOption.index && selectedOption.type) {
-              // Object is layer
-              datasetLayer = await getOrCreateLayerFromID(
-                selectedOption.id,
-                selectedOption.type
-              );
-            }
-            return {
-              key: argName.replaceAll("_", " "),
-              value: selectedOption,
-              datasetLayer,
-              viewable: datasetLayer && !isDatasetLayerVisible(datasetLayer),
-            };
+          if (!selectedOption) {
+            return;
           }
+
+          let datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
+          if (
+            isVectorDatasetLayer(selectedOption) ||
+            isRasterDatasetLayer(selectedOption)
+          ) {
+            datasetLayer = selectedOption;
+          }
+
+          // TODO: Populate network objects with correct map layer
+
+          return {
+            key: argName.replaceAll("_", " "),
+            value: selectedOption,
+            datasetLayer,
+            viewable: datasetLayer && !isDatasetLayerVisible(datasetLayer),
+          };
         })
       );
       activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
