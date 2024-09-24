@@ -212,6 +212,7 @@ export function clearClickedFeatureData() {
   clickedDatasetLayer.value = undefined;
 }
 
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // See all of the clicked features, and display the one that's at the highest layer
 watch(clickedFeatureCandidates, (features) => {
   if (!features.length) {
@@ -220,9 +221,14 @@ watch(clickedFeatureCandidates, (features) => {
 
   const map = getMap();
   const layerIds = map.getLayersOrder();
+
+  // TypeScript complains about this type being too complex for some reason.
+  // @ts-ignore
   const featureLayerIDs = new Set(features.map((f) => f.feature.layer.id));
 
   // Find the highest layer that was clicked
+  // TypeScript complains about this type being too complex for some reason.
+  // @ts-ignore
   const selectedLayerID = layerIds.toReversed().find((id) => {
     return featureLayerIDs.has(id);
   });
@@ -238,7 +244,6 @@ watch(clickedFeatureCandidates, (features) => {
 
   // Set new values
   // TypeScript complains about this type being too complex for some reason.
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   clickedFeature.value = selectedFeature;
   showMapTooltip.value = true;
@@ -249,3 +254,4 @@ watch(clickedFeatureCandidates, (features) => {
   // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
   clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
 });
+/* eslint-enable @typescript-eslint/ban-ts-comment */
