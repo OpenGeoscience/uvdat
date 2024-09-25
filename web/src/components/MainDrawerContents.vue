@@ -113,13 +113,21 @@ export default {
             {{ project.name }}
             <div style="color: grey" class="mt-2">
               <v-icon icon="mdi-database-outline" size="small" />
-              <span class="mr-3">{{ project.item_counts.datasets }}</span>
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.datasets }}
+              </span>
               <v-icon icon="mdi-border-none-variant" size="small" />
-              <span class="mr-3">{{ project.item_counts.regions }}</span>
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.regions }}
+              </span>
               <v-icon icon="mdi-chart-bar" size="small" />
-              <span class="mr-3">{{ project.item_counts.charts }}</span>
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.charts }}
+              </span>
               <v-icon icon="mdi-earth" size="small" />
-              <span class="mr-3">{{ project.item_counts.simulations }}</span>
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.simulations }}
+              </span>
             </div>
           </div>
           <div class="location-menu">
