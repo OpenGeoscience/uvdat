@@ -595,7 +595,7 @@ export function isDatasetLayerVisible(
     return false;
   }
 
-  // TODO: This is tricky as it's not longer a binary value
+  // Return true if any of the constituent layers are visible
   return mapLayers.some(
     (layer) => layer.getLayoutProperty("visibility") !== "none"
   );

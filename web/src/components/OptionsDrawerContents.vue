@@ -62,9 +62,6 @@ export default {
         currentNetworkDataset.value.id === currentDataset.value.id
     );
 
-    // TODO: Determine what to use this for
-    // const zIndex = ref<number>();
-
     const currentLayerName = computed(() => {
       return currentDatasetLayer.value?.name;
     });
