@@ -26,7 +26,7 @@ export default {
   emits: ["toggleDatasets"],
   setup(props: any, { emit }: any) {
     const groupByOptions = ["category", "dataset_type"];
-    const groupByKey = ref(["category"]);
+    const groupByKey = ref("category");
     const numDatasets = computed(() => props.datasets.length);
     const filterMenuItems: ComputedRef<Record<string, string[]>> = computed(
       () => {
@@ -69,7 +69,7 @@ export default {
     const datasetGroups = computed(() => {
       const groups: Record<string, Dataset[]> = {};
       filteredDatasets.value.forEach((dataset: any) => {
-        const groupName = dataset[groupByKey.value[0]];
+        const groupName = dataset[groupByKey.value];
         if (!groups[groupName]) {
           groups[groupName] = [];
         }
@@ -139,32 +139,17 @@ export default {
           <v-card-text style="background-color: lightgrey" class="py-2">
             Group by
           </v-card-text>
-          <v-list
-            density="compact"
-            selectable
-            mandatory
-            select-strategy="single-leaf"
-            v-model:selected="groupByKey"
-          >
-            <v-list-item
+          <v-radio-group v-model="groupByKey">
+            <v-radio
               v-for="option in groupByOptions"
               :key="option"
               :value="option"
             >
-              <v-list-item-title class="capitalize">
-                {{ option.replace("_", " ") }}
-              </v-list-item-title>
-              <template v-slot:append="{ isSelected }">
-                <v-checkbox
-                  :model-value="isSelected"
-                  density="compact"
-                  class="ml-4"
-                  style="vertical-align: bottom"
-                  hide-details
-                />
+              <template v-slot:label>
+                <span class="capitalize">{{ option.replace("_", " ") }}</span>
               </template>
-            </v-list-item>
-          </v-list>
+            </v-radio>
+          </v-radio-group>
           <v-card-text style="background-color: lightgrey" class="py-2">
             Filter by
           </v-card-text>
@@ -234,7 +219,7 @@ export default {
         @update:model-value="toggleDatasets($event, datasetGroups[groupName])"
       />
       <v-card-subtitle class="group-title capitalize text-caption px-1">
-        {{ groupByKey[0].replace("_", " ") }}: {{ groupName.toLowerCase() }}
+        {{ groupByKey.replace("_", " ") }}: {{ groupName.toLowerCase() }}
       </v-card-subtitle>
       <v-expansion-panels multiple>
         <v-expansion-panel
