@@ -12,7 +12,7 @@ import {
 } from "./store";
 import { loadContexts } from "./storeFunctions";
 import { updateBaseLayer } from "@/layers";
-import OpenLayersMap from "./components/map/OpenLayersMap.vue";
+import Map from "./components/map/Map.vue";
 import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
@@ -20,7 +20,7 @@ import SimulationsPanel from "./components/SimulationsPanel.vue";
 
 export default defineComponent({
   components: {
-    OpenLayersMap,
+    Map,
     MainDrawerContents,
     OptionsDrawerContents,
     ChartJS,
@@ -109,7 +109,7 @@ export default defineComponent({
           : 'main-area'
       "
     >
-      <OpenLayersMap />
+      <Map />
       <ChartJS v-if="currentChart" />
       <SimulationsPanel v-if="currentSimulationType" />
     </div>

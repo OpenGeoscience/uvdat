@@ -2,14 +2,14 @@
 import { ref, watch, computed, onMounted } from "vue";
 import {
   currentNetworkDataset,
-  currentNetworkMapLayer,
+  currentNetworkDatasetLayer,
   deactivatedNodes,
   selectedDatasets,
-  selectedMapLayers,
+  selectedDatasetLayers,
 } from "@/store";
 import { deactivatedNodesUpdated, fetchDatasetNetwork } from "@/utils";
-import { getMapLayerForDataObject } from "@/layers";
-import { isVectorMapLayer } from "@/types";
+import { getDatasetLayerForDataObject } from "@/layers";
+import { isVectorDatasetLayer } from "@/types";
 
 export default {
   props: {
@@ -46,11 +46,11 @@ export default {
         fetchDatasetNetwork(currentNetworkDataset.value);
       }
       if (currentNetworkDataset.value) {
-        const mapLayer = await getMapLayerForDataObject(
+        const datasetLayer = await getDatasetLayerForDataObject(
           currentNetworkDataset.value
         );
-        if (isVectorMapLayer(mapLayer)) {
-          currentNetworkMapLayer.value = mapLayer;
+        if (isVectorDatasetLayer(datasetLayer)) {
+          currentNetworkDatasetLayer.value = datasetLayer;
         }
       }
     }
@@ -100,8 +100,8 @@ export default {
 
     return {
       currentNetworkDataset,
-      currentNetworkMapLayer,
-      selectedMapLayers,
+      currentNetworkDatasetLayer,
+      selectedDatasetLayers,
       nodeChanges,
       currentTick,
       seconds,
@@ -117,8 +117,8 @@ export default {
   <div
     v-if="
       !currentNetworkDataset ||
-      !currentNetworkMapLayer ||
-      !selectedMapLayers.includes(currentNetworkMapLayer)
+      !currentNetworkDatasetLayer ||
+      !selectedDatasetLayers.includes(currentNetworkDatasetLayer)
     "
   >
     Show network dataset layer to begin.

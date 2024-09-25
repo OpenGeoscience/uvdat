@@ -1,19 +1,21 @@
+import { LngLatLike, Map, MapGeoJSONFeature } from "maplibre-gl";
+
+export interface Network {
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+}
+
 export interface Dataset {
   id: number;
   name: string;
   description: string;
   category: string;
-  created: string;
-  modified: string;
   processing: boolean;
-  metadata: object;
-  dataset_type: "vector" | "raster";
-  map_layers?: (VectorMapLayer | RasterMapLayer)[];
+  metadata: Record<string, unknown>;
+  dataset_type: "VECTOR" | "RASTER";
+  map_layers?: (VectorDatasetLayer | RasterDatasetLayer)[];
   current_layer_index?: number;
-  network: {
-    nodes: NetworkNode[];
-    edges: NetworkEdge[];
-  };
+  network?: Network;
 }
 
 export interface SourceRegion {
@@ -43,7 +45,7 @@ export interface DerivedRegion {
 export interface Context {
   id: number;
   name: string;
-  default_map_center: number[];
+  default_map_center: [number, number];
   default_map_zoom: number;
   datasets: Dataset[];
   created: string;
@@ -60,10 +62,20 @@ export interface Feature {
   };
 }
 
+export interface ClickedFeatureData {
+  pos: LngLatLike;
+  feature: MapGeoJSONFeature;
+}
+
+export interface RasterTooltipData {
+  pos: LngLatLike;
+  text: string;
+}
+
 export interface NetworkNode {
   id: number;
   name: string;
-  dataset: number;
+  network: number;
   metadata: object;
   capacity: number | null;
   location: number[];
@@ -72,7 +84,7 @@ export interface NetworkNode {
 export interface NetworkEdge {
   id: number;
   name: string;
-  dataset: number;
+  network: number;
   metadata: object;
   capacity: number | null;
   line_geopmetry: object;
@@ -81,35 +93,52 @@ export interface NetworkEdge {
   to_node: number;
 }
 
-export interface AbstractMapLayer {
+export interface DefaultStyle {
+  // Both
+  palette?: string;
+
+  // Raster
+  data_range?: [number, number];
+  transparency_threshold?: number;
+  trim_distribution_percentage?: number;
+
+  // Vector
+  color_delimiter?: string;
+  color_property?: string;
+  outline?: string;
+}
+
+export interface DatasetLayerMetadata {
+  network?: boolean;
+  [key: string]: unknown;
+}
+
+export interface AbstractDatasetLayer {
   id: number;
   name: string;
   file_item?: {
     id: number;
     name: string;
   };
-  metadata?: {
-    network?: boolean;
-  };
-  default_style?: object;
+  metadata: DatasetLayerMetadata;
+  // default_style: Record<string, unknown> | DefaultStyle;
+  default_style: DefaultStyle;
   index: number;
   dataset_id?: number;
   derived_region_id?: number;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  openlayer?: any;
+  dataset_category: string;
 }
 
 export function isNonNullObject(obj: unknown): obj is object {
   return typeof obj === "object" && obj !== null;
 }
 
-export interface RasterMapLayer extends AbstractMapLayer {
+export interface RasterDatasetLayer extends AbstractDatasetLayer {
   cloud_optimized_geotiff: string;
   type: "raster";
 }
 
-export function isRasterMapLayer(obj: unknown): obj is RasterMapLayer {
+export function isRasterDatasetLayer(obj: unknown): obj is RasterDatasetLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "raster";
 }
 
@@ -123,12 +152,28 @@ export interface RasterData {
   data: number[][];
 }
 
-export interface VectorMapLayer extends AbstractMapLayer {
+export interface VectorDatasetLayer extends AbstractDatasetLayer {
   type: "vector";
 }
 
-export function isVectorMapLayer(obj: unknown): obj is VectorMapLayer {
+export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
   return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
+}
+
+export type StyleLayer = NonNullable<ReturnType<Map["getLayer"]>>;
+export interface UserLayer extends StyleLayer {
+  metadata: {
+    id: number;
+    type: "vector" | "raster";
+  };
+}
+
+export function isUserLayer(layer: StyleLayer): layer is UserLayer {
+  return (
+    isNonNullObject(layer.metadata) &&
+    "id" in layer.metadata &&
+    layer.metadata.id !== undefined
+  );
 }
 
 export interface VectorTile {

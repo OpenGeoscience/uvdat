@@ -1,28 +1,22 @@
 <script lang="ts">
 import { computed, watch } from "vue";
 import {
-  clickedMapLayer,
+  clickedDatasetLayer,
   deactivatedNodes,
-  regionGroupingActive,
-  regionGroupingType,
   clickedFeature,
   selectedSourceRegions,
-  selectedMapLayers,
-  selectedDatasets,
+  rasterTooltipEnabled,
+  rasterTooltipValue,
+  selectedDatasetLayers,
+  availableDatasets,
 } from "@/store";
-import { getMap, cancelRegionGrouping } from "@/storeFunctions";
+import { getMap, getTooltip } from "@/storeFunctions";
 import { toggleNodeActive } from "@/utils";
-import type { DerivedRegion, SourceRegion } from "@/types";
-import { SimpleGeometry } from "ol/geom";
-import { getDataObjectForMapLayer } from "@/layers";
+import type { SourceRegion, UserLayer, VectorDatasetLayer } from "@/types";
+import * as turf from "@turf/turf";
 
 export default {
   setup() {
-    const dataObjectForClickedMapLayer = computed(() => {
-      if (!clickedMapLayer.value) return undefined;
-      return getDataObjectForMapLayer(clickedMapLayer.value) as DerivedRegion;
-    });
-
     const clickedFeatureProperties = computed(() => {
       if (clickedFeature.value === undefined) {
         return {};
@@ -36,14 +30,14 @@ export default {
         "edge_id",
       ]);
       return Object.fromEntries(
-        Object.entries(clickedFeature.value.getProperties()).filter(
+        Object.entries(clickedFeature.value.feature.properties).filter(
           ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
         )
       );
     });
 
     const clickedRegion = computed(() => {
-      const props = clickedFeature.value?.getProperties();
+      const props = clickedFeature.value?.feature?.properties;
       const regionId = props?.region_id;
       const regionName = props?.region_name;
       const regionDatasetId = props?.dataset_id;
@@ -58,221 +52,139 @@ export default {
       return undefined;
     });
 
-    const clickedRegionIsGrouped = computed(() => {
-      if (clickedRegion.value === undefined) {
-        return false;
-      }
-
-      return (
-        selectedSourceRegions.value.find(
-          (region) => region.id === clickedRegion.value?.id
-        ) !== undefined
-      );
-    });
-
     function zoomToRegion() {
-      const geom = clickedFeature.value?.getGeometry() as SimpleGeometry;
-      if (geom === undefined) {
+      if (clickedFeature.value === undefined) {
         return;
       }
+
       // Set map zoom to match bounding box of region
       const map = getMap();
-      map.getView().fit(geom, {
-        size: map.getSize(),
-        duration: 300,
-      });
-    }
-
-    function beginRegionGrouping(groupingType: "intersection" | "union") {
-      if (clickedRegion.value === undefined) {
-        throw new Error("Began region grouping with no selected region");
+      const bbox = turf.bbox(clickedFeature.value.feature.geometry);
+      if (bbox.length !== 4) {
+        throw new Error("Returned bbox should have 4 elements!");
       }
 
-      regionGroupingActive.value = true;
-      regionGroupingType.value = groupingType;
-
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      selectedSourceRegions.value = [clickedRegion.value];
+      map.fitBounds(bbox);
     }
 
-    // Ensure that if any regions of the currently selected datasets are
-    // de-selected, their regions are removed from the selection
-    watch(selectedMapLayers, () => {
-      // Filter out any regions from un-selected data sources
-      selectedSourceRegions.value = selectedSourceRegions.value.filter(
-        (region) =>
-          region.dataset_id &&
-          selectedDatasets.value.map((d) => d.id).includes(region.dataset_id)
+    // Check if the layer associated with the clicked feature is still selected
+    watch(selectedDatasetLayers, (selectedLayers) => {
+      if (clickedFeature.value === undefined) {
+        return;
+      }
+
+      const layer = clickedFeature.value.feature.layer as UserLayer;
+      const match = selectedLayers.find(
+        (dsLayer) =>
+          dsLayer.id === layer.metadata.id &&
+          dsLayer.type === layer.metadata.type
       );
-      // Check if the list is now empty
-      if (selectedSourceRegions.value.length === 0) {
-        cancelRegionGrouping();
+      if (match === undefined) {
+        clickedFeature.value = undefined;
       }
     });
 
-    function removeRegionFromGrouping() {
-      if (clickedRegion.value?.id === undefined) {
-        throw new Error("Tried to remove non-existent region from grouping");
+    // Handle clicked features and raster tooltip behavior.
+    // Feature clicks are given tooltip priority.
+    watch(
+      [clickedFeature, rasterTooltipValue],
+      ([featureData, rasterTooltipData]) => {
+        const tooltip = getTooltip();
+        if (featureData === undefined && rasterTooltipData === undefined) {
+          tooltip.remove();
+          return;
+        }
+
+        // Set tooltip position. Give feature clicks priority
+        if (featureData !== undefined) {
+          tooltip.setLngLat(featureData.pos);
+        } else if (rasterTooltipData !== undefined) {
+          tooltip.setLngLat(rasterTooltipData.pos);
+        }
+
+        // This makes the tooltip visible
+        tooltip.addTo(getMap());
+      }
+    );
+
+    const clickedFeatureIsDeactivatedNode = computed(
+      () =>
+        clickedFeature.value &&
+        deactivatedNodes.value.includes(
+          clickedFeature.value.feature.properties.node_id
+        )
+    );
+
+    function toggleNodeHandler() {
+      if (clickedFeature.value === undefined) {
+        throw new Error("Clicked node is undefined!");
       }
 
-      selectedSourceRegions.value = selectedSourceRegions.value.filter(
-        (region) => region.id !== clickedRegion.value?.id
+      const dataset = availableDatasets.value?.find(
+        (d) => d.id === clickedDatasetLayer.value?.dataset_id
       );
-
-      // Check if that element was the last removed
-      if (selectedSourceRegions.value.length === 0) {
-        cancelRegionGrouping();
+      if (dataset) {
+        dataset.current_layer_index =
+          dataset?.map_layers?.find(
+            ({ id }) => id === clickedDatasetLayer.value?.id
+          )?.index || 0;
       }
+
+      toggleNodeActive(
+        clickedFeature.value.feature.properties.node_id,
+        // TODO: Fix
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        dataset!,
+        clickedDatasetLayer.value as VectorDatasetLayer
+      );
     }
 
     return {
-      dataObjectForClickedMapLayer,
-      clickedMapLayer,
-      regionGroupingActive,
+      clickedDatasetLayer,
       clickedFeature,
       clickedFeatureProperties,
       clickedRegion,
       selectedSourceRegions,
-      clickedRegionIsGrouped,
-      regionGroupingType,
       deactivatedNodes,
-      toggleNodeActive,
+      toggleNodeHandler,
       zoomToRegion,
-      removeRegionFromGrouping,
-      beginRegionGrouping,
+      rasterTooltipEnabled,
+      rasterTooltipValue,
+      selectedDatasetLayers,
+      clickedFeatureIsDeactivatedNode,
     };
   },
 };
 </script>
 
 <template>
-  <div v-if="dataObjectForClickedMapLayer && clickedFeature">
-    <!-- Render for Derived Regions -->
-    <div v-if="dataObjectForClickedMapLayer.source_regions">
-      <v-row no-gutters>ID: {{ dataObjectForClickedMapLayer.id }} </v-row>
-      <v-row no-gutters> Name: {{ dataObjectForClickedMapLayer.name }} </v-row>
-      <v-row no-gutters>
-        Source Region IDs: {{ dataObjectForClickedMapLayer.source_regions }}
-      </v-row>
-      <v-row no-gutters>
-        Creation Operation: {{ dataObjectForClickedMapLayer.operation }}
-      </v-row>
-    </div>
+  <div v-if="clickedFeature">
     <!-- Render for Source Regions -->
-    <div v-else-if="clickedRegion">
+    <div v-if="clickedRegion">
       <v-row no-gutters>ID: {{ clickedRegion.id }}</v-row>
       <v-row no-gutters>Name: {{ clickedRegion.name }}</v-row>
-      <v-row>
+      <v-row no-gutters>
         <v-btn
           class="my-1"
           variant="outlined"
-          block
           prepend-icon="mdi-vector-square"
           @click="zoomToRegion"
-          >Zoom To Region</v-btn
         >
+          Zoom To Region
+        </v-btn>
       </v-row>
-
-      <template v-if="regionGroupingActive && clickedRegion">
-        <template v-if="clickedRegionIsGrouped">
-          <v-row>
-            <v-btn
-              variant="outlined"
-              block
-              class="my-1"
-              @click="removeRegionFromGrouping"
-            >
-              <template v-slot:prepend>
-                <v-icon>
-                  {{
-                    regionGroupingType === "intersection"
-                      ? "mdi-vector-intersection"
-                      : "mdi-vector-union"
-                  }}
-                </v-icon>
-              </template>
-              Ungroup Region
-            </v-btn>
-          </v-row>
-        </template>
-        <template v-else>
-          <v-row>
-            <v-btn
-              variant="outlined"
-              block
-              class="my-1"
-              @click="selectedSourceRegions.push(clickedRegion)"
-            >
-              <template v-slot:prepend>
-                <v-icon>
-                  {{
-                    regionGroupingType === "intersection"
-                      ? "mdi-vector-intersection"
-                      : "mdi-vector-union"
-                  }}
-                </v-icon>
-              </template>
-              Add region to grouping
-            </v-btn>
-          </v-row>
-        </template>
-      </template>
-      <template v-else>
-        <v-row>
-          <v-btn
-            variant="outlined"
-            block
-            class="my-1"
-            prepend-icon="mdi-vector-intersection"
-            @click="beginRegionGrouping('intersection')"
-          >
-            Begin region intersection
-          </v-btn>
-        </v-row>
-        <v-row>
-          <v-btn
-            variant="outlined"
-            block
-            class="my-1"
-            prepend-icon="mdi-vector-union"
-            @click="beginRegionGrouping('union')"
-          >
-            Begin region union
-          </v-btn>
-        </v-row>
-      </template>
     </div>
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
-    <div v-else-if="clickedFeature.getProperties().node_id" class="pa-2">
+    <div v-else-if="clickedFeature.feature.properties.node_id">
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
-      <v-btn
-        variant="outlined"
-        v-if="deactivatedNodes.includes(clickedFeature.getProperties().node_id)"
-        @click="
-          toggleNodeActive(
-            clickedFeature.getProperties().node_id,
-            dataObjectForClickedMapLayer,
-            clickedMapLayer
-          )
-        "
-      >
-        Reactivate Node
-      </v-btn>
-      <v-btn
-        variant="outlined"
-        @click="
-          toggleNodeActive(
-            clickedFeature.getProperties().node_id,
-            dataObjectForClickedMapLayer,
-            clickedMapLayer
-          )
-        "
-        v-else
-      >
-        Deactivate Node
+      <v-btn variant="outlined" @click="toggleNodeHandler">
+        <template v-if="clickedFeatureIsDeactivatedNode">
+          Reactivate Node
+        </template>
+        <template v-else> Deactivate Node </template>
       </v-btn>
     </div>
     <!-- Render for all other features -->
@@ -280,6 +192,14 @@ export default {
       <v-row no-gutters v-for="(v, k) in clickedFeatureProperties" :key="k">
         {{ k }}: {{ v }}
       </v-row>
+    </div>
+  </div>
+
+  <!-- Check for raster tooltip data after, to give clicked features priority -->
+  <div v-else-if="rasterTooltipEnabled && rasterTooltipValue">
+    <div v-if="rasterTooltipValue.text === ''">waiting for data...</div>
+    <div v-else>
+      <span>{{ rasterTooltipValue.text }}</span>
     </div>
   </div>
 </template>

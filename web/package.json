@@ -11,12 +11,12 @@
   "dependencies": {
     "@girder/oauth-client": "^0.8.0",
     "@mdi/font": "^7.2.96",
+    "@turf/turf": "^7.1.0",
     "axios": "^1.4.0",
     "buffer": "^6.0.3",
     "core-js": "^3.8.3",
-    "maplibre-gl": "^2.4.0",
-    "ol": "^7.3.0",
-    "openlayers": "^4.6.5",
+    "lodash": "^4.17.21",
+    "maplibre-gl": "^4.6.0",
     "shpjs": "^4.0.4",
     "sortablejs": "^1.15.0",
     "vue": "^3.2.13",
@@ -25,13 +25,14 @@
     "vuetify": "^3.3.16"
   },
   "devDependencies": {
-    "@typescript-eslint/typescript-estree": "^6.9.0",
+    "@types/lodash": "^4.17.7",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.62.0",
-    "@vue/cli-service": "~5.0.0",
+    "@typescript-eslint/typescript-estree": "^6.21.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-plugin-typescript": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
     "@vue/eslint-config-typescript": "^9.1.0",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^8.3.0",
@@ -40,7 +41,7 @@
     "prettier": "^2.4.1",
     "sass": "^1.32.7",
     "sass-loader": "^12.0.0",
-    "typescript": "5.1.5"
+    "typescript": "5.6.2"
   },
   "eslintConfig": {
     "root": true,

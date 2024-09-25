@@ -1,15 +1,20 @@
 <script lang="ts">
 import { ref, watch } from "vue";
 import draggable from "vuedraggable";
-import { currentDataset, selectedMapLayers } from "@/store";
-import { updateVisibleMapLayers, clearMapLayers } from "@/layers";
+import { currentDataset, selectedDatasetLayers } from "@/store";
 import {
-  RasterMapLayer,
-  VectorMapLayer,
+  updateVisibleMapLayers,
+  clearMapLayers,
+  findExistingMapLayers,
+} from "@/layers";
+import {
+  RasterDatasetLayer,
+  VectorDatasetLayer,
   Dataset,
   DerivedRegion,
 } from "@/types";
-import { getDataObjectForMapLayer } from "@/layers";
+import { getDataObjectForDatasetLayer } from "@/layers";
+import { getMap } from "@/storeFunctions";
 
 export default {
   components: {
@@ -18,42 +23,57 @@ export default {
   setup() {
     const layerMenuActive = ref(false);
 
-    function labelForLayer(mapLayer: VectorMapLayer | RasterMapLayer) {
+    function labelForLayer(
+      datasetLayer: VectorDatasetLayer | RasterDatasetLayer
+    ) {
       const dataObject: Dataset | DerivedRegion | undefined =
-        getDataObjectForMapLayer(mapLayer);
+        getDataObjectForDatasetLayer(datasetLayer);
       if (dataObject) {
         let ret = dataObject.name;
         if (dataObject.map_layers && dataObject.map_layers.length > 1) {
-          ret += ` (Layer ${mapLayer.index})`;
+          ret += ` (Layer ${datasetLayer.index})`;
         }
         return ret;
       }
       return "Unnamed Layer";
     }
 
-    async function setCurrentDataset(layer: VectorMapLayer | RasterMapLayer) {
-      currentDataset.value = getDataObjectForMapLayer(layer) as Dataset;
+    async function setCurrentDataset(
+      layer: VectorDatasetLayer | RasterDatasetLayer
+    ) {
+      currentDataset.value = getDataObjectForDatasetLayer(layer) as Dataset;
     }
 
-    function reorderMapLayers() {
-      selectedMapLayers.value.forEach((mapLayer, index) => {
-        mapLayer.openlayer.setZIndex(selectedMapLayers.value.length - index);
+    function reorderDatasetLayers() {
+      const map = getMap();
+
+      /**
+       * Traverse dataset layers in reverse order, since calling moveLayer with no arguments
+       * appends it to the end of the list, and in this context, we want the first element
+       * in selectedDatasetLayers to be rendered last.
+       */
+      selectedDatasetLayers.value.toReversed().forEach((datasetLayer) => {
+        const layers = findExistingMapLayers(datasetLayer);
+        layers.forEach((layer) => {
+          map.moveLayer(layer.id);
+        });
       });
+
       updateVisibleMapLayers();
     }
 
-    watch(selectedMapLayers, () => {
-      layerMenuActive.value = !!selectedMapLayers.value.length;
+    watch(selectedDatasetLayers, () => {
+      layerMenuActive.value = !!selectedDatasetLayers.value.length;
     });
 
     return {
       layerMenuActive,
-      selectedMapLayers,
+      selectedDatasetLayers,
       labelForLayer,
       clearMapLayers,
-      reorderMapLayers,
+      reorderDatasetLayers,
       setCurrentDataset,
-      getDataObjectForMapLayer,
+      getDataObjectForDatasetLayer,
     };
   },
 };
@@ -78,7 +98,7 @@ export default {
       <v-card-title style="min-width: 250px">
         Active Layers
         <v-tooltip
-          v-if="selectedMapLayers.length"
+          v-if="selectedDatasetLayers.length"
           text="Remove All Layers"
           location="bottom"
         >
@@ -89,16 +109,18 @@ export default {
           </template>
         </v-tooltip>
       </v-card-title>
-      <div v-if="!selectedMapLayers.length" class="pa-4">No layers active.</div>
+      <div v-if="!selectedDatasetLayers.length" class="pa-4">
+        No layers active.
+      </div>
       <draggable
-        v-model="selectedMapLayers"
-        @change="reorderMapLayers"
+        v-model="selectedDatasetLayers"
+        @change="reorderDatasetLayers"
         item-key="id"
       >
         <template #item="{ element }">
           <v-card class="px-3 py-1">
             <v-tooltip
-              v-if="selectedMapLayers.length"
+              v-if="selectedDatasetLayers.length"
               text="Reorder Layers"
               location="bottom"
             >
@@ -110,7 +132,7 @@ export default {
             {{ labelForLayer(element) }}
 
             <v-tooltip
-              v-if="selectedMapLayers.length"
+              v-if="selectedDatasetLayers.length"
               text="Open Layer Options"
               location="bottom"
             >

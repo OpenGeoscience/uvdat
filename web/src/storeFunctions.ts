@@ -1,7 +1,3 @@
-import View from "ol/View.js";
-import TileLayer from "ol/layer/Tile.js";
-import OSM from "ol/source/OSM.js";
-import * as olProj from "ol/proj";
 import { watch } from "vue";
 
 import {
@@ -12,14 +8,14 @@ import {
   currentDataset,
   map,
   showMapTooltip,
-  selectedMapLayers,
-  clickedMapLayer,
+  selectedDatasetLayers,
+  clickedDatasetLayer,
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
   regionGroupingActive,
   regionGroupingType,
-  rasterTooltip,
+  rasterTooltipEnabled,
   polls,
   availableCharts,
   currentChart,
@@ -28,11 +24,13 @@ import {
   availableDerivedRegions,
   selectedDerivedRegions,
   currentNetworkDataset,
-  currentNetworkMapLayer,
+  currentNetworkDatasetLayer,
   currentNetworkGCC,
   deactivatedNodes,
   loading,
   currentError,
+  tooltipOverlay,
+  clickedFeatureCandidates,
 } from "./store";
 import { Dataset } from "./types";
 import {
@@ -43,16 +41,20 @@ import {
   getContextSimulationTypes,
   getContextDerivedRegions,
 } from "@/api/rest";
+import {
+  datasetLayerFromMapLayerID,
+  styleNetworkVectorTileLayer,
+} from "./layers";
 
 export function clearState() {
   availableDatasets.value = undefined;
   selectedDatasets.value = [];
   currentDataset.value = undefined;
-  selectedMapLayers.value = [];
-  clickedMapLayer.value = undefined;
+  selectedDatasetLayers.value = [];
+  clickedDatasetLayer.value = undefined;
   showMapBaseLayer.value = true;
   clickedFeature.value = undefined;
-  rasterTooltip.value = undefined;
+  rasterTooltipEnabled.value = false;
   availableCharts.value = undefined;
   currentChart.value = undefined;
   availableSimulationTypes.value = undefined;
@@ -63,7 +65,7 @@ export function clearState() {
   regionGroupingActive.value = false;
   regionGroupingType.value = undefined;
   currentNetworkDataset.value = undefined;
-  currentNetworkMapLayer.value = undefined;
+  currentNetworkDatasetLayer.value = undefined;
   deactivatedNodes.value = [];
   currentNetworkGCC.value = undefined;
   loading.value = false;
@@ -76,6 +78,13 @@ export function getMap() {
     throw new Error("Map not yet initialized!");
   }
   return map.value;
+}
+
+export function getTooltip() {
+  if (tooltipOverlay.value === undefined) {
+    throw new Error("Tooltip not yet initialized!");
+  }
+  return tooltipOverlay.value;
 }
 
 export function loadContexts() {
@@ -99,20 +108,9 @@ export function clearMap() {
   if (!currentContext.value) {
     return;
   }
-  getMap().setView(
-    new View({
-      center: olProj.fromLonLat(currentContext.value.default_map_center),
-      zoom: currentContext.value.default_map_zoom,
-    })
-  );
-  getMap().setLayers([
-    new TileLayer({
-      source: new OSM(),
-      properties: {
-        baseLayer: true,
-      },
-    }),
-  ]);
+  const map = getMap();
+  map.setCenter(currentContext.value.default_map_center);
+  map.setZoom(currentContext.value.default_map_zoom);
 }
 
 export function loadDatasets() {
@@ -180,6 +178,22 @@ export function pollForProcessingDataset(datasetId: number) {
   }, 10000);
 }
 
+/**
+ * If a network analysis is going on, reset it to its starting state.
+ */
+export function clearCurrentNetwork() {
+  const datasetLayer = currentNetworkDatasetLayer.value;
+
+  currentNetworkDataset.value = undefined;
+  currentNetworkDatasetLayer.value = undefined;
+  deactivatedNodes.value = [];
+  currentNetworkGCC.value = undefined;
+
+  if (datasetLayer !== undefined) {
+    styleNetworkVectorTileLayer(datasetLayer);
+  }
+}
+
 watch(currentContext, () => {
   clearState();
   clearMap();
@@ -189,5 +203,55 @@ watch(currentContext, () => {
   loadDerivedRegions();
 });
 watch(currentDataset, () => {
-  rasterTooltip.value = undefined;
+  rasterTooltipEnabled.value = false;
 });
+
+export function clearClickedFeatureData() {
+  clickedFeature.value = undefined;
+  showMapTooltip.value = false;
+  clickedDatasetLayer.value = undefined;
+}
+
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// See all of the clicked features, and display the one that's at the highest layer
+watch(clickedFeatureCandidates, (features) => {
+  if (!features.length) {
+    return;
+  }
+
+  const map = getMap();
+  const layerIds = map.getLayersOrder();
+
+  // TypeScript complains about this type being too complex for some reason.
+  // @ts-ignore
+  const featureLayerIDs = new Set(features.map((f) => f.feature.layer.id));
+
+  // Find the highest layer that was clicked
+  // TypeScript complains about this type being too complex for some reason.
+  // @ts-ignore
+  const selectedLayerID = layerIds.toReversed().find((id) => {
+    return featureLayerIDs.has(id);
+  });
+  const selectedFeature = features.find(
+    (f) => f.feature.layer.id === selectedLayerID
+  );
+
+  // If none found, just reset values
+  if (selectedLayerID === undefined || selectedFeature === undefined) {
+    clearClickedFeatureData();
+    return;
+  }
+
+  // Set new values
+  // TypeScript complains about this type being too complex for some reason.
+  // @ts-ignore
+  clickedFeature.value = selectedFeature;
+  showMapTooltip.value = true;
+  clickedDatasetLayer.value = datasetLayerFromMapLayerID(
+    selectedFeature.feature.layer.id
+  );
+
+  // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
+  clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
+});
+/* eslint-enable @typescript-eslint/ban-ts-comment */

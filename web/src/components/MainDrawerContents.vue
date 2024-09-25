@@ -9,7 +9,7 @@ import {
   currentSimulationType,
   availableDerivedRegions,
   currentDataset,
-  availableMapLayers,
+  availableDatasetLayers,
   selectedDerivedRegions,
 } from "@/store";
 import {
@@ -19,12 +19,8 @@ import {
   loadDerivedRegions,
 } from "../storeFunctions";
 import { Dataset, DerivedRegion } from "@/types";
-import { getDatasetMapLayers } from "@/api/rest";
-import {
-  getMapLayerForDataObject,
-  toggleMapLayer,
-  getOrCreateLayerFromID,
-} from "@/layers";
+import { getDatasetLayers } from "@/api/rest";
+import { getDatasetLayerForDataObject, toggleDatasetLayer } from "@/layers";
 
 export default {
   setup() {
@@ -59,8 +55,8 @@ export default {
     const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
 
     async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
-      const mapLayer = await getMapLayerForDataObject(derivedRegion);
-      toggleMapLayer(mapLayer);
+      const datasetLayer = await getDatasetLayerForDataObject(derivedRegion);
+      toggleDatasetLayer(datasetLayer);
     }
 
     async function toggleDataset(dataset: Dataset) {
@@ -74,9 +70,9 @@ export default {
       // Ensure layer index is set
       dataset.current_layer_index = dataset.current_layer_index || 0;
       if (dataset.map_layers === undefined) {
-        dataset.map_layers = await getDatasetMapLayers(dataset.id);
-        availableMapLayers.value = [
-          ...availableMapLayers.value,
+        dataset.map_layers = await getDatasetLayers(dataset.id);
+        availableDatasetLayers.value = [
+          ...availableDatasetLayers.value,
           ...dataset.map_layers,
         ];
       }
@@ -85,9 +81,8 @@ export default {
         dataset.map_layers !== undefined &&
         dataset.current_layer_index !== undefined
       ) {
-        const { id, type } = dataset.map_layers[dataset.current_layer_index];
-        const mapLayer = await getOrCreateLayerFromID(id, type);
-        toggleMapLayer(mapLayer);
+        const datasetLayer = dataset.map_layers[dataset.current_layer_index];
+        toggleDatasetLayer(datasetLayer);
       }
     }
 
@@ -306,9 +301,11 @@ export default {
 .v-expansion-panel-text__wrapper {
   padding: 8px 10px 16px !important;
 }
+
 .v-checkbox .v-selection-control {
   max-width: 100%;
 }
+
 .expand-icon {
   float: right;
 }

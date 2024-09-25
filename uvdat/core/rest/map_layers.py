@@ -63,10 +63,6 @@ mvtgeom as (
             ST_Transform(t.geometry, %(srid)s),
             ST_Transform(bounds.geom, %(srid)s)
         )
-        AND (
-            ST_GeometryType(ST_AsText(t.geometry)) != 'ST_Point'
-            OR %(z)s >= 16
-        )
 )
 SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 ;

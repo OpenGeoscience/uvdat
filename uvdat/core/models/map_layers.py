@@ -27,6 +27,7 @@ class AbstractMapLayer(TimeStampedModel):
 
 class RasterMapLayer(AbstractMapLayer):
     cloud_optimized_geotiff = S3FileField()
+    # TODO: Store data x/y min/max bounds on model
 
     def get_image_data(self, resolution: float = 1.0):
         with tempfile.TemporaryDirectory() as tmp:

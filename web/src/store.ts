@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import {
   Context,
   Chart,
@@ -6,11 +6,13 @@ import {
   DerivedRegion,
   SourceRegion,
   SimulationType,
-  VectorMapLayer,
-  RasterMapLayer,
+  VectorDatasetLayer,
+  RasterDatasetLayer,
+  ClickedFeatureData,
+  RasterTooltipData,
 } from "./types.js";
 // import { MapLayer } from "@/data";
-import { Map as olMap, Feature } from "ol";
+import { Map, Popup } from "maplibre-gl";
 
 // Context
 export const availableContexts = ref<Context[]>([]);
@@ -22,14 +24,25 @@ export const selectedDatasets = ref<Dataset[]>([]);
 export const currentDataset = ref<Dataset>();
 
 // Map
-export const map = ref<olMap>();
-export const availableMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
-export const selectedMapLayers = ref<(VectorMapLayer | RasterMapLayer)[]>([]);
-export const clickedMapLayer = ref<VectorMapLayer | RasterMapLayer>();
+export const map = ref<Map>();
+export const availableDatasetLayers = ref<
+  (VectorDatasetLayer | RasterDatasetLayer)[]
+>([]);
+export const selectedDatasetLayers = ref<
+  (VectorDatasetLayer | RasterDatasetLayer)[]
+>([]);
+export const clickedDatasetLayer = ref<
+  VectorDatasetLayer | RasterDatasetLayer
+>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
-export const clickedFeature = ref<Feature>();
-export const rasterTooltip = ref();
+export const tooltipOverlay = ref<Popup>();
+export const rasterTooltipEnabled = ref(false);
+
+// Features
+export const clickedFeatureCandidates = reactive<ClickedFeatureData[]>([]);
+export const clickedFeature = ref<ClickedFeatureData>();
+export const rasterTooltipValue = ref<RasterTooltipData | undefined>();
 
 // Charts & Simulations
 export const availableCharts = ref<Chart[]>();
@@ -46,7 +59,7 @@ export const regionGroupingType = ref<"intersection" | "union" | undefined>();
 
 // Network
 export const currentNetworkDataset = ref<Dataset>();
-export const currentNetworkMapLayer = ref<VectorMapLayer>();
+export const currentNetworkDatasetLayer = ref<VectorDatasetLayer>();
 export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 

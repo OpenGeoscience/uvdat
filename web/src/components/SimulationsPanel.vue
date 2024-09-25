@@ -3,17 +3,18 @@ import { ref, watch } from "vue";
 import {
   currentSimulationType,
   currentContext,
-  selectedMapLayers,
+  selectedDatasetLayers,
 } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { RasterMapLayer, SimulationResult, VectorMapLayer } from "@/types";
 import {
-  getMapLayerForDataObject,
-  getOrCreateLayerFromID,
-  isMapLayerVisible,
-  toggleMapLayer,
-} from "@/layers";
+  isRasterDatasetLayer,
+  isVectorDatasetLayer,
+  RasterDatasetLayer,
+  SimulationResult,
+  VectorDatasetLayer,
+} from "@/types";
+import { isDatasetLayerVisible, toggleDatasetLayer } from "@/layers";
 
 export default {
   components: {
@@ -26,7 +27,7 @@ export default {
       {
         key: string;
         viewable: boolean;
-        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
         value: { name: string };
       }[]
     >([]);
@@ -88,34 +89,32 @@ export default {
           const selectedOption: any = argDef?.options.find(
             (o: { id: number }) => o === argValue || o.id === argValue
           );
-          if (selectedOption) {
-            let mapLayer: VectorMapLayer | RasterMapLayer | undefined;
-            if (selectedOption.map_layers) {
-              // Object has layers
-              mapLayer = (await getMapLayerForDataObject(selectedOption)) as
-                | VectorMapLayer
-                | RasterMapLayer
-                | undefined;
-            } else if (selectedOption.index && selectedOption.type) {
-              // Object is layer
-              mapLayer = await getOrCreateLayerFromID(
-                selectedOption.id,
-                selectedOption.type
-              );
-            }
-            return {
-              key: argName.replaceAll("_", " "),
-              value: selectedOption,
-              mapLayer,
-              viewable: mapLayer && !isMapLayerVisible(mapLayer),
-            };
+          if (!selectedOption) {
+            return;
           }
+
+          let datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
+          if (
+            isVectorDatasetLayer(selectedOption) ||
+            isRasterDatasetLayer(selectedOption)
+          ) {
+            datasetLayer = selectedOption;
+          }
+
+          // TODO: Populate network objects with correct map layer
+
+          return {
+            key: argName.replaceAll("_", " "),
+            value: selectedOption,
+            datasetLayer,
+            viewable: datasetLayer && !isDatasetLayerVisible(datasetLayer),
+          };
         })
       );
       activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
         key: string;
         viewable: boolean;
-        mapLayer: VectorMapLayer | RasterMapLayer | undefined;
+        datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
         value: { name: string };
       }[];
     }
@@ -161,7 +160,7 @@ export default {
       }
     });
 
-    watch(selectedMapLayers, populateActiveResultInputs);
+    watch(selectedDatasetLayers, populateActiveResultInputs);
 
     return {
       currentSimulationType,
@@ -175,7 +174,7 @@ export default {
       inputSelectionRules,
       run,
       timestampToTitle,
-      toggleMapLayer,
+      toggleDatasetLayer,
     };
   },
 };
@@ -252,7 +251,7 @@ export default {
                     <td>{{ arg.value.name || arg.value }}</td>
                     <td>
                       <v-btn
-                        @click="toggleMapLayer(arg.mapLayer)"
+                        @click="toggleDatasetLayer(arg.datasetLayer)"
                         v-if="arg.viewable"
                       >
                         Show on Map
