@@ -56,24 +56,25 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
 
 def ingest_projects(use_case):
     project_file_path = USE_CASE_FOLDER / use_case / 'projects.json'
-    if project_file_path.exists():
-        print('Creating Project objects...')
-        with open(project_file_path) as projects_json:
-            data = json.load(projects_json)
-            for project in data:
-                print('\t- ', project['name'])
-                existing = Project.objects.filter(name=project['name'])
-                if existing.count():
-                    project_for_setting = existing.first()
-                else:
-                    project_for_setting = Project.objects.create(
-                        name=project['name'],
-                        default_map_center=Point(*project['default_map_center']),
-                        default_map_zoom=project['default_map_zoom'],
-                    )
-                    print('\t', f'Project {project_for_setting.name} created.')
+    if not project_file_path.exists():
+        return
 
-                project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
+    print('Creating Project objects...')
+    with open(project_file_path) as projects_json:
+        data = json.load(projects_json)
+        for project in data:
+            print('\t- ', project['name'])
+            project_for_setting, created = Project.objects.get_or_create(
+                name=project['name'],
+                defaults={
+                    'default_map_center': Point(*project['default_map_center']),
+                    'default_map_zoom': project['default_map_zoom'],
+                },
+            )
+            if created:
+                print('\t', f'Project {project_for_setting.name} created.')
+
+            project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
 
 
 def ingest_charts(use_case):
