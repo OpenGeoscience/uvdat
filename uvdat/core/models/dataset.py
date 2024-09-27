@@ -17,10 +17,7 @@ class Dataset(models.Model):
     )
 
     def is_in_project(self, project_id):
-        from uvdat.core.models import Project
-
-        project = Project.objects.get(id=project_id)
-        return project.datasets.filter(id=self.id).exists()
+        return self.project_set.filter(id=project_id).exists()
 
     def readable_by(self, user):
         return True
