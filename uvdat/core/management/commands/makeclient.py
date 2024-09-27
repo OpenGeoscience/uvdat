@@ -1,6 +1,5 @@
 import os
 
-from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.management.base import BaseCommand, CommandError
 from oauth2_provider.models import Application
@@ -22,24 +21,18 @@ class Command(BaseCommand):
         site.name = 'UVDAT'
         site.save()
 
-        try:
-            user = User.objects.first()
-            if Application.objects.filter(user=user).exists():
-                raise CommandError(
-                    'The client already exists. You can administer it from the admin console.'
-                )
-            application = Application(
-                user=user,
-                redirect_uris=uri,
-                client_id=client_id,
-                name='client-app',
-                client_type='public',
-                authorization_grant_type='authorization-code',
-                skip_authorization=True,
-            )
-            application.save()
-            self.stdout.write(self.style.SUCCESS('Client Application created.'))
-        except User.DoesNotExist:
+        _, created = Application.objects.get_or_create(
+            name='client-app',
+            defaults={
+                'redirect_uris': uri,
+                'client_id': client_id,
+                'client_type': 'public',
+                'authorization_grant_type': 'authorization-code',
+                'skip_authorization': True,
+            },
+        )
+        if not created:
             raise CommandError(
-                'A user must exist before creating a client. Use createsuperuser command.'
+                'The client already exists. You can administer it from the admin console.'
             )
+        self.stdout.write(self.style.SUCCESS('Client Application created.'))
