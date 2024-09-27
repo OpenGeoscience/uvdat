@@ -62,6 +62,7 @@ export default {
     function createMap() {
       const newMap = new Map({
         container: "mapContainer",
+        // transformRequest adds auth headers to tile requests (excluding OSM requests)
         transformRequest: (url) => {
           let headers = {};
           if (!url.includes("openstreetmap")) {
