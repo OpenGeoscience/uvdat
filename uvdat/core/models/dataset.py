@@ -16,18 +16,6 @@ class Dataset(models.Model):
         choices=DatasetType.choices,
     )
 
-    def is_in_project(self, project_id):
-        return self.project_set.filter(id=project_id).exists()
-
-    def readable_by(self, user):
-        return True
-
-    def editable_by(self, user):
-        return user.is_superuser
-
-    def deletable_by(self, user):
-        return user.is_superuser
-
     def spawn_conversion_task(
         self,
         style_options=None,

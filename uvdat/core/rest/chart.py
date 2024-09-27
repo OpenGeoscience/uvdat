@@ -3,14 +3,15 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Chart
-from uvdat.core.rest.filter import AccessControl
+from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import ChartSerializer
 
 
 class ChartViewSet(ModelViewSet):
     queryset = Chart.objects.all()
     serializer_class = ChartSerializer
-    filter_backends = [AccessControl]
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
     def validate_editable(self, chart, func, *args, **kwargs):

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Project
-from uvdat.core.rest.filter import AccessControl
+from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import ProjectSerializer
 from uvdat.core.tasks.osmnx import load_roads
 
@@ -11,7 +11,8 @@ from uvdat.core.tasks.osmnx import load_roads
 class ProjectViewSet(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    filter_backends = [AccessControl]
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
     def perform_create(self, serializer):

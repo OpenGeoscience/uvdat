@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset, NetworkEdge, NetworkNode
-from uvdat.core.rest.filter import AccessControl
+from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import (
     DatasetSerializer,
     NetworkEdgeSerializer,
@@ -20,7 +20,8 @@ from uvdat.core.tasks.chart import add_gcc_chart_datum
 class DatasetViewSet(ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
-    filter_backends = [AccessControl]
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
     @action(detail=True, methods=['get'])

@@ -9,7 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Project
 from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResult
-from uvdat.core.rest.filter import AccessControl
+from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
 import uvdat.core.rest.serializers as uvdat_serializers
 
 
@@ -64,7 +64,8 @@ def get_available_simulations(project_id: int):
 class SimulationViewSet(ModelViewSet):
     queryset = SimulationResult.objects.all()
     serializer_class = uvdat_serializers.SimulationResultSerializer
-    filter_backends = [AccessControl]
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
     @action(

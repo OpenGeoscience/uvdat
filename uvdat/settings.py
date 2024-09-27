@@ -26,12 +26,19 @@ class UvdatMixin(ConfigMixin):
 
     HOMEPAGE_REDIRECT_URL = values.URLValue(environ_required=True)
 
+    # django-guardian; disable anonymous user permissions
+    ANONYMOUS_USER_NAME = None
+
+    # django-guardian; raise PermissionDenied exception instead of redirecting to login page
+    GUARDIAN_RAISE_403 = True
+
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'django.contrib.gis',
             'django_large_image',
+            'guardian',
             'uvdat.core.apps.CoreConfig',
         ] + configuration.INSTALLED_APPS
 
@@ -39,6 +46,12 @@ class UvdatMixin(ConfigMixin):
         configuration.INSTALLED_APPS += [
             's3_file_field',
         ]
+
+        configuration.AUTHENTICATION_BACKENDS = (
+            'django.contrib.auth.backends.ModelBackend',
+            'allauth.account.auth_backends.AuthenticationBackend',
+            'guardian.backends.ObjectPermissionBackend',
+        )
 
         configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
             'oauth2_provider.contrib.rest_framework.OAuth2Authentication',

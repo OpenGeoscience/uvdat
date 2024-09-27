@@ -10,18 +10,6 @@ class Network(models.Model):
     category = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
 
-    def is_in_project(self, project_id):
-        return self.dataset.is_in_project(project_id)
-
-    def readable_by(self, user):
-        return self.dataset.readable_by(user)
-
-    def editable_by(self, user):
-        return self.dataset.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.dataset.deletable_by(user)
-
     def get_graph(self):
         from uvdat.core.tasks.networks import get_network_graph
 
@@ -42,18 +30,6 @@ class NetworkNode(models.Model):
     metadata = models.JSONField(blank=True, null=True)
     capacity = models.IntegerField(null=True)
     location = geo_models.PointField()
-
-    def is_in_project(self, project_id):
-        return self.network.is_in_project(project_id)
-
-    def readable_by(self, user):
-        return self.network.readable_by(user)
-
-    def editable_by(self, user):
-        return self.network.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.network.deletable_by(user)
 
     def get_adjacent_nodes(self) -> models.QuerySet:
         entering_node_ids = (
@@ -80,15 +56,3 @@ class NetworkEdge(models.Model):
     directed = models.BooleanField(default=False)
     from_node = models.ForeignKey(NetworkNode, related_name='+', on_delete=models.CASCADE)
     to_node = models.ForeignKey(NetworkNode, related_name='+', on_delete=models.CASCADE)
-
-    def is_in_project(self, project_id):
-        return self.network.is_in_project(project_id)
-
-    def readable_by(self, user):
-        return self.network.readable_by(user)
-
-    def editable_by(self, user):
-        return self.network.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.network.deletable_by(user)

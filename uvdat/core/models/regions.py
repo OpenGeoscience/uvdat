@@ -12,18 +12,6 @@ class SourceRegion(models.Model):
     metadata = models.JSONField(blank=True, null=True)
     boundary = geo_models.MultiPolygonField()
 
-    def is_in_project(self, project_id):
-        return self.dataset.is_in_project(project_id)
-
-    def readable_by(self, user):
-        return self.dataset.readable_by(user)
-
-    def editable_by(self, user):
-        return self.dataset.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.dataset.deletable_by(user)
-
     class Meta:
         constraints = [
             # We enforce name uniqueness across datasets
@@ -53,18 +41,6 @@ class DerivedRegion(models.Model):
     # Since these regions are not associated with Datasets,
     # They need their own reference to a map representation
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.PROTECT)
-
-    def is_in_project(self, project_id):
-        return self.project.id == int(project_id)
-
-    def readable_by(self, user):
-        return self.project.readable_by(user)
-
-    def editable_by(self, user):
-        return self.project.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.project.deletable_by(user)
 
     def get_map_layers(self):
         return [

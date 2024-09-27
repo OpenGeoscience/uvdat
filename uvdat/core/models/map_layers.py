@@ -18,18 +18,6 @@ class AbstractMapLayer(TimeStampedModel):
     default_style = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
 
-    def is_in_project(self, project_id):
-        return self.dataset.is_in_project(project_id)
-
-    def readable_by(self, user):
-        return self.dataset.readable_by(user)
-
-    def editable_by(self, user):
-        return self.dataset.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.dataset.deletable_by(user)
-
     class Meta:
         abstract = True
 

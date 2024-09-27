@@ -13,18 +13,6 @@ class Chart(models.Model):
     chart_options = models.JSONField(blank=True, null=True)
     editable = models.BooleanField(default=False)
 
-    def is_in_project(self, project_id):
-        return self.project.id == project_id
-
-    def readable_by(self, user):
-        return self.project.readable_by(user)
-
-    def editable_by(self, user):
-        return self.project.editable_by(user)
-
-    def deletable_by(self, user):
-        return self.project.owned_by(user)
-
     def spawn_conversion_task(
         self,
         conversion_options=None,

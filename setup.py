@@ -42,6 +42,7 @@ setup(
         'django-configurations[database,email]==2.5.1',
         'django-extensions==3.2.3',
         'django-filter==24.3',
+        'django-guardian==2.4.0',
         'django-oauth-toolkit==2.4.0',
         'djangorestframework==3.15.2',
         'django-large-image==0.10.0',
