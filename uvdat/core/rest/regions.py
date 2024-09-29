@@ -3,7 +3,7 @@ import json
 from django.http import HttpResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet, mixins
 
 from uvdat.core.models import DerivedRegion, SourceRegion
 from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
@@ -17,7 +17,7 @@ from .serializers import (
 )
 
 
-class SourceRegionViewSet(ModelViewSet):
+class SourceRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = SourceRegion.objects.all()
     serializer_class = SourceRegionSerializer
     permission_classes = [GuardianPermission]
@@ -25,7 +25,7 @@ class SourceRegionViewSet(ModelViewSet):
     lookup_field = 'id'
 
 
-class DerivedRegionViewSet(ModelViewSet):
+class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = DerivedRegion.objects.all()
     serializer_class = DerivedRegionListSerializer
     permission_classes = [GuardianPermission]
