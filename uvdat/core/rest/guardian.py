@@ -26,6 +26,8 @@ class GuardianPermission(IsAuthenticated):
             return obj.dataset.project_set
         if isinstance(obj, (models.NetworkEdge, models.NetworkNode)):
             return obj.network.dataset.project_set
+        if isinstance(obj, models.VectorFeature):
+            return obj.map_layer.dataset.project_set
 
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
