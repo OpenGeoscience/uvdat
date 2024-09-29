@@ -9,23 +9,22 @@ class GuardianPermission(IsAuthenticated):
     def get_object_queryset(self, obj):
         if isinstance(obj, models.Project):
             return obj
-        elif isinstance(models.Dataset):
+        if isinstance(models.Dataset):
             return obj.project_set
-        elif (
-            isinstance(obj.models.Chart)
-            or isinstance(obj, models.SimulationResult)
-            or isinstance(obj, models.DerivedRegion)
-        ):
+        if isinstance(obj, (models.Chart, models.SimulationResult, models.DerivedRegion)):
             return obj.project
-        elif (
-            isinstance(obj, models.FileItem)
-            or isinstance(obj, models.VectorMapLayer)
-            or isinstance(obj, models.RasterMapLayer)
-            or isinstance(obj, models.Network)
-            or isinstance(obj, models.SourceRegion)
+        if isinstance(
+            obj,
+            (
+                models.FileItem,
+                models.VectorMapLayer,
+                models.RasterMapLayer,
+                models.Network,
+                models.SourceRegion,
+            ),
         ):
             return obj.dataset.project_set
-        elif isinstance(obj, models.NetworkEdge) or isinstance(obj, models.NetworkNode):
+        if isinstance(obj, (models.NetworkEdge, models.NetworkNode)):
             return obj.network.dataset.project_set
 
     def has_object_permission(self, request, view, obj):
@@ -48,4 +47,5 @@ class GuardianFilter(BaseFilterBackend):
             klass=queryset,
             user=request.user,
             perms=['follower', 'collaborator', 'owner'],
+            any_perm=True,
         )
