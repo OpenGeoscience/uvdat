@@ -16,7 +16,8 @@ class ProjectViewSet(ModelViewSet):
     lookup_field = 'id'
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        project = serializer.save()
+        project.update_permissions(owner=self.request.user)
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

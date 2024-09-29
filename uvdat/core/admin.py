@@ -18,7 +18,7 @@ from uvdat.core.models import (
 
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'owner']
+    list_display = ['id', 'name']
 
 
 class DatasetAdmin(admin.ModelAdmin):
