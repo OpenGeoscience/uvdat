@@ -24,6 +24,14 @@ class DatasetViewSet(ModelViewSet):
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        project_id: str = self.request.query_params.get('project')
+        if project_id is None or not project_id.isdigit():
+            return qs
+
+        return qs.filter(project=int(project_id))
+
     @action(detail=True, methods=['get'])
     def map_layers(self, request, **kwargs):
         dataset: Dataset = self.get_object()

@@ -32,18 +32,19 @@ class DerivedRegionViewSet(mixins.RetrieveModelMixin, mixins.ListModelMixin, Gen
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        project_id: str = self.request.query_params.get('project')
+        if project_id is None or not project_id.isdigit():
+            return qs
+
+        return qs.filter(project=int(project_id))
+
     def get_serializer_class(self):
         if self.detail:
             return DerivedRegionDetailSerializer
 
         return super().get_serializer_class()
-
-    def get_queryset(self):
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            return DerivedRegion.objects.filter(project__id=project_id)
-        else:
-            return DerivedRegion.objects.all()
 
     @action(detail=True, methods=['GET'])
     def as_feature(self, request, *args, **kwargs):
