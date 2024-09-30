@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
@@ -16,8 +17,9 @@ class ProjectViewSet(ModelViewSet):
     lookup_field = 'id'
 
     def perform_create(self, serializer):
-        project = serializer.save()
-        project.update_permissions(owner=self.request.user)
+        project: Project = serializer.save()
+        user: User = self.request.user
+        project.set_permissions(owner=[user])
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

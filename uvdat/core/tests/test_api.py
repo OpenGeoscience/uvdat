@@ -120,7 +120,7 @@ def viewset_test(
 
     # Update project permissions
     if perm is not None:
-        test_project.update_permissions(**{perm: [user.id]})
+        test_project.set_permissions(**{perm: [user.id]})
         assert get_perms(user, test_project) == [perm]
 
     # Test endpoints
