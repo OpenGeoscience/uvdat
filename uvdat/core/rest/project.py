@@ -25,17 +25,16 @@ class ProjectViewSet(ModelViewSet):
     def partial_update(self, request, id):
         project = self.get_object()
         dataset_ids = request.data.pop('dataset_ids', None)
-        owner_id = request.data.pop('owner', None)
-        collaborator_ids = request.data.pop('collaborators', None)
-        follower_ids = request.data.pop('followers', None)
         if dataset_ids is not None:
             project.datasets.set(Dataset.objects.filter(id__in=dataset_ids))
-        if owner_id is not None:
-            project.owner = User.objects.get(id=owner_id)
-        if collaborator_ids is not None:
-            project.collaborators.set(User.objects.filter(id__in=collaborator_ids))
-        if follower_ids is not None:
-            project.followers.set(User.objects.filter(id__in=follower_ids))
+        owner_id = request.data.pop('owner', None)
+        collaborator_ids = request.data.pop('collaborators', [])
+        follower_ids = request.data.pop('followers', [])
+        project.set_permissions(
+            owner=User.objects.filter(id=owner_id),
+            collaborator=User.objects.filter(id__in=collaborator_ids),
+            follower=User.objects.filter(id__in=follower_ids),
+        )
         serializer = ProjectSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
