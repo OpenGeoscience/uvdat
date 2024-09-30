@@ -8,6 +8,7 @@ from django.db import transaction
 import geopandas
 
 from uvdat.core.models import DerivedRegion, Project, SourceRegion, VectorMapLayer
+from uvdat.core.rest.guardian import filter_queryset_by_projects
 from uvdat.core.tasks.map_layers import save_vector_features
 
 
@@ -22,7 +23,8 @@ def create_derived_region(name: str, project: Project, region_ids: List[int], op
         raise DerivedRegionCreationError('Derived Regions must consist of multiple regions')
 
     # Ensure all regions are from one project
-    if any(not sr.is_in_project(project.id) for sr in source_regions):
+    filtered = filter_queryset_by_projects(source_regions, Project.objects.filter(id=project.id))
+    if filtered.count() < source_regions.count():
         raise DerivedRegionCreationError(
             f'Source Regions must exist in the same project with id {project.id}.'
         )

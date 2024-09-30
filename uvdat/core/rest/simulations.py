@@ -9,7 +9,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Project
 from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResult
-from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
+from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission, filter_queryset_by_projects
 import uvdat.core.rest.serializers as uvdat_serializers
 
 
@@ -40,13 +40,16 @@ def get_available_simulations(project_id: int):
                     option_objects = options_type.objects
                     if options_annotations:
                         option_objects = option_objects.annotate(**options_annotations)
-                    options = list(
+
+                    queryset = option_objects.filter(
+                        **options_query,
+                    ).all()
+                    options = [
                         option_serializer(d).data
-                        for d in option_objects.filter(
-                            **options_query,
-                        ).all()
-                        if d.is_in_project(project_id)
-                    )
+                        for d in filter_queryset_by_projects(
+                            queryset=queryset, projects=Project.objects.filter(id=project_id)
+                        )
+                    ]
             args.append(
                 {
                     'name': a['name'],
