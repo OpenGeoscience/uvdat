@@ -3,6 +3,7 @@ import json
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.serializers import geojson
+from guardian.shortcuts import get_users_with_perms
 from rest_framework import serializers
 
 from uvdat.core.models import (
@@ -29,14 +30,28 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
-    owner = UserSerializer(allow_null=True, required=False)
-    collaborators = UserSerializer(many=True, required=False)
-    followers = UserSerializer(many=True, required=False)
+    owner = serializers.SerializerMethodField('get_owner')
+    collaborators = serializers.SerializerMethodField('get_collaborators')
+    followers = serializers.SerializerMethodField('get_followers')
 
     def get_center(self, obj):
         # Web client expects Lon, Lat
         if obj.default_map_center:
             return [obj.default_map_center.y, obj.default_map_center.x]
+
+    def get_owner(self, obj):
+        users = get_users_with_perms(obj, only_with_perms_in=['owner'])
+        if users.count() == 0:
+            return None
+        return UserSerializer(users.first()).data
+
+    def get_collaborators(self, obj):
+        users = get_users_with_perms(obj, only_with_perms_in=['collaborator'])
+        return [UserSerializer(user).data for user in users.all()]
+
+    def get_followers(self, obj):
+        users = get_users_with_perms(obj, only_with_perms_in=['follower'])
+        return [UserSerializer(user).data for user in users.all()]
 
     def to_internal_value(self, data):
         center = data.get('default_map_center')
