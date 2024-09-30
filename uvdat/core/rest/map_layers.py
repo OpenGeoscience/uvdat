@@ -108,7 +108,7 @@ class VectorMapLayerViewSet(ModelViewSet):
         url_path=r'tiles/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)',
         url_name='tiles',
     )
-    def get_vector_tile(self, request, x: str, y: str, z: str, pk: str):
+    def get_vector_tile(self, request, id: str, x: str, y: str, z: str):
         with connection.cursor() as cursor:
             cursor.execute(
                 VECTOR_TILE_SQL,
@@ -117,7 +117,7 @@ class VectorMapLayerViewSet(ModelViewSet):
                     'x': x,
                     'y': y,
                     'srid': 3857,
-                    'map_layer_id': pk,
+                    'map_layer_id': id,
                 },
             )
             row = cursor.fetchone()
