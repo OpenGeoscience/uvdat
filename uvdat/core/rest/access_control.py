@@ -57,13 +57,27 @@ class GuardianPermission(IsAuthenticated):
 
 class GuardianFilter(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
-        if request.user.is_superuser:
+        project_id = request.query_params.get('project')
+        if project_id is not None:
+            try:
+                project_id = int(project_id)
+            except ValueError:
+                project_id = None
+
+        if request.user.is_superuser and project_id is None:
             return queryset
 
         # Allow user to have any level of permission
         all_perms = [x for x, _ in Project._meta.permissions]
         user_projects = get_objects_for_user(
-            klass=models.Project, user=request.user, perms=all_perms, any_perm=True
+            klass=(
+                models.Project
+                if project_id is None
+                else models.Project.objects.filter(id=project_id)
+            ),
+            user=request.user,
+            perms=all_perms,
+            any_perm=True,
         )
 
         # Return queryset filtered by objects that are within these projects
