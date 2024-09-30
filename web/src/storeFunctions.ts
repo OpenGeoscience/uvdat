@@ -101,8 +101,7 @@ export function clearMap() {
     zoom = currentProject.value.default_map_zoom;
   }
   const map = getMap();
-  map.setCenter(center);
-  map.setZoom(zoom);
+  map.jumpTo({ center, zoom });
 }
 
 export function loadDatasets() {
