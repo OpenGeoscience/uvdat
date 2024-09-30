@@ -93,7 +93,7 @@ export function loadProjects() {
   });
 }
 
-export function clearMap() {
+export function setMapCenter() {
   let center: [number, number] = [0, 30];
   let zoom = 1;
   if (currentProject.value) {
@@ -187,7 +187,7 @@ export function clearCurrentNetwork() {
 
 watch(currentProject, () => {
   clearState();
-  clearMap();
+  setMapCenter();
   loadDatasets();
   loadCharts();
   loadSimulationTypes();

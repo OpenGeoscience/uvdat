@@ -9,7 +9,7 @@ import {
   clickedFeature,
   showMapBaseLayer,
 } from "@/store";
-import { clearMap } from "@/storeFunctions";
+import { setMapCenter } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import ActiveLayers from "./ActiveLayers.vue";
@@ -152,7 +152,7 @@ export default {
 
     onMounted(() => {
       createMap();
-      clearMap();
+      setMapCenter();
     });
 
     return {

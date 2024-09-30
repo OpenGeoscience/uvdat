@@ -1,7 +1,7 @@
 import axios from "axios";
 import OauthClient from "@resonant/oauth-client";
 import { currentError, currentUser, currentProject } from "@/store";
-import { clearState, clearMap } from "@/storeFunctions";
+import { clearState, setMapCenter } from "@/storeFunctions";
 
 export const baseURL = `${process.env.VUE_APP_API_ROOT}api/v1/`;
 
@@ -61,5 +61,5 @@ export const logout = async () => {
   currentUser.value = undefined;
   currentProject.value = undefined;
   clearState();
-  clearMap();
+  setMapCenter();
 };
