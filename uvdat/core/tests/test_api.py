@@ -1,7 +1,6 @@
 from django.contrib.gis.geos import LineString, MultiPolygon, Point, Polygon
 from guardian.shortcuts import get_perms
 import pytest
-from rest_framework.test import APIClient
 
 from uvdat.core.models import (
     Chart,
@@ -10,9 +9,7 @@ from uvdat.core.models import (
     Network,
     NetworkEdge,
     NetworkNode,
-    Project,
     RasterMapLayer,
-    SimulationResult,
     SourceRegion,
     VectorMapLayer,
 )
@@ -44,7 +41,6 @@ def fetch_endpoint(server, client, viewset_name, obj_id, **kwargs):
 
 def create_endpoint(server, client, viewset_name, post_data, **kwargs):
     if post_data is not None:
-        write_allowed = kwargs.get('write_allowed', False)
         api_root = f'{server.url}/api/v1'
         response = client.post(f'{api_root}/{viewset_name}/', post_data, format='json')
         assert response.status_code == 201

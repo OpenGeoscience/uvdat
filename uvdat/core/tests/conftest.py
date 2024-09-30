@@ -66,8 +66,8 @@ def api_client() -> APIClient:
 
 @pytest.fixture
 def permissions_client(user_info, test_project) -> APIClient:
-    perm = user_info.pop('perm', None)
-    test_id = user_info.pop('id', None)
+    user_info.pop('perm', None)
+    user_info.pop('id', None)
     user = User.objects.create(**user_info)
     client = APIClient()
     client.force_authenticate(user=user)
