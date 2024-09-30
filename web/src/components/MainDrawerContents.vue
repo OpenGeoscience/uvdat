@@ -2,7 +2,7 @@
 import { ref, Ref, computed } from "vue";
 import { availableProjects, currentProject, projectConfigMode } from "@/store";
 import ProjectContents from "./ProjectContents.vue";
-import { getCurrentMapPosition, resetMap } from "@/storeFunctions";
+import { getCurrentMapPosition, setMapCenter } from "@/storeFunctions";
 import { Project } from "@/types";
 import { patchProject } from "@/api/rest";
 
@@ -38,7 +38,7 @@ export default {
           }
           return p;
         });
-        resetMap(project);
+        setMapCenter(project);
         saving.value = "done";
       });
     }
@@ -49,7 +49,7 @@ export default {
       searchText,
       saving,
       openProjectConfig,
-      resetMap,
+      setMapCenter,
       saveProjectMapLocation,
     };
   },
@@ -141,7 +141,7 @@ export default {
             >
               <v-card width="250">
                 <v-list selectable>
-                  <v-list-item @click="resetMap(project)">
+                  <v-list-item @click="setMapCenter(project)">
                     Go to project default map position
                   </v-list-item>
                   <v-list-item @click="saveProjectMapLocation(project)">
