@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from django.contrib.gis.geos import LineString, MultiPolygon, Point, Polygon
 from guardian.shortcuts import get_perms
 import pytest
@@ -13,271 +12,310 @@ from uvdat.core.models import (
     NetworkNode,
     Project,
     RasterMapLayer,
+    SimulationResult,
     SourceRegion,
     VectorMapLayer,
 )
 
-USER_INFOS = [
-    dict(
-        id='superuser',
-        username='userA',
-        password='testmepassA',
-        email='a@fakeemail.com',
-        is_superuser=True,
-        perm=None,
-    ),
-    dict(
-        id='owner',
-        username='userB',
-        password='testmepassB',
-        email='b@fakeemail.com',
-        is_superuser=False,
-        perm='owner',
-    ),
-    dict(
-        id='collaborator',
-        username='userC',
-        password='testmepassC',
-        email='c@fakeemail.com',
-        is_superuser=False,
-        perm='collaborator',
-    ),
-    dict(
-        id='follower',
-        username='userD',
-        password='testmepassD',
-        email='d@fakeemail.com',
-        is_superuser=False,
-        perm='follower',
-    ),
-    dict(
-        id='no_perms',
-        username='userE',
-        password='testmepassE',
-        email='E@fakeemail.com',
-        is_superuser=False,
-        perm=None,
-    ),
-]
+from .conftest import USER_INFOS
 
-VIEWS = [
-    dict(
-        obj_key='chart',
-        base='charts',
-        post_data=dict(name='New Chart'),
-        put_data=dict(name='Overwritten Test Chart'),
-        patch_data=dict(name='Updated Test Chart'),
-    ),
-    dict(
-        obj_key='file_item',
-        base='files',
-        post_data=None,
-        put_data=None,
-        patch_data=dict(name='Updated Test File'),
-    ),
-    dict(
-        obj_key='raster',
-        base='rasters',
-        post_data=None,
-        put_data=None,
-        patch_data=dict(index=1),
-    ),
-    dict(
-        obj_key='vector',
-        base='vectors',
-        post_data=None,
-        put_data=None,
-        patch_data=dict(index=2),
-    ),
-    dict(
-        # No edit/delete methods allowed for regions
-        obj_key='region',
-        base='source-regions',
-        post_data=None,
-        put_data=None,
-        patch_data=None,
-        perform_delete=False,
-    ),
-    dict(
-        obj_key='edge',
-        base='edges',
-        post_data=None,
-        put_data=None,
-        patch_data=dict(name='Updated Test Edge'),
-    ),
-    dict(
-        obj_key='node_1',
-        base='nodes',
-        post_data=None,
-        put_data=None,
-        patch_data=dict(name='Updated Test Node'),
-        expected_count=2,
-    ),
-    dict(
-        obj_key='network',
-        base='networks',
-        post_data=None,
-        put_data=None,
-        patch_data=dict(category='foo'),
-    ),
-    dict(
-        obj_key='dataset',
-        base='datasets',
-        post_data=dict(name='New Dataset', dataset_type='VECTOR', category='test'),
-        put_data=dict(name='Overwritten Test Dataset', dataset_type='VECTOR', category='test'),
-        patch_data=dict(name='Updated Test Dataset'),
-    ),
-    dict(
-        obj_key='project',
-        base='projects',
+
+def list_endpoint(server, client, viewset_name, **kwargs):
+    read_allowed = kwargs.get('read_allowed', False)
+    api_root = f'{server.url}/api/v1'
+    response = client.get(f'{api_root}/{viewset_name}/', format='json')
+    assert response.status_code == 200
+    if not read_allowed:
+        assert response.json().get('count') == 0
+    else:
+        assert response.json().get('count') == 1
+
+
+def fetch_endpoint(server, client, viewset_name, obj_id, **kwargs):
+    read_allowed = kwargs.get('read_allowed', False)
+    api_root = f'{server.url}/api/v1'
+    response = client.get(f'{api_root}/{viewset_name}/{obj_id}/', format='json')
+    if not read_allowed:
+        assert response.status_code == 404
+    else:
+        assert response.status_code == 200
+        assert response.json().get('id') == obj_id
+
+
+def create_endpoint(server, client, viewset_name, post_data, **kwargs):
+    if post_data is not None:
+        write_allowed = kwargs.get('write_allowed', False)
+        api_root = f'{server.url}/api/v1'
+        response = client.post(f'{api_root}/{viewset_name}/', post_data, format='json')
+        assert response.status_code == 201
+        for key, value in post_data.items():
+            assert response.json().get(key) == value
+
+
+def overwrite_endpoint(server, client, viewset_name, obj_id, put_data, **kwargs):
+    if put_data is not None:
+        read_allowed = kwargs.get('read_allowed', False)
+        write_allowed = kwargs.get('write_allowed', False)
+        api_root = f'{server.url}/api/v1'
+        response = client.put(f'{api_root}/{viewset_name}/{obj_id}/', put_data, format='json')
+        if not read_allowed:
+            assert response.status_code == 404
+        elif not write_allowed:
+            assert response.status_code == 403
+        else:
+            assert response.status_code == 200
+            for key, value in put_data.items():
+                assert response.json().get(key) == value
+
+
+def update_endpoint(server, client, viewset_name, obj_id, patch_data, **kwargs):
+    if patch_data is not None:
+        read_allowed = kwargs.get('read_allowed', False)
+        write_allowed = kwargs.get('write_allowed', False)
+        api_root = f'{server.url}/api/v1'
+        response = client.patch(f'{api_root}/{viewset_name}/{obj_id}/', patch_data, format='json')
+        if not read_allowed:
+            assert response.status_code == 404
+        elif not write_allowed:
+            assert response.status_code == 403
+        else:
+            assert response.status_code == 200
+            for key, value in patch_data.items():
+                assert response.json().get(key) == value
+
+
+def delete_endpoint(server, client, viewset_name, obj_id, **kwargs):
+    perform_delete = kwargs.get('perform_delete', True)
+    read_allowed = kwargs.get('read_allowed', False)
+    delete_allowed = kwargs.get('write_allowed', False)
+    api_root = f'{server.url}/api/v1'
+    if perform_delete:
+        response = client.delete(f'{api_root}/{viewset_name}/{obj_id}/', format='json')
+        if not read_allowed:
+            assert response.status_code == 404
+        elif not delete_allowed:
+            assert response.status_code == 403
+        else:
+            assert response.status_code == 204
+
+
+def viewset_test(
+    live_server,
+    permissions_client,
+    user_info,
+    test_project,
+    viewset_name,
+    obj,
+    post_data=None,
+    put_data=None,
+    patch_data=None,
+    perform_delete=True,
+):
+    client, user = permissions_client
+    perm = user_info.get('perm')
+    superuser = user_info.get('is_superuser')
+    args = [live_server, client, viewset_name]
+    kwargs = dict(
+        read_allowed=perm is not None or superuser,
+        write_allowed=perm in ['collaborator', 'owner'] or superuser,
+        delete_allowed=perm == 'owner' or superuser,
+        perform_delete=perform_delete,
+    )
+
+    # Update project permissions
+    if perm is not None:
+        test_project.update_permissions(**{perm: [user.id]})
+        assert get_perms(user, test_project) == [perm]
+
+    # Test endpoints
+    list_endpoint(*args, **kwargs)
+    fetch_endpoint(*args, obj.id, **kwargs)
+    create_endpoint(*args, post_data, **kwargs)
+    overwrite_endpoint(*args, obj.id, put_data, **kwargs)
+    update_endpoint(*args, obj.id, patch_data, **kwargs)
+    delete_endpoint(*args, obj.id, **kwargs)
+
+
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_project_viewset(live_server, permissions_client, user_info, test_project):
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'projects',
+        test_project,
         post_data=dict(name='New Project', default_map_center=[42, -71], default_map_zoom=10),
         put_data=dict(
             name='Overwritten Test Project', default_map_center=[42, -71], default_map_zoom=10
         ),
         patch_data=dict(name='Updated Test Project'),
-    ),
-]
-
-
-def create_objects():
-    geo_points = (Point(42, -71), Point(41, -70), Point(41.5, -70.5), Point(42, -71))
-    project = Project.objects.create(
-        name='Permission Test', default_map_zoom=10, default_map_center=geo_points[0]
-    )
-    chart = Chart.objects.create(name='Test Chart', project=project)
-    dataset = Dataset.objects.create(name='Test Dataset')
-    file_item = FileItem.objects.create(name='Test File', dataset=dataset)
-    raster = RasterMapLayer.objects.create(dataset=dataset)
-    vector = VectorMapLayer.objects.create(dataset=dataset)
-    # VectorFeature does not have API Viewset yet
-    # feature = VectorFeature.objects.create(
-    #   map_layer=vector, geometry=geo_points[0], properties={}
-    # )
-    network = Network.objects.create(dataset=dataset)
-    node_1 = NetworkNode.objects.create(name='Test Node', network=network, location=geo_points[0])
-    node_2 = NetworkNode.objects.create(name='Test Node', network=network, location=geo_points[1])
-    edge = NetworkEdge.objects.create(
-        name='Test Edge',
-        network=network,
-        line_geometry=LineString(geo_points[0], geo_points[1]),
-        from_node=node_1,
-        to_node=node_2,
-    )
-    region = SourceRegion.objects.create(
-        name='Test Region', dataset=dataset, boundary=MultiPolygon(Polygon(geo_points))
-    )
-    project.datasets.add(dataset)
-    return dict(
-        project=project,
-        chart=chart,
-        dataset=dataset,
-        file_item=file_item,
-        raster=raster,
-        vector=vector,
-        # feature=feature,
-        network=network,
-        node_1=node_1,
-        node_2=node_2,
-        edge=edge,
-        region=region,
     )
 
 
 @pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
 @pytest.mark.django_db
-def test_permissions(user_info, live_server):
-    # Set up client
-    api_root = f'{live_server.url}/api/v1'
-    test_id = user_info.pop('id')
-    perm = user_info.pop('perm')
-    user = User.objects.create(**user_info)
-    client = APIClient()
-    client.force_authenticate(user=user)
-    print('Test', test_id)
+def test_chart_viewset(live_server, permissions_client, user_info, test_project):
+    chart = Chart.objects.create(name='Test Chart', project=test_project)
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'charts',
+        chart,
+        post_data=dict(name='New Chart'),
+        put_data=dict(name='Overwritten Test Chart'),
+        patch_data=dict(name='Updated Test Chart'),
+    )
 
-    # expected permissions
-    read_allowed = perm is not None or user.is_superuser
-    write_allowed = perm in ['collaborator', 'owner'] or user.is_superuser
-    delete_allowed = perm == 'owner' or user.is_superuser
 
-    # Create objects
-    objects = create_objects()
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_dataset_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'datasets',
+        dataset,
+        post_data=dict(name='New Dataset', dataset_type='VECTOR', category='test'),
+        put_data=dict(name='Overwritten Test Dataset', dataset_type='VECTOR', category='test'),
+        patch_data=dict(name='Updated Test Dataset'),
+    )
 
-    # Update project permissions
-    if perm is not None:
-        project = objects.get('project')
-        project.update_permissions(**{perm: [user.id]})
-        perms_list = get_perms(user, project)
-        assert perms_list == [perm]
 
-    # Test viewsets
-    for view in VIEWS:
-        base, obj_key, post_data, put_data, patch_data, expected_count, perform_delete = (
-            view.get('base'),
-            view.get('obj_key'),
-            view.get('post_data'),
-            view.get('put_data'),
-            view.get('patch_data'),
-            view.get('expected_count', 1),
-            view.get('perform_delete', True),
-        )
-        obj = objects.get(obj_key)
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_files_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    file_item = FileItem.objects.create(name='Test File', dataset=dataset)
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'files',
+        file_item,
+        patch_data=dict(name='Updated Test File'),
+    )
 
-        # list endpoint
-        response = client.get(f'{api_root}/{base}/', format='json')
-        assert response.status_code == 200
-        if not read_allowed:
-            assert response.json().get('count') == 0
-        else:
-            assert response.json().get('count') == expected_count
 
-        # fetch endpoint
-        response = client.get(f'{api_root}/{base}/{obj.id}/', format='json')
-        if not read_allowed:
-            assert response.status_code == 404
-        else:
-            assert response.status_code == 200
-            assert response.json().get('id') == obj.id
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_raster_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    raster = RasterMapLayer.objects.create(dataset=dataset)
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'rasters',
+        raster,
+        patch_data=dict(index=1),
+    )
 
-        # create endpoint
-        if post_data is not None:
-            response = client.post(f'{api_root}/{base}/', post_data, format='json')
-            assert response.status_code == 201
-            for key, value in post_data.items():
-                assert response.json().get(key) == value
 
-        # overwrite endpoint
-        if put_data is not None:
-            response = client.put(f'{api_root}/{base}/{obj.id}/', put_data, format='json')
-            if not read_allowed:
-                assert response.status_code == 404
-            elif not write_allowed:
-                assert response.status_code == 403
-            else:
-                assert response.status_code == 200
-                for key, value in put_data.items():
-                    assert response.json().get(key) == value
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_vector_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    vector = VectorMapLayer.objects.create(dataset=dataset)
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'vectors',
+        vector,
+        patch_data=dict(index=1),
+    )
 
-        # update endpoint
-        if patch_data is not None:
-            response = client.patch(f'{api_root}/{base}/{obj.id}/', patch_data, format='json')
-            if not read_allowed:
-                assert response.status_code == 404
-            elif not write_allowed:
-                assert response.status_code == 403
-            else:
-                assert response.status_code == 200
-                for key, value in patch_data.items():
-                    assert response.json().get(key) == value
 
-        # delete endpoint
-        if perform_delete:
-            response = client.delete(f'{api_root}/{base}/{obj.id}/', format='json')
-            if not read_allowed:
-                assert response.status_code == 404
-            elif not delete_allowed:
-                assert response.status_code == 403
-            else:
-                assert response.status_code == 204
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_network_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    network = Network.objects.create(dataset=dataset)
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'networks',
+        network,
+        patch_data=dict(category='foo'),
+    )
 
-    client.logout()
+
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_node_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    network = Network.objects.create(dataset=dataset)
+    node = NetworkNode.objects.create(name='Test Node', network=network, location=Point(42, -71))
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'nodes',
+        node,
+        patch_data=dict(name='Updated Test Node'),
+    )
+
+
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_edge_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    network = Network.objects.create(dataset=dataset)
+    node_1 = NetworkNode.objects.create(name='Test Node', network=network, location=Point(42, -71))
+    node_2 = NetworkNode.objects.create(name='Test Node', network=network, location=Point(41, -70))
+    edge = NetworkEdge.objects.create(
+        name='Test Edge',
+        network=network,
+        line_geometry=LineString(Point(42, -71), Point(41, -70)),
+        from_node=node_1,
+        to_node=node_2,
+    )
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'edges',
+        edge,
+        patch_data=dict(name='Updated Test Edge'),
+    )
+
+
+@pytest.mark.parametrize('user_info', USER_INFOS, ids=[u.get('id') for u in USER_INFOS])
+@pytest.mark.django_db
+def test_region_viewset(live_server, permissions_client, user_info, test_project):
+    dataset = Dataset.objects.create(name='Test Dataset')
+    test_project.datasets.add(dataset)
+    geo_points = (Point(42, -71), Point(41, -70), Point(41.5, -70.5), Point(42, -71))
+    region = SourceRegion.objects.create(
+        name='Test Region', dataset=dataset, boundary=MultiPolygon(Polygon(geo_points))
+    )
+    viewset_test(
+        live_server,
+        permissions_client,
+        user_info,
+        test_project,
+        'source-regions',
+        region,
+        perform_delete=False,
+    )
