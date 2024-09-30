@@ -6,14 +6,14 @@ from uvdat.core import models
 
 
 # TODO: Dataset permissions should be separated from Project permissions
-def filter_by_parent_perms(
-    klass, user, perms=['follower', 'collaborator', 'owner'], queryset=None, obj=None
-):
+def filter_by_parent_perms(klass, user, perms=None, queryset=None, obj=None):
     objects = None
     if queryset is not None:
         objects = queryset
     elif obj is not None:
         objects = klass.objects.filter(id=obj.id)
+    if perms is None:
+        perms = ['follower', 'collaborator', 'owner']
 
     parent_queryset = None
     filter_function = None

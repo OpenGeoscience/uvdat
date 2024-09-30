@@ -7,7 +7,6 @@ from rest_framework.test import APIClient
 from uvdat.core.models import (
     Chart,
     Dataset,
-    DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
@@ -15,7 +14,6 @@ from uvdat.core.models import (
     Project,
     RasterMapLayer,
     SourceRegion,
-    VectorFeature,
     VectorMapLayer,
 )
 
@@ -152,7 +150,9 @@ def create_objects():
     raster = RasterMapLayer.objects.create(dataset=dataset)
     vector = VectorMapLayer.objects.create(dataset=dataset)
     # VectorFeature does not have API Viewset yet
-    # feature = VectorFeature.objects.create(map_layer=vector, geometry=geo_points[0], properties={})
+    # feature = VectorFeature.objects.create(
+    #   map_layer=vector, geometry=geo_points[0], properties={}
+    # )
     network = Network.objects.create(dataset=dataset)
     node_1 = NetworkNode.objects.create(name='Test Node', network=network, location=geo_points[0])
     node_2 = NetworkNode.objects.create(name='Test Node', network=network, location=geo_points[1])
