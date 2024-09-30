@@ -9,7 +9,11 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Project
 from uvdat.core.models.simulations import AVAILABLE_SIMULATIONS, SimulationResult
-from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission, filter_queryset_by_projects
+from uvdat.core.rest.access_control import (
+    GuardianFilter,
+    GuardianPermission,
+    filter_queryset_by_projects,
+)
 import uvdat.core.rest.serializers as uvdat_serializers
 
 

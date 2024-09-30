@@ -1,7 +1,7 @@
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import FileItem
-from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
+from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import FileItemSerializer
 
 

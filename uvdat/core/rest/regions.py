@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.viewsets import GenericViewSet, mixins
 
 from uvdat.core.models import DerivedRegion, SourceRegion
-from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
+from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.tasks.regions import DerivedRegionCreationError, create_derived_region
 
 from .serializers import (

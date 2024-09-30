@@ -8,7 +8,7 @@ from django.db import transaction
 import geopandas
 
 from uvdat.core.models import DerivedRegion, Project, SourceRegion, VectorMapLayer
-from uvdat.core.rest.guardian import filter_queryset_by_projects
+from uvdat.core.rest.access_control import filter_queryset_by_projects
 from uvdat.core.tasks.map_layers import save_vector_features
 
 

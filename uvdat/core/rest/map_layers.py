@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
-from uvdat.core.rest.guardian import GuardianFilter, GuardianPermission
+from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import (
     RasterMapLayerSerializer,
     VectorMapLayerDetailSerializer,
