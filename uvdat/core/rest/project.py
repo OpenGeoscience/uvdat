@@ -19,7 +19,7 @@ class ProjectViewSet(ModelViewSet):
     def perform_create(self, serializer):
         project: Project = serializer.save()
         user: User = self.request.user
-        project.set_permissions(owner=[user])
+        project.set_permissions(owner=user)
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):
