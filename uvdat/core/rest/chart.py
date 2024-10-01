@@ -1,21 +1,26 @@
 from django.http import HttpResponse
 from rest_framework.decorators import action
-from rest_framework.viewsets import GenericViewSet, mixins
+from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Chart
+from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
+from uvdat.core.rest.serializers import ChartSerializer
 
-from .serializers import ChartSerializer
 
-
-class ChartViewSet(GenericViewSet, mixins.ListModelMixin):
+class ChartViewSet(ModelViewSet):
     queryset = Chart.objects.all()
     serializer_class = ChartSerializer
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
+    lookup_field = 'id'
 
-    def get_queryset(self, **kwargs):
-        context_id = self.request.query_params.get('context')
-        if context_id:
-            return Chart.objects.filter(context__id=context_id)
-        return Chart.objects.all()
+    def get_queryset(self):
+        qs = super().get_queryset()
+        project_id: str = self.request.query_params.get('project')
+        if project_id is None or not project_id.isdigit():
+            return qs
+
+        return qs.filter(project=int(project_id))
 
     def validate_editable(self, chart, func, *args, **kwargs):
         if chart.editable:

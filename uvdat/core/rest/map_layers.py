@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import (
     RasterMapLayerSerializer,
     VectorMapLayerDetailSerializer,
@@ -72,6 +73,9 @@ SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
     queryset = RasterMapLayer.objects.select_related('dataset').all()
     serializer_class = RasterMapLayerSerializer
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
+    lookup_field = 'id'
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
     @action(
@@ -89,6 +93,9 @@ class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
 class VectorMapLayerViewSet(ModelViewSet):
     queryset = VectorMapLayer.objects.select_related('dataset').all()
     serializer_class = VectorMapLayerSerializer
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
+    lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -101,7 +108,7 @@ class VectorMapLayerViewSet(ModelViewSet):
         url_path=r'tiles/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)',
         url_name='tiles',
     )
-    def get_vector_tile(self, request, x: str, y: str, z: str, pk: str):
+    def get_vector_tile(self, request, id: str, x: str, y: str, z: str):
         with connection.cursor() as cursor:
             cursor.execute(
                 VECTOR_TILE_SQL,
@@ -110,7 +117,7 @@ class VectorMapLayerViewSet(ModelViewSet):
                     'x': x,
                     'y': y,
                     'srid': 3857,
-                    'map_layer_id': pk,
+                    'map_layer_id': id,
                 },
             )
             row = cursor.fetchone()

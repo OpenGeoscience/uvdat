@@ -1,14 +1,15 @@
 from .chart import ChartViewSet
-from .context import ContextViewSet
 from .dataset import DatasetViewSet
 from .file_item import FileItemViewSet
 from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .network import NetworkEdgeViewSet, NetworkNodeViewSet, NetworkViewSet
+from .project import ProjectViewSet
 from .regions import DerivedRegionViewSet, SourceRegionViewSet
 from .simulations import SimulationViewSet
+from .user import UserViewSet
 
 __all__ = [
-    ContextViewSet,
+    ProjectViewSet,
     ChartViewSet,
     FileItemViewSet,
     RasterMapLayerViewSet,
@@ -20,4 +21,5 @@ __all__ = [
     SourceRegionViewSet,
     DerivedRegionViewSet,
     SimulationViewSet,
+    UserViewSet,
 ]

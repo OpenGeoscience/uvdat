@@ -1,22 +1,24 @@
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from uvdat.core.rest import (
     ChartViewSet,
-    ContextViewSet,
     DatasetViewSet,
     DerivedRegionViewSet,
     FileItemViewSet,
     NetworkEdgeViewSet,
     NetworkNodeViewSet,
     NetworkViewSet,
+    ProjectViewSet,
     RasterMapLayerViewSet,
     SimulationViewSet,
     SourceRegionViewSet,
+    UserViewSet,
     VectorMapLayerViewSet,
 )
 
@@ -28,7 +30,8 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
-router.register(r'contexts', ContextViewSet, basename='contexts')
+router.register(r'users', UserViewSet, basename='users')
+router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'files', FileItemViewSet, basename='files')
 router.register(r'charts', ChartViewSet, basename='charts')
@@ -49,6 +52,8 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
+    # Redirect all other server requests to Vue client
+    path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),  # type: ignore
 ]
 
 if settings.DEBUG:

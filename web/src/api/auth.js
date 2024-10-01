@@ -1,6 +1,7 @@
 import axios from "axios";
-import OauthClient from "@girder/oauth-client";
-import { currentError } from "@/store";
+import OauthClient from "@resonant/oauth-client";
+import { currentError, currentUser, currentProject } from "@/store";
+import { clearState, setMapCenter } from "@/storeFunctions";
 
 export const baseURL = `${process.env.VUE_APP_API_ROOT}api/v1/`;
 
@@ -9,7 +10,8 @@ export const apiClient = axios.create({
 });
 export const oauthClient = new OauthClient(
   new URL(process.env.VUE_APP_OAUTH_API_ROOT),
-  process.env.VUE_APP_OAUTH_CLIENT_ID
+  process.env.VUE_APP_OAUTH_CLIENT_ID,
+  { redirectUrl: window.location.origin }
 );
 
 export async function restoreLogin() {
@@ -17,6 +19,13 @@ export async function restoreLogin() {
     return;
   }
   await oauthClient.maybeRestoreLogin();
+  if (oauthClient.isLoggedIn) {
+    apiClient.get("/users/me").then((response) => {
+      if (response.data) {
+        currentUser.value = response.data;
+      }
+    });
+  }
 }
 
 apiClient.interceptors.request.use((config) => ({
@@ -29,7 +38,6 @@ apiClient.interceptors.request.use((config) => ({
 
 apiClient.interceptors.response.use(
   (response) => {
-    currentError.value = undefined;
     return response;
   },
   (error) => {
@@ -37,6 +45,8 @@ apiClient.interceptors.response.use(
       currentError.value = "Server error; see server logs for details.";
     } else if (error.response?.status === 404) {
       currentError.value = "Not found.";
+    } else if (error.response?.status === 401) {
+      currentError.value = "Not authenticated.";
     } else if (error.response) {
       currentError.value = error.response?.data;
     } else {
@@ -48,4 +58,8 @@ apiClient.interceptors.response.use(
 
 export const logout = async () => {
   await oauthClient.logout();
+  currentUser.value = undefined;
+  currentProject.value = undefined;
+  clearState();
+  setMapCenter();
 };

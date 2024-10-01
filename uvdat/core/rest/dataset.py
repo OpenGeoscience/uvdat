@@ -6,19 +6,31 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset, NetworkEdge, NetworkNode
-from uvdat.core.rest import serializers as uvdat_serializers
+from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
+from uvdat.core.rest.serializers import (
+    DatasetSerializer,
+    NetworkEdgeSerializer,
+    NetworkNodeSerializer,
+    RasterMapLayerSerializer,
+    VectorMapLayerSerializer,
+)
 from uvdat.core.tasks.chart import add_gcc_chart_datum
 
 
 class DatasetViewSet(ModelViewSet):
-    serializer_class = uvdat_serializers.DatasetSerializer
+    queryset = Dataset.objects.all()
+    serializer_class = DatasetSerializer
+    permission_classes = [GuardianPermission]
+    filter_backends = [GuardianFilter]
+    lookup_field = 'id'
 
     def get_queryset(self):
-        context_id = self.request.query_params.get('context')
-        if context_id:
-            return Dataset.objects.filter(context__id=context_id)
-        else:
-            return Dataset.objects.all()
+        qs = super().get_queryset()
+        project_id: str = self.request.query_params.get('project')
+        if project_id is None or not project_id.isdigit():
+            return qs
+
+        return qs.filter(project=int(project_id))
 
     @action(detail=True, methods=['get'])
     def map_layers(self, request, **kwargs):
@@ -27,10 +39,10 @@ class DatasetViewSet(ModelViewSet):
 
         # Set serializer based on dataset type
         if dataset.dataset_type == Dataset.DatasetType.RASTER:
-            serializer = uvdat_serializers.RasterMapLayerSerializer(map_layers, many=True)
+            serializer = RasterMapLayerSerializer(map_layers, many=True)
         elif dataset.dataset_type == Dataset.DatasetType.VECTOR:
             # Set serializer
-            serializer = uvdat_serializers.VectorMapLayerSerializer(map_layers, many=True)
+            serializer = VectorMapLayerSerializer(map_layers, many=True)
         else:
             raise NotImplementedError(f'Dataset Type {dataset.dataset_type}')
 
@@ -51,11 +63,11 @@ class DatasetViewSet(ModelViewSet):
             networks.append(
                 {
                     'nodes': [
-                        uvdat_serializers.NetworkNodeSerializer(n).data
+                        NetworkNodeSerializer(n).data
                         for n in NetworkNode.objects.filter(network=network)
                     ],
                     'edges': [
-                        uvdat_serializers.NetworkEdgeSerializer(e).data
+                        NetworkEdgeSerializer(e).data
                         for e in NetworkEdge.objects.filter(network=network)
                     ],
                 }
@@ -65,7 +77,7 @@ class DatasetViewSet(ModelViewSet):
     @action(detail=True, methods=['get'])
     def gcc(self, request, **kwargs):
         dataset = self.get_object()
-        context_id = request.query_params.get('context')
+        project_id = request.query_params.get('project')
         exclude_nodes = request.query_params.get('exclude_nodes', [])
         exclude_nodes = exclude_nodes.split(',')
         exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
@@ -81,5 +93,5 @@ class DatasetViewSet(ModelViewSet):
             results.sort(key=lambda r: len(r.get('excluded')), reverse=True)
             gcc = results[0].get('gcc')
             excluded = results[0].get('excluded')
-            add_gcc_chart_datum(dataset, context_id, excluded, len(gcc))
+            add_gcc_chart_datum(dataset, project_id, excluded, len(gcc))
             return HttpResponse(json.dumps(gcc), status=200)

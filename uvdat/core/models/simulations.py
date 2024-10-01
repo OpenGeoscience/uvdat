@@ -3,9 +3,9 @@ from django_extensions.db.models import TimeStampedModel
 
 from uvdat.core.tasks import simulations as uvdat_simulations
 
-from .context import Context
 from .map_layers import RasterMapLayer, VectorMapLayer
 from .networks import Network
+from .project import Project
 
 
 class SimulationResult(TimeStampedModel):
@@ -17,15 +17,12 @@ class SimulationResult(TimeStampedModel):
         max_length=max(len(choice[0]) for choice in SimulationType.choices),
         choices=SimulationType.choices,
     )
-    context = models.ForeignKey(
-        Context, on_delete=models.CASCADE, related_name='simulation_results'
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='simulation_results', null=True
     )
     input_args = models.JSONField(blank=True, null=True)
     output_data = models.JSONField(blank=True, null=True)
     error_message = models.TextField(null=True, blank=True)
-
-    def is_in_context(self, context_id):
-        return self.context.id == int(context_id)
 
     def get_simulation_type(self):
         if not self.simulation_type or self.simulation_type not in AVAILABLE_SIMULATIONS:

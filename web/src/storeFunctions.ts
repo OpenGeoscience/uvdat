@@ -1,8 +1,8 @@
 import { watch } from "vue";
 
 import {
-  availableContexts,
-  currentContext,
+  availableProjects,
+  currentProject,
   availableDatasets,
   selectedDatasets,
   currentDataset,
@@ -27,23 +27,23 @@ import {
   currentNetworkDatasetLayer,
   currentNetworkGCC,
   deactivatedNodes,
-  loading,
   currentError,
   tooltipOverlay,
   clickedFeatureCandidates,
 } from "./store";
 import { Dataset } from "./types";
 import {
-  getContextDatasets,
-  getContexts,
+  getProjectDatasets,
+  getProjects,
   getDataset,
-  getContextCharts,
-  getContextSimulationTypes,
-  getContextDerivedRegions,
+  getProjectCharts,
+  getProjectSimulationTypes,
+  getProjectDerivedRegions,
 } from "@/api/rest";
 import {
   datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
+  updateBaseLayer,
 } from "./layers";
 
 export function clearState() {
@@ -68,7 +68,6 @@ export function clearState() {
   currentNetworkDatasetLayer.value = undefined;
   deactivatedNodes.value = [];
   currentNetworkGCC.value = undefined;
-  loading.value = false;
   currentError.value = undefined;
   polls.value = {};
 }
@@ -87,65 +86,57 @@ export function getTooltip() {
   return tooltipOverlay.value;
 }
 
-export function loadContexts() {
+export function loadProjects() {
   clearState();
-  getContexts().then((data) => {
-    availableContexts.value = data;
-    if (data.length) {
-      currentContext.value = data[0];
-    }
-    if (currentContext.value?.datasets) {
-      currentContext.value?.datasets.forEach((d) => {
-        if (d.processing) {
-          pollForProcessingDataset(d.id);
-        }
-      });
-    }
+  getProjects().then((data) => {
+    availableProjects.value = data;
   });
 }
 
-export function clearMap() {
-  if (!currentContext.value) {
-    return;
+export function setMapCenter() {
+  let center: [number, number] = [0, 30];
+  let zoom = 1;
+  if (currentProject.value) {
+    center = currentProject.value.default_map_center;
+    zoom = currentProject.value.default_map_zoom;
   }
   const map = getMap();
-  map.setCenter(currentContext.value.default_map_center);
-  map.setZoom(currentContext.value.default_map_zoom);
+  map.jumpTo({ center, zoom });
 }
 
 export function loadDatasets() {
-  if (!currentContext.value) return;
+  if (!currentProject.value) return;
   availableDatasets.value = undefined;
-  getContextDatasets(currentContext.value.id).then((data: Dataset[]) => {
+  getProjectDatasets(currentProject.value.id).then((data: Dataset[]) => {
     availableDatasets.value = data;
   });
 }
 
 export function loadCharts() {
-  if (!currentContext.value) return;
+  if (!currentProject.value) return;
   availableCharts.value = undefined;
   currentChart.value = undefined;
-  getContextCharts(currentContext.value.id).then((charts) => {
+  getProjectCharts(currentProject.value.id).then((charts) => {
     availableCharts.value = charts;
   });
 }
 
 export function loadSimulationTypes() {
-  if (!currentContext.value) return;
+  if (!currentProject.value) return;
   availableSimulationTypes.value = undefined;
   currentSimulationType.value = undefined;
-  getContextSimulationTypes(currentContext.value.id).then((sims) => {
+  getProjectSimulationTypes(currentProject.value.id).then((sims) => {
     availableSimulationTypes.value = sims;
   });
 }
 
 export async function loadDerivedRegions() {
-  if (!currentContext.value) {
+  if (!currentProject.value) {
     return;
   }
 
-  availableDerivedRegions.value = await getContextDerivedRegions(
-    currentContext.value.id
+  availableDerivedRegions.value = await getProjectDerivedRegions(
+    currentProject.value.id
   );
 }
 
@@ -160,13 +151,13 @@ export function cancelRegionGrouping() {
 export function pollForProcessingDataset(datasetId: number) {
   // fetch dataset every 10 seconds until it is not in a processing state
   polls.value[datasetId] = setInterval(() => {
-    const currentVersion = currentContext.value?.datasets.find(
+    const currentVersion = currentProject.value?.datasets.find(
       (d) => d.id === datasetId
     );
-    if (currentContext.value && currentVersion?.processing) {
+    if (currentProject.value && currentVersion?.processing) {
       getDataset(datasetId).then((newVersion) => {
-        if (currentContext.value && !newVersion.processing) {
-          currentContext.value.datasets = currentContext.value.datasets.map(
+        if (currentProject.value && !newVersion.processing) {
+          currentProject.value.datasets = currentProject.value.datasets.map(
             (d) => (d.id === datasetId ? newVersion : d)
           );
         }
@@ -194,9 +185,9 @@ export function clearCurrentNetwork() {
   }
 }
 
-watch(currentContext, () => {
+watch(currentProject, () => {
   clearState();
-  clearMap();
+  setMapCenter();
   loadDatasets();
   loadCharts();
   loadSimulationTypes();
@@ -254,4 +245,6 @@ watch(clickedFeatureCandidates, (features) => {
   // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
   clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
 });
+
+watch(showMapBaseLayer, updateBaseLayer);
 /* eslint-enable @typescript-eslint/ban-ts-comment */

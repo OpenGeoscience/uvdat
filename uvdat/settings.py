@@ -12,6 +12,7 @@ from composed_configuration import (
     ProductionBaseConfiguration,
     TestingBaseConfiguration,
 )
+from configurations import values
 
 
 class UvdatMixin(ConfigMixin):
@@ -20,12 +21,24 @@ class UvdatMixin(ConfigMixin):
 
     BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
+    # Override default signup sheet to ask new users for first and last name
+    ACCOUNT_FORMS = {'signup': 'uvdat.core.rest.accounts.AccountSignupForm'}
+
+    HOMEPAGE_REDIRECT_URL = values.URLValue(environ_required=True)
+
+    # django-guardian; disable anonymous user permissions
+    ANONYMOUS_USER_NAME = None
+
+    # django-guardian; raise PermissionDenied exception instead of redirecting to login page
+    GUARDIAN_RAISE_403 = True
+
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'django.contrib.gis',
             'django_large_image',
+            'guardian',
             'uvdat.core.apps.CoreConfig',
         ] + configuration.INSTALLED_APPS
 
@@ -34,10 +47,13 @@ class UvdatMixin(ConfigMixin):
             's3_file_field',
         ]
 
-        # Disable authentication requirements for REST
-        # TODO: configure authentication and remove this workaround
-        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
-        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
+        configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
+            'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        ]
+        configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
+            'rest_framework.permissions.IsAuthenticated'
+        ]
 
         # Re-configure the database for PostGIS
         db_parts = urlparse(os.environ['DJANGO_DATABASE_URL'])

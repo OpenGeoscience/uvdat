@@ -1,17 +1,20 @@
 import json
 
+from django.contrib.auth.models import User
+from django.contrib.gis.geos import Point
 from django.contrib.gis.serializers import geojson
+from guardian.shortcuts import get_users_with_perms
 from rest_framework import serializers
 
 from uvdat.core.models import (
     Chart,
-    Context,
     Dataset,
     DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
     NetworkNode,
+    Project,
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
@@ -19,16 +22,47 @@ from uvdat.core.models import (
 )
 
 
-class ContextSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
+
+
+class ProjectSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
+    owner = serializers.SerializerMethodField('get_owner')
+    collaborators = serializers.SerializerMethodField('get_collaborators')
+    followers = serializers.SerializerMethodField('get_followers')
 
     def get_center(self, obj):
         # Web client expects Lon, Lat
         if obj.default_map_center:
             return [obj.default_map_center.y, obj.default_map_center.x]
 
+    def get_owner(self, obj):
+        users = list(get_users_with_perms(obj, only_with_perms_in=['owner']))
+        if len(users) != 1:
+            raise Exception('Project must have exactly one owner')
+
+        return UserSerializer(users[0]).data
+
+    def get_collaborators(self, obj):
+        users = get_users_with_perms(obj, only_with_perms_in=['collaborator'])
+        return [UserSerializer(user).data for user in users.all()]
+
+    def get_followers(self, obj):
+        users = get_users_with_perms(obj, only_with_perms_in=['follower'])
+        return [UserSerializer(user).data for user in users.all()]
+
+    def to_internal_value(self, data):
+        center = data.get('default_map_center')
+        data = super().to_internal_value(data)
+        if isinstance(center, list):
+            data['default_map_center'] = Point(center[1], center[0])
+        return data
+
     class Meta:
-        model = Context
+        model = Project
         fields = '__all__'
 
 
@@ -145,7 +179,7 @@ class DerivedRegionListSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'context',
+            'project',
             'metadata',
             'source_regions',
             'operation',
@@ -173,7 +207,7 @@ class DerivedRegionCreationSerializer(serializers.ModelSerializer):
         model = DerivedRegion
         fields = [
             'name',
-            'context',
+            'project',
             'regions',
             'operation',
         ]

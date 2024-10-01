@@ -1,12 +1,12 @@
 import {
-  getContextCharts,
   getDatasetNetwork,
   getNetworkGCC,
+  getProjectCharts,
   getRasterData,
 } from "@/api/rest";
 import {
   rasterTooltipEnabled,
-  currentContext,
+  currentProject,
   deactivatedNodes,
   currentNetworkGCC,
   availableCharts,
@@ -150,17 +150,17 @@ export function randomColor() {
 }
 
 export function deactivatedNodesUpdated() {
-  if (!(currentContext.value && currentNetworkDataset.value)) {
+  if (!(currentProject.value && currentNetworkDataset.value)) {
     return;
   }
 
   currentNetworkGCC.value = undefined;
   getNetworkGCC(
     currentNetworkDataset.value.id,
-    currentContext.value.id,
+    currentProject.value.id,
     deactivatedNodes.value
   ).then((gcc) => {
-    if (!currentContext.value) {
+    if (!currentProject.value) {
       return;
     }
     currentNetworkGCC.value = gcc;
@@ -170,7 +170,7 @@ export function deactivatedNodesUpdated() {
     }
 
     // update chart
-    getContextCharts(currentContext.value.id).then((charts) => {
+    getProjectCharts(currentProject.value.id).then((charts) => {
       availableCharts.value = charts;
       if (currentChart.value) {
         currentChart.value = charts.find(

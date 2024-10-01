@@ -2,7 +2,7 @@
 import { ref, watch } from "vue";
 import {
   currentSimulationType,
-  currentContext,
+  currentProject,
   selectedDatasetLayers,
 } from "@/store";
 import { getSimulationResults, runSimulation } from "@/api/rest";
@@ -42,10 +42,10 @@ export default {
 
     function run() {
       inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
-        if (valid && currentContext.value && currentSimulationType.value) {
+        if (valid && currentProject.value && currentSimulationType.value) {
           runSimulation(
             currentSimulationType.value.id,
-            currentContext.value.id,
+            currentProject.value.id,
             selectedInputs.value
           ).then((result) => {
             tab.value = "old";
@@ -56,10 +56,10 @@ export default {
     }
 
     function fetchResults() {
-      if (!currentContext.value || !currentSimulationType.value) return;
+      if (!currentProject.value || !currentSimulationType.value) return;
       getSimulationResults(
         currentSimulationType.value.id,
-        currentContext.value.id
+        currentProject.value.id
       ).then((results) => {
         availableResults.value = results;
         if (activeResult.value) {

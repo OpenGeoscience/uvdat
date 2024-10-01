@@ -1,6 +1,7 @@
 import { reactive, ref } from "vue";
 import {
-  Context,
+  User,
+  Project,
   Chart,
   Dataset,
   DerivedRegion,
@@ -14,9 +15,9 @@ import {
 // import { MapLayer } from "@/data";
 import { Map, Popup } from "maplibre-gl";
 
-// Context
-export const availableContexts = ref<Context[]>([]);
-export const currentContext = ref<Context>();
+// Project
+export const availableProjects = ref<Project[]>([]);
+export const currentProject = ref<Project>();
 
 // Datasets
 export const availableDatasets = ref<Dataset[]>();
@@ -64,6 +65,6 @@ export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 
 // ETC
-export const loading = ref<boolean>(false);
+export const currentUser = ref<User>();
 export const currentError = ref<string>();
 export const polls = ref<Record<number, number>>({});

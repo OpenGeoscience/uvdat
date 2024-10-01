@@ -7,7 +7,8 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 import geopandas
 
-from uvdat.core.models import Context, DerivedRegion, SourceRegion, VectorMapLayer
+from uvdat.core.models import DerivedRegion, Project, SourceRegion, VectorMapLayer
+from uvdat.core.rest.access_control import filter_queryset_by_projects
 from uvdat.core.tasks.map_layers import save_vector_features
 
 
@@ -15,16 +16,17 @@ class DerivedRegionCreationError(Exception):
     pass
 
 
-def create_derived_region(name: str, context: Context, region_ids: List[int], operation: str):
+def create_derived_region(name: str, project: Project, region_ids: List[int], operation: str):
     # Ensure at least two regions provided
     source_regions = SourceRegion.objects.filter(pk__in=region_ids)
     if source_regions.count() < 2:
         raise DerivedRegionCreationError('Derived Regions must consist of multiple regions')
 
-    # Ensure all regions are from one context
-    if any(not sr.is_in_context(context.id) for sr in source_regions):
+    # Ensure all regions are from one project
+    filtered = filter_queryset_by_projects(source_regions, Project.objects.filter(id=project.id))
+    if filtered.count() < source_regions.count():
         raise DerivedRegionCreationError(
-            f'Source Regions must exist in the same context with id {context.id}.'
+            f'Source Regions must exist in the same project with id {project.id}.'
         )
 
     # Only handle union operations for now
@@ -44,7 +46,7 @@ def create_derived_region(name: str, context: Context, region_ids: List[int], op
     # Check for duplicate derived regions
     existing = list(
         DerivedRegion.objects.filter(
-            context=context, boundary=GEOSGeometry(new_boundary)
+            project=project, boundary=GEOSGeometry(new_boundary)
         ).values_list('id', flat=True)
     )
     if existing:
@@ -65,7 +67,7 @@ def create_derived_region(name: str, context: Context, region_ids: List[int], op
 
         derived_region = DerivedRegion.objects.create(
             name=name,
-            context=context,
+            project=project,
             metadata={},
             boundary=new_boundary,
             operation=operation,

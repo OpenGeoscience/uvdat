@@ -1,15 +1,16 @@
+from django.contrib.auth.models import User
 from django.core.management import call_command
 import pytest
 
 from uvdat.core.models import (
     Chart,
-    Context,
     Dataset,
     DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
     NetworkNode,
+    Project,
     RasterMapLayer,
     SimulationResult,
     SourceRegion,
@@ -20,6 +21,9 @@ from uvdat.core.models import (
 
 @pytest.mark.django_db
 def test_populate():
+    # ensure a superuser exists
+    User.objects.create_superuser('testsuper')
+
     # smaller subset for faster evaluation
     # 0 is MBTA Rapid Transit, tests network eval
     # 4 is Massachusetts Elevation Data, tests raster eval
@@ -35,7 +39,7 @@ def test_populate():
     )
 
     assert Chart.objects.all().count() == 1
-    assert Context.objects.all().count() == 2
+    assert Project.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
     assert DerivedRegion.objects.all().count() == 0
     assert FileItem.objects.all().count() == 7
