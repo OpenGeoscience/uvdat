@@ -100,13 +100,11 @@ export function setMapCenter(project: Project | undefined) {
 
 export function getCurrentMapPosition() {
   const map = getMap();
-  let center = [0, 0];
-  let zoom = map.getZoom();
-  const centerLngLat = map.getCenter();
-  if (centerLngLat) center = [centerLngLat.lng, centerLngLat.lat];
-  if (zoom) zoom = Math.floor(zoom);
-  else zoom = 1;
-  return { center, zoom };
+  const { lat, lng } = map.getCenter();
+  return {
+    center: [lng, lat],
+    zoom: map.getZoom(),
+  };
 }
 
 export async function loadDerivedRegions() {
