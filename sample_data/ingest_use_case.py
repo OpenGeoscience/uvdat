@@ -32,6 +32,7 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
         file_location.parent.mkdir(parents=True, exist_ok=True)
         with open(file_location, 'wb') as f:
             r = requests.get(file_url)
+            r.raise_for_status()
             f.write(r.content)
 
     existing = FileItem.objects.filter(name=file_name)
