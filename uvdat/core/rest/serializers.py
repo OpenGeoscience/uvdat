@@ -40,10 +40,11 @@ class ProjectSerializer(serializers.ModelSerializer):
             return [obj.default_map_center.y, obj.default_map_center.x]
 
     def get_owner(self, obj):
-        users = get_users_with_perms(obj, only_with_perms_in=['owner'])
-        if users.count() == 0:
-            return None
-        return UserSerializer(users.first()).data
+        users = list(get_users_with_perms(obj, only_with_perms_in=['owner']))
+        if len(users) != 1:
+            raise Exception('Project must have exactly one owner')
+
+        return UserSerializer(users[0]).data
 
     def get_collaborators(self, obj):
         users = get_users_with_perms(obj, only_with_perms_in=['collaborator'])

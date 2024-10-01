@@ -16,7 +16,7 @@ class Project(models.Model):
     @transaction.atomic()
     def set_permissions(
         self,
-        owner: list[User] | None = None,
+        owner: User,
         collaborator: list[User] | None = None,
         follower: list[User] | None = None,
     ):
@@ -28,8 +28,7 @@ class Project(models.Model):
         ).delete()
 
         # Assign new perms
-        for user in owner or []:
-            assign_perm('owner', user, self)
+        assign_perm('owner', owner, self)
         for user in collaborator or []:
             assign_perm('collaborator', user, self)
         for user in follower or []:
