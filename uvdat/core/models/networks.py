@@ -1,8 +1,45 @@
 from django.contrib.gis.db import models as geo_models
-from django.db import models
-import networkx as nx
+from django.db import connection, models
 
 from .dataset import Dataset
+
+GCC_QUERY = """
+WITH RECURSIVE n as (
+    -- starting node
+    SELECT id FROM (
+        SELECT cnn.id
+        FROM core_networknode cnn
+        WHERE
+            cnn.network_id = %(network_id)s AND
+            NOT (cnn.id = ANY(%(excluded_nodes)s))
+        ORDER BY random()
+        LIMIT 1
+    ) nn
+    UNION
+    -- Select the *other* node in the edge
+    SELECT CASE
+        WHEN e.to_node_id = n.id
+        THEN e.from_node_id
+        ELSE e.to_node_id
+    END
+    FROM n
+    JOIN (
+        SELECT *
+        FROM core_networkedge ne
+        WHERE
+            ne.network_id = %(network_id)s AND
+            NOT (
+                ne.from_node_id = ANY(%(excluded_nodes)s) OR
+                ne.to_node_id = ANY(%(excluded_nodes)s)
+            )
+    ) e
+    ON
+        e.from_node_id = n.id OR
+        e.to_node_id = n.id
+)
+SELECT id FROM n ORDER BY id
+;
+"""
 
 
 class Network(models.Model):
@@ -10,18 +47,36 @@ class Network(models.Model):
     category = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
 
-    def get_graph(self):
-        from uvdat.core.tasks.networks import get_network_graph
+    def get_gcc(self, excluded_nodes: list[int]):
+        total_nodes = NetworkNode.objects.filter(network=self).count()
 
-        return get_network_graph(self)
+        # This is used to store all the nodes we've already visited,
+        # starting with the explicitly excluded nodes
+        cur_excluded_nodes = excluded_nodes.copy()
 
-    def get_gcc(self, exclude_nodes):
-        graph = self.get_graph()
-        graph.remove_nodes_from(exclude_nodes)
-        if graph.number_of_nodes == 0 or nx.number_connected_components(graph) == 0:
-            return []
-        gcc = max(nx.connected_components(graph), key=len)
-        return list(gcc)
+        # Store largest network found so far
+        gcc = []
+
+        with connection.cursor() as cursor:
+            # If the GCC size is greater than half the network, we know that there's no way to
+            # find a larger one. If we've exhausted all nodes, also stop searching.
+            while not (len(gcc) > (total_nodes // 2) or len(cur_excluded_nodes) >= total_nodes):
+                cursor.execute(
+                    GCC_QUERY,
+                    {
+                        'excluded_nodes': cur_excluded_nodes,
+                        'network_id': self.pk,
+                    },
+                )
+                nodes = [x[0] for x in cursor.fetchall()]
+                if not nodes:
+                    raise Exception('Expected to find nodes but found none')
+
+                cur_excluded_nodes.extend(nodes)
+                if len(nodes) > len(gcc):
+                    gcc = nodes
+
+        return gcc
 
 
 class NetworkNode(models.Model):
