@@ -1,5 +1,222 @@
 # CHANGELOG
 
+## v0.4.0 (2024-10-01)
+
+### Documentation
+
+* docs: Add `makeclient` step to Setup Guide ([`c3b4ac2`](https://github.com/OpenGeoscience/uvdat/commit/c3b4ac24dad2a1d27450957a08223b0c01ff5a4c))
+
+### Feature
+
+* feat: Override signup form to include name fields ([`de74292`](https://github.com/OpenGeoscience/uvdat/commit/de74292bc41128aefe670d075193f3e5fb96c911))
+
+* feat: Update API to use AccessControl filter backend ([`1754ac3`](https://github.com/OpenGeoscience/uvdat/commit/1754ac318a2c2a025ed075af9df5cfc6ad72b9d4))
+
+* feat: Add access control check functions on each model ([`245a04f`](https://github.com/OpenGeoscience/uvdat/commit/245a04f87a6a5116e0e4f0e16059c2961b171861))
+
+* feat: replace Context model with Project model ([`003f88f`](https://github.com/OpenGeoscience/uvdat/commit/003f88f29b9c51355426e71d196437100ded1e1e))
+
+* feat: client-side changes for authentication ([`a3bd8dc`](https://github.com/OpenGeoscience/uvdat/commit/a3bd8dce2515c04764812cd6e2ec77f9f3d3d049))
+
+* feat: server-side changes for authentication ([`b60591c`](https://github.com/OpenGeoscience/uvdat/commit/b60591c0526144ba7629cc5e9bc6810e459239d5))
+
+### Fix
+
+* fix: add import to `ingest_use_case` ([`8d1d9db`](https://github.com/OpenGeoscience/uvdat/commit/8d1d9dbbba930749af9ef742a002e7f00e8f1e1d))
+
+* fix: enforce an owner on server-created projects ([`de9725c`](https://github.com/OpenGeoscience/uvdat/commit/de9725c968b92793ef5f0494f119f557720a91e2))
+
+* fix: update `set_permissions` call in `test_api` ([`e157327`](https://github.com/OpenGeoscience/uvdat/commit/e157327a6329a3ee0b3035046c0d449da9dd7e9f))
+
+* fix: update `set_permissions` call in Project `perform_create` ([`61e7a29`](https://github.com/OpenGeoscience/uvdat/commit/61e7a298e4354bbda4ea945bb6d106e5afc2f9bb))
+
+* fix: update permissions fields on `ProjectSerializer` ([`2e66d31`](https://github.com/OpenGeoscience/uvdat/commit/2e66d317aa67fb02644a4bd798e52907a7b1ff3b))
+
+* fix: allow filtering by `project_id` in request params ([`fadc263`](https://github.com/OpenGeoscience/uvdat/commit/fadc2634a90e61e302bfaced0dc383aa4d9950d1))
+
+* fix: add `VectorFeature` clause to `get_object_queryset` ([`3178461`](https://github.com/OpenGeoscience/uvdat/commit/3178461bd1a02cfb286bb3c23407c29529e2de73))
+
+* fix: roll back change to region viewset inheritance ([`e317c6d`](https://github.com/OpenGeoscience/uvdat/commit/e317c6d3e327500324eb28f6d1df1c3656620c74))
+
+* fix: Add watcher for `showMapBaseLayer` ([`df03bad`](https://github.com/OpenGeoscience/uvdat/commit/df03badcd8e4c15c16bb0d23571351ba517fcf49))
+
+* fix: Add authentication to maplibre tile requests ([`4906e9f`](https://github.com/OpenGeoscience/uvdat/commit/4906e9fab2d93fd7058e4c82cd6e53c94e36f09e))
+
+* fix: Resolve merge conflicts after rebase ([`b7f1cca`](https://github.com/OpenGeoscience/uvdat/commit/b7f1cca5b2b4b98a8e0b8b01c56af4c854cc3762))
+
+* fix: Add missing django env var to Celery config in `docker-compose.override.yml` ([`faac2fd`](https://github.com/OpenGeoscience/uvdat/commit/faac2fdd572e9d7a2906c46f0f3895b6ce931b9d))
+
+* fix: Include constraint removal step in migration file ([`f9a3221`](https://github.com/OpenGeoscience/uvdat/commit/f9a3221483a2adbc65eecd96237206585b282160))
+
+* fix: Add homepage redirect url ([`7372b16`](https://github.com/OpenGeoscience/uvdat/commit/7372b16d06d844207e364dad695fb419997f3176))
+
+* fix: address some server-side API bugs ([`6943cb4`](https://github.com/OpenGeoscience/uvdat/commit/6943cb4696cfb4de250fd55e924448d742b0aa33))
+
+* fix: remove `SESSION_COOKIE_AGE` value override ([`ffbd515`](https://github.com/OpenGeoscience/uvdat/commit/ffbd5159241e6634c2ba019632f99fb832d5bda0))
+
+### Refactor
+
+* refactor: move `project_id` query param filtering to `get_queryset` on relevant ViewSets ([`305f0b2`](https://github.com/OpenGeoscience/uvdat/commit/305f0b2d6d94a985c46579799257a3e9c115f51d))
+
+* refactor: rename `guardian.py` -&gt; `access_control.py` ([`3315a4d`](https://github.com/OpenGeoscience/uvdat/commit/3315a4da81a2dd7ab8ae7e925fa257a949155969))
+
+* refactor: update `guardian.py` ([`9989e6f`](https://github.com/OpenGeoscience/uvdat/commit/9989e6f6aee6aaf3377cec43907911476c1e05e5))
+
+* refactor: update `guardian.py` to get passing permissions tests ([`934f729`](https://github.com/OpenGeoscience/uvdat/commit/934f729ec48e72dfbcc9d4736029286119330ec8))
+
+* refactor: remove permission fields from Project model and add `update_permissions` method ([`5935f62`](https://github.com/OpenGeoscience/uvdat/commit/5935f62cfbf39eeb3cdf4bbea827645768a3993c))
+
+* refactor: apply suggestions to `guardian.py` ([`f831cf3`](https://github.com/OpenGeoscience/uvdat/commit/f831cf38eefd71fce0d36d418bb3e6810b6ef144))
+
+* refactor: Add comment to `urls.py` ([`af567f1`](https://github.com/OpenGeoscience/uvdat/commit/af567f19997a7b4d95f8560f88aac64a5f904776))
+
+* refactor: add explanatory comment to Map&#39;s `transformRequest` function ([`9f6c9ab`](https://github.com/OpenGeoscience/uvdat/commit/9f6c9ab78e1e8784a4c1a2530be09c0b60dfc666))
+
+* refactor: update `Dataset.is_in_project` function ([`d78a494`](https://github.com/OpenGeoscience/uvdat/commit/d78a4941266da8f0a5ca541a512b3c83cc7bb2ef))
+
+* refactor: update `makeclient` management command ([`88af424`](https://github.com/OpenGeoscience/uvdat/commit/88af42465644d78751e9859e605beb351d9a5f3c))
+
+* refactor: update `ingest_projects` function ([`318f695`](https://github.com/OpenGeoscience/uvdat/commit/318f695abe7b3652fff3bbba4804b2113ce8c256))
+
+### Style
+
+* style: remove unused imports and variables ([`7bb8976`](https://github.com/OpenGeoscience/uvdat/commit/7bb89764a0cdcdded2b5bc865b65b2f6c13a71e1))
+
+* style: remove change to flake8 rules in `tox.ini` ([`52c9ffe`](https://github.com/OpenGeoscience/uvdat/commit/52c9ffe6d482e686a56ee4bbb288a3aa4aa7dcac))
+
+* style: fix lint errors ([`61f9767`](https://github.com/OpenGeoscience/uvdat/commit/61f97670c52de649533fa1315cf3a1d4aa9f7770))
+
+* style: Lint fixes ([`10330c3`](https://github.com/OpenGeoscience/uvdat/commit/10330c359f13bb93c8ead80e9fa3ae7508242681))
+
+### Test
+
+* test: ensure a superuser exists at beginning of populate test ([`b614f13`](https://github.com/OpenGeoscience/uvdat/commit/b614f13daa05d85e8b3583966805b05f025f5808))
+
+* test: refactor API tests, split up by viewset ([`c5deb96`](https://github.com/OpenGeoscience/uvdat/commit/c5deb962579dd37a96ffd8d7b41180adecaaaa66))
+
+* test: Add a test for API permissions ([`bc1a27e`](https://github.com/OpenGeoscience/uvdat/commit/bc1a27e765be53a192ca2f34219353b7abff867c))
+
+* test: pass homepage url env var through tox environments ([`4b3a0bd`](https://github.com/OpenGeoscience/uvdat/commit/4b3a0bd62d9375881fec5a72b6a589e2a514b5b5))
+
+### Unknown
+
+* Merge pull request #60 from OpenGeoscience/auth-and-projects
+
+Authentication and projects ([`6a3c0d4`](https://github.com/OpenGeoscience/uvdat/commit/6a3c0d4ce1215559724f638ce53d7d03dc45040d))
+
+* Append authentication settings to existing configuration ([`9453764`](https://github.com/OpenGeoscience/uvdat/commit/94537644751bbfbda934aaadc55f4afa4fb33a79))
+
+* Enforce single owner per project ([`448d070`](https://github.com/OpenGeoscience/uvdat/commit/448d070613abbae1797a038b433eaf91b9615c3c))
+
+* Rename clearMap to setMapCenter ([`33eba30`](https://github.com/OpenGeoscience/uvdat/commit/33eba30ad692bfa6b18382cc4490398809af234b))
+
+* Fix bug when initially setting map center/zoom
+
+For some reason, initially setting the map center and zoom would set the
+latitude to 0, only the first time. ([`7d75b37`](https://github.com/OpenGeoscience/uvdat/commit/7d75b37c4231a896ec6beb0a04a3d2e1af361c9d))
+
+* Refactor Project.set_permissions
+
+- Explicitly define allowed values
+- Use a transaction, to ensure no inconsistent data
+- Overwrite permissions, by deleting all existing first ([`61196f8`](https://github.com/OpenGeoscience/uvdat/commit/61196f87829ed718ca6baa777a0a066b71faba1f))
+
+* Rename pk to id in get_vector_tile ([`4b10b27`](https://github.com/OpenGeoscience/uvdat/commit/4b10b2713fb9138b1d15ffdaca0e9def277d110e))
+
+* Generalize project filtering function
+
+It now accepts a model queryset, and project queryset, and returns the
+queryset filtered to those that are contained within the project
+queryset. The user permission logic has been removed from that function. ([`ea5ff03`](https://github.com/OpenGeoscience/uvdat/commit/ea5ff0379cef498aa6c03f07fcb4220465668c8f))
+
+* wip: Consolidate access control logic with `django-guardian` ([`b40dd60`](https://github.com/OpenGeoscience/uvdat/commit/b40dd6078ddd1e3341d75dcb2a502379753c2316))
+
+* Switch from `@girder/oauth-client` to `@resonant/oauth-client` ([`093fcb3`](https://github.com/OpenGeoscience/uvdat/commit/093fcb309eddf67f435c78a5d9d2cc17c18dda28))
+
+* Migrate from OpenLayers to MapLibre GL (#63)
+
+* Partially working maplibre-gl implementation
+
+* Rename server map layers to dataset layers
+
+* Fix basic rendering issues
+
+* Fix active layer ordering
+
+* Fix opacity rendering
+
+* Remove use of DatasetLayer.openlayer
+
+* Fix updateBaseLayer and clearMapLayers
+
+* Place toggled layer on top if not created
+
+* Improve types
+
+* Correctly display vector layer points
+
+* Display region datasets correctly
+
+* Clean up unnecessary code and fix type issues
+
+* Simplify layer creation
+
+* Fix map click handler
+
+* Fix zoom to region button
+
+* Remove region grouping functionality in map tooltip
+
+* Apply style changes to all dataset layers by default
+
+* Fix circle layer opacity issue
+
+* Improve line and circle rendering
+
+* Fix raster and tooltip display
+
+* Consolidate tooltip manipulation code
+
+* Clean up raster colormap code
+
+* Fix layout of zoom to region button
+
+* Enable network and GCC features
+
+* Remove references to openlayers
+
+* Use OSM instead of map tiler
+
+* Fix linting errors
+
+* Ensure map layers are fetched in sorted order
+
+* Fix bug in raster tile request param construction
+
+* Remove unused and commented out code
+
+* Ignore and add TODO to non-null assertion
+
+* Remove nested array in network endpoint
+
+* Add comment to explain unavoidable error
+
+* Fix bug with reset network button
+
+* Show raster and flood map layers in simulations panel
+
+* Add ts-ignore statements
+
+* Remove TODOs ([`ad426e9`](https://github.com/OpenGeoscience/uvdat/commit/ad426e9b42304f69c1be036d97bf3b9a18d24baa))
+
+* Merge pull request #62 from OpenGeoscience/ny-grid-improved
+
+Use improved NY Grid data ([`6c51ec8`](https://github.com/OpenGeoscience/uvdat/commit/6c51ec8328a16e6767dc96a047ace068d170af3a))
+
+* update wait time estimate in import script ([`74db6e8`](https://github.com/OpenGeoscience/uvdat/commit/74db6e831d96f5d96a06f0a05983063e7b68e137))
+
+* data: refer to new networks zip on DKC ([`9ed26d6`](https://github.com/OpenGeoscience/uvdat/commit/9ed26d61e22bf82d67273351057580048cfc8461))
+
 ## v0.3.0 (2024-08-21)
 
 ### Feature
