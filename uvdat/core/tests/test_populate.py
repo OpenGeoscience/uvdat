@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.core.management import call_command
 import pytest
 
@@ -20,6 +21,9 @@ from uvdat.core.models import (
 
 @pytest.mark.django_db
 def test_populate():
+    # ensure a superuser exists
+    User.objects.create_superuser('testsuper')
+
     # smaller subset for faster evaluation
     # 0 is MBTA Rapid Transit, tests network eval
     # 4 is Massachusetts Elevation Data, tests raster eval
