@@ -10,7 +10,7 @@ from .dataset import Dataset
 class Project(models.Model):
     name = models.CharField(max_length=255, unique=True)
     default_map_center = geo_models.PointField()
-    default_map_zoom = models.IntegerField(default=10)
+    default_map_zoom = models.FloatField(default=10)
     datasets = models.ManyToManyField(Dataset, blank=True)
 
     @transaction.atomic()
