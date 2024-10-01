@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v0.4.1 (2024-10-01)
+
+### Performance
+
+* perf: Implement GCC algorithm in native postgres ([`ba33eb0`](https://github.com/OpenGeoscience/uvdat/commit/ba33eb08fb44b39d3d3159539538d42db4b9bceb))
+
+### Refactor
+
+* refactor: Move find_network_gcc into Network.get_gcc ([`1eadf03`](https://github.com/OpenGeoscience/uvdat/commit/1eadf03c9949d6d85dce9f2f94cb6e0d32a24925))
+
+### Unknown
+
+* Merge pull request #70 from OpenGeoscience/postgres-gcc-query
+
+Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenGeoscience/uvdat/commit/3bf0d015ddf41b11b1e5e9440a94da0f1e712818))
+
 ## v0.4.0 (2024-10-01)
 
 ### Documentation
