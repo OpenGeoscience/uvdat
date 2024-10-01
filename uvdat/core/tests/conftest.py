@@ -54,9 +54,12 @@ USER_INFOS = [
 
 @pytest.fixture
 def test_project() -> Project:
-    return Project.objects.create(
+    project = Project.objects.create(
         name='Test Project', default_map_zoom=10, default_map_center=Point(42, -71)
     )
+    original_owner = User.objects.create(username='testowner')
+    project.set_permissions(owner=original_owner)
+    return project
 
 
 @pytest.fixture

@@ -75,6 +75,7 @@ def ingest_projects(use_case):
                 print('\t', f'Project {project_for_setting.name} created.')
 
             project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
+            project_for_setting.set_permissions(owner=User.objects.filter(is_superuser=True).first())
 
 
 def ingest_charts(use_case):
