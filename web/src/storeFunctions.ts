@@ -103,7 +103,7 @@ export function getCurrentMapPosition() {
   let center = [0, 0];
   let zoom = map.getZoom();
   const centerLngLat = map.getCenter();
-  if (centerLngLat) center = [centerLngLat.lat, centerLngLat.lng];
+  if (centerLngLat) center = [centerLngLat.lng, centerLngLat.lat];
   if (zoom) zoom = Math.floor(zoom);
   else zoom = 1;
   return { center, zoom };

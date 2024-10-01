@@ -67,7 +67,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         center = data.get('default_map_center')
         data = super().to_internal_value(data)
         if isinstance(center, list):
-            data['default_map_center'] = Point(*center)
+            data['default_map_center'] = Point(center[1], center[0])
         return data
 
     class Meta:
