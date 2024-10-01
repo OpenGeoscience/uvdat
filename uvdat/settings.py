@@ -47,13 +47,8 @@ class UvdatMixin(ConfigMixin):
             's3_file_field',
         ]
 
-        configuration.AUTHENTICATION_BACKENDS = (
-            'django.contrib.auth.backends.ModelBackend',
-            'allauth.account.auth_backends.AuthenticationBackend',
-            'guardian.backends.ObjectPermissionBackend',
-        )
-
-        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
+        configuration.AUTHENTICATION_BACKENDS += ['guardian.backends.ObjectPermissionBackend']
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] += [
             'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         ]
         configuration.REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
