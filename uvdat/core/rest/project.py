@@ -30,11 +30,12 @@ class ProjectViewSet(ModelViewSet):
         owner_id = request.data.pop('owner', None)
         collaborator_ids = request.data.pop('collaborators', [])
         follower_ids = request.data.pop('followers', [])
-        project.set_permissions(
-            owner=User.objects.filter(id=owner_id),
-            collaborator=User.objects.filter(id__in=collaborator_ids),
-            follower=User.objects.filter(id__in=follower_ids),
-        )
+        if owner_id is not None:
+            project.set_permissions(
+                owner=User.objects.get(id=owner_id),
+                collaborator=User.objects.filter(id__in=collaborator_ids),
+                follower=User.objects.filter(id__in=follower_ids),
+            )
         serializer = ProjectSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
