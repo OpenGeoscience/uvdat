@@ -74,7 +74,7 @@ export default {
       const { center, zoom } = getCurrentMapPosition();
       createProject(newProjectName.value, center, zoom).then(() => {
         newProjectName.value = undefined;
-        projectConfigMode.value = true;
+        projectConfigMode.value = "existing";
         loadProjects();
       });
     }
@@ -122,7 +122,7 @@ export default {
 
     function loadSelectedProject() {
       currentProject.value = selectedProject.value;
-      projectConfigMode.value = false;
+      projectConfigMode.value = undefined;
     }
 
     function toggleOtherDatasetSelection({
@@ -205,7 +205,7 @@ export default {
     }
 
     watch(selectedProject, () => {
-      projectConfigMode.value = true;
+      projectConfigMode.value = "existing";
       newProjectName.value = undefined;
       projectToDelete.value = undefined;
       projectToEdit.value = undefined;
@@ -255,7 +255,7 @@ export default {
         class="close-button transparent"
         variant="flat"
         icon
-        @click="projectConfigMode = false"
+        @click="projectConfigMode = undefined"
       >
         <v-icon>mdi-close</v-icon>
       </v-btn>
@@ -339,7 +339,7 @@ export default {
             density="compact"
             autofocus
             @keydown.enter="create"
-            @keydown.esc="projectConfigMode = true"
+            @keydown.esc="projectConfigMode = 'existing'"
           />
           <v-btn
             color="primary"

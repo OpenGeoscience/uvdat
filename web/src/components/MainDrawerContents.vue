@@ -21,7 +21,7 @@ export default {
     });
 
     function openProjectConfig(create = false) {
-      projectConfigMode.value = create ? "new" : true;
+      projectConfigMode.value = create ? "new" : "existing";
     }
 
     function saveProjectMapLocation(project: Project) {
