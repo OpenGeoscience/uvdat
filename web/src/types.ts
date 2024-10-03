@@ -71,6 +71,19 @@ export interface Project {
   };
 }
 
+export interface ProjectPatch {
+  name?: string;
+  datasets?: number[];
+  default_map_center?: number[];
+  default_map_zoom?: number;
+}
+
+export interface ProjectPermissions {
+  owner_id: number;
+  collaborator_ids: number[];
+  follower_ids: number[];
+}
+
 export interface Feature {
   type: string;
   geometry: {

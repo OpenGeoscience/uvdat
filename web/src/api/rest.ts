@@ -2,6 +2,8 @@ import { apiClient } from "./auth";
 import {
   User,
   Project,
+  ProjectPatch,
+  ProjectPermissions,
   Dataset,
   NetworkNode,
   RasterData,
@@ -37,9 +39,16 @@ export async function createProject(
 
 export async function patchProject(
   projectId: number,
-  data: object
+  data: ProjectPatch
 ): Promise<Project> {
   return (await apiClient.patch(`projects/${projectId}/`, data)).data;
+}
+
+export async function updateProjectPermissions(
+  projectId: number,
+  data: ProjectPermissions
+): Promise<Project> {
+  return (await apiClient.put(`projects/${projectId}/permissions/`, data)).data;
 }
 
 export async function deleteProject(projectId: number): Promise<Project> {

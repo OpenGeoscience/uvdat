@@ -189,10 +189,12 @@ export default {
       saving.value = true;
       if (selectedProject.value) {
         patchProject(selectedProject.value.id, {
-          dataset_ids: ids,
+          datasets: ids,
         }).then((project) => {
-          projDatasets.value = project.datasets;
-          saving.value = false;
+          getProjectDatasets(project.id).then((datasets) => {
+            projDatasets.value = datasets;
+            saving.value = false;
+          });
         });
       }
     }

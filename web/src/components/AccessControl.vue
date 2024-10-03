@@ -1,8 +1,8 @@
 <script lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { onMounted, ref, Ref } from "vue";
-import { User } from "@/types";
-import { getUsers, patchProject } from "@/api/rest";
+import { ProjectPermissions, User } from "@/types";
+import { getUsers, updateProjectPermissions } from "@/api/rest";
 
 export default {
   props: {
@@ -26,56 +26,64 @@ export default {
     const userToRemove: Ref<User | undefined> = ref();
 
     function savePermissions() {
-      const newPermissions = {
-        owner: props.project.owner?.id,
-        collaborators: props.project.collaborators.map((u: User) => u.id),
-        followers: props.project.followers.map((u: User) => u.id),
+      const newPermissions: ProjectPermissions = {
+        owner_id: props.project.owner?.id,
+        collaborator_ids: props.project.collaborators.map((u: User) => u.id),
+        follower_ids: props.project.followers.map((u: User) => u.id),
       };
       if (userToRemove.value) {
-        newPermissions.collaborators = newPermissions.collaborators.filter(
-          (uid: number) => uid != userToRemove.value?.id
-        );
-        newPermissions.followers = newPermissions.followers.filter(
+        newPermissions.collaborator_ids =
+          newPermissions.collaborator_ids.filter(
+            (uid: number) => uid != userToRemove.value?.id
+          );
+        newPermissions.follower_ids = newPermissions.follower_ids.filter(
           (uid: number) => uid != userToRemove.value?.id
         );
       } else if (
         ["transfer", "claim"].includes(userSelectDialogMode.value) &&
         selectedUsers.value.length == 1
       ) {
-        if (!newPermissions.collaborators.includes(newPermissions.owner)) {
-          newPermissions.collaborators.push(newPermissions.owner);
+        if (
+          !newPermissions.collaborator_ids.includes(newPermissions.owner_id)
+        ) {
+          newPermissions.collaborator_ids.push(newPermissions.owner_id);
         }
-        if (newPermissions.collaborators.includes(selectedUsers.value[0].id)) {
-          newPermissions.collaborators = newPermissions.collaborators.filter(
+        if (
+          newPermissions.collaborator_ids.includes(selectedUsers.value[0].id)
+        ) {
+          newPermissions.collaborator_ids =
+            newPermissions.collaborator_ids.filter(
+              (uid: number) => uid != selectedUsers.value[0].id
+            );
+        }
+        if (newPermissions.follower_ids.includes(selectedUsers.value[0].id)) {
+          newPermissions.follower_ids = newPermissions.follower_ids.filter(
             (uid: number) => uid != selectedUsers.value[0].id
           );
         }
-        if (newPermissions.followers.includes(selectedUsers.value[0].id)) {
-          newPermissions.followers = newPermissions.followers.filter(
-            (uid: number) => uid != selectedUsers.value[0].id
-          );
-        }
-        newPermissions.owner = selectedUsers.value[0].id;
+        newPermissions.owner_id = selectedUsers.value[0].id;
       } else if (selectedPermissionLevel.value == "collaborator") {
         selectedUsers.value.forEach((u: User) => {
-          if (!newPermissions.collaborators.includes(u.id)) {
-            newPermissions.collaborators.push(u.id);
+          if (!newPermissions.collaborator_ids.includes(u.id)) {
+            newPermissions.collaborator_ids.push(u.id);
           }
         });
       } else if (selectedPermissionLevel.value == "follower") {
         selectedUsers.value.forEach((u: User) => {
-          if (!newPermissions.followers.includes(u.id)) {
-            newPermissions.followers.push(u.id);
+          if (!newPermissions.follower_ids.includes(u.id)) {
+            newPermissions.follower_ids.push(u.id);
           }
         });
       }
-      patchProject(props.project.id, newPermissions).then((project) => {
-        emit("updateSelectedProject", project);
-        selectedUsers.value = [];
-        selectedPermissionLevel.value = "follower";
-        showUserSelectDialog.value = false;
-        userToRemove.value = undefined;
-      });
+      updateProjectPermissions(props.project.id, newPermissions).then(
+        (project) => {
+          emit("updateSelectedProject", project);
+          selectedUsers.value = [];
+          selectedPermissionLevel.value = "follower";
+          showUserSelectDialog.value = false;
+          userToRemove.value = undefined;
+        }
+      );
     }
 
     onMounted(() => {

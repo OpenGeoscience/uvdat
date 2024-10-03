@@ -1,12 +1,20 @@
+from typing import Any
+
 from django.contrib.auth.models import User
 from django.http import HttpResponse
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset, Project
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import DatasetSerializer, ProjectSerializer
+from uvdat.core.rest.serializers import (
+    DatasetSerializer,
+    ProjectPermissionsSerializer,
+    ProjectSerializer,
+)
 from uvdat.core.tasks.osmnx import load_roads
 
 
@@ -22,29 +30,21 @@ class ProjectViewSet(ModelViewSet):
         user: User = self.request.user
         project.set_permissions(owner=user)
 
-    def partial_update(self, request, id):
-        project = self.get_object()
-        dataset_ids = request.data.pop('dataset_ids', None)
-        if dataset_ids is not None:
-            project.datasets.set(Dataset.objects.filter(id__in=dataset_ids))
-        owner_id = request.data.pop('owner', None)
-        collaborator_ids = request.data.pop('collaborators', [])
-        follower_ids = request.data.pop('followers', [])
-        if owner_id is not None:
-            project.set_permissions(
-                owner=User.objects.get(id=owner_id),
-                collaborator=User.objects.filter(id__in=collaborator_ids),
-                follower=User.objects.filter(id__in=follower_ids),
-            )
-        serializer = ProjectSerializer(project, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        project.save()
-        response = ProjectSerializer(project).data
-        response.update(
-            datasets=[DatasetSerializer(dataset).data for dataset in project.datasets.all()]
+    @swagger_auto_schema(method='PUT', request_body=ProjectPermissionsSerializer)
+    @action(detail=True, methods=['PUT'])
+    def permissions(self, request: Request, *args: Any, **kwargs: Any):
+        serializer = ProjectPermissionsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        project: Project = self.get_object()
+        project.set_permissions(
+            owner=User.objects.get(id=data['owner_id']),
+            collaborator=list(User.objects.filter(id__in=data['collaborator_ids'])),
+            follower=list(User.objects.filter(id__in=data['follower_ids'])),
         )
-        return Response(response, status=200)
+
+        return Response(ProjectSerializer(project).data, status=200)
 
     @action(detail=True, methods=['get'])
     def regions(self, request, **kwargs):

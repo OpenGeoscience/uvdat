@@ -28,6 +28,12 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_superuser']
 
 
+class ProjectPermissionsSerializer(serializers.Serializer):
+    owner_id = serializers.IntegerField()
+    collaborator_ids = serializers.ListField(child=serializers.IntegerField())
+    follower_ids = serializers.ListField(child=serializers.IntegerField())
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
     owner = serializers.SerializerMethodField('get_owner')
