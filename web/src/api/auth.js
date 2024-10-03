@@ -61,5 +61,5 @@ export const logout = async () => {
   currentUser.value = undefined;
   currentProject.value = undefined;
   clearState();
-  setMapCenter(undefined);
+  setMapCenter();
 };

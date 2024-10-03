@@ -87,7 +87,7 @@ export function loadProjects() {
   });
 }
 
-export function setMapCenter(project: Project | undefined) {
+export function setMapCenter(project: Project | undefined = undefined) {
   let center: [number, number] = [0, 30];
   let zoom = 1;
   if (project) {
