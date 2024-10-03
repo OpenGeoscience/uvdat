@@ -8,13 +8,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from uvdat.core.models import Dataset, Project
+from uvdat.core.models import Project
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import (
-    DatasetSerializer,
-    ProjectPermissionsSerializer,
-    ProjectSerializer,
-)
+from uvdat.core.rest.serializers import ProjectPermissionsSerializer, ProjectSerializer
 from uvdat.core.tasks.osmnx import load_roads
 
 
