@@ -15,7 +15,7 @@ from uvdat.core.tasks.osmnx import load_roads
 
 
 class ProjectViewSet(ModelViewSet):
-    queryset = Project.objects.all()
+    queryset = Project.objects.all().order_by('name')
     serializer_class = ProjectSerializer
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
