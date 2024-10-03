@@ -1,5 +1,5 @@
 <script lang="ts">
-import { ref, Ref, computed } from "vue";
+import { ref, computed } from "vue";
 import { availableProjects, currentProject, projectConfigMode } from "@/store";
 import ProjectContents from "./ProjectContents.vue";
 import { getCurrentMapPosition, setMapCenter } from "@/storeFunctions";
@@ -10,7 +10,7 @@ export default {
   components: { ProjectContents },
   setup() {
     const searchText = ref();
-    const saving: Ref<string | boolean> = ref(false);
+    const saving = ref<"waiting" | "done">();
     const filteredProjects = computed(() => {
       return availableProjects.value.filter((proj) => {
         return (
@@ -26,7 +26,7 @@ export default {
 
     function saveProjectMapLocation(project: Project) {
       const { center, zoom } = getCurrentMapPosition();
-      saving.value = true;
+      saving.value = "waiting";
       patchProject(project.id, {
         default_map_center: center,
         default_map_zoom: zoom,
@@ -143,7 +143,7 @@ export default {
               open-on-hover
               open-delay="150"
               :close-on-content-click="false"
-              @update:model-value="saving = false"
+              @update:model-value="saving = undefined"
             >
               <v-card width="250">
                 <v-list selectable>
