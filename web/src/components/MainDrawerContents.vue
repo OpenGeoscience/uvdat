@@ -131,11 +131,17 @@ export default {
             </div>
           </div>
           <div class="location-menu">
-            <v-icon icon="mdi-map-marker-right" size="small" color="primary" />
+            <v-icon
+              icon="mdi-map-marker-right"
+              size="small"
+              color="primary"
+              @click.stop
+            />
             <v-menu
               activator="parent"
               location="end"
               open-on-hover
+              open-delay="150"
               :close-on-content-click="false"
               @update:model-value="saving = false"
             >
