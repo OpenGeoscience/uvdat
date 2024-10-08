@@ -1,112 +1,98 @@
-<script lang="ts">
+<script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { onMounted, ref, Ref, computed, ComputedRef, watch } from "vue";
+import {
+  onMounted,
+  ref,
+  Ref,
+  computed,
+  ComputedRef,
+  watch,
+  defineProps,
+  defineEmits,
+  withDefaults,
+} from "vue";
 import { Dataset } from "@/types";
 import { getDatasetLayers } from "@/api/rest";
 
-export default {
-  props: {
-    datasets: {
-      required: true,
-      type: Array,
-    },
-    selectedIds: {
-      required: true,
-      type: Array,
-    },
-    eyeIcon: {
-      default: false,
-      type: Boolean,
-    },
-    idPrefix: {
-      default: "",
-      type: String,
-    },
-  },
-  emits: ["toggleDatasets"],
-  setup(props: any, { emit }: any) {
-    const groupByOptions = ["category", "dataset_type"];
-    const groupByKey = ref("category");
-    const numDatasets = computed(() => props.datasets.length);
-    const filterMenuItems: ComputedRef<Record<string, string[]>> = computed(
-      () => {
-        const menuItems: Record<string, string[]> = Object.fromEntries(
-          groupByOptions.map((opt) => [opt, []])
+const props = withDefaults(
+  defineProps<{
+    datasets: Dataset[];
+    selectedIds: number[];
+    eyeIcon?: boolean;
+    idPrefix?: string;
+  }>(),
+  {
+    eyeIcon: false,
+    idPrefix: "",
+  }
+);
+const emit = defineEmits(["toggleDatasets"]);
+const groupByOptions = ["category", "dataset_type"];
+const groupByKey = ref("category");
+const numDatasets = computed(() => props.datasets.length);
+const filterMenuItems: ComputedRef<Record<string, string[]>> = computed(() => {
+  const menuItems: Record<string, string[]> = Object.fromEntries(
+    groupByOptions.map((opt) => [opt, []])
+  );
+  props.datasets.forEach((dataset: any) => {
+    groupByOptions.forEach((opt) => {
+      const value = dataset[opt].toLowerCase();
+      if (!menuItems[opt].includes(value)) {
+        menuItems[opt].push(value);
+      }
+    });
+  });
+  return menuItems;
+});
+const filters: Ref<Record<string, string[]>> = ref(
+  Object.fromEntries(groupByOptions.map((opt) => [opt, []]))
+);
+const searchText = ref();
+const filteredDatasets = computed(() => {
+  return props.datasets.filter((dataset: any) => {
+    const searchMatch =
+      !searchText.value ||
+      dataset.name.toLowerCase().includes(searchText.value.toLowerCase());
+    const filterMatch = Object.entries(filters.value).every(
+      ([filter_type, values]) => {
+        return (
+          !values.length ||
+          values
+            .map((v) => v.toLowerCase())
+            .includes(dataset[filter_type].toLowerCase())
         );
-        props.datasets.forEach((dataset: any) => {
-          groupByOptions.forEach((opt) => {
-            const value = dataset[opt].toLowerCase();
-            if (!menuItems[opt].includes(value)) {
-              menuItems[opt].push(value);
-            }
-          });
-        });
-        return menuItems;
       }
     );
-    const filters: Ref<Record<string, string[]>> = ref(
-      Object.fromEntries(groupByOptions.map((opt) => [opt, []]))
-    );
-    const searchText = ref();
-    const filteredDatasets = computed(() => {
-      return props.datasets.filter((dataset: any) => {
-        const searchMatch =
-          !searchText.value ||
-          dataset.name.toLowerCase().includes(searchText.value.toLowerCase());
-        const filterMatch = Object.entries(filters.value).every(
-          ([filter_type, values]) => {
-            return (
-              !values.length ||
-              values
-                .map((v) => v.toLowerCase())
-                .includes(dataset[filter_type].toLowerCase())
-            );
-          }
-        );
-        return searchMatch && filterMatch;
-      });
-    });
-    const datasetGroups = computed(() => {
-      const groups: Record<string, Dataset[]> = {};
-      filteredDatasets.value.forEach((dataset: any) => {
-        const groupName = dataset[groupByKey.value];
-        if (!groups[groupName]) {
-          groups[groupName] = [];
-        }
-        groups[groupName].push(dataset);
-      });
-      return groups;
-    });
-
-    function fetchAllLayers() {
-      props.datasets.forEach(async (dataset: Dataset) => {
-        dataset.map_layers = await getDatasetLayers(dataset.id);
-      });
+    return searchMatch && filterMatch;
+  });
+});
+const datasetGroups = computed(() => {
+  const groups: Record<string, Dataset[]> = {};
+  filteredDatasets.value.forEach((dataset: any) => {
+    const groupName = dataset[groupByKey.value];
+    if (!groups[groupName]) {
+      groups[groupName] = [];
     }
+    groups[groupName].push(dataset);
+  });
+  return groups;
+});
 
-    function toggleDatasets(show: boolean | null, datasets: Dataset[]) {
-      emit("toggleDatasets", { show, datasets });
-    }
+function fetchAllLayers() {
+  props.datasets.forEach(async (dataset: Dataset) => {
+    dataset.map_layers = await getDatasetLayers(dataset.id);
+  });
+}
 
-    watch(numDatasets, () => {
-      filters.value = Object.fromEntries(
-        groupByOptions.map((opt) => [opt, []])
-      );
-    });
+function toggleDatasets(show: boolean | null, datasets: Dataset[]) {
+  emit("toggleDatasets", { show, datasets });
+}
 
-    onMounted(fetchAllLayers);
+watch(numDatasets, () => {
+  filters.value = Object.fromEntries(groupByOptions.map((opt) => [opt, []]));
+});
 
-    return {
-      groupByOptions,
-      groupByKey,
-      filterMenuItems,
-      filters,
-      datasetGroups,
-      searchText,
-      toggleDatasets,
-    };
-  },
-};
+onMounted(fetchAllLayers);
 </script>
 
 <template>

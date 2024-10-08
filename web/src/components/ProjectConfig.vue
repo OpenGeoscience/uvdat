@@ -1,4 +1,4 @@
-<script lang="ts">
+<script setup lang="ts">
 import { ref, Ref, computed, onMounted, ComputedRef, watch } from "vue";
 import {
   availableProjects,
@@ -18,245 +18,206 @@ import {
 import { Project, Dataset } from "@/types";
 import { getCurrentMapPosition, loadProjects } from "@/storeFunctions";
 
-export default {
-  components: { AccessControl, DatasetList },
-  setup() {
-    const currentTab = ref();
-    const searchText = ref();
-    const filteredProjects = computed(() => {
-      return availableProjects.value.filter((proj) => {
-        return (
-          !searchText.value ||
-          proj.name.toLowerCase().includes(searchText.value.toLowerCase())
-        );
-      });
-    });
-    const selectedProject: Ref<Project | undefined> = ref();
-    const allDatasets: Ref<Dataset[]> = ref([]);
-    const projDatasets: Ref<Dataset[] | undefined> = ref();
-    const projSelectedDatasetIds: Ref<number[]> = ref([]);
-    const otherDatasets: ComputedRef<Dataset[]> = computed(() => {
-      return allDatasets.value.filter(
-        (d1) => !projDatasets.value?.map((d2) => d2.id).includes(d1.id)
-      );
-    });
-    const otherSelectedDatasetIds: Ref<number[]> = ref([]);
+const currentTab = ref();
+const searchText = ref();
+const filteredProjects = computed(() => {
+  return availableProjects.value.filter((proj) => {
+    return (
+      !searchText.value ||
+      proj.name.toLowerCase().includes(searchText.value.toLowerCase())
+    );
+  });
+});
+const selectedProject: Ref<Project | undefined> = ref();
+const allDatasets: Ref<Dataset[]> = ref([]);
+const projDatasets: Ref<Dataset[] | undefined> = ref();
+const projSelectedDatasetIds: Ref<number[]> = ref([]);
+const otherDatasets: ComputedRef<Dataset[]> = computed(() => {
+  return allDatasets.value.filter(
+    (d1) => !projDatasets.value?.map((d2) => d2.id).includes(d1.id)
+  );
+});
+const otherSelectedDatasetIds: Ref<number[]> = ref([]);
 
-    const permissions = computed(() => {
-      const ret = Object.fromEntries(
-        availableProjects.value.map((p) => {
-          let perm = "view";
-          if (p.id == selectedProject.value?.id) {
-            p = selectedProject.value;
-          }
-          if (
-            p.owner?.id == currentUser.value?.id ||
-            currentUser.value?.is_superuser
-          ) {
-            perm = "own";
-          } else if (
-            currentUser.value &&
-            p.collaborators.map((u) => u.id).includes(currentUser.value.id)
-          ) {
-            perm = "edit";
-          }
-          return [p.id, perm];
-        })
-      );
-      return ret;
-    });
-    const saving: Ref<boolean> = ref(false);
-    const newProjectName = ref();
-    const projectToEdit: Ref<Project | undefined> = ref();
-    const projectToDelete: Ref<Project | undefined> = ref();
-
-    function create() {
-      const { center, zoom } = getCurrentMapPosition();
-      createProject(newProjectName.value, center, zoom).then(() => {
-        newProjectName.value = undefined;
-        projectConfigMode.value = "existing";
-        loadProjects();
-      });
-    }
-
-    function del() {
-      if (projectToDelete.value) {
-        deleteProject(projectToDelete.value.id).then(() => {
-          loadProjects();
-          if (selectedProject.value?.id == projectToDelete.value?.id) {
-            selectedProject.value = undefined;
-          }
-          projectToDelete.value = undefined;
-        });
+const permissions = computed(() => {
+  const ret = Object.fromEntries(
+    availableProjects.value.map((p) => {
+      let perm = "view";
+      if (p.id == selectedProject.value?.id) {
+        p = selectedProject.value;
       }
-    }
-
-    function saveProjectName() {
-      if (!newProjectName.value) {
-        projectToEdit.value = undefined;
-        return;
+      if (
+        p.owner?.id == currentUser.value?.id ||
+        currentUser.value?.is_superuser
+      ) {
+        perm = "own";
+      } else if (
+        currentUser.value &&
+        p.collaborators.map((u) => u.id).includes(currentUser.value.id)
+      ) {
+        perm = "edit";
       }
-      saving.value = true;
-      if (projectToEdit.value) {
-        patchProject(projectToEdit.value.id, {
-          name: newProjectName.value,
-        }).then(() => {
-          projectToEdit.value = undefined;
-          newProjectName.value = undefined;
-          saving.value = false;
-          loadProjects();
-        });
-      }
-    }
+      return [p.id, perm];
+    })
+  );
+  return ret;
+});
+const saving: Ref<boolean> = ref(false);
+const newProjectName = ref();
+const projectToEdit: Ref<Project | undefined> = ref();
+const projectToDelete: Ref<Project | undefined> = ref();
 
-    function selectProject(v: Record<string, unknown>) {
-      if (selectedProject.value?.id != v.id) {
-        getProjectDatasets(v.id as number).then((data) => {
-          projDatasets.value = data;
-        });
-        selectedProject.value = availableProjects.value.find(
-          (p) => p.id == v.id
-        );
-      }
-    }
+function create() {
+  const { center, zoom } = getCurrentMapPosition();
+  createProject(newProjectName.value, center, zoom).then(() => {
+    newProjectName.value = undefined;
+    projectConfigMode.value = "existing";
+    loadProjects();
+  });
+}
 
-    function loadSelectedProject() {
-      currentProject.value = selectedProject.value;
-      projectConfigMode.value = undefined;
-    }
-
-    function toggleOtherDatasetSelection({
-      show,
-      datasets,
-    }: {
-      show: boolean;
-      datasets: Dataset[];
-    }) {
-      datasets.forEach((dataset: Dataset) => {
-        if (show && !otherSelectedDatasetIds.value.includes(dataset.id)) {
-          otherSelectedDatasetIds.value.push(dataset.id);
-        } else if (
-          !show &&
-          otherSelectedDatasetIds.value.includes(dataset.id)
-        ) {
-          otherSelectedDatasetIds.value = otherSelectedDatasetIds.value.filter(
-            (id) => id != dataset.id
-          );
-        }
-      });
-    }
-
-    function toggleProjDatasetSelection({
-      show,
-      datasets,
-    }: {
-      show: boolean;
-      datasets: Dataset[];
-    }) {
-      datasets.forEach((dataset: Dataset) => {
-        if (show && !projSelectedDatasetIds.value.includes(dataset.id)) {
-          projSelectedDatasetIds.value.push(dataset.id);
-        } else if (!show && projSelectedDatasetIds.value.includes(dataset.id)) {
-          projSelectedDatasetIds.value = projSelectedDatasetIds.value.filter(
-            (id) => id != dataset.id
-          );
-        }
-      });
-    }
-
-    function addAllSelectionToProject() {
-      if (projDatasets.value) {
-        saveDatasetsToProject([
-          ...projDatasets.value.map((d) => d.id),
-          ...otherSelectedDatasetIds.value,
-        ]);
-        otherSelectedDatasetIds.value = [];
-      }
-    }
-
-    function removeProjSelectionFromProject() {
-      if (projDatasets.value) {
-        saveDatasetsToProject(
-          projDatasets.value
-            .map((d) => d.id)
-            .filter((id) => !projSelectedDatasetIds.value.includes(id))
-        );
-        projSelectedDatasetIds.value = [];
-      }
-    }
-
-    function saveDatasetsToProject(ids: number[]) {
-      saving.value = true;
-      if (selectedProject.value) {
-        patchProject(selectedProject.value.id, {
-          datasets: ids,
-        }).then((project) => {
-          getProjectDatasets(project.id).then((datasets) => {
-            projDatasets.value = datasets;
-            saving.value = false;
-          });
-        });
-      }
-    }
-
-    function updateSelectedProject(newProjectData: Project) {
+function del() {
+  if (projectToDelete.value) {
+    deleteProject(projectToDelete.value.id).then(() => {
       loadProjects();
-      selectedProject.value = newProjectData;
-    }
-
-    watch(selectedProject, () => {
-      resetProjectEdit();
+      if (selectedProject.value?.id == projectToDelete.value?.id) {
+        selectedProject.value = undefined;
+      }
+      projectToDelete.value = undefined;
     });
+  }
+}
 
-    onMounted(() => {
-      getDatasets().then((data) => {
-        allDatasets.value = data;
+function saveProjectName() {
+  if (!newProjectName.value) {
+    projectToEdit.value = undefined;
+    return;
+  }
+  saving.value = true;
+  if (projectToEdit.value) {
+    patchProject(projectToEdit.value.id, {
+      name: newProjectName.value,
+    }).then(() => {
+      projectToEdit.value = undefined;
+      newProjectName.value = undefined;
+      saving.value = false;
+      loadProjects();
+    });
+  }
+}
+
+function selectProject(v: Record<string, unknown>) {
+  if (selectedProject.value?.id != v.id) {
+    getProjectDatasets(v.id as number).then((data) => {
+      projDatasets.value = data;
+    });
+    selectedProject.value = availableProjects.value.find((p) => p.id == v.id);
+  }
+}
+
+function loadSelectedProject() {
+  currentProject.value = selectedProject.value;
+  projectConfigMode.value = undefined;
+}
+
+function toggleOtherDatasetSelection({
+  show,
+  datasets,
+}: {
+  show: boolean;
+  datasets: Dataset[];
+}) {
+  datasets.forEach((dataset: Dataset) => {
+    if (show && !otherSelectedDatasetIds.value.includes(dataset.id)) {
+      otherSelectedDatasetIds.value.push(dataset.id);
+    } else if (!show && otherSelectedDatasetIds.value.includes(dataset.id)) {
+      otherSelectedDatasetIds.value = otherSelectedDatasetIds.value.filter(
+        (id) => id != dataset.id
+      );
+    }
+  });
+}
+
+function toggleProjDatasetSelection({
+  show,
+  datasets,
+}: {
+  show: boolean;
+  datasets: Dataset[];
+}) {
+  datasets.forEach((dataset: Dataset) => {
+    if (show && !projSelectedDatasetIds.value.includes(dataset.id)) {
+      projSelectedDatasetIds.value.push(dataset.id);
+    } else if (!show && projSelectedDatasetIds.value.includes(dataset.id)) {
+      projSelectedDatasetIds.value = projSelectedDatasetIds.value.filter(
+        (id) => id != dataset.id
+      );
+    }
+  });
+}
+
+function addAllSelectionToProject() {
+  if (projDatasets.value) {
+    saveDatasetsToProject([
+      ...projDatasets.value.map((d) => d.id),
+      ...otherSelectedDatasetIds.value,
+    ]);
+    otherSelectedDatasetIds.value = [];
+  }
+}
+
+function removeProjSelectionFromProject() {
+  if (projDatasets.value) {
+    saveDatasetsToProject(
+      projDatasets.value
+        .map((d) => d.id)
+        .filter((id) => !projSelectedDatasetIds.value.includes(id))
+    );
+    projSelectedDatasetIds.value = [];
+  }
+}
+
+function saveDatasetsToProject(ids: number[]) {
+  saving.value = true;
+  if (selectedProject.value) {
+    patchProject(selectedProject.value.id, {
+      datasets: ids,
+    }).then((project) => {
+      getProjectDatasets(project.id).then((datasets) => {
+        projDatasets.value = datasets;
+        saving.value = false;
       });
     });
+  }
+}
 
-    function resetProjectEdit() {
-      projectConfigMode.value = "existing";
-      newProjectName.value = undefined;
-      projectToDelete.value = undefined;
-      projectToEdit.value = undefined;
-    }
+function updateSelectedProject(newProjectData: Project) {
+  loadProjects();
+  selectedProject.value = newProjectData;
+}
 
-    function handleEditFocus(focused: boolean) {
-      if (!focused) {
-        resetProjectEdit();
-      }
-    }
+watch(selectedProject, () => {
+  resetProjectEdit();
+});
 
-    return {
-      currentTab,
-      projectConfigMode,
-      searchText,
-      filteredProjects,
-      selectedProject,
-      otherDatasets,
-      otherSelectedDatasetIds,
-      projDatasets,
-      projSelectedDatasetIds,
-      permissions,
-      saving,
-      newProjectName,
-      projectToEdit,
-      projectToDelete,
-      create,
-      del,
-      saveProjectName,
-      selectProject,
-      loadSelectedProject,
-      toggleOtherDatasetSelection,
-      toggleProjDatasetSelection,
-      addAllSelectionToProject,
-      removeProjSelectionFromProject,
-      updateSelectedProject,
-      handleEditFocus,
-      resetProjectEdit,
-    };
-  },
-};
+onMounted(() => {
+  getDatasets().then((data) => {
+    allDatasets.value = data;
+  });
+});
+
+function resetProjectEdit() {
+  projectConfigMode.value = "existing";
+  newProjectName.value = undefined;
+  projectToDelete.value = undefined;
+  projectToEdit.value = undefined;
+}
+
+function handleEditFocus(focused: boolean) {
+  if (!focused) {
+    resetProjectEdit();
+  }
+}
 </script>
 
 <template>

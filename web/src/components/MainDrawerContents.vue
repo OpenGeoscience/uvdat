@@ -1,4 +1,4 @@
-<script lang="ts">
+<script setup lang="ts">
 import { ref, computed } from "vue";
 import { availableProjects, currentProject, projectConfigMode } from "@/store";
 import ProjectContents from "./ProjectContents.vue";
@@ -6,54 +6,39 @@ import { getCurrentMapPosition, setMapCenter } from "@/storeFunctions";
 import { Project } from "@/types";
 import { patchProject } from "@/api/rest";
 
-export default {
-  components: { ProjectContents },
-  setup() {
-    const searchText = ref();
-    const saving = ref<"waiting" | "done">();
-    const filteredProjects = computed(() => {
-      return availableProjects.value.filter((proj) => {
-        return (
-          !searchText.value ||
-          proj.name.toLowerCase().includes(searchText.value.toLowerCase())
-        );
-      });
+const searchText = ref();
+const saving = ref<"waiting" | "done">();
+const filteredProjects = computed(() => {
+  return availableProjects.value.filter((proj) => {
+    return (
+      !searchText.value ||
+      proj.name.toLowerCase().includes(searchText.value.toLowerCase())
+    );
+  });
+});
+
+function openProjectConfig(create = false) {
+  projectConfigMode.value = create ? "new" : "existing";
+}
+
+function saveProjectMapLocation(project: Project) {
+  const { center, zoom } = getCurrentMapPosition();
+  saving.value = "waiting";
+  patchProject(project.id, {
+    default_map_center: center,
+    default_map_zoom: zoom,
+  }).then((project) => {
+    availableProjects.value = availableProjects.value.map((p) => {
+      if (p.id == project.id) {
+        p.default_map_center = project.default_map_center;
+        p.default_map_zoom = project.default_map_zoom;
+      }
+      return p;
     });
-
-    function openProjectConfig(create = false) {
-      projectConfigMode.value = create ? "new" : "existing";
-    }
-
-    function saveProjectMapLocation(project: Project) {
-      const { center, zoom } = getCurrentMapPosition();
-      saving.value = "waiting";
-      patchProject(project.id, {
-        default_map_center: center,
-        default_map_zoom: zoom,
-      }).then((project) => {
-        availableProjects.value = availableProjects.value.map((p) => {
-          if (p.id == project.id) {
-            p.default_map_center = project.default_map_center;
-            p.default_map_zoom = project.default_map_zoom;
-          }
-          return p;
-        });
-        setMapCenter(project);
-        saving.value = "done";
-      });
-    }
-
-    return {
-      filteredProjects,
-      currentProject,
-      searchText,
-      saving,
-      openProjectConfig,
-      setMapCenter,
-      saveProjectMapLocation,
-    };
-  },
-};
+    setMapCenter(project);
+    saving.value = "done";
+  });
+}
 </script>
 
 <template>
