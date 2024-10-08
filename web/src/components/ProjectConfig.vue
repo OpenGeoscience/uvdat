@@ -205,10 +205,7 @@ export default {
     }
 
     watch(selectedProject, () => {
-      projectConfigMode.value = "existing";
-      newProjectName.value = undefined;
-      projectToDelete.value = undefined;
-      projectToEdit.value = undefined;
+      resetProjectEdit();
     });
 
     onMounted(() => {
@@ -216,6 +213,19 @@ export default {
         allDatasets.value = data;
       });
     });
+
+    function resetProjectEdit() {
+      projectConfigMode.value = "existing";
+      newProjectName.value = undefined;
+      projectToDelete.value = undefined;
+      projectToEdit.value = undefined;
+    }
+
+    function handleEditFocus(focused: boolean) {
+      if (!focused) {
+        resetProjectEdit();
+      }
+    }
 
     return {
       currentTab,
@@ -242,6 +252,8 @@ export default {
       addAllSelectionToProject,
       removeProjSelectionFromProject,
       updateSelectedProject,
+      handleEditFocus,
+      resetProjectEdit,
     };
   },
 };
@@ -295,7 +307,9 @@ export default {
               hide-details
               autofocus
               @keydown.stop
+              @keydown.esc="resetProjectEdit"
               @keydown.enter="saveProjectName"
+              @update:focused="handleEditFocus"
             />
             <span v-else>{{ title }}</span>
           </template>
@@ -339,7 +353,8 @@ export default {
             density="compact"
             autofocus
             @keydown.enter="create"
-            @keydown.esc="projectConfigMode = 'existing'"
+            @keydown.esc="resetProjectEdit"
+            @update:focused="handleEditFocus"
           />
           <v-btn
             color="primary"
