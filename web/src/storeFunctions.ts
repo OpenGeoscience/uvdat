@@ -87,15 +87,23 @@ export function loadProjects() {
   });
 }
 
-export function setMapCenter(project: Project | undefined = undefined) {
+export function setMapCenter(
+  project: Project | undefined = undefined,
+  jump = false
+) {
   let center: [number, number] = [0, 30];
   let zoom = 1;
   if (project) {
     center = project.default_map_center;
     zoom = project.default_map_zoom;
   }
+
   const map = getMap();
-  map.jumpTo({ center, zoom });
+  if (jump) {
+    map.jumpTo({ center, zoom });
+  } else {
+    map.flyTo({ center, zoom, duration: 2000 });
+  }
 }
 
 export function getCurrentMapPosition() {
