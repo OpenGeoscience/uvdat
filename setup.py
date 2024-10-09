@@ -2,6 +2,8 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
+__version__ = '0.4.1'
+
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
     with readme_file.open() as f:
@@ -12,7 +14,7 @@ else:
 
 setup(
     name='uvdat',
-    version='0.1.0',
+    version=__version__,
     description='',
     long_description=long_description,
     long_description_content_type='text/markdown',
