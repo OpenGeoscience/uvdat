@@ -1,13 +1,102 @@
 # CHANGELOG
 
 
+## v0.5.0 (2024-10-10)
+
+### Fixes
+
+* fix: Remove current project owner from users list ([`7051ab4`](https://github.com/OpenGeoscience/uvdat/commit/7051ab43be0fbaa66eed735b4f3b5b4a675bed74))
+
+### Unknown
+
+* Merge pull request #66 from OpenGeoscience/project-config-ui
+
+Project Configuration UI ([`5723496`](https://github.com/OpenGeoscience/uvdat/commit/572349674d9b11f7b06eba5925b0264d5591e371))
+
+* Merge branch 'master' into project-config-ui ([`5cddada`](https://github.com/OpenGeoscience/uvdat/commit/5cddadab83bdf18ae700e7e041ffe0663f11b018))
+
+
 ## v0.4.2 (2024-10-10)
+
+### Code Style
+
+* style: use title case for component tag ([`ba7fbcf`](https://github.com/OpenGeoscience/uvdat/commit/ba7fbcfb1e3ac4eb8f6ea22aa5ae6783739ba7b6))
+
+* style: replace double equals with triple equals ([`245871b`](https://github.com/OpenGeoscience/uvdat/commit/245871b2f7b0861443b2a7d619fc43c2b34f028e))
+
+* style: remove unused imports ([`07f1a9d`](https://github.com/OpenGeoscience/uvdat/commit/07f1a9de4b60b9b078dd9829648b171ceb594339))
+
+* style: Adjust vertical alignment of object counts, flush with icons ([`a070f83`](https://github.com/OpenGeoscience/uvdat/commit/a070f833b9027742e17e405a7d2612a4975c2d91))
+
+### Features
+
+* feat: default to `flyTo` when setting map center ([`ce33080`](https://github.com/OpenGeoscience/uvdat/commit/ce3308061dbaec28c955cea79d996319c95579f6))
+
+* feat: add Access Control interface ([`dba0516`](https://github.com/OpenGeoscience/uvdat/commit/dba0516f343641da615aaa9912c828a880f0a591))
+
+* feat: create/delete projects, edit project names and default map positions ([`d91be55`](https://github.com/OpenGeoscience/uvdat/commit/d91be555dd1a3ba7161775ff891dc26230a723ff))
+
+* feat: Add Dataset selection panel to Project Config page ([`bb21859`](https://github.com/OpenGeoscience/uvdat/commit/bb2185903fba8ee4189c415206ed8a24250233fb))
+
+* feat: Toggle dataset layers with maplibre ([`b84303d`](https://github.com/OpenGeoscience/uvdat/commit/b84303d806776500b20a29191ee2ad8c814da193))
+
+* feat: Add basic ProjectConfig component ([`e7b29bb`](https://github.com/OpenGeoscience/uvdat/commit/e7b29bb00b2da2ab96e61cd7dbe1881ece13c5b2))
 
 ### Fixes
 
 * fix: Use `pipx` action in lint workflow to avoid "externally managed environment" error ([`ad76188`](https://github.com/OpenGeoscience/uvdat/commit/ad76188e02828bcbbb63a8bb1984c381549c4466))
 
+* fix: modify `savePermissions` to move users between followers and collaborators lists ([`1c83360`](https://github.com/OpenGeoscience/uvdat/commit/1c83360df559c9eb41bde1a0cfb9c336b4b63658))
+
+* fix: Prevent multiple permissions for single user in project ([`16e6140`](https://github.com/OpenGeoscience/uvdat/commit/16e61409b11fec074c7cec673b99c34548323306))
+
+* fix: improve map location menu hover/click behavior ([`d2ad119`](https://github.com/OpenGeoscience/uvdat/commit/d2ad11919dcb63a82e7e29e69709dbeac670cb39))
+
+* fix: order Project queryset by name ([`80fe54e`](https://github.com/OpenGeoscience/uvdat/commit/80fe54eca12635cc9bc16a234fe1ba68ab329c06))
+
+* fix: update `set_permissions` call in `ProjectViewSet.partial_update` ([`99bee91`](https://github.com/OpenGeoscience/uvdat/commit/99bee913574e2b04cf113e6d1a4985d6885a32f0))
+
+* fix: reverse map coord ordering in API ([`744e124`](https://github.com/OpenGeoscience/uvdat/commit/744e12452331f7f382f1e48e6aa32d924bf4890a))
+
+* fix: update references to `resetMap` -> `setMapCenter` ([`513959a`](https://github.com/OpenGeoscience/uvdat/commit/513959a1408d3c0eedcc4b89da82bb641826b2e7))
+
+* fix: update setting permissions in Project `partial_update` ([`294ab3c`](https://github.com/OpenGeoscience/uvdat/commit/294ab3c69841db3b8a2ea18bff11c3731e997e72))
+
+* fix: add `item_counts` to `ProjectSerializer` for new sidebar design ([`3a71b3a`](https://github.com/OpenGeoscience/uvdat/commit/3a71b3aa0a302002c0096535849c6ae175e598ff))
+
+* fix: Change groupBy control to radio buttons ([`b933d2f`](https://github.com/OpenGeoscience/uvdat/commit/b933d2f842f8d4401fd1a3febc0713020e0422a5))
+
+* fix: adjust map state watchers ([`58f59a4`](https://github.com/OpenGeoscience/uvdat/commit/58f59a4b0cae192aba5a091e8288cac80e84115b))
+
+* fix: change loading behavior of Project contents panels ([`407eccf`](https://github.com/OpenGeoscience/uvdat/commit/407eccf53eb68b6d3b60579c6cc35baf0d07eac1))
+
+* fix: Add matplotlib to requirements for raster colormaps ([`971e991`](https://github.com/OpenGeoscience/uvdat/commit/971e9914bc15cf9c7be8c706fdb1663c43643650))
+
 ### Refactoring
+
+* refactor: enforce consistent naming of permission levels ([`a843439`](https://github.com/OpenGeoscience/uvdat/commit/a843439b046ea507f20806c631c89f8d6cac720c))
+
+* refactor: Apply suggestion to use sets in `savePermissions` ([`f5bc7ad`](https://github.com/OpenGeoscience/uvdat/commit/f5bc7ad65e11b246d01661931323f68c51cf1269))
+
+* refactor: Remove ownership claim mode ([`816dd25`](https://github.com/OpenGeoscience/uvdat/commit/816dd2518bd5e5c98049242b5668a068d220a4c1))
+
+* refactor: Apply suggestion to `toggleDatasets` function in `ProjectContents` ([`754d1be`](https://github.com/OpenGeoscience/uvdat/commit/754d1beb89fd984a8097c1429a31e4ab311a2b05))
+
+* refactor: Use Vue `script setup` syntax on new/modified components ([`7eb640c`](https://github.com/OpenGeoscience/uvdat/commit/7eb640c9114e88c2e944ba0698c9707b077e3ae1))
+
+* refactor: explicitly define acceptable values for `saving` ([`38d2cc9`](https://github.com/OpenGeoscience/uvdat/commit/38d2cc91200a0e723a6147f7caf67ec0cb4a40a5))
+
+* refactor: explicitly define acceptable values for `projectConfigMode` ([`6ce1e6f`](https://github.com/OpenGeoscience/uvdat/commit/6ce1e6f43bb1e17533acab52aab858ce7c4afd5f))
+
+* refactor:  `setMapCenter` implicit undefined argument ([`ccb3e39`](https://github.com/OpenGeoscience/uvdat/commit/ccb3e39786a591c939434b2cb8eccfda8ef25073))
+
+* refactor: separate Project update endpoints, don't override `partial_update` ([`d2bffde`](https://github.com/OpenGeoscience/uvdat/commit/d2bffde373e24062094136fdfeaf3fd6a46934d8))
+
+* refactor: update web/src/storeFunctions.ts
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com> ([`cff13c4`](https://github.com/OpenGeoscience/uvdat/commit/cff13c4cdadaf97b27d3e1588ee93930aa90af81))
+
+* refactor: populate store vars when fetching for Project contents ([`7afef9b`](https://github.com/OpenGeoscience/uvdat/commit/7afef9be6ecca1db97135dddca7fa3bf223770e2))
 
 * refactor: Use FloatField for Project.default_map_zoom ([`6d84564`](https://github.com/OpenGeoscience/uvdat/commit/6d845640216714ccb89074c5ad9683aa1cff8e14))
 
@@ -16,6 +105,18 @@
 * Merge pull request #82 from OpenGeoscience/ci-use-pipx
 
 Use `pipx` for package installation in CI ([`3c265fa`](https://github.com/OpenGeoscience/uvdat/commit/3c265fa8c7c01a13ba8955088e51168a1d4ed593))
+
+* Apply suggestion to typing in AccessControl.vue
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com> ([`4464033`](https://github.com/OpenGeoscience/uvdat/commit/44640331966c2e936e3c4ba21427d87229002f12))
+
+* Reset project name text fields if focus is lossed ([`33f53f3`](https://github.com/OpenGeoscience/uvdat/commit/33f53f363f5e0b3d2d4d629258f1d407b75cf816))
+
+* deps: Upgrade vuetify ([`8977ada`](https://github.com/OpenGeoscience/uvdat/commit/8977ada2e19a2e543c13f38a63c12e1ff39004b3))
+
+* ui: Set primary color to blue ([`e7e0e3c`](https://github.com/OpenGeoscience/uvdat/commit/e7e0e3ce16fc15b0cda5b0aadc0daf699c8335c0))
+
+* ui: Redesign main drawer contents ([`13f00ea`](https://github.com/OpenGeoscience/uvdat/commit/13f00ead7791a53c42140276f11d984af9fc8ab5))
 
 * Merge pull request #71 from OpenGeoscience/default-map-zoom-float
 
