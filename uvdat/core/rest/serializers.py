@@ -33,6 +33,18 @@ class ProjectPermissionsSerializer(serializers.Serializer):
     collaborator_ids = serializers.ListField(child=serializers.IntegerField())
     follower_ids = serializers.ListField(child=serializers.IntegerField())
 
+    def validate(self, attrs):
+        collaborators = set(attrs['collaborator_ids'])
+        followers = set(attrs['follower_ids'])
+        owner = attrs['owner_id']
+
+        if collaborators & followers or owner in (collaborators | followers):
+            raise serializers.ValidationError(
+                'A user cannot have multiple permissions on a single project'
+            )
+
+        return super().validate(attrs)
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     default_map_center = serializers.SerializerMethodField('get_center')
