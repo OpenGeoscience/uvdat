@@ -28,7 +28,7 @@ function savePermissions() {
     collaborators.delete(userToRemove.value.id);
     followers.delete(userToRemove.value.id);
   } else if (
-    ["transfer", "claim"].includes(userSelectDialogMode.value) &&
+    userSelectDialogMode.value === "transfer" &&
     selectedUsers.value.length === 1
   ) {
     // Transfer ownership to new owner, demoting current owner to collaborator
@@ -39,8 +39,10 @@ function savePermissions() {
     owner = newOwner;
   } else if (selectedPermissionLevel.value == "collaborator") {
     selectedUsers.value.forEach((u: User) => collaborators.add(u.id));
+    selectedUsers.value.forEach((u: User) => followers.delete(u.id));
   } else if (selectedPermissionLevel.value == "follower") {
     selectedUsers.value.forEach((u: User) => followers.add(u.id));
+    selectedUsers.value.forEach((u: User) => collaborators.delete(u.id));
   }
   const newPermissions: ProjectPermissions = {
     owner_id: owner,
@@ -48,11 +50,13 @@ function savePermissions() {
     follower_ids: Array.from(followers),
   };
   updateProjectPermissions(props.project.id, newPermissions).then((project) => {
-    emit("updateSelectedProject", project);
-    selectedUsers.value = [];
-    selectedPermissionLevel.value = "follower";
-    showUserSelectDialog.value = false;
-    userToRemove.value = undefined;
+    if (project) {
+      emit("updateSelectedProject", project);
+      selectedUsers.value = [];
+      selectedPermissionLevel.value = "follower";
+      showUserSelectDialog.value = false;
+      userToRemove.value = undefined;
+    }
   });
 }
 
