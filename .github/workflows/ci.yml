@@ -10,7 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: pip install tox
+      - name: Install Tox
+        uses: threeal/pipx-install-action@v1.0.0
+        with:
+          packages: tox
       - name: Lint
         run: tox -e lint
 
