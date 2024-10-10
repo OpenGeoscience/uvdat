@@ -104,25 +104,23 @@ function toggleDatasets({
         ...dataset.map_layers,
       ];
     }
-    let layer = undefined;
-    if (
-      dataset.map_layers !== undefined &&
-      dataset.current_layer_index !== undefined
-    ) {
-      layer = dataset.map_layers[dataset.current_layer_index];
-    }
-    if (show && !selectedDatasetIds.value.includes(dataset.id)) {
+    // Ensure show and selected match
+    const selected = selectedDatasetIds.value.includes(dataset.id);
+    if (show && !selected) {
       selectedDatasets.value.push(dataset);
-      if (layer) toggleDatasetLayer(layer);
-    } else if (!show && selectedDatasetIds.value.includes(dataset.id)) {
+    } else if (!show && selected) {
+      // Ensure dataset isn't current dataset and is filtered out from selected datasets
       if (currentDataset.value?.id === dataset.id) {
         currentDataset.value = undefined;
       }
       selectedDatasets.value = selectedDatasets.value.filter((d) => {
         d.id != dataset.id;
       });
-      if (layer) toggleDatasetLayer(layer);
     }
+    // Toggle dataset layer. This *must* be called after the above code,
+    // as it relies on the above changes to function correctly.
+    const layer = dataset.map_layers[dataset.current_layer_index];
+    if (layer) toggleDatasetLayer(layer);
   });
 }
 
