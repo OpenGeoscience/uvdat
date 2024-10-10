@@ -1,12 +1,40 @@
 # CHANGELOG
 
+
+## v0.4.2 (2024-10-10)
+
+### Fixes
+
+* fix: Use `pipx` action in lint workflow to avoid "externally managed environment" error ([`ad76188`](https://github.com/OpenGeoscience/uvdat/commit/ad76188e02828bcbbb63a8bb1984c381549c4466))
+
+### Refactoring
+
+* refactor: Use FloatField for Project.default_map_zoom ([`6d84564`](https://github.com/OpenGeoscience/uvdat/commit/6d845640216714ccb89074c5ad9683aa1cff8e14))
+
+### Unknown
+
+* Merge pull request #82 from OpenGeoscience/ci-use-pipx
+
+Use `pipx` for package installation in CI ([`3c265fa`](https://github.com/OpenGeoscience/uvdat/commit/3c265fa8c7c01a13ba8955088e51168a1d4ed593))
+
+* Merge pull request #71 from OpenGeoscience/default-map-zoom-float
+
+Use FloatField for Project.default_map_zoom ([`6dae4c1`](https://github.com/OpenGeoscience/uvdat/commit/6dae4c1d4319e0ca9c53adaf70343e6435b4175b))
+
+* Merge pull request #78 from OpenGeoscience/fix-ingest-use-case
+
+Prevent writing of file if request was not successful ([`82dd93c`](https://github.com/OpenGeoscience/uvdat/commit/82dd93c0f4f15ea155c02a75d0d6152d180b6b53))
+
+* Prevent writing of file if request was not successful ([`882de66`](https://github.com/OpenGeoscience/uvdat/commit/882de66cc26a73fc3173bd22e757e8ddb82999ba))
+
+
 ## v0.4.1 (2024-10-01)
 
-### Performance
+### Performance Improvements
 
 * perf: Implement GCC algorithm in native postgres ([`ba33eb0`](https://github.com/OpenGeoscience/uvdat/commit/ba33eb08fb44b39d3d3159539538d42db4b9bceb))
 
-### Refactor
+### Refactoring
 
 * refactor: Move find_network_gcc into Network.get_gcc ([`1eadf03`](https://github.com/OpenGeoscience/uvdat/commit/1eadf03c9949d6d85dce9f2f94cb6e0d32a24925))
 
@@ -16,13 +44,24 @@
 
 Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenGeoscience/uvdat/commit/3bf0d015ddf41b11b1e5e9440a94da0f1e712818))
 
+
 ## v0.4.0 (2024-10-01)
+
+### Code Style
+
+* style: remove unused imports and variables ([`7bb8976`](https://github.com/OpenGeoscience/uvdat/commit/7bb89764a0cdcdded2b5bc865b65b2f6c13a71e1))
+
+* style: remove change to flake8 rules in `tox.ini` ([`52c9ffe`](https://github.com/OpenGeoscience/uvdat/commit/52c9ffe6d482e686a56ee4bbb288a3aa4aa7dcac))
+
+* style: fix lint errors ([`61f9767`](https://github.com/OpenGeoscience/uvdat/commit/61f97670c52de649533fa1315cf3a1d4aa9f7770))
+
+* style: Lint fixes ([`10330c3`](https://github.com/OpenGeoscience/uvdat/commit/10330c359f13bb93c8ead80e9fa3ae7508242681))
 
 ### Documentation
 
 * docs: Add `makeclient` step to Setup Guide ([`c3b4ac2`](https://github.com/OpenGeoscience/uvdat/commit/c3b4ac24dad2a1d27450957a08223b0c01ff5a4c))
 
-### Feature
+### Features
 
 * feat: Override signup form to include name fields ([`de74292`](https://github.com/OpenGeoscience/uvdat/commit/de74292bc41128aefe670d075193f3e5fb96c911))
 
@@ -36,7 +75,7 @@ Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenG
 
 * feat: server-side changes for authentication ([`b60591c`](https://github.com/OpenGeoscience/uvdat/commit/b60591c0526144ba7629cc5e9bc6810e459239d5))
 
-### Fix
+### Fixes
 
 * fix: add import to `ingest_use_case` ([`8d1d9db`](https://github.com/OpenGeoscience/uvdat/commit/8d1d9dbbba930749af9ef742a002e7f00e8f1e1d))
 
@@ -70,11 +109,11 @@ Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenG
 
 * fix: remove `SESSION_COOKIE_AGE` value override ([`ffbd515`](https://github.com/OpenGeoscience/uvdat/commit/ffbd5159241e6634c2ba019632f99fb832d5bda0))
 
-### Refactor
+### Refactoring
 
 * refactor: move `project_id` query param filtering to `get_queryset` on relevant ViewSets ([`305f0b2`](https://github.com/OpenGeoscience/uvdat/commit/305f0b2d6d94a985c46579799257a3e9c115f51d))
 
-* refactor: rename `guardian.py` -&gt; `access_control.py` ([`3315a4d`](https://github.com/OpenGeoscience/uvdat/commit/3315a4da81a2dd7ab8ae7e925fa257a949155969))
+* refactor: rename `guardian.py` -> `access_control.py` ([`3315a4d`](https://github.com/OpenGeoscience/uvdat/commit/3315a4da81a2dd7ab8ae7e925fa257a949155969))
 
 * refactor: update `guardian.py` ([`9989e6f`](https://github.com/OpenGeoscience/uvdat/commit/9989e6f6aee6aaf3377cec43907911476c1e05e5))
 
@@ -86,7 +125,7 @@ Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenG
 
 * refactor: Add comment to `urls.py` ([`af567f1`](https://github.com/OpenGeoscience/uvdat/commit/af567f19997a7b4d95f8560f88aac64a5f904776))
 
-* refactor: add explanatory comment to Map&#39;s `transformRequest` function ([`9f6c9ab`](https://github.com/OpenGeoscience/uvdat/commit/9f6c9ab78e1e8784a4c1a2530be09c0b60dfc666))
+* refactor: add explanatory comment to Map's `transformRequest` function ([`9f6c9ab`](https://github.com/OpenGeoscience/uvdat/commit/9f6c9ab78e1e8784a4c1a2530be09c0b60dfc666))
 
 * refactor: update `Dataset.is_in_project` function ([`d78a494`](https://github.com/OpenGeoscience/uvdat/commit/d78a4941266da8f0a5ca541a512b3c83cc7bb2ef))
 
@@ -94,17 +133,7 @@ Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenG
 
 * refactor: update `ingest_projects` function ([`318f695`](https://github.com/OpenGeoscience/uvdat/commit/318f695abe7b3652fff3bbba4804b2113ce8c256))
 
-### Style
-
-* style: remove unused imports and variables ([`7bb8976`](https://github.com/OpenGeoscience/uvdat/commit/7bb89764a0cdcdded2b5bc865b65b2f6c13a71e1))
-
-* style: remove change to flake8 rules in `tox.ini` ([`52c9ffe`](https://github.com/OpenGeoscience/uvdat/commit/52c9ffe6d482e686a56ee4bbb288a3aa4aa7dcac))
-
-* style: fix lint errors ([`61f9767`](https://github.com/OpenGeoscience/uvdat/commit/61f97670c52de649533fa1315cf3a1d4aa9f7770))
-
-* style: Lint fixes ([`10330c3`](https://github.com/OpenGeoscience/uvdat/commit/10330c359f13bb93c8ead80e9fa3ae7508242681))
-
-### Test
+### Testing
 
 * test: ensure a superuser exists at beginning of populate test ([`b614f13`](https://github.com/OpenGeoscience/uvdat/commit/b614f13daa05d85e8b3583966805b05f025f5808))
 
@@ -233,13 +262,20 @@ Use improved NY Grid data ([`6c51ec8`](https://github.com/OpenGeoscience/uvdat/c
 
 * data: refer to new networks zip on DKC ([`9ed26d6`](https://github.com/OpenGeoscience/uvdat/commit/9ed26d61e22bf82d67273351057580048cfc8461))
 
+
 ## v0.3.0 (2024-08-21)
 
-### Feature
+### Code Style
+
+* style: Additional style fixes ([`3f18006`](https://github.com/OpenGeoscience/uvdat/commit/3f180067ba6ee44ff9c0f7a9d6ac06840180d09e))
+
+* style: Reformat with tox ([`0f985c9`](https://github.com/OpenGeoscience/uvdat/commit/0f985c96452d0fa834b371f990b045af85e4d29c))
+
+### Features
 
 * feat: Add import script to load county networks from exported geojson files ([`0bb90a4`](https://github.com/OpenGeoscience/uvdat/commit/0bb90a432686168797fbde5c5a4f3ba935208027))
 
-### Fix
+### Fixes
 
 * fix: remove unintentional quotes ([`296dc78`](https://github.com/OpenGeoscience/uvdat/commit/296dc7865d37dc0bbed1e0838e29a6df31793589))
 
@@ -249,7 +285,7 @@ Use improved NY Grid data ([`6c51ec8`](https://github.com/OpenGeoscience/uvdat/c
 
 * fix: ingest contexts before charts ([`df98b5d`](https://github.com/OpenGeoscience/uvdat/commit/df98b5d72ac16471c55127e58327d1b587089276))
 
-* fix: `network.dataset` -&gt; `dataset` ([`f859588`](https://github.com/OpenGeoscience/uvdat/commit/f859588f1e5d4142dec8c2c40db4974757ed48f4))
+* fix: `network.dataset` -> `dataset` ([`f859588`](https://github.com/OpenGeoscience/uvdat/commit/f859588f1e5d4142dec8c2c40db4974757ed48f4))
 
 * fix: only delete old map layers at beginning of dataset ingest ([`d71c90a`](https://github.com/OpenGeoscience/uvdat/commit/d71c90a73d9ff28ab4adddfc2f5478bf01efa904))
 
@@ -257,21 +293,15 @@ Use improved NY Grid data ([`6c51ec8`](https://github.com/OpenGeoscience/uvdat/c
 
 * fix: Improve speed and accuracy of network interpretation algorithm ([`29650e7`](https://github.com/OpenGeoscience/uvdat/commit/29650e70397b367d066e23e575441330b31368f5))
 
-### Refactor
+### Refactoring
 
-* refactor: Rename `vector_features_from_network` -&gt; `create_vector_features_from_network` ([`a287c78`](https://github.com/OpenGeoscience/uvdat/commit/a287c78f0ba11aa945792c39899a94955b66fa67))
+* refactor: Rename `vector_features_from_network` -> `create_vector_features_from_network` ([`a287c78`](https://github.com/OpenGeoscience/uvdat/commit/a287c78f0ba11aa945792c39899a94955b66fa67))
 
 * refactor: create ingest modules with `convert_dataset` function for each use case ([`48a769d`](https://github.com/OpenGeoscience/uvdat/commit/48a769d0511dee3dbf929b779ca198885d00b15c))
 
 * refactor: remove unnecessary string casting ([`fb2cb07`](https://github.com/OpenGeoscience/uvdat/commit/fb2cb073be55d6fd22e78376fc22978efc660c60))
 
-### Style
-
-* style: Additional style fixes ([`3f18006`](https://github.com/OpenGeoscience/uvdat/commit/3f180067ba6ee44ff9c0f7a9d6ac06840180d09e))
-
-* style: Reformat with tox ([`0f985c9`](https://github.com/OpenGeoscience/uvdat/commit/0f985c96452d0fa834b371f990b045af85e4d29c))
-
-### Test
+### Testing
 
 * test: adjust expected number of contexts in populate test ([`11c2c83`](https://github.com/OpenGeoscience/uvdat/commit/11c2c8315b49076709ab9bd46cdda90e549ab690))
 
@@ -289,13 +319,20 @@ Add New York Energy use case to populate script ([`221fdf2`](https://github.com/
 
 * Reorganize sample_data folder to accomodate multiple use cases ([`cfa32a8`](https://github.com/OpenGeoscience/uvdat/commit/cfa32a87f5425578ba886540ad081391c797cdc7))
 
+
 ## v0.2.0 (2024-08-21)
 
-### Feature
+### Code Style
+
+* style: reformat with black ([`431537b`](https://github.com/OpenGeoscience/uvdat/commit/431537b5e495be578f2a30c588d3a893e7ac4413))
+
+* style: Lint fixes ([`d7c6ef6`](https://github.com/OpenGeoscience/uvdat/commit/d7c6ef6f6bb2915305a495e649a07cf02456b1cc))
+
+### Features
 
 * feat: Add rest viewsets for file item and network models ([`53e54e5`](https://github.com/OpenGeoscience/uvdat/commit/53e54e5dfdb6c530f8238e7be671afb2dbcc13d0))
 
-### Fix
+### Fixes
 
 * fix: remove old name reference ([`bfd69c2`](https://github.com/OpenGeoscience/uvdat/commit/bfd69c2f7fd8e16cd8e39424d03f22f72c21bc9f))
 
@@ -303,17 +340,11 @@ Add New York Energy use case to populate script ([`221fdf2`](https://github.com/
 
 * fix: Small bug fixes ([`87279bc`](https://github.com/OpenGeoscience/uvdat/commit/87279bce6a19bec2f4979c7f381913734ad9d655))
 
-### Refactor
+### Refactoring
 
 * refactor: apply suggested changes ([`f50de69`](https://github.com/OpenGeoscience/uvdat/commit/f50de697a5dc8abb7e98b00d17b233cf69fa82a1))
 
-### Style
-
-* style: reformat with black ([`431537b`](https://github.com/OpenGeoscience/uvdat/commit/431537b5e495be578f2a30c588d3a893e7ac4413))
-
-* style: Lint fixes ([`d7c6ef6`](https://github.com/OpenGeoscience/uvdat/commit/d7c6ef6f6bb2915305a495e649a07cf02456b1cc))
-
-### Test
+### Testing
 
 * test: Update OSMnx test expected number of nodes and edges ([`95c8c8a`](https://github.com/OpenGeoscience/uvdat/commit/95c8c8a729538bc515676c8600a35f28a2612dab))
 
@@ -321,19 +352,20 @@ Add New York Energy use case to populate script ([`221fdf2`](https://github.com/
 
 * Merge pull request #46 from OpenGeoscience/model-changes
 
-Networks &amp; File Items ([`79e6ca7`](https://github.com/OpenGeoscience/uvdat/commit/79e6ca7b145a6e2477fcac210fba5f59ae94a0d8))
+Networks & File Items ([`79e6ca7`](https://github.com/OpenGeoscience/uvdat/commit/79e6ca7b145a6e2477fcac210fba5f59ae94a0d8))
 
 * Add Network model; allow multiple networks on a single dataset ([`6e0e132`](https://github.com/OpenGeoscience/uvdat/commit/6e0e132d5024518e99c462df4aac286f3c8f68d0))
 
 * Make file_item relation optional (a MapLayer can exist on a Dataset without a FileItem) ([`4c480f6`](https://github.com/OpenGeoscience/uvdat/commit/4c480f60aae3a93332b23ae65d890f2bf82adbc1))
 
+
 ## v0.1.0 (2024-08-19)
 
-### Feature
+### Features
 
 * feat: pin dependency versions in `setup.py` ([`2f3b671`](https://github.com/OpenGeoscience/uvdat/commit/2f3b671a2a84ffbbe0905a07c0988a6418bdbe67))
 
-### Test
+### Testing
 
 * test: try different docker compose action ([`05442e7`](https://github.com/OpenGeoscience/uvdat/commit/05442e783dfe91bc0353d718a5c13cc74a5ad674))
 
@@ -393,6 +425,7 @@ Generate vector tiles dynamically from extracted features ([`a85b7d1`](https://g
 
 * Generate vector tiles dynamically from extracted features ([`90bd64f`](https://github.com/OpenGeoscience/uvdat/commit/90bd64f61e001f17cce2194cf041a906d9b51360))
 
+
 ## v0.0.0 (2024-06-20)
 
 ### Unknown
@@ -415,13 +448,13 @@ Create a docs folder and improve README ([`b371373`](https://github.com/OpenGeos
 
 * Remove uvdat_flow image ([`3dbeb10`](https://github.com/OpenGeoscience/uvdat/commit/3dbeb102a3f77a454cbf1d0f92b7f5c63036ba1c))
 
-* Fix typo in &#34;representations&#34; ([`1012c94`](https://github.com/OpenGeoscience/uvdat/commit/1012c949269aeaa0e1286b8b33cafd0ebc89f751))
+* Fix typo in "representations" ([`1012c94`](https://github.com/OpenGeoscience/uvdat/commit/1012c949269aeaa0e1286b8b33cafd0ebc89f751))
 
-* Replace &#34;Girder 4&#34; with &#34;Resonant&#34; in README ([`e1ec12d`](https://github.com/OpenGeoscience/uvdat/commit/e1ec12d5c10a1b4987b5ce008149acbb2077633f))
+* Replace "Girder 4" with "Resonant" in README ([`e1ec12d`](https://github.com/OpenGeoscience/uvdat/commit/e1ec12d5c10a1b4987b5ce008149acbb2077633f))
 
 * Editorial changes
 
-Signed-off-by: Anne Haley &lt;anne.haley@kitware.com&gt; ([`3a60b97`](https://github.com/OpenGeoscience/uvdat/commit/3a60b97b926eab960dac05f49ba5cf5c3a07018c))
+Signed-off-by: Anne Haley <anne.haley@kitware.com> ([`3a60b97`](https://github.com/OpenGeoscience/uvdat/commit/3a60b97b926eab960dac05f49ba5cf5c3a07018c))
 
 * Add more links to README ([`a6835fb`](https://github.com/OpenGeoscience/uvdat/commit/a6835fb15afb19d585317129916a14d0a910e9f8))
 
@@ -451,7 +484,7 @@ Model redesign ([`72000c2`](https://github.com/OpenGeoscience/uvdat/commit/72000
 
 * Use `selectedDerivedRegions` storage instead of `isDerivedRegionSelected` function ([`dfe4c74`](https://github.com/OpenGeoscience/uvdat/commit/dfe4c7412974a057a4acfaac94a7a624ae80bffc))
 
-* Merge remote-tracking branch &#39;origin/master&#39; into model-redesign ([`6459e75`](https://github.com/OpenGeoscience/uvdat/commit/6459e753f0cbec9dba8773453cc3f0be77397aaa))
+* Merge remote-tracking branch 'origin/master' into model-redesign ([`6459e75`](https://github.com/OpenGeoscience/uvdat/commit/6459e753f0cbec9dba8773453cc3f0be77397aaa))
 
 * Merge pull request #32 from OpenGeoscience/fix-active-layers ([`8a91613`](https://github.com/OpenGeoscience/uvdat/commit/8a916130c8c0044359b206ecd7e97737d40e3e1c))
 
@@ -477,11 +510,11 @@ Web updates ([`56eab4a`](https://github.com/OpenGeoscience/uvdat/commit/56eab4a9
 
 * Add TODO ([`334b445`](https://github.com/OpenGeoscience/uvdat/commit/334b445d1201e1e3b4134d876ce457e50a7e781c))
 
-* Fix reference to &#34;dataset&#34; object (instead of &#34;Dataset&#34; class) ([`1175a1b`](https://github.com/OpenGeoscience/uvdat/commit/1175a1b277492777e622e3381701ef0ce39c65c0))
+* Fix reference to "dataset" object (instead of "Dataset" class) ([`1175a1b`](https://github.com/OpenGeoscience/uvdat/commit/1175a1b277492777e622e3381701ef0ce39c65c0))
 
 * Use already-fetched map layers, consistent use of caching and types ([`3d4287f`](https://github.com/OpenGeoscience/uvdat/commit/3d4287f13ca924ae71c5339eee87ae87abe37d4d))
 
-* Exclude &#34;Extended&#34; serializers from serializer matches in `get_available_simulations` ([`55fbff5`](https://github.com/OpenGeoscience/uvdat/commit/55fbff51af4286b5bd0fef34e075a0a4d1bb797c))
+* Exclude "Extended" serializers from serializer matches in `get_available_simulations` ([`55fbff5`](https://github.com/OpenGeoscience/uvdat/commit/55fbff51af4286b5bd0fef34e075a0a4d1bb797c))
 
 * Add TODO ([`4b62b03`](https://github.com/OpenGeoscience/uvdat/commit/4b62b0378487949fefcffbf1d15ca6473f93b1ea))
 
@@ -491,7 +524,7 @@ Web updates ([`56eab4a`](https://github.com/OpenGeoscience/uvdat/commit/56eab4a9
 
 * Retrieve map layers from dataset detail endpoint ([`f987749`](https://github.com/OpenGeoscience/uvdat/commit/f987749dae08302a70df3c4611d32e185498d5bf))
 
-* Don&#39;t create local paths for service volumes ([`c96ff90`](https://github.com/OpenGeoscience/uvdat/commit/c96ff90eca962230d0bf0ad3be4de20abd0ebf7d))
+* Don't create local paths for service volumes ([`c96ff90`](https://github.com/OpenGeoscience/uvdat/commit/c96ff90eca962230d0bf0ad3be4de20abd0ebf7d))
 
 * Fix type errors for AbstractLayer ([`0efeab8`](https://github.com/OpenGeoscience/uvdat/commit/0efeab880d5f5cca401e0b622bc45dbfab0989e2))
 
@@ -553,7 +586,7 @@ Web updates ([`56eab4a`](https://github.com/OpenGeoscience/uvdat/commit/56eab4a9
 
 * Resolve import errors with consistent Vue setup structure ([`c0b6a8d`](https://github.com/OpenGeoscience/uvdat/commit/c0b6a8dd6a346f8cdda92efccabea81e7279ce64))
 
-* City -&gt; Context ([`7fb50ea`](https://github.com/OpenGeoscience/uvdat/commit/7fb50eaebdbcd3879ae8afdcc72fa6d2e3b5dc34))
+* City -> Context ([`7fb50ea`](https://github.com/OpenGeoscience/uvdat/commit/7fb50eaebdbcd3879ae8afdcc72fa6d2e3b5dc34))
 
 * Ensure large-image-converter is installed prior to pytest ([`1305b01`](https://github.com/OpenGeoscience/uvdat/commit/1305b018fc67a18abc62793027e4a2a0e0b9cb5a))
 
@@ -570,7 +603,7 @@ needed but not posted to PyPI yet ([`4c3917e`](https://github.com/OpenGeoscience
 
 * More lint fixes ([`ea94851`](https://github.com/OpenGeoscience/uvdat/commit/ea94851cec7d70931607a7ad19f25bd7782001aa))
 
-* Move env to run step for pytest &amp; check-migrations ([`9efb8e3`](https://github.com/OpenGeoscience/uvdat/commit/9efb8e30df248106fc2a2c08928e3a508fcd77ea))
+* Move env to run step for pytest & check-migrations ([`9efb8e3`](https://github.com/OpenGeoscience/uvdat/commit/9efb8e30df248106fc2a2c08928e3a508fcd77ea))
 
 * Fix linting ([`537153b`](https://github.com/OpenGeoscience/uvdat/commit/537153bfd308c4ace502ae89162f47aa158f660e))
 
@@ -582,7 +615,7 @@ needed but not posted to PyPI yet ([`4c3917e`](https://github.com/OpenGeoscience
 
 * Use S3FileField for large geojson data ([`08779f3`](https://github.com/OpenGeoscience/uvdat/commit/08779f308887d05165e8b12e36a80c23dc22b0d5))
 
-* Rename &#34;Original&#34; to &#34;Source&#34; ([`edb1ada`](https://github.com/OpenGeoscience/uvdat/commit/edb1adae6f8998ddd0546f252c03ab290cd73778))
+* Rename "Original" to "Source" ([`edb1ada`](https://github.com/OpenGeoscience/uvdat/commit/edb1adae6f8998ddd0546f252c03ab290cd73778))
 
 * Change Cities into Contexts ([`cfd6a07`](https://github.com/OpenGeoscience/uvdat/commit/cfd6a07675a13b7e5dc500c181dd0316dd711b86))
 
@@ -616,7 +649,7 @@ needed but not posted to PyPI yet ([`4c3917e`](https://github.com/OpenGeoscience
 
 * Merge pull request #29 from OpenGeoscience/pin-django-allauth ([`c4a93fd`](https://github.com/OpenGeoscience/uvdat/commit/c4a93fd212250b1728a1cf607a3de8a3faf7d7b2))
 
-* Pin django-allauth to &lt;0.56.0 ([`026bb14`](https://github.com/OpenGeoscience/uvdat/commit/026bb141b5e333fdcb6c5c2d1c5c46df1b407a10))
+* Pin django-allauth to <0.56.0 ([`026bb14`](https://github.com/OpenGeoscience/uvdat/commit/026bb141b5e333fdcb6c5c2d1c5c46df1b407a10))
 
 * Merge pull request #19 from OpenGeoscience/region-operations ([`948f6ad`](https://github.com/OpenGeoscience/uvdat/commit/948f6ad6f7ebc3a2f136bb4c04d00884d9ae5dc1))
 
@@ -718,11 +751,11 @@ Recovery simulations ([`7f798ac`](https://github.com/OpenGeoscience/uvdat/commit
 
 Suggested by @AlmightyYakob
 
-Co-authored-by: Jacob Nesbitt &lt;jjnesbitt2@gmail.com&gt; ([`08bbc1c`](https://github.com/OpenGeoscience/uvdat/commit/08bbc1c29982d0fc8e95969fd1d8b2c2e0f4aead))
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com> ([`08bbc1c`](https://github.com/OpenGeoscience/uvdat/commit/08bbc1c29982d0fc8e95969fd1d8b2c2e0f4aead))
 
 * Optimize construct_edge_list ([`476273f`](https://github.com/OpenGeoscience/uvdat/commit/476273f23864859f4140e599eda42bf9366a0008))
 
-* Implement other recovery modes with Jack&#39;s centrality measures function ([`c48ad15`](https://github.com/OpenGeoscience/uvdat/commit/c48ad159cc3eae913acf75b10a110b724e4c2892))
+* Implement other recovery modes with Jack's centrality measures function ([`c48ad15`](https://github.com/OpenGeoscience/uvdat/commit/c48ad159cc3eae913acf75b10a110b724e4c2892))
 
 * Update Node Animation component ([`fea8537`](https://github.com/OpenGeoscience/uvdat/commit/fea8537bfdc760a4282f73974804c39c895b55c0))
 
@@ -740,7 +773,7 @@ Simulations pane ([`d7ecc06`](https://github.com/OpenGeoscience/uvdat/commit/d7e
 
 * Add City reference on Simulation Results ([`1cd52b8`](https://github.com/OpenGeoscience/uvdat/commit/1cd52b8cdcc5bfd926b3bc6ea54dd73645f3053f))
 
-* Don&#39;t overwrite other rest framework defaults ([`6cf524a`](https://github.com/OpenGeoscience/uvdat/commit/6cf524a74e89cdff0b2533a3c72680507bad2120))
+* Don't overwrite other rest framework defaults ([`6cf524a`](https://github.com/OpenGeoscience/uvdat/commit/6cf524a74e89cdff0b2533a3c72680507bad2120))
 
 * Constrain simulation_id and input_args as unique together ([`3f60dd8`](https://github.com/OpenGeoscience/uvdat/commit/3f60dd857b841d2e80a3bb37dcf2f42f4d68ee16))
 
@@ -748,7 +781,7 @@ Simulations pane ([`d7ecc06`](https://github.com/OpenGeoscience/uvdat/commit/d7e
 
 * Remove redundant model inheritance ([`d58061d`](https://github.com/OpenGeoscience/uvdat/commit/d58061d61eb2d7b933b586658ab20681f3c78828))
 
-* Don&#39;t redraw network layer until new gcc is received (avoid flickering) ([`9814351`](https://github.com/OpenGeoscience/uvdat/commit/9814351755bce02b14e7376c855b86e36197cc86))
+* Don't redraw network layer until new gcc is received (avoid flickering) ([`9814351`](https://github.com/OpenGeoscience/uvdat/commit/9814351755bce02b14e7376c855b86e36197cc86))
 
 * Add Node Failure Animation component ([`9e27e03`](https://github.com/OpenGeoscience/uvdat/commit/9e27e0322fa1fba5445be78f1d0edaa1d375562d))
 
@@ -838,7 +871,7 @@ Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b
 
 * Add download button for chart data ([`f72ea6d`](https://github.com/OpenGeoscience/uvdat/commit/f72ea6d5fb9d9f6cd8141288e718d6f15d601e42))
 
-* GCC chart - use fixed y range and don&#39;t use temporal resets ([`b78f124`](https://github.com/OpenGeoscience/uvdat/commit/b78f12447f653bdf35925e6290d28f3e99798a71))
+* GCC chart - use fixed y range and don't use temporal resets ([`b78f124`](https://github.com/OpenGeoscience/uvdat/commit/b78f12447f653bdf35925e6290d28f3e99798a71))
 
 * Minor client fixes ([`d9e9df8`](https://github.com/OpenGeoscience/uvdat/commit/d9e9df824bc91a8f867833086c5c1a9f66e526c1))
 
@@ -856,7 +889,7 @@ Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b
 
 * Fix layer bug making map disappear ([`503317e`](https://github.com/OpenGeoscience/uvdat/commit/503317e436ab6ad5f4fea07abdc8856a9ef73a0a))
 
-* Merge branch &#39;regions&#39; into charts ([`afab630`](https://github.com/OpenGeoscience/uvdat/commit/afab6307836190d42a60a3faf5ed61cd95da1d09))
+* Merge branch 'regions' into charts ([`afab630`](https://github.com/OpenGeoscience/uvdat/commit/afab6307836190d42a60a3faf5ed61cd95da1d09))
 
 * Make metadata display table recursive for nested objects ([`e204702`](https://github.com/OpenGeoscience/uvdat/commit/e204702af394eba922da0635dd59ab682146e245))
 
@@ -880,7 +913,7 @@ Charts ([`9548d73`](https://github.com/OpenGeoscience/uvdat/commit/9548d736f0b8b
 
 * Fetch regions directly instead of using vector tiles ([`9aebd8d`](https://github.com/OpenGeoscience/uvdat/commit/9aebd8d89b5b80ad4479aacfed4a445d7f05c729))
 
-* Add &#34;Zoom to Region&#34; button to map tooltip ([`090243c`](https://github.com/OpenGeoscience/uvdat/commit/090243c25fdae36bc9c6eb107a74537cc91cea56))
+* Add "Zoom to Region" button to map tooltip ([`090243c`](https://github.com/OpenGeoscience/uvdat/commit/090243c25fdae36bc9c6eb107a74537cc91cea56))
 
 * Reformat displayFeatureTooltip function ([`50aa728`](https://github.com/OpenGeoscience/uvdat/commit/50aa728349c2d59249e517b4b7440859ee981c6e))
 
@@ -914,7 +947,7 @@ Deactivate nodes ([`6b7f741`](https://github.com/OpenGeoscience/uvdat/commit/6b7
 
 * Allow user to deactivate nodes ([`3ace365`](https://github.com/OpenGeoscience/uvdat/commit/3ace365268d2dd19d29f10b97fe987218bd48a4d))
 
-* Merge branch &#39;raster-tooltip&#39; into deactivate-nodes ([`c1ea7cb`](https://github.com/OpenGeoscience/uvdat/commit/c1ea7cb7c1d7823b568af43c0181e108eae32bc4))
+* Merge branch 'raster-tooltip' into deactivate-nodes ([`c1ea7cb`](https://github.com/OpenGeoscience/uvdat/commit/c1ea7cb7c1d7823b568af43c0181e108eae32bc4))
 
 * Create a separate tooltip function called when raster tooltip is enabled ([`3b40787`](https://github.com/OpenGeoscience/uvdat/commit/3b40787d2828b83fbce4fa14a4741d7147660c1b))
 
@@ -978,7 +1011,7 @@ Network nodes ([`6d011fd`](https://github.com/OpenGeoscience/uvdat/commit/6d011f
 
 * Algorithm fixes and add function to output network as geojson ([`5df2486`](https://github.com/OpenGeoscience/uvdat/commit/5df2486947fd93c7abe1eaa44d5a7b6413e8608f))
 
-* Replace hard-coded key &#34;STATION&#34; ([`d612932`](https://github.com/OpenGeoscience/uvdat/commit/d612932bf83c6fffa286436abd822d4ecbefd1ea))
+* Replace hard-coded key "STATION" ([`d612932`](https://github.com/OpenGeoscience/uvdat/commit/d612932bf83c6fffa286436abd822d4ecbefd1ea))
 
 * Remove unnecessary column assignment ([`9166a3c`](https://github.com/OpenGeoscience/uvdat/commit/9166a3c8d1a12ca431b2d29d0fdf772c837a988a))
 
@@ -994,7 +1027,7 @@ Network nodes ([`6d011fd`](https://github.com/OpenGeoscience/uvdat/commit/6d011f
 
 * Create NetworkNode model and serializer ([`e6b60bc`](https://github.com/OpenGeoscience/uvdat/commit/e6b60bcdd4667083484a55e714ed9c1e570876e8))
 
-* Run conversion task synchronously in population script (don&#39;t send to celery) ([`4bb375b`](https://github.com/OpenGeoscience/uvdat/commit/4bb375b57d272e7d76bea17b746d714fe0001f5f))
+* Run conversion task synchronously in population script (don't send to celery) ([`4bb375b`](https://github.com/OpenGeoscience/uvdat/commit/4bb375b57d272e7d76bea17b746d714fe0001f5f))
 
 * Merge pull request #3 from OpenGeoscience/options-panel
 
@@ -1058,11 +1091,11 @@ Make setup instructions more clear ([`be80df0`](https://github.com/OpenGeoscienc
 
 * Add raster dataset (elevation) ([`b6db77d`](https://github.com/OpenGeoscience/uvdat/commit/b6db77dc1f2b23add7d46c30e4049e4cffe84db4))
 
-* Don&#39;t generate vector tiles client side ([`c76fb47`](https://github.com/OpenGeoscience/uvdat/commit/c76fb479cdb30c14d0552ee26b441a435ad2e5b8))
+* Don't generate vector tiles client side ([`c76fb47`](https://github.com/OpenGeoscience/uvdat/commit/c76fb479cdb30c14d0552ee26b441a435ad2e5b8))
 
 * Add styling to vector tile layers ([`2b0b2d2`](https://github.com/OpenGeoscience/uvdat/commit/2b0b2d2613d56d5914993918ed6403b40ee3ee30))
 
-* Don&#39;t create vector tiles server-side ([`bf98a4e`](https://github.com/OpenGeoscience/uvdat/commit/bf98a4e602394ee4ec84c6de7820448ed842efd4))
+* Don't create vector tiles server-side ([`bf98a4e`](https://github.com/OpenGeoscience/uvdat/commit/bf98a4e602394ee4ec84c6de7820448ed842efd4))
 
 * Add web client that makes vector tiles from geojson ([`e78453c`](https://github.com/OpenGeoscience/uvdat/commit/e78453c4878a44135ac89385a8c2d2f90ad324d9))
 
