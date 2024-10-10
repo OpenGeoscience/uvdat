@@ -18,49 +18,34 @@ const permissionLevels = ["follower", "collaborator"];
 const userToRemove: Ref<User | undefined> = ref();
 
 function savePermissions() {
-  const newPermissions: ProjectPermissions = {
-    owner_id: props.project.owner?.id,
-    collaborator_ids: props.project.collaborators.map((u: User) => u.id),
-    follower_ids: props.project.followers.map((u: User) => u.id),
-  };
+  let owner: number = props.project.owner.id;
+  const collaborators = new Set(
+    props.project.collaborators.map((u: User) => u.id)
+  );
+  const followers = new Set(props.project.followers.map((u: User) => u.id));
   if (userToRemove.value) {
-    newPermissions.collaborator_ids = newPermissions.collaborator_ids.filter(
-      (uid: number) => uid !== userToRemove.value?.id
-    );
-    newPermissions.follower_ids = newPermissions.follower_ids.filter(
-      (uid: number) => uid !== userToRemove.value?.id
-    );
+    collaborators.delete(userToRemove.value.id);
+    followers.delete(userToRemove.value.id);
   } else if (
-    userSelectDialogMode.value === "transfer" &&
+    ["transfer", "claim"].includes(userSelectDialogMode.value) &&
     selectedUsers.value.length === 1
   ) {
-    if (!newPermissions.collaborator_ids.includes(newPermissions.owner_id)) {
-      newPermissions.collaborator_ids.push(newPermissions.owner_id);
-    }
-    if (newPermissions.collaborator_ids.includes(selectedUsers.value[0].id)) {
-      newPermissions.collaborator_ids = newPermissions.collaborator_ids.filter(
-        (uid: number) => uid !== selectedUsers.value[0].id
-      );
-    }
-    if (newPermissions.follower_ids.includes(selectedUsers.value[0].id)) {
-      newPermissions.follower_ids = newPermissions.follower_ids.filter(
-        (uid: number) => uid !== selectedUsers.value[0].id
-      );
-    }
-    newPermissions.owner_id = selectedUsers.value[0].id;
-  } else if (selectedPermissionLevel.value === "collaborator") {
-    selectedUsers.value.forEach((u: User) => {
-      if (!newPermissions.collaborator_ids.includes(u.id)) {
-        newPermissions.collaborator_ids.push(u.id);
-      }
-    });
-  } else if (selectedPermissionLevel.value === "follower") {
-    selectedUsers.value.forEach((u: User) => {
-      if (!newPermissions.follower_ids.includes(u.id)) {
-        newPermissions.follower_ids.push(u.id);
-      }
-    });
+    // Transfer ownership to new owner, demoting current owner to collaborator
+    const newOwner = selectedUsers.value[0].id;
+    followers.delete(newOwner);
+    collaborators.delete(newOwner);
+    collaborators.add(owner);
+    owner = newOwner;
+  } else if (selectedPermissionLevel.value == "collaborator") {
+    selectedUsers.value.forEach((u: User) => collaborators.add(u.id));
+  } else if (selectedPermissionLevel.value == "follower") {
+    selectedUsers.value.forEach((u: User) => followers.add(u.id));
   }
+  const newPermissions: ProjectPermissions = {
+    owner_id: owner,
+    collaborator_ids: Array.from(collaborators),
+    follower_ids: Array.from(followers),
+  };
   updateProjectPermissions(props.project.id, newPermissions).then((project) => {
     emit("updateSelectedProject", project);
     selectedUsers.value = [];
