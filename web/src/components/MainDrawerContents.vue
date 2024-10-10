@@ -29,7 +29,7 @@ function saveProjectMapLocation(project: Project) {
     default_map_zoom: zoom,
   }).then((project) => {
     availableProjects.value = availableProjects.value.map((p) => {
-      if (p.id == project.id) {
+      if (p.id === project.id) {
         p.default_map_center = project.default_map_center;
         p.default_map_zoom = project.default_map_zoom;
       }
@@ -138,7 +138,7 @@ function saveProjectMapLocation(project: Project) {
                   <v-list-item @click="saveProjectMapLocation(project)">
                     Set current map position as project default
                     <v-icon
-                      v-if="saving == 'done'"
+                      v-if="saving === 'done'"
                       icon="mdi-check"
                       color="green"
                       style="float: right"
@@ -158,7 +158,7 @@ function saveProjectMapLocation(project: Project) {
         <v-expansion-panel-text class="pa-0">
           <v-card rounded="0" flat color="grey-lighten-2" class="pa-2">
             <project-contents
-              v-if="project == currentProject"
+              v-if="project === currentProject"
               :project="project"
             />
           </v-card>

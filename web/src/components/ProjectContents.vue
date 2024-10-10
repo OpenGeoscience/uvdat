@@ -76,13 +76,13 @@ function selectItem(
   panelLabel: string,
   item: Dataset | DerivedRegion | Chart | SimulationType
 ) {
-  if (panelLabel == "Regions") {
+  if (panelLabel === "Regions") {
     getDatasetLayerForDataObject(item as DerivedRegion).then((layer) => {
       toggleDatasetLayer(layer);
     });
-  } else if (panelLabel == "Charts") {
+  } else if (panelLabel === "Charts") {
     currentChart.value = item as Chart;
-  } else if (panelLabel == "Simulations") {
+  } else if (panelLabel === "Simulations") {
     currentSimulationType.value = item as SimulationType;
   }
 }
@@ -114,7 +114,7 @@ function toggleDatasets({
         currentDataset.value = undefined;
       }
       selectedDatasets.value = selectedDatasets.value.filter((d) => {
-        d.id != dataset.id;
+        d.id !== dataset.id;
       });
     }
     // Toggle dataset layer. This *must* be called after the above code,
@@ -170,7 +170,7 @@ watch(openPanels, () => {
           No Available {{ panel.label }}.
         </div>
         <dataset-list
-          v-else-if="panel.label == 'Datasets' && projectContents['Datasets']"
+          v-else-if="panel.label === 'Datasets' && projectContents['Datasets']"
           :datasets="projectContents['Datasets']"
           :selected-ids="selectedDatasetIds"
           :eye-icon="true"

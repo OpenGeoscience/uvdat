@@ -520,7 +520,7 @@ export function styleRasterDatasetLayer(
   if (colormapPalette) {
     tileParams.palette = colormapPalette;
   }
-  if (Array.isArray(colormapRange) && colormapRange?.length == 2) {
+  if (Array.isArray(colormapRange) && colormapRange?.length === 2) {
     tileParams.min = colormapRange[0];
     tileParams.max = colormapRange[1];
   }

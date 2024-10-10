@@ -25,36 +25,36 @@ function savePermissions() {
   };
   if (userToRemove.value) {
     newPermissions.collaborator_ids = newPermissions.collaborator_ids.filter(
-      (uid: number) => uid != userToRemove.value?.id
+      (uid: number) => uid !== userToRemove.value?.id
     );
     newPermissions.follower_ids = newPermissions.follower_ids.filter(
-      (uid: number) => uid != userToRemove.value?.id
+      (uid: number) => uid !== userToRemove.value?.id
     );
   } else if (
     ["transfer", "claim"].includes(userSelectDialogMode.value) &&
-    selectedUsers.value.length == 1
+    selectedUsers.value.length === 1
   ) {
     if (!newPermissions.collaborator_ids.includes(newPermissions.owner_id)) {
       newPermissions.collaborator_ids.push(newPermissions.owner_id);
     }
     if (newPermissions.collaborator_ids.includes(selectedUsers.value[0].id)) {
       newPermissions.collaborator_ids = newPermissions.collaborator_ids.filter(
-        (uid: number) => uid != selectedUsers.value[0].id
+        (uid: number) => uid !== selectedUsers.value[0].id
       );
     }
     if (newPermissions.follower_ids.includes(selectedUsers.value[0].id)) {
       newPermissions.follower_ids = newPermissions.follower_ids.filter(
-        (uid: number) => uid != selectedUsers.value[0].id
+        (uid: number) => uid !== selectedUsers.value[0].id
       );
     }
     newPermissions.owner_id = selectedUsers.value[0].id;
-  } else if (selectedPermissionLevel.value == "collaborator") {
+  } else if (selectedPermissionLevel.value === "collaborator") {
     selectedUsers.value.forEach((u: User) => {
       if (!newPermissions.collaborator_ids.includes(u.id)) {
         newPermissions.collaborator_ids.push(u.id);
       }
     });
-  } else if (selectedPermissionLevel.value == "follower") {
+  } else if (selectedPermissionLevel.value === "follower") {
     selectedUsers.value.forEach((u: User) => {
       if (!newPermissions.follower_ids.includes(u.id)) {
         newPermissions.follower_ids.push(u.id);
@@ -114,7 +114,7 @@ onMounted(() => {
         </template>
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] == 'own'"
+            v-if="permissions[project.id] === 'own'"
             icon="mdi-pencil"
             @click="
               showUserSelectDialog = true;
@@ -126,7 +126,7 @@ onMounted(() => {
       <v-list-item v-else class="mx-4" subtitle="No owner">
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] == 'own'"
+            v-if="permissions[project.id] === 'own'"
             icon="mdi-pencil"
             @click="
               showUserSelectDialog = true;
@@ -170,7 +170,7 @@ onMounted(() => {
         </template>
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] == 'own'"
+            v-if="permissions[project.id] === 'own'"
             icon="mdi-trash-can"
             @click="userToRemove = collaborator"
           />
@@ -216,7 +216,7 @@ onMounted(() => {
         </template>
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] == 'own'"
+            v-if="permissions[project.id] === 'own'"
             icon="mdi-trash-can"
             @click="userToRemove = follower"
           />
@@ -229,7 +229,7 @@ onMounted(() => {
       />
     </v-list>
     <v-btn
-      v-if="permissions[project.id] == 'own'"
+      v-if="permissions[project.id] === 'own'"
       color="primary"
       @click="
         showUserSelectDialog = true;
@@ -241,7 +241,9 @@ onMounted(() => {
     <v-dialog v-model="showUserSelectDialog" width="500">
       <v-card>
         <v-card-title class="pa-3 bg-grey-lighten-2 text-grey-darken-2">
-          {{ userSelectDialogMode == "add" ? "Add Users" : "Select New Owner" }}
+          {{
+            userSelectDialogMode === "add" ? "Add Users" : "Select New Owner"
+          }}
           <v-btn
             class="close-button transparent"
             variant="flat"
@@ -253,7 +255,7 @@ onMounted(() => {
         </v-card-title>
         <v-messages
           color="red"
-          :active="userSelectDialogMode == 'transfer'"
+          :active="userSelectDialogMode === 'transfer'"
           :messages="[
             'Warning: After transferring ownership to another user, you will no \
             longer be able to make changes to permissions or delete the project. \
@@ -266,7 +268,7 @@ onMounted(() => {
             v-model="selectedUsers"
             :items="allUsers"
             :label="
-              userSelectDialogMode == 'add'
+              userSelectDialogMode === 'add'
                 ? 'Users to add'
                 : 'New project owner'
             "
@@ -297,7 +299,7 @@ onMounted(() => {
             </template>
           </v-select>
           <v-select
-            v-if="userSelectDialogMode == 'add'"
+            v-if="userSelectDialogMode === 'add'"
             v-model="selectedPermissionLevel"
             :items="permissionLevels"
             label="Permission Level"

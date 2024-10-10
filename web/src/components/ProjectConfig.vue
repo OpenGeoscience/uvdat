@@ -43,11 +43,11 @@ const permissions = computed(() => {
   const ret = Object.fromEntries(
     availableProjects.value.map((p) => {
       let perm = "view";
-      if (p.id == selectedProject.value?.id) {
+      if (p.id === selectedProject.value?.id) {
         p = selectedProject.value;
       }
       if (
-        p.owner?.id == currentUser.value?.id ||
+        p.owner?.id === currentUser.value?.id ||
         currentUser.value?.is_superuser
       ) {
         perm = "own";
@@ -80,7 +80,7 @@ function del() {
   if (projectToDelete.value) {
     deleteProject(projectToDelete.value.id).then(() => {
       loadProjects();
-      if (selectedProject.value?.id == projectToDelete.value?.id) {
+      if (selectedProject.value?.id === projectToDelete.value?.id) {
         selectedProject.value = undefined;
       }
       projectToDelete.value = undefined;
@@ -107,11 +107,11 @@ function saveProjectName() {
 }
 
 function selectProject(v: Record<string, unknown>) {
-  if (selectedProject.value?.id != v.id) {
+  if (selectedProject.value?.id !== v.id) {
     getProjectDatasets(v.id as number).then((data) => {
       projDatasets.value = data;
     });
-    selectedProject.value = availableProjects.value.find((p) => p.id == v.id);
+    selectedProject.value = availableProjects.value.find((p) => p.id === v.id);
   }
 }
 
@@ -132,7 +132,7 @@ function toggleOtherDatasetSelection({
       otherSelectedDatasetIds.value.push(dataset.id);
     } else if (!show && otherSelectedDatasetIds.value.includes(dataset.id)) {
       otherSelectedDatasetIds.value = otherSelectedDatasetIds.value.filter(
-        (id) => id != dataset.id
+        (id) => id !== dataset.id
       );
     }
   });
@@ -150,7 +150,7 @@ function toggleProjDatasetSelection({
       projSelectedDatasetIds.value.push(dataset.id);
     } else if (!show && projSelectedDatasetIds.value.includes(dataset.id)) {
       projSelectedDatasetIds.value = projSelectedDatasetIds.value.filter(
-        (id) => id != dataset.id
+        (id) => id !== dataset.id
       );
     }
   });
@@ -260,7 +260,7 @@ function handleEditFocus(focused: boolean) {
         >
           <template v-slot:title="{ title, item }">
             <v-text-field
-              v-if="projectToEdit?.id == item.id"
+              v-if="projectToEdit?.id === item.id"
               v-model="newProjectName"
               :placeholder="item.name"
               label="Project Name"
@@ -285,7 +285,7 @@ function handleEditFocus(focused: boolean) {
                 @click.stop="projectToEdit = item"
               />
               <v-btn
-                v-else-if="projectToEdit?.id == item.id"
+                v-else-if="projectToEdit?.id === item.id"
                 color="primary"
                 variant="flat"
                 style="min-width: 40px; min-height: 40px"
@@ -307,7 +307,7 @@ function handleEditFocus(focused: boolean) {
             </div>
           </template>
         </v-list>
-        <div class="pa-2 d-flex" v-if="projectConfigMode == 'new'">
+        <div class="pa-2 d-flex" v-if="projectConfigMode === 'new'">
           <v-text-field
             v-model="newProjectName"
             label="Project Name"
@@ -349,7 +349,7 @@ function handleEditFocus(focused: boolean) {
           <v-tab value="users" class="text-grey">Access Control</v-tab>
         </v-tabs>
         <div
-          v-if="currentTab == 'datasets' && projDatasets"
+          v-if="currentTab === 'datasets' && projDatasets"
           class="py-3 px-6 d-flex"
         >
           <div style="width: 30%">
@@ -405,7 +405,7 @@ function handleEditFocus(focused: boolean) {
             </v-btn>
           </div>
         </div>
-        <div v-if="currentTab == 'users'" class="py-3 px-6">
+        <div v-if="currentTab === 'users'" class="py-3 px-6">
           <access-control
             :project="selectedProject"
             :permissions="permissions"
