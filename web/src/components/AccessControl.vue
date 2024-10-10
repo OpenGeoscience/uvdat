@@ -100,7 +100,7 @@ onMounted(() => {
         </template>
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] === 'own'"
+            v-if="permissions[project.id] === 'owner'"
             icon="mdi-pencil"
             @click="
               showUserSelectDialog = true;
@@ -144,7 +144,7 @@ onMounted(() => {
         </template>
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] === 'own'"
+            v-if="permissions[project.id] === 'owner'"
             icon="mdi-trash-can"
             @click="userToRemove = collaborator"
           />
@@ -190,7 +190,7 @@ onMounted(() => {
         </template>
         <template v-slot:append>
           <v-icon
-            v-if="permissions[project.id] === 'own'"
+            v-if="permissions[project.id] === 'owner'"
             icon="mdi-trash-can"
             @click="userToRemove = follower"
           />
@@ -203,7 +203,7 @@ onMounted(() => {
       />
     </v-list>
     <v-btn
-      v-if="permissions[project.id] === 'own'"
+      v-if="permissions[project.id] === 'owner'"
       color="primary"
       @click="
         showUserSelectDialog = true;
@@ -247,16 +247,17 @@ onMounted(() => {
                 : 'New project owner'
             "
             item-title="username"
-            :rules="[
-              (v) =>
-                !(userSelectDialogMode === 'transfer' && v.length > 1) ||
-                'Must select one new owner',
-            ]"
             return-object
-            multiple
-            clearable
-            chips
-            closable-chips
+            :multiple="userSelectDialogMode === 'add'"
+            :clearable="userSelectDialogMode === 'add'"
+            :chips="userSelectDialogMode === 'add'"
+            :closable-chips="userSelectDialogMode === 'add'"
+            @update:model-value="
+              (v: User | User[]) => {
+                if (Array.isArray(v)) selectedUsers = v;
+                else selectedUsers = [v];
+              }
+            "
           >
             <template v-slot:item="{ props, item }">
               <v-list-item

@@ -42,7 +42,7 @@ const otherSelectedDatasetIds: Ref<number[]> = ref([]);
 const permissions = computed(() => {
   const ret = Object.fromEntries(
     availableProjects.value.map((p) => {
-      let perm = "view";
+      let perm = "follower";
       if (p.id === selectedProject.value?.id) {
         p = selectedProject.value;
       }
@@ -50,12 +50,12 @@ const permissions = computed(() => {
         p.owner?.id === currentUser.value?.id ||
         currentUser.value?.is_superuser
       ) {
-        perm = "own";
+        perm = "owner";
       } else if (
         currentUser.value &&
         p.collaborators.map((u) => u.id).includes(currentUser.value.id)
       ) {
-        perm = "edit";
+        perm = "collaborator";
       }
       return [p.id, perm];
     })
@@ -276,7 +276,7 @@ function handleEditFocus(focused: boolean) {
           </template>
           <template v-slot:append="{ item }">
             <div
-              v-if="['own', 'edit'].includes(permissions[item.id])"
+              v-if="['owner', 'collaborator'].includes(permissions[item.id])"
               class="text-grey-darken-1"
             >
               <v-icon
@@ -296,7 +296,7 @@ function handleEditFocus(focused: boolean) {
               </v-btn>
             </div>
             <div
-              v-if="['own'].includes(permissions[item.id])"
+              v-if="['owner'].includes(permissions[item.id])"
               class="text-grey-darken-1"
             >
               <v-icon
