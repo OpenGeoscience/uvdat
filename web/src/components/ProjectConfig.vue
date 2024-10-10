@@ -406,7 +406,7 @@ function handleEditFocus(focused: boolean) {
           </div>
         </div>
         <div v-if="currentTab === 'users'" class="py-3 px-6">
-          <access-control
+          <AccessControl
             :project="selectedProject"
             :permissions="permissions"
             @updateSelectedProject="updateSelectedProject"
