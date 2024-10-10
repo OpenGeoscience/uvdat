@@ -47,6 +47,7 @@ setup(
         'djangorestframework==3.15.2',
         'django-large-image==0.10.0',
         'drf-yasg==1.21.7',
+        'matplotlib==3.9.2',  # for raster colormaps
         'osmnx==1.9.4',
         'geopandas==0.14.4',
         'networkx==3.3',

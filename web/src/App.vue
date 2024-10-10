@@ -8,6 +8,7 @@ import {
   availableProjects,
   currentChart,
   currentSimulationType,
+  projectConfigMode,
 } from "./store";
 import { oauthClient, logout } from "./api/auth";
 import { loadProjects } from "./storeFunctions";
@@ -16,6 +17,7 @@ import MainDrawerContents from "./components/MainDrawerContents.vue";
 import OptionsDrawerContents from "./components/OptionsDrawerContents.vue";
 import ChartJS from "./components/ChartJS.vue";
 import SimulationsPanel from "./components/SimulationsPanel.vue";
+import ProjectConfig from "./components/ProjectConfig.vue";
 
 export default defineComponent({
   components: {
@@ -24,9 +26,10 @@ export default defineComponent({
     OptionsDrawerContents,
     ChartJS,
     SimulationsPanel,
+    ProjectConfig,
   },
   setup() {
-    const drawer = ref(false);
+    const drawer = ref(true);
     const showError = computed(() => currentError.value !== undefined);
 
     function onReady() {
@@ -41,9 +44,7 @@ export default defineComponent({
 
     onMounted(onReady);
     watch(currentUser, onReady);
-    watch(currentProject, () => {
-      drawer.value = currentProject.value !== undefined;
-    });
+    watch(projectConfigMode, loadProjects);
 
     return {
       login,
@@ -57,6 +58,7 @@ export default defineComponent({
       showError,
       currentChart,
       currentSimulationType,
+      projectConfigMode,
     };
   },
 });
@@ -98,20 +100,10 @@ export default defineComponent({
     </v-overlay>
     <v-app-bar app prominent>
       <v-app-bar-nav-icon
-        v-if="currentProject"
         @click.stop="drawer = !drawer"
+        v-if="!projectConfigMode"
       />
       <v-toolbar-title>UVDAT</v-toolbar-title>
-      <v-spacer />
-      <v-select
-        label="Select Project"
-        v-model="currentProject"
-        :items="availableProjects"
-        item-title="name"
-        density="compact"
-        return-object
-        style="margin-top: 15px"
-      />
       <v-spacer />
       <div v-if="currentUser" class="px-3">
         {{ currentUser.first_name }}
@@ -129,36 +121,38 @@ export default defineComponent({
         </v-btn>
       </div>
     </v-app-bar>
-    <v-navigation-drawer
-      v-if="currentProject"
-      v-model="drawer"
-      permanent
-      width="300"
-      class="main-area drawer"
-    >
-      <MainDrawerContents />
-    </v-navigation-drawer>
-    <v-navigation-drawer
-      :model-value="currentDataset !== undefined"
-      permanent
-      width="300"
-      location="right"
-      class="main-area drawer"
-    >
-      <OptionsDrawerContents />
-    </v-navigation-drawer>
-    <div
-      :class="
-        drawer
-          ? currentDataset
-            ? 'main-area shifted-2'
-            : 'main-area shifted-1'
-          : 'main-area'
-      "
-    >
-      <Map />
-      <ChartJS v-if="currentChart" />
-      <SimulationsPanel v-if="currentSimulationType" />
+    <ProjectConfig v-if="projectConfigMode" />
+    <div v-else>
+      <v-navigation-drawer
+        v-model="drawer"
+        permanent
+        width="350"
+        class="main-area drawer"
+      >
+        <MainDrawerContents />
+      </v-navigation-drawer>
+      <v-navigation-drawer
+        :model-value="currentDataset !== undefined"
+        permanent
+        width="300"
+        location="right"
+        class="main-area drawer"
+      >
+        <OptionsDrawerContents />
+      </v-navigation-drawer>
+      <div
+        :class="
+          drawer
+            ? currentDataset
+              ? 'main-area shifted-2'
+              : 'main-area shifted-1'
+            : 'main-area'
+        "
+      >
+        <Map />
+        <ChartJS v-if="currentChart" />
+        <SimulationsPanel v-if="currentSimulationType" />
+      </div>
     </div>
   </v-app>
 </template>
@@ -174,12 +168,12 @@ export default defineComponent({
   left: 250px;
 }
 .shifted-1 {
-  left: 300px;
-  width: calc(100% - 300px);
+  left: 350px;
+  width: calc(100% - 350px);
 }
 .shifted-2 {
-  left: 300px;
+  left: 350px;
   right: 300px;
-  width: calc(100% - 600px);
+  width: calc(100% - 650px);
 }
 </style>

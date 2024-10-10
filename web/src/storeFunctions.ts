@@ -31,20 +31,14 @@ import {
   tooltipOverlay,
   clickedFeatureCandidates,
 } from "./store";
-import { Dataset } from "./types";
+import { getProjects, getDataset, getProjectDerivedRegions } from "@/api/rest";
 import {
-  getProjectDatasets,
-  getProjects,
-  getDataset,
-  getProjectCharts,
-  getProjectSimulationTypes,
-  getProjectDerivedRegions,
-} from "@/api/rest";
-import {
+  clearMapLayers,
   datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
   updateBaseLayer,
 } from "./layers";
+import { Project } from "./types";
 
 export function clearState() {
   availableDatasets.value = undefined;
@@ -93,41 +87,32 @@ export function loadProjects() {
   });
 }
 
-export function setMapCenter() {
+export function setMapCenter(
+  project: Project | undefined = undefined,
+  jump = false
+) {
   let center: [number, number] = [0, 30];
   let zoom = 1;
-  if (currentProject.value) {
-    center = currentProject.value.default_map_center;
-    zoom = currentProject.value.default_map_zoom;
+  if (project) {
+    center = project.default_map_center;
+    zoom = project.default_map_zoom;
   }
+
   const map = getMap();
-  map.jumpTo({ center, zoom });
+  if (jump) {
+    map.jumpTo({ center, zoom });
+  } else {
+    map.flyTo({ center, zoom, duration: 2000 });
+  }
 }
 
-export function loadDatasets() {
-  if (!currentProject.value) return;
-  availableDatasets.value = undefined;
-  getProjectDatasets(currentProject.value.id).then((data: Dataset[]) => {
-    availableDatasets.value = data;
-  });
-}
-
-export function loadCharts() {
-  if (!currentProject.value) return;
-  availableCharts.value = undefined;
-  currentChart.value = undefined;
-  getProjectCharts(currentProject.value.id).then((charts) => {
-    availableCharts.value = charts;
-  });
-}
-
-export function loadSimulationTypes() {
-  if (!currentProject.value) return;
-  availableSimulationTypes.value = undefined;
-  currentSimulationType.value = undefined;
-  getProjectSimulationTypes(currentProject.value.id).then((sims) => {
-    availableSimulationTypes.value = sims;
-  });
+export function getCurrentMapPosition() {
+  const map = getMap();
+  const { lat, lng } = map.getCenter();
+  return {
+    center: [lng, lat],
+    zoom: map.getZoom(),
+  };
 }
 
 export async function loadDerivedRegions() {
@@ -187,11 +172,8 @@ export function clearCurrentNetwork() {
 
 watch(currentProject, () => {
   clearState();
-  setMapCenter();
-  loadDatasets();
-  loadCharts();
-  loadSimulationTypes();
-  loadDerivedRegions();
+  setMapCenter(currentProject.value);
+  clearMapLayers();
 });
 watch(currentDataset, () => {
   rasterTooltipEnabled.value = false;

@@ -18,6 +18,7 @@ import { Map, Popup } from "maplibre-gl";
 // Project
 export const availableProjects = ref<Project[]>([]);
 export const currentProject = ref<Project>();
+export const projectConfigMode = ref<"new" | "existing">();
 
 // Datasets
 export const availableDatasets = ref<Dataset[]>();

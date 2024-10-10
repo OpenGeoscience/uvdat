@@ -1,312 +1,195 @@
-<script lang="ts">
-import { ref, computed, watch } from "vue";
-import {
-  availableCharts,
-  currentChart,
-  selectedDatasets,
-  availableDatasets,
-  availableSimulationTypes,
-  currentSimulationType,
-  availableDerivedRegions,
-  currentDataset,
-  availableDatasetLayers,
-  selectedDerivedRegions,
-} from "@/store";
-import {
-  loadDatasets,
-  loadCharts,
-  loadSimulationTypes,
-  loadDerivedRegions,
-} from "../storeFunctions";
-import { Dataset, DerivedRegion } from "@/types";
-import { getDatasetLayers } from "@/api/rest";
-import { getDatasetLayerForDataObject, toggleDatasetLayer } from "@/layers";
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { availableProjects, currentProject, projectConfigMode } from "@/store";
+import ProjectContents from "./ProjectContents.vue";
+import { getCurrentMapPosition, setMapCenter } from "@/storeFunctions";
+import { Project } from "@/types";
+import { patchProject } from "@/api/rest";
 
-export default {
-  setup() {
-    const openPanels = ref([0]);
+const searchText = ref();
+const saving = ref<"waiting" | "done">();
+const filteredProjects = computed(() => {
+  return availableProjects.value.filter((proj) => {
+    return (
+      !searchText.value ||
+      proj.name.toLowerCase().includes(searchText.value.toLowerCase())
+    );
+  });
+});
 
-    const expandedDatasetGroups = ref<string[]>([]);
+function openProjectConfig(create = false) {
+  projectConfigMode.value = create ? "new" : "existing";
+}
 
-    const availableDatasetGroups = computed(() => {
-      if (!availableDatasets.value) return [];
-      const groupKey = "category";
-      const datasetGroups: Record<string, Dataset[]> = {};
-      availableDatasets.value.forEach((dataset: Dataset) => {
-        const currentGroup = dataset[groupKey];
-        if (!datasetGroups[currentGroup]) datasetGroups[currentGroup] = [];
-        datasetGroups[currentGroup].push(dataset);
-      });
-
-      const ret: {
-        id: number;
-        datasets: Dataset[];
-        name: string;
-      }[] = Object.entries(datasetGroups)
-        .map(([name, datasets], index) => ({
-          id: index,
-          datasets,
-          name,
-        }))
-        .sort((a, b) => b.name.localeCompare(a.name));
-      return ret;
+function saveProjectMapLocation(project: Project) {
+  const { center, zoom } = getCurrentMapPosition();
+  saving.value = "waiting";
+  patchProject(project.id, {
+    default_map_center: center,
+    default_map_zoom: zoom,
+  }).then((project) => {
+    availableProjects.value = availableProjects.value.map((p) => {
+      if (p.id === project.id) {
+        p.default_map_center = project.default_map_center;
+        p.default_map_zoom = project.default_map_zoom;
+      }
+      return p;
     });
-
-    const activeLayerTableHeaders = [{ text: "Name", value: "name" }];
-
-    async function toggleDerivedRegion(derivedRegion: DerivedRegion) {
-      const datasetLayer = await getDatasetLayerForDataObject(derivedRegion);
-      toggleDatasetLayer(datasetLayer);
-    }
-
-    async function toggleDataset(dataset: Dataset) {
-      if (
-        !selectedDatasets.value.map((d) => d.id).includes(dataset.id) &&
-        currentDataset.value?.id === dataset.id
-      ) {
-        currentDataset.value = undefined;
-      }
-
-      // Ensure layer index is set
-      dataset.current_layer_index = dataset.current_layer_index || 0;
-      if (dataset.map_layers === undefined) {
-        dataset.map_layers = await getDatasetLayers(dataset.id);
-        availableDatasetLayers.value = [
-          ...availableDatasetLayers.value,
-          ...dataset.map_layers,
-        ];
-      }
-
-      if (
-        dataset.map_layers !== undefined &&
-        dataset.current_layer_index !== undefined
-      ) {
-        const datasetLayer = dataset.map_layers[dataset.current_layer_index];
-        toggleDatasetLayer(datasetLayer);
-      }
-    }
-
-    // If new derived region created, open panel
-    watch(availableDerivedRegions, (availableRegs, oldRegs) => {
-      if (availableRegs === undefined || oldRegs === undefined) {
-        return;
-      }
-      if (!(availableRegs.length > oldRegs.length)) {
-        return;
-      }
-
-      if (!openPanels.value.includes(1)) {
-        openPanels.value.push(1);
-      }
-    });
-
-    watch(availableDatasets, () => {
-      expandedDatasetGroups.value = availableDatasetGroups.value.map(
-        (g) => g.name
-      );
-    });
-
-    return {
-      availableDatasets,
-      currentDataset,
-      selectedDatasets,
-      selectedDerivedRegions,
-      openPanels,
-      expandedDatasetGroups,
-      availableDatasetGroups,
-      activeLayerTableHeaders,
-      currentChart,
-      availableCharts,
-      currentSimulationType,
-      availableSimulationTypes,
-      availableDerivedRegions,
-      loadDatasets,
-      toggleDataset,
-      toggleDerivedRegion,
-      loadCharts,
-      loadSimulationTypes,
-      loadDerivedRegions,
-    };
-  },
-};
+    setMapCenter(project);
+    saving.value = "done";
+  });
+}
 </script>
 
 <template>
-  <v-expansion-panels multiple variant="accordion" v-model="openPanels">
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        <v-icon @click.stop="loadDatasets" class="mr-2">mdi-refresh</v-icon>
-        Available Datasets
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <div v-if="!availableDatasets" style="text-align: center; width: 100%">
-          <v-progress-circular indeterminate size="30" />
-        </div>
-        <v-card-subtitle
-          v-if="availableDatasets && availableDatasets.length === 0"
-        >
-          No Available Datasets.
-        </v-card-subtitle>
-        <v-expansion-panels
-          multiple
-          variant="accordion"
-          v-model="expandedDatasetGroups"
-          v-if="
-            availableDatasets &&
-            availableDatasets.length &&
-            availableDatasets[0].id
-          "
-        >
-          <v-expansion-panel
-            v-for="group in availableDatasetGroups"
-            :title="group.name"
-            :key="group.id"
-            :value="group.name"
-          >
-            <v-expansion-panel-text>
-              <v-checkbox
-                v-for="dataset in group.datasets"
-                v-model="selectedDatasets"
-                :value="dataset"
-                :key="dataset.name"
-                :label="dataset.name"
-                :disabled="dataset.processing"
-                @change="() => toggleDataset(dataset)"
-                density="compact"
-                hide-details
-              >
-                <template v-slot:label>
-                  {{ dataset.name }}
-                  {{ dataset.processing ? "(processing)" : "" }}
-                  <v-tooltip activator="parent" location="end" max-width="300">
-                    {{ dataset.description }}
-                  </v-tooltip>
-                  <v-icon
-                    v-show="
-                      selectedDatasets && selectedDatasets.includes(dataset)
-                    "
-                    size="small"
-                    class="expand-icon ml-1"
-                    @click.prevent="currentDataset = dataset"
-                  >
-                    mdi-cog
-                  </v-icon>
-                </template>
-              </v-checkbox>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        <v-icon @click.stop="loadDerivedRegions" class="mr-2">
-          mdi-refresh
-        </v-icon>
-        Available Derived Regions
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <template v-if="!availableDerivedRegions?.length">
-          <div style="text-align: center; width: 100%">
-            <v-progress-circular indeterminate size="30" />
-          </div>
-          <v-card-subtitle> No Available Derived Regions. </v-card-subtitle>
-        </template>
-        <v-checkbox
-          v-for="region in availableDerivedRegions"
-          v-model="selectedDerivedRegions"
-          :value="region"
-          :key="region.id"
-          :label="region.name"
-          hide-details
+  <div>
+    <v-card flat class="position-sticky top-0 pa-3" style="z-index: 2">
+      <div class="d-flex mb-2">
+        <v-text-field
+          v-model="searchText"
+          label="Search Projects"
+          variant="outlined"
           density="compact"
-          @click="toggleDerivedRegion(region)"
+          append-inner-icon="mdi-magnify"
+          hide-details
         />
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        <v-icon @click.stop="loadCharts" class="mr-2">mdi-refresh</v-icon>
-        Available Charts
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <div v-if="!availableCharts" style="text-align: center; width: 100%">
-          <v-progress-circular indeterminate size="30" />
-        </div>
-        <v-card-subtitle v-if="availableCharts && availableCharts.length === 0">
-          No Available Charts.
-        </v-card-subtitle>
-        <v-list>
-          <v-list-item
-            v-for="chart in availableCharts"
-            :key="chart.id"
-            :value="chart.id"
-            :active="currentChart && chart.id === currentChart.id"
-            @click="currentChart = chart"
-          >
-            {{ chart.name }}
-            <v-tooltip activator="parent" location="end" max-width="300">
-              {{ chart.description }}
-            </v-tooltip>
-          </v-list-item>
-        </v-list>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-
-    <v-expansion-panel>
-      <v-expansion-panel-title>
-        <v-icon @click.stop="loadSimulationTypes" class="mr-2"
-          >mdi-refresh</v-icon
+        <v-btn
+          color="primary"
+          variant="flat"
+          style="min-width: 40px; min-height: 40px"
+          class="px-0 ml-2"
+          @click="() => openProjectConfig(true)"
         >
-        Available Simulations
-      </v-expansion-panel-title>
-      <v-expansion-panel-text>
-        <div
-          v-if="!availableSimulationTypes"
-          style="text-align: center; width: 100%"
-        >
-          <v-progress-circular indeterminate size="30" />
-        </div>
-        <v-card-subtitle
-          v-if="
-            availableSimulationTypes && availableSimulationTypes.length === 0
-          "
-        >
-          No Available Simulation Types.
-        </v-card-subtitle>
-        <v-list>
-          <v-list-item
-            v-for="sim in availableSimulationTypes"
-            :key="sim.id"
-            :value="sim.id"
-            :active="
-              currentSimulationType && sim.id === currentSimulationType.id
-            "
-            @click="currentSimulationType = sim"
-          >
-            {{ sim.name }}
-            <v-tooltip activator="parent" location="end" max-width="300">
-              {{ sim.description }}
-            </v-tooltip>
-          </v-list-item>
-        </v-list>
-      </v-expansion-panel-text>
-    </v-expansion-panel>
-  </v-expansion-panels>
+          <v-icon icon="mdi-plus" size="large" />
+          <v-tooltip activator="parent" location="end">
+            Create New Project
+          </v-tooltip>
+        </v-btn>
+      </div>
+      <div class="d-flex" style="justify-content: space-between">
+        <v-card-subtitle>All Projects</v-card-subtitle>
+        <v-icon
+          icon="mdi-cog"
+          color="primary"
+          id="open-config"
+          @click="() => openProjectConfig(false)"
+        />
+        <v-tooltip activator="#open-config" location="end">
+          Configure Projects
+        </v-tooltip>
+      </div>
+    </v-card>
+    <div
+      v-if="!filteredProjects || !filteredProjects.length"
+      style="color: grey"
+      class="my-2 mx-6 text-caption"
+    >
+      No Available Projects.
+    </div>
+    <v-expansion-panels flat rounded v-model="currentProject" class="px-3">
+      <v-expansion-panel
+        v-for="project in filteredProjects"
+        :key="project.id"
+        :value="project"
+        style="margin-bottom: 6px"
+      >
+        <v-expansion-panel-title color="grey-lighten-4">
+          <div>
+            {{ project.name }}
+            <div style="color: grey" class="mt-2">
+              <v-icon icon="mdi-database-outline" size="small" />
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.datasets }}
+              </span>
+              <v-icon icon="mdi-border-none-variant" size="small" />
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.regions }}
+              </span>
+              <v-icon icon="mdi-chart-bar" size="small" />
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.charts }}
+              </span>
+              <v-icon icon="mdi-earth" size="small" />
+              <span class="mr-3" style="vertical-align: text-bottom">
+                {{ project.item_counts.simulations }}
+              </span>
+            </div>
+          </div>
+          <div class="location-menu">
+            <v-icon
+              icon="mdi-map-marker-right"
+              size="small"
+              color="primary"
+              @click.stop
+            />
+            <v-menu
+              activator="parent"
+              location="end"
+              open-on-hover
+              open-delay="150"
+              :close-on-content-click="false"
+              @update:model-value="saving = undefined"
+            >
+              <v-card width="250">
+                <v-list selectable>
+                  <v-list-item @click="setMapCenter(project)">
+                    Go to project default map position
+                  </v-list-item>
+                  <v-list-item @click="saveProjectMapLocation(project)">
+                    Set current map position as project default
+                    <v-icon
+                      v-if="saving === 'done'"
+                      icon="mdi-check"
+                      color="green"
+                      style="float: right"
+                    />
+                    <v-progress-circular
+                      v-else-if="saving"
+                      size="15"
+                      indeterminate
+                      style="float: right"
+                    />
+                  </v-list-item>
+                </v-list>
+              </v-card>
+            </v-menu>
+          </div>
+        </v-expansion-panel-title>
+        <v-expansion-panel-text class="pa-0">
+          <v-card rounded="0" flat color="grey-lighten-2" class="pa-2">
+            <project-contents
+              v-if="project === currentProject"
+              :project="project"
+            />
+          </v-card>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
+  </div>
 </template>
 
 <style>
 .v-expansion-panel-text__wrapper {
-  padding: 8px 10px 16px !important;
+  padding: 0 !important;
 }
-
 .v-checkbox .v-selection-control {
   max-width: 100%;
 }
-
 .expand-icon {
   float: right;
+}
+.v-expansion-panel-title__overlay {
+  background-color: transparent !important;
+}
+.v-expansion-panel:not(:first-child)::after {
+  border-top-width: 0px !important;
+}
+.v-expansion-panel-title__icon {
+  align-self: flex-start;
+}
+.location-menu {
+  position: absolute;
+  right: 25px;
+  bottom: 15px;
 }
 </style>

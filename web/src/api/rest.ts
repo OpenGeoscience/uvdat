@@ -1,6 +1,9 @@
 import { apiClient } from "./auth";
 import {
+  User,
   Project,
+  ProjectPatch,
+  ProjectPermissions,
   Dataset,
   NetworkNode,
   RasterData,
@@ -12,8 +15,44 @@ import {
   Network,
 } from "@/types";
 
+export async function getUsers(): Promise<User[]> {
+  return (await apiClient.get(`users`)).data.results;
+}
+
 export async function getProjects(): Promise<Project[]> {
   return (await apiClient.get("projects")).data.results;
+}
+
+export async function createProject(
+  name: string,
+  default_map_center: number[],
+  default_map_zoom: number
+): Promise<Project> {
+  return (
+    await apiClient.post("projects/", {
+      name,
+      default_map_center,
+      default_map_zoom,
+    })
+  ).data;
+}
+
+export async function patchProject(
+  projectId: number,
+  data: ProjectPatch
+): Promise<Project> {
+  return (await apiClient.patch(`projects/${projectId}/`, data)).data;
+}
+
+export async function updateProjectPermissions(
+  projectId: number,
+  data: ProjectPermissions
+): Promise<Project> {
+  return (await apiClient.put(`projects/${projectId}/permissions/`, data)).data;
+}
+
+export async function deleteProject(projectId: number): Promise<Project> {
+  return await apiClient.delete(`projects/${projectId}/`).data;
 }
 
 export async function getProjectDatasets(
@@ -38,6 +77,10 @@ export async function getProjectSimulationTypes(
 ): Promise<SimulationType[]> {
   return (await apiClient.get(`simulations/available/project/${projectId}`))
     .data;
+}
+
+export async function getDatasets(): Promise<Dataset[]> {
+  return (await apiClient.get(`datasets`)).data.results;
 }
 
 export async function getDataset(datasetId: number): Promise<Dataset> {

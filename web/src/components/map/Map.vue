@@ -152,7 +152,7 @@ export default {
 
     onMounted(() => {
       createMap();
-      setMapCenter();
+      setMapCenter(undefined, true);
     });
 
     return {

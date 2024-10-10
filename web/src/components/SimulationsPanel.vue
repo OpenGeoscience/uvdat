@@ -64,7 +64,7 @@ export default {
         availableResults.value = results;
         if (activeResult.value) {
           activeResult.value = availableResults.value.find(
-            (r) => r.id == activeResult.value?.id
+            (r) => r.id === activeResult.value?.id
           );
         }
       });
@@ -126,7 +126,7 @@ export default {
       }
       const targetResult: SimulationResult | undefined =
         availableResults.value.find(
-          (r: { id: number }) => r.id == activeResult.value?.id
+          (r: { id: number }) => r.id === activeResult.value?.id
         );
       if (
         targetResult &&
@@ -276,7 +276,7 @@ export default {
               <div v-else-if="result.output_data">
                 <v-card-title>Results</v-card-title>
                 <div
-                  v-if="currentSimulationType.output_type == 'node_animation'"
+                  v-if="currentSimulationType.output_type === 'node_animation'"
                   class="pa-5"
                 >
                   <div v-if="result.output_data.node_failures?.length === 0">

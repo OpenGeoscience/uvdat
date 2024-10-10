@@ -38,6 +38,7 @@ export interface SourceRegion {
 export interface DerivedRegion {
   id: number;
   name: string;
+  description: string;
   project: number;
   metadata: object;
   boundary: object;
@@ -62,6 +63,25 @@ export interface Project {
   owner: User;
   collaborators: User[];
   followers: User[];
+  item_counts: {
+    datasets: number;
+    regions: number;
+    charts: number;
+    simulations: number;
+  };
+}
+
+export interface ProjectPatch {
+  name?: string;
+  datasets?: number[];
+  default_map_center?: number[];
+  default_map_zoom?: number;
+}
+
+export interface ProjectPermissions {
+  owner_id: number;
+  collaborator_ids: number[];
+  follower_ids: number[];
 }
 
 export interface Feature {
