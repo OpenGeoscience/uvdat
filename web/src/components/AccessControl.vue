@@ -13,8 +13,9 @@ const allUsers: Ref<User[]> = ref([]);
 const showUserSelectDialog: Ref<boolean> = ref(false);
 const userSelectDialogMode: Ref<"add" | "transfer"> = ref("add");
 const selectedUsers: Ref<User[]> = ref([]);
-const selectedPermissionLevel: Ref<string> = ref("follower");
-const permissionLevels = ["follower", "collaborator"];
+type PermissionLevel = "follower" | "collaborator";
+const permissionLevels: PermissionLevel[] = ["follower", "collaborator"];
+const selectedPermissionLevel: Ref<PermissionLevel> = ref("follower");
 const userToRemove: Ref<User | undefined> = ref();
 
 function savePermissions() {
