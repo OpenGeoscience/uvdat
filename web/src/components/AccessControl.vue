@@ -11,7 +11,7 @@ const props = defineProps<{
 const emit = defineEmits(["updateSelectedProject"]);
 const allUsers: Ref<User[]> = ref([]);
 const showUserSelectDialog: Ref<boolean> = ref(false);
-const userSelectDialogMode: Ref<string> = ref("add");
+const userSelectDialogMode: Ref<"add" | "transfer"> = ref("add");
 const selectedUsers: Ref<User[]> = ref([]);
 const selectedPermissionLevel: Ref<string> = ref("follower");
 const permissionLevels = ["follower", "collaborator"];
@@ -31,7 +31,7 @@ function savePermissions() {
       (uid: number) => uid !== userToRemove.value?.id
     );
   } else if (
-    ["transfer", "claim"].includes(userSelectDialogMode.value) &&
+    userSelectDialogMode.value === "transfer" &&
     selectedUsers.value.length === 1
   ) {
     if (!newPermissions.collaborator_ids.includes(newPermissions.owner_id)) {
@@ -119,18 +119,6 @@ onMounted(() => {
             @click="
               showUserSelectDialog = true;
               userSelectDialogMode = 'transfer';
-            "
-          />
-        </template>
-      </v-list-item>
-      <v-list-item v-else class="mx-4" subtitle="No owner">
-        <template v-slot:append>
-          <v-icon
-            v-if="permissions[project.id] === 'own'"
-            icon="mdi-pencil"
-            @click="
-              showUserSelectDialog = true;
-              userSelectDialogMode = 'claim';
             "
           />
         </template>
@@ -275,10 +263,8 @@ onMounted(() => {
             item-title="username"
             :rules="[
               (v) =>
-                !(
-                  ['transfer', 'claim'].includes(userSelectDialogMode) &&
-                  v.length > 1
-                ) || 'Must select one new owner',
+                !(userSelectDialogMode === 'transfer' && v.length > 1) ||
+                'Must select one new owner',
             ]"
             return-object
             multiple
