@@ -56,13 +56,16 @@ function savePermissions() {
       selectedPermissionLevel.value = "follower";
       showUserSelectDialog.value = false;
       userToRemove.value = undefined;
+      getUsers().then((data) => {
+        allUsers.value = data.filter((user) => user.id !== project.owner.id);
+      });
     }
   });
 }
 
 onMounted(() => {
   getUsers().then((data) => {
-    allUsers.value = data;
+    allUsers.value = data.filter((user) => user.id !== props.project.owner.id);
   });
 });
 </script>
