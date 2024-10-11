@@ -1,4 +1,5 @@
 from django.db import models
+from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
@@ -21,3 +22,9 @@ class FileItem(TimeStampedModel):
     def download(self):
         # TODO: download
         pass
+
+
+@receiver(models.signals.pre_delete, sender=FileItem)
+def delete_content(sender, instance, **kwargs):
+    if instance.file:
+        instance.file.delete(save=False)
