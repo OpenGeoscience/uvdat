@@ -65,13 +65,13 @@ class VectorFeature(models.Model):
     properties = models.JSONField()
 
 
-@receiver(models.signals.pre_delete, sender=RasterMapLayer)
+@receiver(models.signals.post_delete, sender=RasterMapLayer)
 def delete_raster_content(sender, instance, **kwargs):
     if instance.cloud_optimized_geotiff:
         instance.cloud_optimized_geotiff.delete(save=False)
 
 
-@receiver(models.signals.pre_delete, sender=VectorMapLayer)
+@receiver(models.signals.post_delete, sender=VectorMapLayer)
 def delete_vector_content(sender, instance, **kwargs):
     if instance.geojson_file:
         instance.geojson_file.delete(save=False)

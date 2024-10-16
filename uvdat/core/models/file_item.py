@@ -24,7 +24,7 @@ class FileItem(TimeStampedModel):
         pass
 
 
-@receiver(models.signals.pre_delete, sender=FileItem)
+@receiver(models.signals.post_delete, sender=FileItem)
 def delete_content(sender, instance, **kwargs):
     if instance.file:
         instance.file.delete(save=False)
