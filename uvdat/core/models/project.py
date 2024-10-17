@@ -14,6 +14,27 @@ class Project(models.Model):
     datasets = models.ManyToManyField(Dataset, blank=True)
 
     @transaction.atomic()
+    def set_owner(self, user: User):
+        UserObjectPermission.objects.filter(
+            content_type__app_label=self._meta.app_label,
+            content_type__model=self._meta.model_name,
+            object_pk=self.pk,
+            permission__codename='owner',
+        ).delete()
+
+        assign_perm('owner', user, self)
+
+    @transaction.atomic()
+    def add_collaborators(self, users: list[User]):
+        for user in users:
+            assign_perm('collaborator', user, self)
+
+    @transaction.atomic()
+    def add_follower(self, users: list[User]):
+        for user in users:
+            assign_perm('follower', user, self)
+
+    @transaction.atomic()
     def set_permissions(
         self,
         owner: User,
@@ -28,11 +49,9 @@ class Project(models.Model):
         ).delete()
 
         # Assign new perms
-        assign_perm('owner', owner, self)
-        for user in collaborator or []:
-            assign_perm('collaborator', user, self)
-        for user in follower or []:
-            assign_perm('follower', user, self)
+        self.set_owner(owner)
+        self.add_collaborators(collaborator or [])
+        self.add_follower(follower or [])
 
     class Meta:
         permissions = [
