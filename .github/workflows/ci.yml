@@ -6,44 +6,60 @@ on:
       - master
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install Tox
-        uses: threeal/pipx-install-action@v1.0.0
-        with:
-          packages: tox
-      - name: Lint
-        run: tox -e lint
-
   lint-client:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - run: cd web && npm i && npm run lint
 
-  pytest:
-    runs-on: ubuntu-latest
+  tox:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        tox-env: [lint, test, check-migrations]
+    services:
+      postgres:
+        image: postgis/postgis:14-3.3
+        env:
+          POSTGRES_DB: django
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+      rabbitmq:
+        image: rabbitmq:management
+        ports:
+          - 5672:5672
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioAccessKey
+          MINIO_ROOT_PASSWORD: minioSecretKey
+        ports:
+          - 9000:9000
     steps:
-      - uses: actions/checkout@v3
-      - uses: hoverkraft-tech/compose-action@v2.0.1
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          compose-file: |
-            docker-compose.yml
-            docker-compose.override.yml
-      - run: |
-          docker compose exec django tox -e test
-
-  check-migrations:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: hoverkraft-tech/compose-action@v2.0.1
-        with:
-          compose-file: |
-            docker-compose.yml
-            docker-compose.override.yml
-      - run: |
-          docker compose exec django tox -e check-migrations
+          python-version: "3.10"
+      - name: Install tox
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Install GDAL
+        run: |
+          sudo apt-add-repository ppa:ubuntugis/ppa
+          sudo apt-get update
+          sudo apt-get install gdal-bin libgdal-dev
+          pip install GDAL==`gdal-config --version`
+      - name: Run tests
+        run: |
+          tox -e ${{ matrix.tox-env }}
+        env:
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          DJANGO_HOMEPAGE_REDIRECT_URL: http://localhost:8080/
