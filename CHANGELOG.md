@@ -1,6 +1,39 @@
 # CHANGELOG
 
 
+## v0.5.1 (2024-10-17)
+
+### Continuous Integration
+
+* ci: pin versions of ubuntu, python, and ubuntugis ([`08271ba`](https://github.com/OpenGeoscience/uvdat/commit/08271ba9d3e1471cdeafbf8b4888ccebde774df4))
+
+* ci: switch postgres image to postgis ([`673df3a`](https://github.com/OpenGeoscience/uvdat/commit/673df3a39d6d985f5aa36939a6348128d82a5636))
+
+* ci: add step to install GDAL ([`820cd86`](https://github.com/OpenGeoscience/uvdat/commit/820cd861115a82d4d8a20cdc1971f8bbeb198a38))
+
+* ci: fix environment vars ([`8c90c8f`](https://github.com/OpenGeoscience/uvdat/commit/8c90c8f7bd398b48a66a1e10121ec621ac2c21ab))
+
+* ci: update github actions to use services ([`3ee1d85`](https://github.com/OpenGeoscience/uvdat/commit/3ee1d8560a6fe60306f70635e9e747de0b8c26e6))
+
+### Fixes
+
+* fix: Replace `pre_delete` with `post_delete` ([`4ba2bcb`](https://github.com/OpenGeoscience/uvdat/commit/4ba2bcb2555639adfc25b537c293cd181698fbdf))
+
+* fix: Add signals to delete files when an object with a FileField is deleted ([`08de376`](https://github.com/OpenGeoscience/uvdat/commit/08de3762c27dd0efb8d280e9c5f1fd8a356fd3fc))
+
+### Unknown
+
+* Merge pull request #83 from OpenGeoscience/file-deletion-signals
+
+File Deletion Signals ([`9994538`](https://github.com/OpenGeoscience/uvdat/commit/9994538dd6320a612cfa7f5ee18eccf2b23c9bb4))
+
+* Merge remote-tracking branch 'origin/master' into file-deletion-signals ([`d02a93f`](https://github.com/OpenGeoscience/uvdat/commit/d02a93fc70b2f0c039bf6d7427db6efb49ac4c8b))
+
+* Merge pull request #84 from OpenGeoscience/ci-update
+
+Update Github Actions ([`b7c6c27`](https://github.com/OpenGeoscience/uvdat/commit/b7c6c27f23374150322c6dcd0273b19a71f8f96c))
+
+
 ## v0.5.0 (2024-10-10)
 
 ### Fixes
