@@ -7,14 +7,14 @@ on:
 
 jobs:
   lint-client:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - run: cd web && npm i && npm run lint
 
   tox:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -43,14 +43,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
       - name: Install tox
         run: |
           pip install --upgrade pip
           pip install tox
       - name: Install GDAL
         run: |
-          sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+          sudo apt-add-repository ppa:ubuntugis/ppa
           sudo apt-get update
           sudo apt-get install gdal-bin libgdal-dev
           pip install GDAL==`gdal-config --version`
