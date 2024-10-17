@@ -54,6 +54,6 @@ jobs:
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
-          DJANGO_HOMEPAGE_REDIRECT_URL: localhost:8080
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          DJANGO_HOMEPAGE_REDIRECT_URL: http://localhost:8080/
