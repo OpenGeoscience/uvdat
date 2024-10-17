@@ -5,6 +5,7 @@ import tempfile
 from django.contrib.gis.db import models as geomodels
 from django.core.files.base import ContentFile
 from django.db import models
+from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 import large_image
 from s3_file_field import S3FileField
@@ -62,3 +63,15 @@ class VectorFeature(models.Model):
     map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)
     geometry = geomodels.GeometryField()
     properties = models.JSONField()
+
+
+@receiver(models.signals.post_delete, sender=RasterMapLayer)
+def delete_raster_content(sender, instance, **kwargs):
+    if instance.cloud_optimized_geotiff:
+        instance.cloud_optimized_geotiff.delete(save=False)
+
+
+@receiver(models.signals.post_delete, sender=VectorMapLayer)
+def delete_vector_content(sender, instance, **kwargs):
+    if instance.geojson_file:
+        instance.geojson_file.delete(save=False)
