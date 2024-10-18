@@ -1,5 +1,10 @@
 const { ProvidePlugin } = require("webpack");
 
+const { gitDescribeSync } = require("git-describe");
+const describe = gitDescribeSync();
+process.env.VUE_APP_VERSION = describe.dirty ? describe.raw : describe.tag;
+process.env.VUE_APP_HASH = describe.hash;
+
 module.exports = {
   transpileDependencies: true,
   configureWebpack: {
