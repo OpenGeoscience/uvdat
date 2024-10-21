@@ -35,7 +35,19 @@ class Project(models.Model):
         )
 
     @transaction.atomic()
+    def delete_users_perms(self, users: list[User]):
+        """Deletes all permissions a user may have on this project."""
+        user_ids = [user.id for user in users]
+        UserObjectPermission.objects.filter(
+            content_type__app_label=self._meta.app_label,
+            content_type__model=self._meta.model_name,
+            object_pk=self.pk,
+            user_id__in=user_ids,
+        ).delete()
+
+    @transaction.atomic()
     def set_owner(self, user: User):
+        # Remove existing owner
         UserObjectPermission.objects.filter(
             content_type__app_label=self._meta.app_label,
             content_type__model=self._meta.model_name,
@@ -43,15 +55,19 @@ class Project(models.Model):
             permission__codename='owner',
         ).delete()
 
+        # Delete any existing user perms and set owner
+        self.delete_users_perms([user])
         assign_perm('owner', user, self)
 
     @transaction.atomic()
     def add_collaborators(self, users: list[User]):
+        self.delete_users_perms(users)
         for user in users:
             assign_perm('collaborator', user, self)
 
     @transaction.atomic()
     def add_followers(self, users: list[User]):
+        self.delete_users_perms(users)
         for user in users:
             assign_perm('follower', user, self)
 
@@ -62,14 +78,6 @@ class Project(models.Model):
         collaborator: list[User] | None = None,
         follower: list[User] | None = None,
     ):
-        # Delete all existing first
-        UserObjectPermission.objects.filter(
-            content_type__app_label=self._meta.app_label,
-            content_type__model=self._meta.model_name,
-            object_pk=self.pk,
-        ).delete()
-
-        # Assign new perms
         self.set_owner(owner)
         self.add_collaborators(collaborator or [])
         self.add_followers(follower or [])

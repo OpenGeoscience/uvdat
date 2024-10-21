@@ -5,6 +5,37 @@ from uvdat.core.models.project import Project
 
 
 @pytest.mark.django_db
+def test_project_set_owner(project, user):
+    owner = project.owner()
+    assert owner.id != user.id
+
+    project.set_owner(user)
+    assert project.owner().id == user.id
+
+
+@pytest.mark.django_db
+def test_project_add_followers_collaborators(project, user_factory):
+    def sort_func(user):
+        return user.id
+
+    users = sorted([user_factory() for _ in range(5)], key=sort_func)
+    assert not project.followers()
+    assert not project.collaborators()
+
+    project.add_followers(users)
+
+    # Check that users added as collaborators were automatically removed from followers
+    project.add_collaborators(users)
+    assert not project.followers()
+    assert sorted(project.collaborators(), key=sort_func) == users
+
+    # Check that users added as followers were automatically removed from collaborators
+    project.add_followers(users)
+    assert not project.collaborators()
+    assert sorted(project.followers(), key=sort_func) == users
+
+
+@pytest.mark.django_db
 def test_rest_project_create_no_datasets(authenticated_api_client):
     fake = faker.Faker()
     resp = authenticated_api_client.post(
