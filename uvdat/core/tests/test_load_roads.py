@@ -5,6 +5,7 @@ import pytest
 from uvdat.core.models import Dataset, Project
 
 
+@pytest.mark.slow
 @pytest.mark.django_db
 def test_load_roads():
     project = Project.objects.create(

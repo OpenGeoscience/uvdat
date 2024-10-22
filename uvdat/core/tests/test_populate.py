@@ -19,6 +19,7 @@ from uvdat.core.models import (
 )
 
 
+@pytest.mark.slow
 @pytest.mark.django_db
 def test_populate():
     # ensure a superuser exists
