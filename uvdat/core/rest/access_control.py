@@ -8,12 +8,16 @@ from uvdat.core import models
 from uvdat.core.models.project import Project
 
 
-# TODO: Dataset permissions should be separated from Project permissions
 def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[models.Project]):
     model = queryset.model
+
+    # Dataset permissions not yet implemented, and as such, all datasets are visible to all users
+    if model == models.Dataset:
+        return queryset
+
     if model == models.Project:
         return queryset.filter(id__in=projects.values_list('id', flat=True))
-    if model in [models.Dataset, models.Chart, models.SimulationResult]:
+    if model in [models.Chart, models.SimulationResult]:
         return queryset.filter(project__in=projects)
     if model in [
         models.FileItem,
