@@ -118,21 +118,20 @@ def test_rest_project_set_permissions_not_allowed(authenticated_api_client, user
     assert resp.status_code == 403
 
 
-# TODO: Fix code, test is correct
-# @pytest.mark.django_db
-# def test_rest_project_set_permissions_change_owner_collaborator(
-#     authenticated_api_client, user, project: Project
-# ):
-#     project.add_collaborators([user])
-#     resp = authenticated_api_client.put(
-#         f'/api/v1/projects/{project.id}/permissions/',
-#         {
-#             'owner_id': user.id,
-#             'collaborator_ids': [],
-#             'follower_ids': [],
-#         },
-#     )
-#     assert resp.status_code == 400
+@pytest.mark.django_db
+def test_rest_project_set_permissions_change_owner_collaborator(
+    authenticated_api_client, user, project: Project
+):
+    project.add_collaborators([user])
+    resp = authenticated_api_client.put(
+        f'/api/v1/projects/{project.id}/permissions/',
+        {
+            'owner_id': user.id,
+            'collaborator_ids': [],
+            'follower_ids': [],
+        },
+    )
+    assert resp.status_code == 403
 
 
 @pytest.mark.django_db
