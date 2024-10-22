@@ -1,3 +1,4 @@
+import typing
 from typing import Any
 
 from django.contrib.auth.models import User
@@ -29,6 +30,15 @@ class ProjectViewSet(ModelViewSet):
     @swagger_auto_schema(method='PUT', request_body=ProjectPermissionsSerializer)
     @action(detail=True, methods=['PUT'])
     def permissions(self, request: Request, *args: Any, **kwargs: Any):
+        if request.user.is_anonymous:
+            raise Exception('Anonymous user received after guardian filter')
+        user = typing.cast(User, request.user)
+
+        # Only the owner can modify project permissions
+        project: Project = self.get_object()
+        if not user.has_perm('owner', project):  # type: ignore
+            return Response(status=403)
+
         serializer = ProjectPermissionsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
