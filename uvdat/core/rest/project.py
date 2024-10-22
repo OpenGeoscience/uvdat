@@ -48,6 +48,7 @@ class ProjectViewSet(ModelViewSet):
         simulation_results = project.simulation_results.all()
         return HttpResponse(simulation_results, status=200)
 
+    # TODO: This should be a POST
     @action(
         detail=True,
         methods=['get'],
