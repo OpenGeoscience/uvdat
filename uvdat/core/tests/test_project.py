@@ -90,3 +90,81 @@ def test_rest_project_retrieve(authenticated_api_client, user, project: Project)
         'charts': 0,
         'simulations': 0,
     }
+
+
+@pytest.mark.django_db
+def test_rest_project_set_permissions_not_allowed(authenticated_api_client, user, project: Project):
+    resp = authenticated_api_client.put(
+        f'/api/v1/projects/{project.id}/permissions/',
+        {
+            'owner_id': user.id,
+            'collaborator_ids': [],
+            'follower_ids': [],
+        },
+    )
+    # 404 because user is not added to the project at all
+    assert resp.status_code == 404
+
+    project.add_followers([user])
+    resp = authenticated_api_client.put(
+        f'/api/v1/projects/{project.id}/permissions/',
+        {
+            'owner_id': user.id,
+            'collaborator_ids': [],
+            'follower_ids': [],
+        },
+    )
+    # User is added, but without sufficient perms, so 403 is returned
+    assert resp.status_code == 403
+
+
+# TODO: Fix code, test is correct
+# @pytest.mark.django_db
+# def test_rest_project_set_permissions_change_owner_collaborator(
+#     authenticated_api_client, user, project: Project
+# ):
+#     project.add_collaborators([user])
+#     resp = authenticated_api_client.put(
+#         f'/api/v1/projects/{project.id}/permissions/',
+#         {
+#             'owner_id': user.id,
+#             'collaborator_ids': [],
+#             'follower_ids': [],
+#         },
+#     )
+#     assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_rest_project_set_permissions_change_owner(api_client, user, project: Project):
+    owner = project.owner()
+    api_client.force_authenticate(user=owner)
+    resp = api_client.put(
+        f'/api/v1/projects/{project.id}/permissions/',
+        {
+            'owner_id': user.id,
+            'collaborator_ids': [owner.id],
+            'follower_ids': [],
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()['owner']['id'] == user.id
+    assert resp.json()['collaborators'][0]['id'] == owner.id
+
+
+@pytest.mark.django_db
+def test_rest_project_delete(authenticated_api_client, user, project: Project):
+    resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
+    assert resp.status_code == 404
+
+    project.add_followers([user])
+    resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
+    assert resp.status_code == 403
+
+    project.add_collaborators([user])
+    resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
+    assert resp.status_code == 403
+
+    project.set_owner(user)
+    resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
+    assert resp.status_code == 204
