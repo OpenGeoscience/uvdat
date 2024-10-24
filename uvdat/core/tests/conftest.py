@@ -6,12 +6,23 @@ from rest_framework.test import APIClient
 
 from uvdat.core.models import Project
 
-from .factories import DatasetFactory, ProjectFactory, SuperUserFactory, UserFactory
+from .factories import (
+    DatasetFactory,
+    NetworkEdgeFactory,
+    NetworkFactory,
+    NetworkNodeFactory,
+    ProjectFactory,
+    SuperUserFactory,
+    UserFactory,
+)
 
 register(UserFactory)
 register(SuperUserFactory, 'superuser')
 register(ProjectFactory)
 register(DatasetFactory)
+register(NetworkFactory)
+register(NetworkNodeFactory)
+register(NetworkEdgeFactory)
 
 
 # Override the existing `project` pytest fixture, to ensure that
