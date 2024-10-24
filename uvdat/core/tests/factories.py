@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import LineString, Point
 import factory.django
@@ -5,6 +7,7 @@ from factory.faker import faker
 import factory.fuzzy
 
 from uvdat.core.models import Dataset, Project
+from uvdat.core.models.map_layers import RasterMapLayer, VectorMapLayer
 from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
 
 
@@ -96,3 +99,25 @@ class NetworkEdgeFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def line_geometry(self):
         return LineString(self.from_node.location, self.to_node.location)
+
+
+class RasterMapLayerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RasterMapLayer
+
+    dataset = factory.SubFactory(DatasetFactory)
+    cloud_optimized_geotiff = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='tif'),
+        from_path=Path(__file__).parent / 'data' / 'sample_cog.tif',
+    )
+
+
+class VectorMapLayerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VectorMapLayer
+
+    dataset = factory.SubFactory(DatasetFactory)
+    geojson_file = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='json'),
+        from_path=Path(__file__).parent / 'data' / 'sample_geo.json',
+    )
