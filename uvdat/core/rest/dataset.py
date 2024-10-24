@@ -57,12 +57,6 @@ class DatasetViewSet(ModelViewSet):
         return Response(serializer.data, status=200)
 
     @action(detail=True, methods=['get'])
-    def convert(self, request, **kwargs):
-        dataset = self.get_object()
-        dataset.spawn_conversion_task()
-        return HttpResponse(status=200)
-
-    @action(detail=True, methods=['get'])
     def network(self, request, **kwargs):
         dataset = self.get_object()
         networks = []
