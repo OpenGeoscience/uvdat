@@ -150,16 +150,9 @@ def test_rest_dataset_network_no_network(authenticated_api_client, dataset: Data
 
 
 @pytest.mark.django_db
-def test_rest_dataset_network(
-    authenticated_api_client, network, network_edge_factory, network_node_factory
-):
+def test_rest_dataset_network(authenticated_api_client, network_edge):
+    network = network_edge.network
     dataset = network.dataset
-    network_edge = network_edge_factory(
-        network=network,
-        from_node=network_node_factory(network=network),
-        to_node=network_node_factory(network=network),
-    )
-
     assert network_edge.from_node != network_edge.to_node
 
     resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/network/')
