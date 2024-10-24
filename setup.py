@@ -74,7 +74,6 @@ setup(
             'factory-boy==3.3.1',
             'pytest==8.3.3',
             'pytest-django==4.9.0',
-            'pytest-factoryboy==2.7.0',
             'pytest-mock==3.14.0',
         ],
     },

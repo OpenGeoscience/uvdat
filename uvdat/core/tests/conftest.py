@@ -1,41 +1,11 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 import pytest
-from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
 from uvdat.core.models import Project
 
-from .factories import (
-    DatasetFactory,
-    NetworkEdgeFactory,
-    NetworkFactory,
-    NetworkNodeFactory,
-    ProjectFactory,
-    RasterMapLayerFactory,
-    SuperUserFactory,
-    UserFactory,
-    VectorMapLayerFactory,
-)
-
-register(UserFactory)
-register(SuperUserFactory, 'superuser')
-register(ProjectFactory)
-register(DatasetFactory)
-register(NetworkFactory)
-register(NetworkNodeFactory)
-register(NetworkEdgeFactory)
-register(RasterMapLayerFactory)
-register(VectorMapLayerFactory)
-
-
-# Override the existing `project` pytest fixture, to ensure that
-# when a project is created, it always has an owner
-@pytest.fixture
-def project(user_factory, project_factory) -> Project:
-    project = project_factory()
-    project.set_owner(user_factory())
-    return project
+from .factory_fixtures import *  # noqa: F403
 
 
 @pytest.fixture
