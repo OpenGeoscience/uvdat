@@ -2,7 +2,7 @@ import itertools
 
 import pytest
 
-from uvdat.core.models.networks import Network, NetworkNode
+from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
 from uvdat.core.models.project import Dataset, Project
 
 
@@ -140,3 +140,34 @@ def test_rest_dataset_map_layers(
 
     # Assert these lists are the same objects
     assert sorted([x['id'] for x in data]) == sorted([x.id for x in map_layers])
+
+
+@pytest.mark.django_db
+def test_rest_dataset_network_no_network(authenticated_api_client, dataset: Dataset):
+    resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/network/')
+    assert resp.status_code == 200
+    assert not resp.json()
+
+
+@pytest.mark.django_db
+def test_rest_dataset_network(
+    authenticated_api_client, network, network_edge_factory, network_node_factory
+):
+    dataset = network.dataset
+    network_edge = network_edge_factory(
+        network=network,
+        from_node=network_node_factory(network=network),
+        to_node=network_node_factory(network=network),
+    )
+
+    assert network_edge.from_node != network_edge.to_node
+
+    resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/network/')
+    assert resp.status_code == 200
+
+    data: list[dict] = resp.json()
+    assert len(data) == 1
+
+    data: dict = data[0]
+    assert len(data['nodes']) == 2
+    assert len(data['edges']) == 1

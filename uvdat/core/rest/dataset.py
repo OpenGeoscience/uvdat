@@ -1,6 +1,3 @@
-import json
-
-from django.http import HttpResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -73,7 +70,7 @@ class DatasetViewSet(ModelViewSet):
                     ],
                 }
             )
-        return HttpResponse(json.dumps(networks), status=200)
+        return Response(networks, status=200)
 
     @swagger_auto_schema(query_serializer=GCCQueryParamSerializer)
     @action(detail=True, methods=['get'])

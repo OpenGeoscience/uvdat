@@ -93,8 +93,11 @@ class NetworkEdgeFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker('name')
     network = factory.SubFactory(NetworkFactory)
-    from_node = factory.SubFactory(NetworkNodeFactory)
-    to_node = factory.SubFactory(NetworkNodeFactory)
+
+    # TODO: Fix bug where both of these fields point to the same node
+    # Ensure the edge and both nodes are in the same network
+    from_node = factory.SubFactory(NetworkNodeFactory, network=factory.SelfAttribute('..network'))
+    to_node = factory.SubFactory(NetworkNodeFactory, network=factory.SelfAttribute('..network'))
 
     @factory.lazy_attribute
     def line_geometry(self):
