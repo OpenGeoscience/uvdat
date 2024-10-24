@@ -87,3 +87,56 @@ def test_rest_dataset_gcc(
     larger_group: list[NetworkNode] = max(group_a, group_b, key=len)
     assert resp.status_code == 200
     assert sorted(resp.json()) == sorted([n.id for n in larger_group])
+
+
+@pytest.mark.parametrize('dataset_type', [x[0] for x in Dataset.DatasetType.choices])
+@pytest.mark.django_db
+def test_rest_dataset_map_layers_incorrect_layer_type(
+    authenticated_api_client,
+    dataset_factory,
+    raster_map_layer_factory,
+    vector_map_layer_factory,
+    dataset_type,
+):
+    dataset = dataset_factory(dataset_type=dataset_type)
+
+    # Intentionally create the wrong map layer type
+    factory = (
+        vector_map_layer_factory
+        if dataset_type == Dataset.DatasetType.RASTER
+        else raster_map_layer_factory
+    )
+    for _ in range(3):
+        factory(dataset=dataset)
+
+    # Check that nothing is returned, since map_layers will only return map layers that match the dataset's type
+    resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/map_layers/')
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+@pytest.mark.parametrize('dataset_type', [x[0] for x in Dataset.DatasetType.choices])
+@pytest.mark.django_db
+def test_rest_dataset_map_layers(
+    authenticated_api_client,
+    dataset_factory,
+    raster_map_layer_factory,
+    vector_map_layer_factory,
+    dataset_type,
+):
+    dataset = dataset_factory(dataset_type=dataset_type)
+    factory = (
+        vector_map_layer_factory
+        if dataset_type == Dataset.DatasetType.VECTOR
+        else raster_map_layer_factory
+    )
+    map_layers = [factory(dataset=dataset) for _ in range(3)]
+
+    resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/map_layers/')
+    assert resp.status_code == 200
+
+    data: list[dict] = resp.json()
+    assert len(data) == 3
+
+    # Assert these lists are the same objects
+    assert sorted([x['id'] for x in data]) == sorted([x.id for x in map_layers])

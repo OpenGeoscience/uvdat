@@ -12,8 +12,10 @@ from .factories import (
     NetworkFactory,
     NetworkNodeFactory,
     ProjectFactory,
+    RasterMapLayerFactory,
     SuperUserFactory,
     UserFactory,
+    VectorMapLayerFactory,
 )
 
 register(UserFactory)
@@ -23,6 +25,8 @@ register(DatasetFactory)
 register(NetworkFactory)
 register(NetworkNodeFactory)
 register(NetworkEdgeFactory)
+register(RasterMapLayerFactory)
+register(VectorMapLayerFactory)
 
 
 # Override the existing `project` pytest fixture, to ensure that
