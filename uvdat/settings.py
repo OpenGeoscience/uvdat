@@ -74,7 +74,9 @@ class DevelopmentConfiguration(UvdatMixin, DevelopmentBaseConfiguration):
 
 
 class TestingConfiguration(UvdatMixin, TestingBaseConfiguration):
-    pass
+    # Ensure celery tasks run synchronously
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_TASK_ALWAYS_EAGER = True
 
 
 class ProductionConfiguration(UvdatMixin, ProductionBaseConfiguration):
