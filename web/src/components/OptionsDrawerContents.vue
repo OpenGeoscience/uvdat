@@ -54,6 +54,7 @@ export default {
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
     const applyToAll = ref<boolean>(true);
+    const ticker = ref();
 
     const allowOpacityModification = computed(
       () =>
@@ -220,6 +221,37 @@ export default {
       opacity.value = 1;
     }
 
+    function pause() {
+      clearInterval(ticker.value);
+      ticker.value = undefined;
+    }
+    function play() {
+      if (currentDataset.value?.map_layers) {
+        pause();
+        ticker.value = setInterval(() => {
+          if (
+            currentDataset.value?.map_layers &&
+            currentDatasetLayerIndex.value <
+              currentDataset.value.map_layers?.length - 1
+          ) {
+            currentDatasetLayerIndex.value += 1;
+          } else {
+            pause();
+          }
+        }, 2000);
+      }
+    }
+    function rewind() {
+      pause();
+      ticker.value = setInterval(() => {
+        if (currentDatasetLayerIndex.value > 0) {
+          currentDatasetLayerIndex.value -= 1;
+        } else {
+          pause();
+        }
+      }, 2000);
+    }
+
     watch(colormap, updateColormap);
     watch(opacity, updateLayerOpacity);
 
@@ -245,6 +277,9 @@ export default {
       getNetworkNodeName,
       updateColormap,
       resetNetwork,
+      play,
+      pause,
+      rewind,
     };
   },
 };
@@ -283,8 +318,14 @@ export default {
         dense
         min="0"
         step="1"
+        hide-details
         :max="currentDataset?.map_layers.length - 1"
       />
+      <div style="width: 100%; text-align: center">
+        <v-btn @click="play" icon="mdi-play" variant="text" />
+        <v-btn @click="pause" icon="mdi-pause" variant="text" />
+        <v-btn @click="rewind" icon="mdi-rewind" variant="text" />
+      </div>
       <v-card-subtitle class="wrap-subtitle">
         Current layer name: {{ currentLayerName || "Untitled" }}
       </v-card-subtitle>
