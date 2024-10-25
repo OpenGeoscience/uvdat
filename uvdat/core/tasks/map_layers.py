@@ -66,7 +66,7 @@ def split_raster_zip(file_item, style_options):
                 archive_file.write(file_item.file.open('rb').read())
                 # unzip all
                 with zipfile.ZipFile(archive_path) as zip_archive:
-                   zip_archive.extractall(extracted_path)
+                    zip_archive.extractall(extracted_path)
             # read VRT files
             vrt_files = list(extracted_path.glob('**/*.vrt'))
             vrt_files.sort()  # rely on filenames for ordering
@@ -88,9 +88,7 @@ def split_raster_zip(file_item, style_options):
                     metadata=metadata,
                 )
                 with open(cog_filepath, 'rb') as cog:
-                    new_file_item.file.save(
-                        cog_filepath, ContentFile(cog.read())
-                    )
+                    new_file_item.file.save(cog_filepath, ContentFile(cog.read()))
                 if cog_size > 0:
                     create_raster_map_layer(new_file_item, style_options)
 
