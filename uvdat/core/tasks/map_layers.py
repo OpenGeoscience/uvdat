@@ -49,7 +49,8 @@ def add_styling(geojson_data, style_options):
 
 def split_raster_zip(file_item, style_options):
     """For each raster image in a zip file, create a new FileItem."""
-    # NOTE: This implementation is not abstract; this was built for the Boston Flood Timeseries dataset.
+    # NOTE: This implementation is not abstract;
+    # this was built for the Boston Flood Timeseries dataset.
     import large_image_converter
 
     if file_item.file_type == 'zip':
