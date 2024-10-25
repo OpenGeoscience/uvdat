@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import tempfile
 import zipfile
@@ -11,7 +12,7 @@ import rasterio
 import shapefile
 from webcolors import name_to_hex
 
-from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.models import FileItem, RasterMapLayer, VectorMapLayer
 from uvdat.core.models.map_layers import VectorFeature
 
 
@@ -46,8 +47,62 @@ def add_styling(geojson_data, style_options):
     return geopandas.GeoDataFrame.from_features(features)
 
 
+def split_raster_zip(file_item, style_options):
+    """For each raster image in a zip file, create a new FileItem."""
+    # NOTE: This implementation is not abstract; this was built for the Boston Flood Timeseries dataset.
+    import large_image_converter
+
+    if file_item.file_type == 'zip':
+        # modify index of original FileItem
+        file_item.index = -1
+        file_item.save()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            archive_path = Path(temp_dir, 'archive.zip')
+            extracted_path = Path(temp_dir, 'extracted')
+            converted_path = Path(temp_dir, 'converted')
+            with open(archive_path, 'wb') as archive_file:
+                # copy from file field
+                archive_file.write(file_item.file.open('rb').read())
+                # unzip all
+                with zipfile.ZipFile(archive_path) as zip_archive:
+                   zip_archive.extractall(extracted_path)
+            # read VRT files
+            vrt_files = list(extracted_path.glob('**/*.vrt'))
+            vrt_files.sort()  # rely on filenames for ordering
+            converted_path.mkdir(parents=True, exist_ok=True)
+            for index, vrt_filepath in enumerate(vrt_files):
+                cog_filepath = converted_path / vrt_filepath.name.replace('vrt', 'tiff')
+                large_image_converter.convert(str(vrt_filepath), str(cog_filepath))
+                cog_size = os.path.getsize(cog_filepath)
+                metadata = file_item.metadata
+                metadata.update(dict(generated=True))
+                new_file_item = FileItem.objects.create(
+                    name=cog_filepath.name,
+                    file_size=cog_size,
+                    file_type='tiff',
+                    index=index,
+                    # inherit other fields from original FileItem
+                    dataset=file_item.dataset,
+                    chart=file_item.chart,
+                    metadata=metadata,
+                )
+                with open(cog_filepath, 'rb') as cog:
+                    new_file_item.file.save(
+                        cog_filepath, ContentFile(cog.read())
+                    )
+                if cog_size > 0:
+                    create_raster_map_layer(new_file_item, style_options)
+
+
 def create_raster_map_layer(file_item, style_options):
     """Save a RasterMapLayer from a FileItem's contents."""
+    if style_options is None:
+        style_options = {}
+    if file_item.file_type == 'zip':
+        split_raster_zip(file_item, style_options)
+        return
+
     import large_image_converter
 
     new_map_layer = RasterMapLayer.objects.create(

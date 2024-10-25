@@ -19,6 +19,12 @@ def convert_dataset(
     dataset.processing = True
     dataset.save()
 
+    # remove any existing generated files
+    generated_files = FileItem.objects.filter(
+        dataset=dataset,
+        metadata__generated=True
+    ).delete()
+
     if dataset.dataset_type == dataset.DatasetType.RASTER:
         RasterMapLayer.objects.filter(dataset=dataset).delete()
         for file_to_convert in FileItem.objects.filter(dataset=dataset):
