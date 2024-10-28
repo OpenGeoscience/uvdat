@@ -9,7 +9,6 @@ from rest_framework import permissions, routers
 from uvdat.core.rest import (
     ChartViewSet,
     DatasetViewSet,
-    DerivedRegionViewSet,
     FileItemViewSet,
     NetworkEdgeViewSet,
     NetworkNodeViewSet,
@@ -41,7 +40,6 @@ router.register(r'networks', NetworkViewSet, basename='networks')
 router.register(r'nodes', NetworkNodeViewSet, basename='nodes')
 router.register(r'edges', NetworkEdgeViewSet, basename='edges')
 router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
-router.register(r'derived-regions', DerivedRegionViewSet, basename='derived-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
 
 urlpatterns = [

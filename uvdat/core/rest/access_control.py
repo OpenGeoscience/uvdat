@@ -13,7 +13,7 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
     model = queryset.model
     if model == models.Project:
         return queryset.filter(id__in=projects.values_list('id', flat=True))
-    if model in [models.Dataset, models.Chart, models.DerivedRegion, models.SimulationResult]:
+    if model in [models.Dataset, models.Chart, models.SimulationResult]:
         return queryset.filter(project__in=projects)
     if model in [
         models.FileItem,

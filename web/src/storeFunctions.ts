@@ -13,16 +13,12 @@ import {
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
-  regionGroupingActive,
-  regionGroupingType,
   rasterTooltipEnabled,
   polls,
   availableCharts,
   currentChart,
   availableSimulationTypes,
   currentSimulationType,
-  availableDerivedRegions,
-  selectedDerivedRegions,
   currentNetworkDataset,
   currentNetworkDatasetLayer,
   currentNetworkGCC,
@@ -31,7 +27,7 @@ import {
   tooltipOverlay,
   clickedFeatureCandidates,
 } from "./store";
-import { getProjects, getDataset, getProjectDerivedRegions } from "@/api/rest";
+import { getProjects, getDataset } from "@/api/rest";
 import {
   clearMapLayers,
   datasetLayerFromMapLayerID,
@@ -53,11 +49,7 @@ export function clearState() {
   currentChart.value = undefined;
   availableSimulationTypes.value = undefined;
   currentSimulationType.value = undefined;
-  availableDerivedRegions.value = undefined;
   selectedSourceRegions.value = [];
-  selectedDerivedRegions.value = [];
-  regionGroupingActive.value = false;
-  regionGroupingType.value = undefined;
   currentNetworkDataset.value = undefined;
   currentNetworkDatasetLayer.value = undefined;
   deactivatedNodes.value = [];
@@ -113,24 +105,6 @@ export function getCurrentMapPosition() {
     center: [lng, lat],
     zoom: map.getZoom(),
   };
-}
-
-export async function loadDerivedRegions() {
-  if (!currentProject.value) {
-    return;
-  }
-
-  availableDerivedRegions.value = await getProjectDerivedRegions(
-    currentProject.value.id
-  );
-}
-
-export function cancelRegionGrouping() {
-  selectedSourceRegions.value = [];
-  regionGroupingActive.value = false;
-  regionGroupingType.value = undefined;
-
-  showMapTooltip.value = false;
 }
 
 export function pollForProcessingDataset(datasetId: number) {

@@ -4,7 +4,6 @@ import {
   Project,
   Chart,
   Dataset,
-  DerivedRegion,
   SourceRegion,
   SimulationType,
   VectorDatasetLayer,
@@ -53,11 +52,7 @@ export const availableSimulationTypes = ref<SimulationType[]>();
 export const currentSimulationType = ref<SimulationType>();
 
 // Regions
-export const availableDerivedRegions = ref<DerivedRegion[]>();
 export const selectedSourceRegions = ref<SourceRegion[]>([]);
-export const selectedDerivedRegions = ref<DerivedRegion[]>([]);
-export const regionGroupingActive = ref(false);
-export const regionGroupingType = ref<"intersection" | "union" | undefined>();
 
 // Network
 export const currentNetworkDataset = ref<Dataset>();

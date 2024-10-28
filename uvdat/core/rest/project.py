@@ -43,12 +43,6 @@ class ProjectViewSet(ModelViewSet):
         return Response(ProjectSerializer(project).data, status=200)
 
     @action(detail=True, methods=['get'])
-    def regions(self, request, **kwargs):
-        project = self.get_object()
-        regions = project.derived_regions.all()
-        return HttpResponse(regions, status=200)
-
-    @action(detail=True, methods=['get'])
     def simulation_results(self, request, **kwargs):
         project = self.get_object()
         simulation_results = project.simulation_results.all()
