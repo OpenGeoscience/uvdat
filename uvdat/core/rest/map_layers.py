@@ -3,9 +3,10 @@ import json
 from django.db import connection
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
+from rest_framework import mixins
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from uvdat.core.models import RasterMapLayer, VectorMapLayer
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
@@ -70,7 +71,7 @@ SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 """
 
 
-class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
+class RasterMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
     queryset = RasterMapLayer.objects.select_related('dataset').all()
     serializer_class = RasterMapLayerSerializer
     permission_classes = [GuardianPermission]
@@ -90,7 +91,7 @@ class RasterMapLayerViewSet(ModelViewSet, LargeImageFileDetailMixin):
         return HttpResponse(json.dumps(data), status=200)
 
 
-class VectorMapLayerViewSet(ModelViewSet):
+class VectorMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin):
     queryset = VectorMapLayer.objects.select_related('dataset').all()
     serializer_class = VectorMapLayerSerializer
     permission_classes = [GuardianPermission]
