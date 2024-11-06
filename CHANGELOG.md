@@ -1,7 +1,32 @@
 # CHANGELOG
 
 
+## v0.6.0 (2024-11-06)
+
+### Bug Fixes
+
+* fix: Update version in `setup.py` and `package.json` with semantic release ([`7f6ce9d`](https://github.com/OpenGeoscience/uvdat/commit/7f6ce9da0acccdf39cebb06b689389e3717119ac))
+
+### Features
+
+* feat: Move version to menu, add hash, add copy buttons, add repo link ([`f1b1b34`](https://github.com/OpenGeoscience/uvdat/commit/f1b1b348d6d30092a64026bb5531c0cbd58a55e0))
+
+* feat: add version tag to toolbar in UI ([`6f6d04d`](https://github.com/OpenGeoscience/uvdat/commit/6f6d04d2a3ed9ca5260c5e8e11a8f536fd5e4ed9))
+
+### Unknown
+
+* Merge pull request #80 from OpenGeoscience/version-tag
+
+Version Tags ([`ca68690`](https://github.com/OpenGeoscience/uvdat/commit/ca68690b4b5000a1b73aad4f4844dcb9c2a0d183))
+
+
 ## v0.5.1 (2024-10-17)
+
+### Bug Fixes
+
+* fix: Replace `pre_delete` with `post_delete` ([`4ba2bcb`](https://github.com/OpenGeoscience/uvdat/commit/4ba2bcb2555639adfc25b537c293cd181698fbdf))
+
+* fix: Add signals to delete files when an object with a FileField is deleted ([`08de376`](https://github.com/OpenGeoscience/uvdat/commit/08de3762c27dd0efb8d280e9c5f1fd8a356fd3fc))
 
 ### Continuous Integration
 
@@ -14,12 +39,6 @@
 * ci: fix environment vars ([`8c90c8f`](https://github.com/OpenGeoscience/uvdat/commit/8c90c8f7bd398b48a66a1e10121ec621ac2c21ab))
 
 * ci: update github actions to use services ([`3ee1d85`](https://github.com/OpenGeoscience/uvdat/commit/3ee1d8560a6fe60306f70635e9e747de0b8c26e6))
-
-### Fixes
-
-* fix: Replace `pre_delete` with `post_delete` ([`4ba2bcb`](https://github.com/OpenGeoscience/uvdat/commit/4ba2bcb2555639adfc25b537c293cd181698fbdf))
-
-* fix: Add signals to delete files when an object with a FileField is deleted ([`08de376`](https://github.com/OpenGeoscience/uvdat/commit/08de3762c27dd0efb8d280e9c5f1fd8a356fd3fc))
 
 ### Unknown
 
@@ -36,7 +55,7 @@ Update Github Actions ([`b7c6c27`](https://github.com/OpenGeoscience/uvdat/commi
 
 ## v0.5.0 (2024-10-10)
 
-### Fixes
+### Bug Fixes
 
 * fix: Remove current project owner from users list ([`7051ab4`](https://github.com/OpenGeoscience/uvdat/commit/7051ab43be0fbaa66eed735b4f3b5b4a675bed74))
 
@@ -51,31 +70,7 @@ Project Configuration UI ([`5723496`](https://github.com/OpenGeoscience/uvdat/co
 
 ## v0.4.2 (2024-10-10)
 
-### Code Style
-
-* style: use title case for component tag ([`ba7fbcf`](https://github.com/OpenGeoscience/uvdat/commit/ba7fbcfb1e3ac4eb8f6ea22aa5ae6783739ba7b6))
-
-* style: replace double equals with triple equals ([`245871b`](https://github.com/OpenGeoscience/uvdat/commit/245871b2f7b0861443b2a7d619fc43c2b34f028e))
-
-* style: remove unused imports ([`07f1a9d`](https://github.com/OpenGeoscience/uvdat/commit/07f1a9de4b60b9b078dd9829648b171ceb594339))
-
-* style: Adjust vertical alignment of object counts, flush with icons ([`a070f83`](https://github.com/OpenGeoscience/uvdat/commit/a070f833b9027742e17e405a7d2612a4975c2d91))
-
-### Features
-
-* feat: default to `flyTo` when setting map center ([`ce33080`](https://github.com/OpenGeoscience/uvdat/commit/ce3308061dbaec28c955cea79d996319c95579f6))
-
-* feat: add Access Control interface ([`dba0516`](https://github.com/OpenGeoscience/uvdat/commit/dba0516f343641da615aaa9912c828a880f0a591))
-
-* feat: create/delete projects, edit project names and default map positions ([`d91be55`](https://github.com/OpenGeoscience/uvdat/commit/d91be555dd1a3ba7161775ff891dc26230a723ff))
-
-* feat: Add Dataset selection panel to Project Config page ([`bb21859`](https://github.com/OpenGeoscience/uvdat/commit/bb2185903fba8ee4189c415206ed8a24250233fb))
-
-* feat: Toggle dataset layers with maplibre ([`b84303d`](https://github.com/OpenGeoscience/uvdat/commit/b84303d806776500b20a29191ee2ad8c814da193))
-
-* feat: Add basic ProjectConfig component ([`e7b29bb`](https://github.com/OpenGeoscience/uvdat/commit/e7b29bb00b2da2ab96e61cd7dbe1881ece13c5b2))
-
-### Fixes
+### Bug Fixes
 
 * fix: Use `pipx` action in lint workflow to avoid "externally managed environment" error ([`ad76188`](https://github.com/OpenGeoscience/uvdat/commit/ad76188e02828bcbbb63a8bb1984c381549c4466))
 
@@ -104,6 +99,30 @@ Project Configuration UI ([`5723496`](https://github.com/OpenGeoscience/uvdat/co
 * fix: change loading behavior of Project contents panels ([`407eccf`](https://github.com/OpenGeoscience/uvdat/commit/407eccf53eb68b6d3b60579c6cc35baf0d07eac1))
 
 * fix: Add matplotlib to requirements for raster colormaps ([`971e991`](https://github.com/OpenGeoscience/uvdat/commit/971e9914bc15cf9c7be8c706fdb1663c43643650))
+
+### Code Style
+
+* style: use title case for component tag ([`ba7fbcf`](https://github.com/OpenGeoscience/uvdat/commit/ba7fbcfb1e3ac4eb8f6ea22aa5ae6783739ba7b6))
+
+* style: replace double equals with triple equals ([`245871b`](https://github.com/OpenGeoscience/uvdat/commit/245871b2f7b0861443b2a7d619fc43c2b34f028e))
+
+* style: remove unused imports ([`07f1a9d`](https://github.com/OpenGeoscience/uvdat/commit/07f1a9de4b60b9b078dd9829648b171ceb594339))
+
+* style: Adjust vertical alignment of object counts, flush with icons ([`a070f83`](https://github.com/OpenGeoscience/uvdat/commit/a070f833b9027742e17e405a7d2612a4975c2d91))
+
+### Features
+
+* feat: default to `flyTo` when setting map center ([`ce33080`](https://github.com/OpenGeoscience/uvdat/commit/ce3308061dbaec28c955cea79d996319c95579f6))
+
+* feat: add Access Control interface ([`dba0516`](https://github.com/OpenGeoscience/uvdat/commit/dba0516f343641da615aaa9912c828a880f0a591))
+
+* feat: create/delete projects, edit project names and default map positions ([`d91be55`](https://github.com/OpenGeoscience/uvdat/commit/d91be555dd1a3ba7161775ff891dc26230a723ff))
+
+* feat: Add Dataset selection panel to Project Config page ([`bb21859`](https://github.com/OpenGeoscience/uvdat/commit/bb2185903fba8ee4189c415206ed8a24250233fb))
+
+* feat: Toggle dataset layers with maplibre ([`b84303d`](https://github.com/OpenGeoscience/uvdat/commit/b84303d806776500b20a29191ee2ad8c814da193))
+
+* feat: Add basic ProjectConfig component ([`e7b29bb`](https://github.com/OpenGeoscience/uvdat/commit/e7b29bb00b2da2ab96e61cd7dbe1881ece13c5b2))
 
 ### Refactoring
 
@@ -181,35 +200,7 @@ Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenG
 
 ## v0.4.0 (2024-10-01)
 
-### Code Style
-
-* style: remove unused imports and variables ([`7bb8976`](https://github.com/OpenGeoscience/uvdat/commit/7bb89764a0cdcdded2b5bc865b65b2f6c13a71e1))
-
-* style: remove change to flake8 rules in `tox.ini` ([`52c9ffe`](https://github.com/OpenGeoscience/uvdat/commit/52c9ffe6d482e686a56ee4bbb288a3aa4aa7dcac))
-
-* style: fix lint errors ([`61f9767`](https://github.com/OpenGeoscience/uvdat/commit/61f97670c52de649533fa1315cf3a1d4aa9f7770))
-
-* style: Lint fixes ([`10330c3`](https://github.com/OpenGeoscience/uvdat/commit/10330c359f13bb93c8ead80e9fa3ae7508242681))
-
-### Documentation
-
-* docs: Add `makeclient` step to Setup Guide ([`c3b4ac2`](https://github.com/OpenGeoscience/uvdat/commit/c3b4ac24dad2a1d27450957a08223b0c01ff5a4c))
-
-### Features
-
-* feat: Override signup form to include name fields ([`de74292`](https://github.com/OpenGeoscience/uvdat/commit/de74292bc41128aefe670d075193f3e5fb96c911))
-
-* feat: Update API to use AccessControl filter backend ([`1754ac3`](https://github.com/OpenGeoscience/uvdat/commit/1754ac318a2c2a025ed075af9df5cfc6ad72b9d4))
-
-* feat: Add access control check functions on each model ([`245a04f`](https://github.com/OpenGeoscience/uvdat/commit/245a04f87a6a5116e0e4f0e16059c2961b171861))
-
-* feat: replace Context model with Project model ([`003f88f`](https://github.com/OpenGeoscience/uvdat/commit/003f88f29b9c51355426e71d196437100ded1e1e))
-
-* feat: client-side changes for authentication ([`a3bd8dc`](https://github.com/OpenGeoscience/uvdat/commit/a3bd8dce2515c04764812cd6e2ec77f9f3d3d049))
-
-* feat: server-side changes for authentication ([`b60591c`](https://github.com/OpenGeoscience/uvdat/commit/b60591c0526144ba7629cc5e9bc6810e459239d5))
-
-### Fixes
+### Bug Fixes
 
 * fix: add import to `ingest_use_case` ([`8d1d9db`](https://github.com/OpenGeoscience/uvdat/commit/8d1d9dbbba930749af9ef742a002e7f00e8f1e1d))
 
@@ -242,6 +233,34 @@ Implement GCC algorithm in native Postgres ([`3bf0d01`](https://github.com/OpenG
 * fix: address some server-side API bugs ([`6943cb4`](https://github.com/OpenGeoscience/uvdat/commit/6943cb4696cfb4de250fd55e924448d742b0aa33))
 
 * fix: remove `SESSION_COOKIE_AGE` value override ([`ffbd515`](https://github.com/OpenGeoscience/uvdat/commit/ffbd5159241e6634c2ba019632f99fb832d5bda0))
+
+### Code Style
+
+* style: remove unused imports and variables ([`7bb8976`](https://github.com/OpenGeoscience/uvdat/commit/7bb89764a0cdcdded2b5bc865b65b2f6c13a71e1))
+
+* style: remove change to flake8 rules in `tox.ini` ([`52c9ffe`](https://github.com/OpenGeoscience/uvdat/commit/52c9ffe6d482e686a56ee4bbb288a3aa4aa7dcac))
+
+* style: fix lint errors ([`61f9767`](https://github.com/OpenGeoscience/uvdat/commit/61f97670c52de649533fa1315cf3a1d4aa9f7770))
+
+* style: Lint fixes ([`10330c3`](https://github.com/OpenGeoscience/uvdat/commit/10330c359f13bb93c8ead80e9fa3ae7508242681))
+
+### Documentation
+
+* docs: Add `makeclient` step to Setup Guide ([`c3b4ac2`](https://github.com/OpenGeoscience/uvdat/commit/c3b4ac24dad2a1d27450957a08223b0c01ff5a4c))
+
+### Features
+
+* feat: Override signup form to include name fields ([`de74292`](https://github.com/OpenGeoscience/uvdat/commit/de74292bc41128aefe670d075193f3e5fb96c911))
+
+* feat: Update API to use AccessControl filter backend ([`1754ac3`](https://github.com/OpenGeoscience/uvdat/commit/1754ac318a2c2a025ed075af9df5cfc6ad72b9d4))
+
+* feat: Add access control check functions on each model ([`245a04f`](https://github.com/OpenGeoscience/uvdat/commit/245a04f87a6a5116e0e4f0e16059c2961b171861))
+
+* feat: replace Context model with Project model ([`003f88f`](https://github.com/OpenGeoscience/uvdat/commit/003f88f29b9c51355426e71d196437100ded1e1e))
+
+* feat: client-side changes for authentication ([`a3bd8dc`](https://github.com/OpenGeoscience/uvdat/commit/a3bd8dce2515c04764812cd6e2ec77f9f3d3d049))
+
+* feat: server-side changes for authentication ([`b60591c`](https://github.com/OpenGeoscience/uvdat/commit/b60591c0526144ba7629cc5e9bc6810e459239d5))
 
 ### Refactoring
 
@@ -399,17 +418,7 @@ Use improved NY Grid data ([`6c51ec8`](https://github.com/OpenGeoscience/uvdat/c
 
 ## v0.3.0 (2024-08-21)
 
-### Code Style
-
-* style: Additional style fixes ([`3f18006`](https://github.com/OpenGeoscience/uvdat/commit/3f180067ba6ee44ff9c0f7a9d6ac06840180d09e))
-
-* style: Reformat with tox ([`0f985c9`](https://github.com/OpenGeoscience/uvdat/commit/0f985c96452d0fa834b371f990b045af85e4d29c))
-
-### Features
-
-* feat: Add import script to load county networks from exported geojson files ([`0bb90a4`](https://github.com/OpenGeoscience/uvdat/commit/0bb90a432686168797fbde5c5a4f3ba935208027))
-
-### Fixes
+### Bug Fixes
 
 * fix: remove unintentional quotes ([`296dc78`](https://github.com/OpenGeoscience/uvdat/commit/296dc7865d37dc0bbed1e0838e29a6df31793589))
 
@@ -426,6 +435,16 @@ Use improved NY Grid data ([`6c51ec8`](https://github.com/OpenGeoscience/uvdat/c
 * fix: Small bug fixes ([`478f58a`](https://github.com/OpenGeoscience/uvdat/commit/478f58a1f2d2e2b757a4058e4a14679e7ee7203a))
 
 * fix: Improve speed and accuracy of network interpretation algorithm ([`29650e7`](https://github.com/OpenGeoscience/uvdat/commit/29650e70397b367d066e23e575441330b31368f5))
+
+### Code Style
+
+* style: Additional style fixes ([`3f18006`](https://github.com/OpenGeoscience/uvdat/commit/3f180067ba6ee44ff9c0f7a9d6ac06840180d09e))
+
+* style: Reformat with tox ([`0f985c9`](https://github.com/OpenGeoscience/uvdat/commit/0f985c96452d0fa834b371f990b045af85e4d29c))
+
+### Features
+
+* feat: Add import script to load county networks from exported geojson files ([`0bb90a4`](https://github.com/OpenGeoscience/uvdat/commit/0bb90a432686168797fbde5c5a4f3ba935208027))
 
 ### Refactoring
 
@@ -456,6 +475,14 @@ Add New York Energy use case to populate script ([`221fdf2`](https://github.com/
 
 ## v0.2.0 (2024-08-21)
 
+### Bug Fixes
+
+* fix: remove old name reference ([`bfd69c2`](https://github.com/OpenGeoscience/uvdat/commit/bfd69c2f7fd8e16cd8e39424d03f22f72c21bc9f))
+
+* fix: undo change to expected number of contexts ([`48fe642`](https://github.com/OpenGeoscience/uvdat/commit/48fe642555bbfe995f57151ccfe5a99ebdf6349e))
+
+* fix: Small bug fixes ([`87279bc`](https://github.com/OpenGeoscience/uvdat/commit/87279bce6a19bec2f4979c7f381913734ad9d655))
+
 ### Code Style
 
 * style: reformat with black ([`431537b`](https://github.com/OpenGeoscience/uvdat/commit/431537b5e495be578f2a30c588d3a893e7ac4413))
@@ -465,14 +492,6 @@ Add New York Energy use case to populate script ([`221fdf2`](https://github.com/
 ### Features
 
 * feat: Add rest viewsets for file item and network models ([`53e54e5`](https://github.com/OpenGeoscience/uvdat/commit/53e54e5dfdb6c530f8238e7be671afb2dbcc13d0))
-
-### Fixes
-
-* fix: remove old name reference ([`bfd69c2`](https://github.com/OpenGeoscience/uvdat/commit/bfd69c2f7fd8e16cd8e39424d03f22f72c21bc9f))
-
-* fix: undo change to expected number of contexts ([`48fe642`](https://github.com/OpenGeoscience/uvdat/commit/48fe642555bbfe995f57151ccfe5a99ebdf6349e))
-
-* fix: Small bug fixes ([`87279bc`](https://github.com/OpenGeoscience/uvdat/commit/87279bce6a19bec2f4979c7f381913734ad9d655))
 
 ### Refactoring
 
