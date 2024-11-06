@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted, computed } from "vue";
+import { defineComponent, ref, Ref, watch, onMounted, computed } from "vue";
 import {
   currentUser,
   currentError,
@@ -31,11 +31,20 @@ export default defineComponent({
   setup() {
     const drawer = ref(true);
     const showError = computed(() => currentError.value !== undefined);
+    const version = process.env.VUE_APP_VERSION;
+    const hash = process.env.VUE_APP_HASH;
+    const copied: Ref<string | undefined> = ref();
 
     function onReady() {
       if (currentUser.value) {
         loadProjects();
       }
+    }
+
+    function copyToClipboard(content: string) {
+      navigator.clipboard.writeText(content).then(() => {
+        copied.value = content;
+      });
     }
 
     const login = () => {
@@ -49,6 +58,9 @@ export default defineComponent({
     return {
       login,
       logout,
+      version,
+      hash,
+      copied,
       currentUser,
       drawer,
       currentProject,
@@ -59,6 +71,7 @@ export default defineComponent({
       currentChart,
       currentSimulationType,
       projectConfigMode,
+      copyToClipboard,
     };
   },
 });
@@ -103,7 +116,44 @@ export default defineComponent({
         @click.stop="drawer = !drawer"
         v-if="!projectConfigMode"
       />
-      <v-toolbar-title>UVDAT</v-toolbar-title>
+      <v-toolbar-title>
+        UVDAT
+        <v-menu
+          activator="parent"
+          :open-on-hover="true"
+          :close-on-content-click="false"
+          @update:model-value="copied = undefined"
+        >
+          <v-card class="pa-3" style="width: fit-content">
+            <v-card-subtitle>
+              <a
+                href="https://github.com/OpenGeoscience/uvdat"
+                target="_blank"
+                style="text-decoration: none"
+              >
+                <v-icon icon="mdi-github" />
+                Source
+              </a>
+            </v-card-subtitle>
+            <v-card-subtitle>
+              <v-icon
+                :icon="copied === version ? 'mdi-check' : 'mdi-content-copy'"
+                :color="copied === version ? 'green' : 'black'"
+                @click="copyToClipboard(version)"
+              />
+              Version: {{ version }}
+            </v-card-subtitle>
+            <v-card-subtitle>
+              <v-icon
+                :icon="copied === hash ? 'mdi-check' : 'mdi-content-copy'"
+                :color="copied === hash ? 'green' : 'black'"
+                @click="copyToClipboard(hash)"
+              />
+              Hash: {{ hash }}
+            </v-card-subtitle>
+          </v-card>
+        </v-menu>
+      </v-toolbar-title>
       <v-spacer />
       <div v-if="currentUser" class="px-3">
         {{ currentUser.first_name }}

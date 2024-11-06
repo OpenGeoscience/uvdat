@@ -23,3 +23,6 @@ quote-style = "single"
 [tool.ruff.lint.isort]
 force-sort-within-sections = true # Sort by name, don't cluster "from" vs "import"
 combine-as-imports = true # Combines "as" imports on the same line
+
+[tool.semantic_release]
+version_variables = ["setup.py:__version__", "web/package.json:version"]
