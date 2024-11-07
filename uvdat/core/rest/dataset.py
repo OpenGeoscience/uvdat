@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
@@ -21,7 +21,7 @@ class GCCQueryParamSerializer(serializers.Serializer):
     exclude_nodes = serializers.RegexField(r'^\d+(,\s?\d+)*$')
 
 
-class DatasetViewSet(ModelViewSet):
+class DatasetViewSet(ReadOnlyModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = [GuardianPermission]
