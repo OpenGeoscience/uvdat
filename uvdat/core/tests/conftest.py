@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 
 from uvdat.core.models import Project
 
-from .factory_fixtures import *  # noqa: F403
+from .factory_fixtures import *  # noqa: F403, F401
 
 
 @pytest.fixture

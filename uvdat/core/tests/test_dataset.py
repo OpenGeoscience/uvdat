@@ -2,7 +2,7 @@ import itertools
 
 import pytest
 
-from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
+from uvdat.core.models.networks import Network, NetworkNode
 from uvdat.core.models.project import Dataset, Project
 
 
@@ -81,7 +81,8 @@ def test_rest_dataset_gcc(
     dataset = network.dataset
     project.datasets.add(dataset)
     resp = authenticated_api_client.get(
-        f'/api/v1/datasets/{dataset.id}/gcc/?project={project.id}&exclude_nodes={connecting_node.id}'
+        f'/api/v1/datasets/{dataset.id}/gcc/'
+        f'?project={project.id}&exclude_nodes={connecting_node.id}'
     )
 
     larger_group: list[NetworkNode] = max(group_a, group_b, key=len)
@@ -109,7 +110,8 @@ def test_rest_dataset_map_layers_incorrect_layer_type(
     for _ in range(3):
         factory(dataset=dataset)
 
-    # Check that nothing is returned, since map_layers will only return map layers that match the dataset's type
+    # Check that nothing is returned, since map_layers will only
+    # return map layers that match the dataset's type
     resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/map_layers/')
     assert resp.status_code == 200
     assert resp.json() == []

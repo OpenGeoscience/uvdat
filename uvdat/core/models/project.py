@@ -36,7 +36,7 @@ class Project(models.Model):
 
     @transaction.atomic()
     def delete_users_perms(self, users: list[User]):
-        """Deletes all permissions a user may have on this project."""
+        """Delete all permissions a user may have on this project."""
         user_ids = [user.id for user in users]
         UserObjectPermission.objects.filter(
             content_type__app_label=self._meta.app_label,

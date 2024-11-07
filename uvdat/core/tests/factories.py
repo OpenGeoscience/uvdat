@@ -12,7 +12,7 @@ from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
 
 
 class FuzzyPointField(factory.fuzzy.BaseFuzzyAttribute):
-    """Yields random point"""
+    """Yield random point."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

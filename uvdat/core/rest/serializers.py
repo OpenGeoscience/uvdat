@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.serializers import geojson
-from guardian.shortcuts import get_users_with_perms
 from rest_framework import serializers
 
 from uvdat.core.models import (
