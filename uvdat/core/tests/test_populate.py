@@ -5,7 +5,6 @@ import pytest
 from uvdat.core.models import (
     Chart,
     Dataset,
-    DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
@@ -41,7 +40,6 @@ def test_populate():
     assert Chart.objects.all().count() == 1
     assert Project.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
-    assert DerivedRegion.objects.all().count() == 0
     assert FileItem.objects.all().count() == 7
     assert Network.objects.all().count() == 1
     assert NetworkEdge.objects.all().count() == 164

@@ -11,7 +11,6 @@ import { Map } from "maplibre-gl";
 import { ref } from "vue";
 import {
   Dataset,
-  DerivedRegion,
   RasterDatasetLayer,
   isRasterDatasetLayer,
   VectorDatasetLayer,
@@ -31,14 +30,12 @@ import {
 import {
   availableDatasets,
   currentDataset,
-  availableDerivedRegions,
   currentNetworkGCC,
   selectedDatasets,
   selectedDatasetLayers,
   showMapBaseLayer,
   deactivatedNodes,
   availableDatasetLayers,
-  selectedDerivedRegions,
   clickedFeature,
   showMapTooltip,
   rasterTooltipValue,
@@ -646,37 +643,34 @@ export async function toggleDatasetLayer(
 
 export function getDataObjectForDatasetLayer(
   datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined
-): Dataset | DerivedRegion | undefined {
+): Dataset | undefined {
   // Data Object refers to the original object for which this map layer was created.
-  // Can either be a Dataset or a DerivedRegion.
+  // In this case, a dataset.
   if (datasetLayer === undefined) {
     throw new Error(`Could not get data object for undefined layer`);
   }
 
-  if (datasetLayer.derived_region_id) {
-    return availableDerivedRegions.value?.find(
-      (r) => r.id === datasetLayer.derived_region_id
-    );
-  } else if (datasetLayer.dataset_id) {
-    const dataset = availableDatasets.value?.find(
-      (d) => d.id === datasetLayer.dataset_id
-    );
-    if (dataset) {
-      dataset.current_layer_index =
-        dataset?.map_layers?.find(({ id }) => id === datasetLayer.id)?.index ||
-        0;
-    }
-    return dataset;
+  if (datasetLayer.dataset_id === undefined) {
+    return undefined;
   }
-  return undefined;
+
+  const dataset = availableDatasets.value?.find(
+    (d) => d.id === datasetLayer.dataset_id
+  );
+  if (dataset) {
+    dataset.current_layer_index =
+      dataset?.map_layers?.find(({ id }) => id === datasetLayer.id)?.index || 0;
+  }
+
+  return dataset;
 }
 
 export async function getDatasetLayerForDataObject(
-  dataObject: Dataset | DerivedRegion | undefined,
+  dataObject: Dataset | undefined,
   layerIndex = 0
 ): Promise<VectorDatasetLayer | RasterDatasetLayer | undefined> {
   // Data Object refers to the original object for which this map layer was created.
-  // Can either be a Dataset or a DerivedRegion.
+  // In this case, a dataset.
   if (dataObject === undefined) {
     throw new Error(`Could not get map layer for undefined data object`);
   }
@@ -695,7 +689,7 @@ export async function getDatasetLayerForDataObject(
 /**
  * TODO: Clean up this function and separate out concerns, because it's awful
  * First, this function is being used to pick up changes in _datasetLayerManager and propogate them to selectedDatasetLayers. This needs to be fixed.
- * Second, it's being used to set selectedDatasets and selectedDerivedRegions. Also fix this.
+ * Second, it's being used to set selectedDatasets. Also fix this.
  * Third, it's being used to set the order of `selectedDatasetLayers` from the map data. This is the most okay thing here,
  *    but it should really be the other way around. The map layers should be set from the selected dataset layers.
  */
@@ -729,14 +723,6 @@ export function updateVisibleMapLayers() {
       );
     });
   }
-
-  // Set selected derived regions
-  const available = availableDerivedRegions.value || [];
-  selectedDerivedRegions.value = available.filter((d) => {
-    return selectedDatasetLayers.value.some(
-      (l) => getDataObjectForDatasetLayer(l) === d
-    );
-  });
 }
 
 export function updateBaseLayer() {

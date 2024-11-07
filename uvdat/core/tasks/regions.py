@@ -1,81 +1,9 @@
-import json
 import secrets
-from typing import List
 
-from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GEOSGeometry
-from django.db import transaction
 import geopandas
 
-from uvdat.core.models import DerivedRegion, Project, SourceRegion, VectorMapLayer
-from uvdat.core.rest.access_control import filter_queryset_by_projects
-from uvdat.core.tasks.map_layers import save_vector_features
-
-
-class DerivedRegionCreationError(Exception):
-    pass
-
-
-def create_derived_region(name: str, project: Project, region_ids: List[int], operation: str):
-    # Ensure at least two regions provided
-    source_regions = SourceRegion.objects.filter(pk__in=region_ids)
-    if source_regions.count() < 2:
-        raise DerivedRegionCreationError('Derived Regions must consist of multiple regions')
-
-    # Ensure all regions are from one project
-    filtered = filter_queryset_by_projects(source_regions, Project.objects.filter(id=project.id))
-    if filtered.count() < source_regions.count():
-        raise DerivedRegionCreationError(
-            f'Source Regions must exist in the same project with id {project.id}.'
-        )
-
-    # Only handle union operations for now
-    if operation == DerivedRegion.VectorOperation.INTERSECTION:
-        raise DerivedRegionCreationError('Intersection Operation not yet supported')
-
-    # Simply include all multipolygons from all source regions
-    # Convert Polygon to MultiPolygon if necessary
-    geojson = json.loads(source_regions.aggregate(polys=Union('boundary'))['polys'].geojson)
-    if geojson['type'] == 'Polygon':
-        geojson['type'] = 'MultiPolygon'
-        geojson['coordinates'] = [geojson['coordinates']]
-
-    # Form proper Geometry object
-    new_boundary = GEOSGeometry(json.dumps((geojson)))
-
-    # Check for duplicate derived regions
-    existing = list(
-        DerivedRegion.objects.filter(
-            project=project, boundary=GEOSGeometry(new_boundary)
-        ).values_list('id', flat=True)
-    )
-    if existing:
-        raise DerivedRegionCreationError(
-            f'Derived Regions with identical boundary already exist: {existing}'
-        )
-
-    # Save and return
-    with transaction.atomic():
-        new_map_layer = VectorMapLayer.objects.create(
-            metadata={},
-            default_style={},
-            index=0,
-        )
-        new_map_layer.write_geojson_data(geojson)
-        new_map_layer.save()
-        save_vector_features(new_map_layer)
-
-        derived_region = DerivedRegion.objects.create(
-            name=name,
-            project=project,
-            metadata={},
-            boundary=new_boundary,
-            operation=operation,
-            map_layer=new_map_layer,
-        )
-        derived_region.source_regions.set(source_regions)
-
-    return derived_region
+from uvdat.core.models import SourceRegion
 
 
 def create_source_regions(vector_map_layer, region_options):

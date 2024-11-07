@@ -56,7 +56,6 @@ export default {
   setup() {
     // OpenLayers refs
     const tooltip = ref<HTMLElement>();
-    const regiongrouping = ref<HTMLElement>();
     const activelayers = ref<HTMLElement>();
 
     function createMap() {
@@ -132,9 +131,6 @@ export default {
         throw new Error("Map or refs not initialized!");
       }
 
-      // Add overlay to display region grouping
-      // map.value.addControl(new VueMapControl(regiongrouping.value!));
-
       // Add overlay to display active layers
       map.value.addControl(new VueMapControl(activelayers.value));
 
@@ -157,7 +153,6 @@ export default {
 
     return {
       activelayers,
-      regiongrouping,
       tooltip,
       showMapTooltip,
       showMapBaseLayer,
@@ -181,9 +176,6 @@ export default {
     <div ref="activelayers" class="maplibregl-ctrl active-layers-control">
       <ActiveLayers />
     </div>
-    <!-- <div ref="regiongrouping" class=" maplibregl-ctrl region-grouping-control">
-            <RegionGrouping />
-        </div> -->
     <div
       id="map-tooltip"
       ref="tooltip"

@@ -9,7 +9,6 @@ import {
   RasterData,
   Chart,
   SimulationType,
-  DerivedRegion,
   VectorDatasetLayer,
   RasterDatasetLayer,
   Network,
@@ -63,13 +62,6 @@ export async function getProjectDatasets(
 
 export async function getProjectCharts(projectId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?project=${projectId}`)).data.results;
-}
-
-export async function getProjectDerivedRegions(
-  projectId: number
-): Promise<DerivedRegion[]> {
-  return (await apiClient.get(`derived-regions?project=${projectId}`)).data
-    .results;
 }
 
 export async function getProjectSimulationTypes(
@@ -164,27 +156,4 @@ export async function getSimulationResults(
       `simulations/${simulationId}/project/${projectId}/results/`
     )
   ).data;
-}
-
-export async function getDerivedRegion(regionId: number) {
-  const res = await apiClient.get(`derived-regions/${regionId}/`);
-  return res.data;
-}
-
-export async function postDerivedRegion(
-  name: string,
-  project: number,
-  regions: number[],
-  op: "union" | "intersection" | undefined
-) {
-  if (!op) return;
-  const operation = op.toUpperCase();
-  const res = await apiClient.post("derived-regions/", {
-    name,
-    project,
-    operation,
-    regions,
-  });
-
-  return res.data;
 }

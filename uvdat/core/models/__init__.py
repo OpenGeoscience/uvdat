@@ -4,7 +4,7 @@ from .file_item import FileItem
 from .map_layers import RasterMapLayer, VectorFeature, VectorMapLayer
 from .networks import Network, NetworkEdge, NetworkNode
 from .project import Project
-from .regions import DerivedRegion, SourceRegion
+from .regions import SourceRegion
 from .simulations import SimulationResult
 
 __all__ = [
@@ -16,7 +16,6 @@ __all__ = [
     VectorMapLayer,
     VectorFeature,
     SourceRegion,
-    DerivedRegion,
     Network,
     NetworkEdge,
     NetworkNode,

@@ -4,7 +4,7 @@ from .file_item import FileItemViewSet
 from .map_layers import RasterMapLayerViewSet, VectorMapLayerViewSet
 from .network import NetworkEdgeViewSet, NetworkNodeViewSet, NetworkViewSet
 from .project import ProjectViewSet
-from .regions import DerivedRegionViewSet, SourceRegionViewSet
+from .regions import SourceRegionViewSet
 from .simulations import SimulationViewSet
 from .user import UserViewSet
 
@@ -19,7 +19,6 @@ __all__ = [
     NetworkEdgeViewSet,
     DatasetViewSet,
     SourceRegionViewSet,
-    DerivedRegionViewSet,
     SimulationViewSet,
     UserViewSet,
 ]

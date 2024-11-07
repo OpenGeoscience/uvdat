@@ -3,7 +3,6 @@ from django.contrib import admin
 from uvdat.core.models import (
     Chart,
     Dataset,
-    DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
@@ -71,16 +70,6 @@ class SourceRegionAdmin(admin.ModelAdmin):
         return obj.dataset.name
 
 
-class DerivedRegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_project_name', 'operation', 'get_source_region_names']
-
-    def get_project_name(self, obj):
-        return obj.project.name
-
-    def get_source_region_names(self, obj):
-        return ', '.join(r.name for r in obj.source_regions.all())
-
-
 class NetworkAdmin(admin.ModelAdmin):
     list_display = ['id', 'category', 'get_dataset_name']
 
@@ -123,7 +112,6 @@ admin.site.register(RasterMapLayer, RasterMapLayerAdmin)
 admin.site.register(VectorMapLayer, VectorMapLayerAdmin)
 admin.site.register(VectorFeature, VectorFeatureAdmin)
 admin.site.register(SourceRegion, SourceRegionAdmin)
-admin.site.register(DerivedRegion, DerivedRegionAdmin)
 admin.site.register(Network, NetworkAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
 admin.site.register(NetworkEdge, NetworkEdgeAdmin)

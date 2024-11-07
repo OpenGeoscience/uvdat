@@ -7,12 +7,7 @@ import {
   clearMapLayers,
   findExistingMapLayers,
 } from "@/layers";
-import {
-  RasterDatasetLayer,
-  VectorDatasetLayer,
-  Dataset,
-  DerivedRegion,
-} from "@/types";
+import { RasterDatasetLayer, VectorDatasetLayer, Dataset } from "@/types";
 import { getDataObjectForDatasetLayer } from "@/layers";
 import { getMap } from "@/storeFunctions";
 
@@ -26,7 +21,7 @@ export default {
     function labelForLayer(
       datasetLayer: VectorDatasetLayer | RasterDatasetLayer
     ) {
-      const dataObject: Dataset | DerivedRegion | undefined =
+      const dataObject: Dataset | undefined =
         getDataObjectForDatasetLayer(datasetLayer);
       if (dataObject) {
         let ret = dataObject.name;

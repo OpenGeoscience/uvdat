@@ -1,5 +1,3 @@
-import json
-
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.serializers import geojson
@@ -9,7 +7,6 @@ from rest_framework import serializers
 from uvdat.core.models import (
     Chart,
     Dataset,
-    DerivedRegion,
     FileItem,
     Network,
     NetworkEdge,
@@ -76,7 +73,6 @@ class ProjectSerializer(serializers.ModelSerializer):
     def get_item_counts(self, obj):
         return {
             'datasets': obj.datasets.count(),
-            'regions': obj.derived_regions.count(),
             'charts': obj.charts.count(),
             'simulations': obj.simulation_results.count(),
         }
@@ -167,14 +163,6 @@ class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSeri
 
 
 class VectorMapLayerDetailSerializer(VectorMapLayerSerializer):
-    derived_region_id = serializers.SerializerMethodField('get_derived_region_id')
-
-    def get_derived_region_id(self, obj):
-        dr = obj.derivedregion_set.first()
-        if dr is None:
-            return None
-        return dr.id
-
     class Meta:
         model = VectorMapLayer
         exclude = ['geojson_file']
@@ -193,54 +181,6 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
         val['properties']['id'] = int(val['properties'].pop('pk'))
 
         return val
-
-
-class DerivedRegionListSerializer(serializers.ModelSerializer):
-    map_layers = serializers.SerializerMethodField('get_map_layers')
-
-    def get_map_layers(self, obj):
-        return obj.get_map_layers()
-
-    class Meta:
-        model = DerivedRegion
-        fields = [
-            'id',
-            'name',
-            'project',
-            'metadata',
-            'source_regions',
-            'operation',
-            'map_layers',
-        ]
-
-
-class DerivedRegionDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DerivedRegion
-        fields = '__all__'
-
-    boundary = serializers.SerializerMethodField()
-    map_layers = serializers.SerializerMethodField('get_map_layers')
-
-    def get_boundary(self, obj):
-        return json.loads(obj.boundary.geojson)
-
-    def get_map_layers(self, obj):
-        return obj.get_map_layers()
-
-
-class DerivedRegionCreationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DerivedRegion
-        fields = [
-            'name',
-            'project',
-            'regions',
-            'operation',
-        ]
-
-    regions = serializers.ListField(child=serializers.IntegerField())
-    operation = serializers.ChoiceField(choices=DerivedRegion.VectorOperation.choices)
 
 
 class NetworkSerializer(serializers.ModelSerializer):

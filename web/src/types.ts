@@ -35,23 +35,6 @@ export interface SourceRegion {
   boundary?: object;
 }
 
-export interface DerivedRegion {
-  id: number;
-  name: string;
-  description: string;
-  project: number;
-  metadata: object;
-  boundary: object;
-  source_regions: number[];
-  operation: "UNION" | "INTERSECTION";
-  map_layers: {
-    id: number;
-    index: number;
-    type: string;
-  }[];
-  current_layer_index: null;
-}
-
 export interface Project {
   id: number;
   name: string;
@@ -157,7 +140,6 @@ export interface AbstractDatasetLayer {
   default_style: DefaultStyle;
   index: number;
   dataset_id?: number;
-  derived_region_id?: number;
   dataset_category: string;
 }
 

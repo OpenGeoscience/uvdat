@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import { ref, Ref, watch, computed, defineProps } from "vue";
-import {
-  Project,
-  Dataset,
-  Chart,
-  DerivedRegion,
-  SimulationType,
-} from "../types";
+import { Project, Dataset, Chart, SimulationType } from "../types";
 import {
   getDatasetLayers,
   getProjectCharts,
   getProjectDatasets,
-  getProjectDerivedRegions,
   getProjectSimulationTypes,
 } from "@/api/rest";
 import DatasetList from "./DatasetList.vue";
@@ -19,35 +12,29 @@ import {
   availableCharts,
   availableDatasetLayers,
   availableDatasets,
-  availableDerivedRegions,
   availableSimulationTypes,
   currentChart,
   currentDataset,
   currentSimulationType,
   selectedDatasets,
 } from "@/store";
-import { getDatasetLayerForDataObject, toggleDatasetLayer } from "@/layers";
+import { toggleDatasetLayer } from "@/layers";
 
 const props = defineProps<{
   project: Project;
 }>();
 
 const panels: {
-  label: "Datasets" | "Regions" | "Charts" | "Simulations";
+  label: "Datasets" | "Charts" | "Simulations";
   loadFunction: (
     projectId: number
-  ) => Promise<Dataset[] | DerivedRegion[] | Chart[] | SimulationType[]>;
+  ) => Promise<Dataset[] | Chart[] | SimulationType[]>;
   storeVar: Ref;
 }[] = [
   {
     label: "Datasets",
     loadFunction: getProjectDatasets,
     storeVar: availableDatasets,
-  },
-  {
-    label: "Regions",
-    loadFunction: getProjectDerivedRegions,
-    storeVar: availableDerivedRegions,
   },
   {
     label: "Charts",
@@ -64,7 +51,6 @@ const panels: {
 const openPanels: Ref<string[]> = ref([]);
 const projectContents: Ref<{
   Datasets?: Dataset[];
-  Regions?: DerivedRegion[];
   Simulations?: SimulationType[];
   Charts?: Chart[];
 }> = ref({});
@@ -74,13 +60,9 @@ const selectedDatasetIds = computed(() =>
 
 function selectItem(
   panelLabel: string,
-  item: Dataset | DerivedRegion | Chart | SimulationType
+  item: Dataset | Chart | SimulationType
 ) {
-  if (panelLabel === "Regions") {
-    getDatasetLayerForDataObject(item as DerivedRegion).then((layer) => {
-      toggleDatasetLayer(layer);
-    });
-  } else if (panelLabel === "Charts") {
+  if (panelLabel === "Charts") {
     currentChart.value = item as Chart;
   } else if (panelLabel === "Simulations") {
     currentSimulationType.value = item as SimulationType;
@@ -135,8 +117,6 @@ watch(openPanels, () => {
           projectContents.value["Datasets"] = data as Dataset[];
         } else if (panel.label === "Charts") {
           projectContents.value["Charts"] = data as Chart[];
-        } else if (panel.label === "Regions") {
-          projectContents.value["Regions"] = data as DerivedRegion[];
         } else if (panel.label === "Simulations") {
           projectContents.value["Simulations"] = data as SimulationType[];
         }
