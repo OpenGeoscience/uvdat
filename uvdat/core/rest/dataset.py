@@ -1,9 +1,8 @@
-import json
-
-from django.http import HttpResponse
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
@@ -17,7 +16,12 @@ from uvdat.core.rest.serializers import (
 from uvdat.core.tasks.chart import add_gcc_chart_datum
 
 
-class DatasetViewSet(ModelViewSet):
+class GCCQueryParamSerializer(serializers.Serializer):
+    project = serializers.IntegerField()
+    exclude_nodes = serializers.RegexField(r'^\d+(,\s?\d+)*$')
+
+
+class DatasetViewSet(ReadOnlyModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = [GuardianPermission]
@@ -50,12 +54,6 @@ class DatasetViewSet(ModelViewSet):
         return Response(serializer.data, status=200)
 
     @action(detail=True, methods=['get'])
-    def convert(self, request, **kwargs):
-        dataset = self.get_object()
-        dataset.spawn_conversion_task()
-        return HttpResponse(status=200)
-
-    @action(detail=True, methods=['get'])
     def network(self, request, **kwargs):
         dataset = self.get_object()
         networks = []
@@ -72,15 +70,21 @@ class DatasetViewSet(ModelViewSet):
                     ],
                 }
             )
-        return HttpResponse(json.dumps(networks), status=200)
+        return Response(networks, status=200)
 
+    @swagger_auto_schema(query_serializer=GCCQueryParamSerializer)
     @action(detail=True, methods=['get'])
     def gcc(self, request, **kwargs):
         dataset = self.get_object()
-        project_id = request.query_params.get('project')
-        exclude_nodes = request.query_params.get('exclude_nodes', [])
-        exclude_nodes = exclude_nodes.split(',')
-        exclude_nodes = [int(n) for n in exclude_nodes if len(n)]
+
+        # Validate and de-serialize query params
+        serializer = GCCQueryParamSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        project_id = serializer.validated_data['project']
+        exclude_nodes = [int(n) for n in serializer.validated_data['exclude_nodes'].split(',')]
+
+        if not dataset.networks.exists():
+            return Response(data='No networks exist in selected dataset', status=400)
 
         # Find the GCC for each network in the dataset
         network_gccs: list[list[int]] = []

@@ -1,12 +1,29 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 import pytest
-from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
 from uvdat.core.models import Project
 
-from .factories import UserFactory
+from .factory_fixtures import *  # noqa: F403, F401
+
+
+@pytest.fixture
+def project_owner(project: Project) -> User:
+    return project.owner()
+
+
+@pytest.fixture
+def project_collaborator(user, project: Project) -> User:
+    project.add_collaborators([user])
+    return user
+
+
+@pytest.fixture
+def project_follower(user, project: Project) -> User:
+    project.add_followers([user])
+    return user
+
 
 USER_INFOS = [
     dict(
@@ -68,6 +85,13 @@ def api_client() -> APIClient:
 
 
 @pytest.fixture
+def authenticated_api_client(user) -> APIClient:
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client
+
+
+@pytest.fixture
 def permissions_client(user_info, test_project) -> APIClient:
     user_info.pop('perm', None)
     user_info.pop('id', None)
@@ -75,6 +99,3 @@ def permissions_client(user_info, test_project) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
     return (client, user)
-
-
-register(UserFactory)

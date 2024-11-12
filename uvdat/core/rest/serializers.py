@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 from django.contrib.gis.serializers import geojson
-from guardian.shortcuts import get_users_with_perms
 from rest_framework import serializers
 
 from uvdat.core.models import (
@@ -55,20 +54,14 @@ class ProjectSerializer(serializers.ModelSerializer):
         if obj.default_map_center:
             return [obj.default_map_center.y, obj.default_map_center.x]
 
-    def get_owner(self, obj):
-        users = list(get_users_with_perms(obj, only_with_perms_in=['owner']))
-        if len(users) != 1:
-            raise Exception('Project must have exactly one owner')
+    def get_owner(self, obj: Project):
+        return UserSerializer(obj.owner()).data
 
-        return UserSerializer(users[0]).data
+    def get_collaborators(self, obj: Project):
+        return [UserSerializer(user).data for user in obj.collaborators()]
 
-    def get_collaborators(self, obj):
-        users = get_users_with_perms(obj, only_with_perms_in=['collaborator'])
-        return [UserSerializer(user).data for user in users.all()]
-
-    def get_followers(self, obj):
-        users = get_users_with_perms(obj, only_with_perms_in=['follower'])
-        return [UserSerializer(user).data for user in users.all()]
+    def get_followers(self, obj: Project):
+        return [UserSerializer(user).data for user in obj.followers()]
 
     def get_item_counts(self, obj):
         return {

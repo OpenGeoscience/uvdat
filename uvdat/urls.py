@@ -9,10 +9,6 @@ from rest_framework import permissions, routers
 from uvdat.core.rest import (
     ChartViewSet,
     DatasetViewSet,
-    FileItemViewSet,
-    NetworkEdgeViewSet,
-    NetworkNodeViewSet,
-    NetworkViewSet,
     ProjectViewSet,
     RasterMapLayerViewSet,
     SimulationViewSet,
@@ -32,13 +28,9 @@ schema_view = get_schema_view(
 router.register(r'users', UserViewSet, basename='users')
 router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
-router.register(r'files', FileItemViewSet, basename='files')
 router.register(r'charts', ChartViewSet, basename='charts')
 router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')
 router.register(r'vectors', VectorMapLayerViewSet, basename='vectors')
-router.register(r'networks', NetworkViewSet, basename='networks')
-router.register(r'nodes', NetworkNodeViewSet, basename='nodes')
-router.register(r'edges', NetworkEdgeViewSet, basename='edges')
 router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
 

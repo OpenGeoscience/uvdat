@@ -70,5 +70,11 @@ setup(
             'ipython==8.26.0',
             'tox==4.16.0',
         ],
+        'test': [
+            'factory-boy==3.3.1',
+            'pytest==8.3.3',
+            'pytest-django==4.9.0',
+            'pytest-mock==3.14.0',
+        ],
     },
 )

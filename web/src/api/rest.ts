@@ -90,10 +90,6 @@ export async function getDatasetLayers(
   return layers.toSorted((a, b) => a.index - b.index);
 }
 
-export async function convertDataset(datasetId: number): Promise<Dataset> {
-  return (await apiClient.get(`datasets/${datasetId}/convert`)).data;
-}
-
 export async function getDatasetNetwork(datasetId: number): Promise<Network[]> {
   return (await apiClient.get(`datasets/${datasetId}/network`)).data;
 }
