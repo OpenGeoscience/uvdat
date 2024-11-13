@@ -69,6 +69,7 @@ setup(
             'django-s3-file-field[minio]==1.0.1',
             'ipython==8.26.0',
             'tox==4.16.0',
+            'precommit==4.0.1',
         ],
         'test': [
             'factory-boy==3.3.1',
