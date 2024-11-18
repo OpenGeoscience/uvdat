@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.7.0 (2024-11-18)
+
+### Bug Fixes
+
+- Add missing hyphen in requirements list
+  ([`82835b2`](https://github.com/OpenGeoscience/uvdat/commit/82835b272914f161836d135e926143db2fecfd45))
+
+### Features
+
+- Add precommit to repo
+  ([`fa55c13`](https://github.com/OpenGeoscience/uvdat/commit/fa55c1364a006cc965c281bd16db6741af20ca37))
+
+
 ## v0.6.1 (2024-11-12)
 
 ### Bug Fixes
