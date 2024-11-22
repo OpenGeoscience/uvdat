@@ -9,7 +9,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             'use_case',
-            choices=['boston_floods', 'new_york_energy'],
+            choices=['boston_floods', 'new_york_energy', 'curbs_aid'],
             help='Sample data collection to load',
         )
         parser.add_argument(

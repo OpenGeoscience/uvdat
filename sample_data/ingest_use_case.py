@@ -147,7 +147,7 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
 
                     dataset_size_mb = dataset_for_conversion.get_size() >> 20
                     if include_large or dataset_size_mb < 50:
-                        if use_case == 'boston_floods':
+                        if use_case in ['boston_floods', 'curbs_aid']:
                             boston_floods_ingest.convert_dataset(dataset_for_conversion, dataset)
                         elif use_case == 'new_york_energy':
                             new_york_energy_ingest.convert_dataset(dataset_for_conversion, dataset)
