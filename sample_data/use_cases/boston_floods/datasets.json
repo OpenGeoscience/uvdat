@@ -100,6 +100,19 @@
         }
     },
     {
+        "name": "Boston Orthoimagery",
+        "description": "Sourced from https://gis.data.mass.gov/maps/6c7009c789354573a42af7251fb768a4/about",
+        "category": "imagery",
+        "type": "raster",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6744df3c22f196cb5d931161/download",
+                "path": "boston/boston_orthoimagery.tiff"
+            }
+        ],
+        "style_options": {}
+    },
+    {
         "name": "Boston Neighborhoods",
         "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
         "category": "region",
