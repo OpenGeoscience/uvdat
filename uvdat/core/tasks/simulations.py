@@ -202,7 +202,7 @@ def segment_curbs(simulation_result_id, imagery_layer):
                         file_item.file.save(zip_path, ContentFile(f.read()))
                     dataset.spawn_conversion_task(asynchronous=False)
                     dataset_ids.append(dataset.id)
-            result.output_data = {'datasets': dataset_ids}
+            result.output_data = {'dataset_ids': dataset_ids}
         except Exception as e:
             result.error_message = str(e)
     result.save()

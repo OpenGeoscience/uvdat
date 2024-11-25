@@ -4,8 +4,14 @@ import {
   currentSimulationType,
   currentProject,
   selectedDatasetLayers,
+  availableDatasets,
 } from "@/store";
-import { getSimulationResults, runSimulation } from "@/api/rest";
+import {
+  getDatasetLayers,
+  getProjectDatasets,
+  getSimulationResults,
+  runSimulation,
+} from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import {
   isRasterDatasetLayer,
@@ -119,6 +125,23 @@ export default {
       }[];
     }
 
+    async function populateActiveResultOutputs() {
+      if (activeResult.value && currentProject.value) {
+        availableDatasets.value = await getProjectDatasets(
+          currentProject.value.id
+        );
+        const datasetIds = activeResult.value.output_data?.dataset_ids;
+        activeResult.value.output_data.datasets = await Promise.all(
+          availableDatasets.value
+            .filter((d) => datasetIds.includes(d.id))
+            .map(async (d) => {
+              d.map_layers = await getDatasetLayers(d.id);
+              return d;
+            })
+        );
+      }
+    }
+
     function pollForActiveResultOutput() {
       if (!availableResults.value) {
         clearInterval(outputPoll.value);
@@ -154,6 +177,7 @@ export default {
     watch(activeResult, () => {
       if (activeResult.value) {
         populateActiveResultInputs();
+        populateActiveResultOutputs();
         if (!outputPoll.value && !activeResult.value.output_data) {
           outputPoll.value = setInterval(pollForActiveResultOutput, 3000);
         }
@@ -287,6 +311,29 @@ export default {
                     :nodeFailures="result.output_data.node_failures"
                     :nodeRecoveries="result.output_data.node_recoveries"
                   />
+                </div>
+                <div
+                  v-if="currentSimulationType.output_type === 'dataset'"
+                  class="pa-5"
+                >
+                  <v-table>
+                    <tbody>
+                      <tr
+                        v-for="dataset in result.output_data.datasets"
+                        :key="dataset.id"
+                      >
+                        <td>{{ dataset.name }}</td>
+                        <td>
+                          <v-btn
+                            v-if="dataset.map_layers"
+                            @click="toggleDatasetLayer(dataset.map_layers[0])"
+                          >
+                            Show on Map
+                          </v-btn>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </v-table>
                 </div>
                 <div v-else>
                   Unknown simulation output type
