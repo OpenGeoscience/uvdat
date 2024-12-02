@@ -10,7 +10,6 @@ from django.core.files.base import ContentFile
 from django_large_image import tilesource, utilities
 import large_image
 import shapely
-from tile2net import Raster
 
 from uvdat.core.tasks.networks import NODE_RECOVERY_MODES, get_network_graph, sort_graph_centrality
 
@@ -126,6 +125,8 @@ def recovery_scenario(simulation_result_id, node_failure_simulation_result, reco
 
 @shared_task
 def segment_curbs(simulation_result_id, imagery_layer):
+    from tile2net import Raster
+
     from uvdat.core.models import Dataset, FileItem, RasterMapLayer, SimulationResult
 
     result = SimulationResult.objects.get(id=simulation_result_id)
