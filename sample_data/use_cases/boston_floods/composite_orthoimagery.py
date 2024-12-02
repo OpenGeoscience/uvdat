@@ -20,7 +20,6 @@ for file_path in folder.glob('**/*'):
     if file_path.name.endswith('.jp2'):
         src = large_image.open(file_path)
         metadata = src.getMetadata()
-        # print(metadata)
         bounds = metadata.get('sourceBounds')
         if proj is None:
             proj = bounds.get('srs')
@@ -63,7 +62,7 @@ src_srs.ImportFromProj4(proj)
 dst_srs = osr.SpatialReference()
 dst_srs.ImportFromEPSG(4326)
 transform = osr.CoordinateTransformation(src_srs, dst_srs)
-# print(transform)
+
 gcps = []
 for px, py, cx, cy in [
     (0, 0, abs_xmin, abs_ymax),
@@ -75,7 +74,6 @@ for px, py, cx, cy in [
     gcps.append((
         px, py, point.GetX(), point.GetY()
     ))
-# print(gcps)
 
 ds = gdal.Open(str(sink_output_path))
 georefd = gdal.Translate(
@@ -87,6 +85,4 @@ georefd = gdal.Translate(
     )
 )
 
-# foo = large_image.open(gdal_output_path)
-# print(foo.getMetadata(), foo.geospatial, foo.__class__)
 print(f'Completed in {datetime.datetime.now() - start} seconds')

@@ -11,10 +11,7 @@ from .project import Project
 class SimulationResult(TimeStampedModel):
     class SimulationType(models.TextChoices):
         FLOOD_1 = 'FLOOD_1', 'Flood Scenario 1'
-        RECOVERY = (
-            'RECOVERY',
-            'Recovery Scenario',
-        )
+        RECOVERY = 'RECOVERY', 'Recovery Scenario'
         SEGMENT_CURBS = 'SEGMENT_CURBS', 'Segment Curbs'
 
     simulation_type = models.CharField(
