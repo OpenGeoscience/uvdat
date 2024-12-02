@@ -268,6 +268,8 @@ export interface SimulationResult {
   output_data: {
     node_failures: [];
     node_recoveries: [];
+    datasets: Dataset[];
+    dataset_ids: number[];
   };
   error_message: string;
   created: string;
