@@ -505,17 +505,16 @@ export function styleRasterDatasetLayer(
     | Record<string, unknown>
     | undefined;
   const colormapPalette = (options?.colormap?.palette ||
-    defaultStyle?.palette ||
-    "terrain") as string;
+    defaultStyle?.palette) as string;
   const colormapRange = options?.colormap?.range || defaultStyle?.data_range;
   const nodataValue = options.nodata || defaultStyle?.transparency_threshold;
 
   const tileParams: Record<string, string> = {
     projection: "EPSG:3857",
-    band: "1",
   };
   if (colormapPalette) {
     tileParams.palette = colormapPalette;
+    tileParams.band = "1";
   }
   if (Array.isArray(colormapRange) && colormapRange?.length === 2) {
     tileParams.min = colormapRange[0];

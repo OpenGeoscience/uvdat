@@ -225,7 +225,7 @@ onMounted(fetchAllLayers);
                 :model-value="selectedIds.includes(dataset.id)"
                 @update:model-value="toggleDatasets($event, [dataset])"
               />
-              {{ dataset.name }}
+              <div style="flex: 1">{{ dataset.name }}</div>
             </template>
           </v-expansion-panel-title>
           <v-expansion-panel-text>

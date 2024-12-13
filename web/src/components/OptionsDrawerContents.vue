@@ -50,7 +50,7 @@ export default {
       VectorDatasetLayer | RasterDatasetLayer | undefined
     >();
     const opacity = ref(1);
-    const colormap = ref("terrain");
+    const colormap = ref();
     const layerRange = ref<number[]>([]);
     const colormapRange = ref<number[]>([]);
     const applyToAll = ref<boolean>(true);
@@ -92,7 +92,7 @@ export default {
     function populateRefs() {
       if (!currentDatasetLayer.value) {
         opacity.value = 1;
-        colormap.value = "terrain";
+        colormap.value = undefined;
         layerRange.value = [];
         colormapRange.value = [];
 
@@ -129,7 +129,7 @@ export default {
       }
 
       // Populate raster refs, if necessary
-      colormap.value = defaultStyle.palette || "terrain";
+      colormap.value = defaultStyle.palette || undefined;
       layerRange.value =
         defaultStyle.data_range?.map((v: number) => Math.round(v)) || [];
       colormapRange.value = layerRange.value;
@@ -194,12 +194,15 @@ export default {
         return;
       }
 
-      styleRasterDatasetLayer(currentDatasetLayer.value, {
-        colormap: {
-          palette: colormap.value,
-          range: colormapRange.value,
-        },
-      });
+      const style = colormap.value
+        ? {
+            colormap: {
+              palette: colormap.value,
+              range: colormapRange.value,
+            },
+          }
+        : {};
+      styleRasterDatasetLayer(currentDatasetLayer.value, style);
     }
 
     function getNetworkNodeName(nodeId: number) {
@@ -309,6 +312,7 @@ export default {
         <v-select
           v-model="colormap"
           dense
+          clearable
           :items="rasterColormaps"
           label="Color map"
         />
