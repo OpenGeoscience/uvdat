@@ -511,10 +511,10 @@ export function styleRasterDatasetLayer(
 
   const tileParams: Record<string, string> = {
     projection: "EPSG:3857",
-    // band: "1",
   };
   if (colormapPalette) {
     tileParams.palette = colormapPalette;
+    tileParams.band = "1";
   }
   if (Array.isArray(colormapRange) && colormapRange?.length === 2) {
     tileParams.min = colormapRange[0];
