@@ -2,19 +2,11 @@ from django.db import models
 
 
 class Dataset(models.Model):
-    class DatasetType(models.TextChoices):
-        VECTOR = 'VECTOR', 'Vector'
-        RASTER = 'RASTER', 'Raster'
-
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
     processing = models.BooleanField(default=False)
     metadata = models.JSONField(blank=True, null=True)
-    dataset_type = models.CharField(
-        max_length=max(len(choice[0]) for choice in DatasetType.choices),
-        choices=DatasetType.choices,
-    )
 
     def spawn_conversion_task(
         self,
@@ -43,14 +35,3 @@ class Dataset(models.Model):
         from uvdat.core.models import SourceRegion
 
         return SourceRegion.objects.filter(dataset=self)
-
-    def get_map_layers(self):
-        """Return a queryset of either RasterMapLayer, or VectorMapLayer."""
-        from uvdat.core.models import RasterMapLayer, VectorMapLayer
-
-        if self.dataset_type == self.DatasetType.RASTER:
-            return RasterMapLayer.objects.filter(dataset=self)
-        if self.dataset_type == self.DatasetType.VECTOR:
-            return VectorMapLayer.objects.filter(dataset=self)
-
-        raise NotImplementedError(f'Dataset Type {self.dataset_type}')

@@ -3,7 +3,7 @@ from django_extensions.db.models import TimeStampedModel
 
 from uvdat.core.tasks import simulations as uvdat_simulations
 
-from .map_layers import RasterMapLayer, VectorMapLayer
+from .data import RasterData, VectorData
 from .networks import Network
 from .project import Project
 
@@ -66,12 +66,12 @@ AVAILABLE_SIMULATIONS = {
             },
             {
                 'name': 'elevation_data',
-                'type': RasterMapLayer,
+                'type': RasterData,
                 'options_query': {'dataset__category': 'elevation'},
             },
             {
                 'name': 'flood_area',
-                'type': VectorMapLayer,
+                'type': VectorData,
                 'options_query': {'dataset__category': 'flood'},
             },
         ],
@@ -112,7 +112,7 @@ AVAILABLE_SIMULATIONS = {
         'args': [
             {
                 'name': 'imagery_layer',
-                'type': RasterMapLayer,
+                'type': RasterData,
                 'options_query': {'dataset__category': 'imagery'},
             }
         ],
