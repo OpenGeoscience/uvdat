@@ -8,13 +8,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.models import RasterData, VectorData
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import (
-    RasterMapLayerSerializer,
-    VectorMapLayerDetailSerializer,
-    VectorMapLayerSerializer,
-)
+from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
 
 VECTOR_TILE_SQL = """
 WITH
@@ -60,7 +56,7 @@ mvtgeom as (
         core_vectorfeature t,
         bounds
     WHERE
-        t.map_layer_id = %(map_layer_id)s
+        t.vector_data_id = %(vector_data_id)s
         AND ST_Intersects(
             ST_Transform(t.geometry, %(srid)s),
             ST_Transform(bounds.geom, %(srid)s)
@@ -71,9 +67,9 @@ SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 """
 
 
-class RasterMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
-    queryset = RasterMapLayer.objects.select_related('dataset').all()
-    serializer_class = RasterMapLayerSerializer
+class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
+    queryset = RasterData.objects.select_related('dataset').all()
+    serializer_class = RasterDataSerializer
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
@@ -86,21 +82,21 @@ class RasterMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImag
         url_name='raster_data',
     )
     def get_raster_data(self, request, resolution: str = '1', **kwargs):
-        raster_map_layer = self.get_object()
-        data = raster_map_layer.get_image_data(float(resolution))
+        raster_data = self.get_object()
+        data = raster_data.get_image_data(float(resolution))
         return HttpResponse(json.dumps(data), status=200)
 
 
-class VectorMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin):
-    queryset = VectorMapLayer.objects.select_related('dataset').all()
-    serializer_class = VectorMapLayerSerializer
+class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
+    queryset = VectorData.objects.select_related('dataset').all()
+    serializer_class = VectorDataSerializer
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = VectorMapLayerDetailSerializer(instance)
+        serializer = VectorDataSerializer(instance)
         return Response(serializer.data)
 
     @action(
@@ -118,7 +114,7 @@ class VectorMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin):
                     'x': x,
                     'y': y,
                     'srid': 3857,
-                    'map_layer_id': id,
+                    'vector_data_id': id,
                 },
             )
             row = cursor.fetchone()

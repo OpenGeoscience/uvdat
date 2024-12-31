@@ -7,14 +7,16 @@ from uvdat.core.models import (
     Chart,
     Dataset,
     FileItem,
+    Layer,
+    LayerFrame,
     Network,
     NetworkEdge,
     NetworkNode,
     Project,
-    RasterMapLayer,
+    RasterData,
     SimulationResult,
     SourceRegion,
-    VectorMapLayer,
+    VectorData,
 )
 
 
@@ -100,65 +102,28 @@ class ChartSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class AbstractMapLayerSerializer(serializers.Serializer):
-    name = serializers.SerializerMethodField('get_name')
-    type = serializers.SerializerMethodField('get_type')
-    dataset_id = serializers.SerializerMethodField('get_dataset_id')
-    file_item = serializers.SerializerMethodField('get_file_item')
-
-    def get_name(self, obj: VectorMapLayer | RasterMapLayer):
-        if obj.dataset:
-            for file_item in obj.dataset.source_files.all():
-                if file_item.index == obj.index:
-                    return file_item.name
-            return f'{obj.dataset.name} Layer {obj.index}'
-        return None
-
-    def get_type(self, obj: VectorMapLayer | RasterMapLayer):
-        if isinstance(obj, VectorMapLayer):
-            return 'vector'
-        return 'raster'
-
-    def get_dataset_id(self, obj: VectorMapLayer | RasterMapLayer):
-        if obj.dataset:
-            return obj.dataset.id
-        return None
-
-    def get_file_item(self, obj: VectorMapLayer | RasterMapLayer):
-        if obj.dataset is None:
-            return None
-        for file_item in obj.dataset.source_files.all():
-            if file_item.index == obj.index:
-                return {
-                    'id': file_item.id,
-                    'name': file_item.name,
-                }
-
-
-class RasterMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
+class LayerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = RasterMapLayer
+        model = Layer
         fields = '__all__'
 
 
-class VectorMapLayerSerializer(serializers.ModelSerializer, AbstractMapLayerSerializer):
-    dataset_category = serializers.SerializerMethodField()
-
-    def get_dataset_category(self, obj: VectorMapLayer):
-        if obj.dataset is None:
-            raise Exception('map layer with null dataset!')
-
-        return obj.dataset.category
-
+class LayerFrameSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VectorMapLayer
-        exclude = ['geojson_file']
+        model = LayerFrame
+        fields = '__all__'
 
 
-class VectorMapLayerDetailSerializer(VectorMapLayerSerializer):
+class VectorDataSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VectorMapLayer
-        exclude = ['geojson_file']
+        model = VectorData
+        fields = '__all__'
+
+
+class RasterDataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RasterData
+        fields = '__all__'
 
 
 class SourceRegionSerializer(serializers.ModelSerializer):

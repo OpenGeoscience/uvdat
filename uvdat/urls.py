@@ -9,12 +9,14 @@ from rest_framework import permissions, routers
 from uvdat.core.rest import (
     ChartViewSet,
     DatasetViewSet,
+    LayerFrameViewSet,
+    LayerViewSet,
     ProjectViewSet,
-    RasterMapLayerViewSet,
+    RasterDataViewSet,
     SimulationViewSet,
     SourceRegionViewSet,
     UserViewSet,
-    VectorMapLayerViewSet,
+    VectorDataViewSet,
 )
 
 router = routers.SimpleRouter()
@@ -29,8 +31,10 @@ router.register(r'users', UserViewSet, basename='users')
 router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'charts', ChartViewSet, basename='charts')
-router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')
-router.register(r'vectors', VectorMapLayerViewSet, basename='vectors')
+router.register(r'layers', LayerViewSet, basename='layers')
+router.register(r'layer-frames', LayerFrameViewSet, basename='layer-frames')
+router.register(r'rasters', RasterDataViewSet, basename='rasters')
+router.register(r'vectors', VectorDataViewSet, basename='vectors')
 router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
 
