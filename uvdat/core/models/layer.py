@@ -4,6 +4,10 @@ from .data import RasterData, VectorData
 from .dataset import Dataset
 
 
+def default_band_ref():
+    return dict(band=1)
+
+
 class Layer(models.Model):
     name = models.CharField(max_length=255, default='Layer')
     dataset = models.ForeignKey(Dataset, related_name='layers', on_delete=models.CASCADE)
@@ -16,7 +20,7 @@ class LayerFrame(models.Model):
     vector = models.ForeignKey(VectorData, null=True, on_delete=models.CASCADE)
     raster = models.ForeignKey(RasterData, null=True, on_delete=models.CASCADE)
     index = models.PositiveIntegerField(default=0)
-    referenced_frame = models.PositiveIntegerField(default=0)
+    band_ref = models.JSONField(default=default_band_ref)
     metadata = models.JSONField(blank=True, null=True)
 
     class Meta:
