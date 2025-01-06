@@ -105,7 +105,8 @@ class ChartSerializer(serializers.ModelSerializer):
 class LayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Layer
-        fields = '__all__'
+        depth = 2
+        fields = ['id', 'name', 'frames', 'metadata', 'dataset']
 
 
 class LayerFrameSerializer(serializers.ModelSerializer):
