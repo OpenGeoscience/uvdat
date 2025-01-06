@@ -61,6 +61,7 @@ mvtgeom as (
             ST_Transform(t.geometry, %(srid)s),
             ST_Transform(bounds.geom, %(srid)s)
         )
+        FILTERS
 )
 SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 ;
@@ -106,9 +107,15 @@ class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
         url_name='tiles',
     )
     def get_vector_tile(self, request, id: str, x: str, y: str, z: str):
+        filters_string = ''
+        filters = request.query_params.copy()
+        filters.pop('token', None)
+        for key, value in filters.items():
+            filters_string += f"\n\t\tAND t.properties::jsonb ? '{key}'"
+            filters_string += f"\n\t\tAND t.properties::jsonb ->> '{key}' = '{value}'"
         with connection.cursor() as cursor:
             cursor.execute(
-                VECTOR_TILE_SQL,
+                VECTOR_TILE_SQL.replace('FILTERS', filters_string),
                 {
                     'z': z,
                     'x': x,
