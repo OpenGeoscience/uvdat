@@ -10,7 +10,7 @@ class Dataset(models.Model):
 
     def spawn_conversion_task(
         self,
-        style_options=None,
+        layer_options=None,
         network_options=None,
         region_options=None,
         asynchronous=True,
@@ -18,9 +18,9 @@ class Dataset(models.Model):
         from uvdat.core.tasks.dataset import convert_dataset
 
         if asynchronous:
-            convert_dataset.delay(self.id, style_options, network_options, region_options)
+            convert_dataset.delay(self.id, layer_options, network_options, region_options)
         else:
-            convert_dataset(self.id, style_options, network_options, region_options)
+            convert_dataset(self.id, layer_options, network_options, region_options)
 
     def get_size(self):
         from uvdat.core.models import FileItem

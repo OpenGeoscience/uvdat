@@ -3,7 +3,6 @@
         "name": "MBTA Rapid Transit",
         "description": "Boston Subway System Lines and Stops",
         "category": "transportation",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
@@ -14,109 +13,148 @@
             "connection_column": "ROUTE",
             "connection_column_delimiter": "/",
             "node_id_column": "STATION"
-        },
-        "style_options": {
-            "color_property": "LINE",
-            "color_delimiter": "/",
-            "outline": "white"
         }
     },
     {
         "name": "MBTA Commuter Rail",
         "description": "Rail linework and station points for passenger, freight, and Amtrak and MBTA Commuter Rail trains.",
         "category": "transportation",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
                 "path": "boston/commuter_rail.zip"
             }
-        ],
-        "style_options": {
-            "color_property": "gray",
-            "outline": "black"
-        }
+        ]
     },
     {
         "name": "Boston Hurricane Surge Inundation Zones",
         "description": "This layer represents worst-case Hurricane Surge Inundation areas for Category 1 through 4 hurricanes striking the coast of Massachusetts.",
         "category": "climate",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907b6ef04fb368544295e7/download",
                 "path": "boston/hurr_inun.zip"
             }
-        ],
-        "style_options": {
-            "color_property": "HURR_CAT",
-            "palette": {
-                "1": "powderblue",
-                "2": "deepskyblue",
-                "3": "royalblue",
-                "4": "mediumblue",
-                "5": "darkblue"
-            }
-        }
+        ]
     },
     {
         "name": "Boston FEMA National Flood Hazard",
         "description": "The National Flood Hazard Layer (NFHL) dataset represents the current effective flood risk data for those parts of the country where maps have been modernized by the Federal Emergency Management Agency (FEMA).",
         "category": "climate",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907beff04fb368544295ea/download",
                 "path": "boston/flood_hazard_fema.zip"
             }
-        ],
-        "style_options": {
-            "color_property": "FLD_ZONE",
-            "palette": {
-                "A": "gold",
-                "AE": "orange",
-                "AH": "tomato",
-                "AO": "orangered",
-                "VE": "darkred",
-                "D": "gray",
-                "X": "green"
-            }
-        }
+        ]
     },
     {
         "name": "Massachusetts Elevation Data",
         "description": "Low resolution sampling of land elevation in meters above sea level",
         "category": "elevation",
-        "type": "raster",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
                 "path": "boston/easternmass.tif"
             }
-        ],
-        "style_options": {
-            "transparency_threshold": 1,
-            "trim_distribution_percentage": 0.01
-        }
+        ]
     },
     {
         "name": "Boston Orthoimagery",
         "description": "Sourced from https://gis.data.mass.gov/maps/6c7009c789354573a42af7251fb768a4/about",
         "category": "imagery",
-        "type": "raster",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/6744df3c22f196cb5d931161/download",
                 "path": "boston/boston_orthoimagery.tiff"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/677c69b537ed172242a867b1/download",
+                "path": "boston/orthoimagery_tiles.zip"
             }
         ],
-        "style_options": {}
+        "layers": [
+            {
+                "name": "Orthoimagery from a single precomposited image",
+                "frames": [
+                    {
+                        "name": "2023",
+                        "index": 0,
+                        "data": "boston_orthoimagery.tiff"
+                    }
+                ]
+            },
+            {
+                "name": "Orthoimagery from many images in a zip",
+                "frames": [
+                    {
+                        "name": "2019",
+                        "index": 0,
+                        "data": "2019_19TCG285905.jp2"
+                    },
+                    {
+                        "name": "2019",
+                        "index": 0,
+                        "data": "2019_19TCG285920.jp2"
+                    },
+                    {
+                        "name": "2019",
+                        "index": 0,
+                        "data": "2019_19TCG300905.jp2"
+                    },
+                    {
+                        "name": "2019",
+                        "index": 0,
+                        "data": "2019_19TCG300920.jp2"
+                    },
+                    {
+                        "name": "2021",
+                        "index": 1,
+                        "data": "2021_19TCG285905.jp2"
+                    },
+                    {
+                        "name": "2021",
+                        "index": 1,
+                        "data": "2021_19TCG285920.jp2"
+                    },
+                    {
+                        "name": "2021",
+                        "index": 1,
+                        "data": "2021_19TCG300905.jp2"
+                    },
+                    {
+                        "name": "2021",
+                        "index": 1,
+                        "data": "2021_19TCG300920.jp2"
+                    },
+                    {
+                        "name": "2023",
+                        "index": 2,
+                        "data": "2023_19TCG285905.jp2"
+                    },
+                    {
+                        "name": "2023",
+                        "index": 2,
+                        "data": "2023_19TCG285920.jp2"
+                    },
+                    {
+                        "name": "2023",
+                        "index": 2,
+                        "data": "2023_19TCG300905.jp2"
+                    },
+                    {
+                        "name": "2023",
+                        "index": 2,
+                        "data": "2023_19TCG300920.jp2"
+                    }
+                ]
+            }
+        ]
     },
     {
         "name": "Boston Neighborhoods",
         "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
         "category": "region",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
@@ -125,19 +163,12 @@
         ],
         "region_options": {
             "name_property": "BlockGr202"
-        },
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "blue"
-            ]
         }
     },
     {
         "name": "Boston Census 2020 Block Groups",
         "description": "Block groups (between 600 and 3,000 people per block) for Boston from the 2020 census",
         "category": "region",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.boston.gov/dataset/c478b600-3e3e-46fd-9f57-da89459e9928/resource/11282722-9386-4272-8a82-2fcec89e6d55/download/census2020_blockgroups.zip",
@@ -146,19 +177,12 @@
         ],
         "region_options": {
             "name_property": "GEOID20"
-        },
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "green"
-            ]
         }
     },
     {
         "name": "Boston Zip Codes",
         "description": "Zip codes 01001-02791",
         "category": "region",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64fbb4c6e99e9e6006f00114/download",
@@ -167,19 +191,12 @@
         ],
         "region_options": {
             "name_property": "GEOID20"
-        },
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "grey"
-            ]
         }
     },
     {
-        "name": "Boston Sea Level Rises",
-        "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch sea-level rise projections",
+        "name": "Boston Projected Flood Events",
+        "description": "Flood projections from Analyze Boston",
         "category": "flood",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64f8743d6725af35134c1479/download",
@@ -192,21 +209,7 @@
             {
                 "url": "https://data.kitware.com/api/v1/item/64f874566725af35134c147f/download",
                 "path": "boston/36in_rise.geojson"
-            }
-        ],
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "blue"
-            ]
-        }
-    },
-    {
-        "name": "Boston 10-Year Flood Events",
-        "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch 10-year flood projections",
-        "category": "flood",
-        "type": "vector",
-        "files": [
+            },
             {
                 "url": "https://data.kitware.com/api/v1/item/64f87ba86725af35134c1485/download",
                 "path": "boston/9in_10yr_flood.geojson"
@@ -218,21 +221,7 @@
             {
                 "url": "https://data.kitware.com/api/v1/item/64f87bfd6725af35134c1491/download",
                 "path": "boston/36in_10yr_flood.geojson"
-            }
-        ],
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "blue"
-            ]
-        }
-    },
-    {
-        "name": "Boston 100-Year Flood Events",
-        "description": "From Analyze Boston: flood data for 9-inch, 21-inch, and 36-inch 100-year flood projections",
-        "category": "flood",
-        "type": "vector",
-        "files": [
+            },
             {
                 "url": "https://data.kitware.com/api/v1/item/64f87bc16725af35134c1488/download",
                 "path": "boston/9in_100yr_flood.geojson"
@@ -246,12 +235,87 @@
                 "path": "boston/36in_100yr_flood.geojson"
             }
         ],
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "blue"
-            ]
-        }
+        "layers": [
+            {
+                "name": "Boston Sea Level Rises",
+                "frames": [
+                    {
+                        "name": "9in",
+                        "data": "9in_rise.geojson"
+                    },
+                    {
+                        "name": "21in",
+                        "data": "21in_rise.geojson"
+                    },
+                    {
+                        "name": "36in",
+                        "data": "36in_rise.geojson"
+                    }
+                ]
+            },
+            {
+                "name": "Boston 10-Year Flood Events",
+                "frames": [
+                    {
+                        "name": "9in",
+                        "data": "9in_10yr_flood.geojson"
+                    },
+                    {
+                        "name": "21in",
+                        "data": "21in_10yr_flood.geojson"
+                    },
+                    {
+                        "name": "36in",
+                        "data": "36in_10yr_flood.geojson"
+                    }
+                ]
+            },
+            {
+                "name": "Boston 100-Year Flood Events",
+                "frames": [
+                    {
+                        "name": "9in",
+                        "data": "9in_100yr_flood.geojson"
+                    },
+                    {
+                        "name": "21in",
+                        "data": "21in_100yr_flood.geojson"
+                    },
+                    {
+                        "name": "36in",
+                        "data": "36in_100yr_flood.geojson"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Boston Flood Timeseries",
+        "description": "46-hour flood simulation over the Boston Harbor Watershed",
+        "category": "flood",
+        "metadata": {
+            "source": "Simulated by Jack Watson at Northeastern University"
+        },
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6564cc5ac5a2b36857ad16cf/download",
+                "path": "boston/flood_simulation.zip"
+            },
+            {
+                "url": "https://data.kitware.com/api/v1/item/6584bcfe8c54f378b99230b0/download",
+                "path": "boston/flood_simulation.nc"
+            }
+        ],
+        "layers": [
+            {
+                "name": "45-hour flood from many files",
+                "data": "flood_simulation.zip"
+            },
+            {
+                "name": "45-hour flood from one multiband file",
+                "data": "flood_simulation.nc"
+            }
+        ]
     },
     {
         "name": "DC Metro",
@@ -267,11 +331,6 @@
             "connection_column": "LINE",
             "connection_column_delimiter": ", ",
             "node_id_column": "NAME"
-        },
-        "style_options": {
-            "color_property": "LINE",
-            "color_delimiter": ", ",
-            "outline": "white"
         }
     }
 ]

@@ -24,7 +24,7 @@ def convert_dataset(dataset, options):
         create_vector_features(dataset, 'Substations')
     else:
         dataset.spawn_conversion_task(
-            style_options=options.get('style_options'),
+            layer_options=options.get('layers'),
             network_options=options.get('network_options'),
             region_options=options.get('region_options'),
             asynchronous=False,
