@@ -11,6 +11,7 @@ from rest_framework.viewsets import GenericViewSet
 from uvdat.core.models import RasterData, VectorData
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
+from uvdat.core.rest.tokenauth import TokenAuth
 
 VECTOR_TILE_SQL = """
 WITH
@@ -83,6 +84,7 @@ class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFil
     queryset = RasterData.objects.select_related('dataset').all()
     serializer_class = RasterDataSerializer
     permission_classes = [GuardianPermission]
+    authentication_classes = [TokenAuth]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
@@ -103,6 +105,7 @@ class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
     queryset = VectorData.objects.select_related('dataset').all()
     serializer_class = VectorDataSerializer
     permission_classes = [GuardianPermission]
+    authentication_classes = [TokenAuth]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
