@@ -12,6 +12,7 @@ class SimulationResult(TimeStampedModel):
     class SimulationType(models.TextChoices):
         FLOOD_1 = 'FLOOD_1', 'Flood Scenario 1'
         RECOVERY = 'RECOVERY', 'Recovery Scenario'
+        SEGMENT_CURBS = 'SEGMENT_CURBS', 'Segment Curbs'
 
     simulation_type = models.CharField(
         max_length=max(len(choice[0]) for choice in SimulationType.choices),
@@ -99,6 +100,21 @@ AVAILABLE_SIMULATIONS = {
                 'type': str,
                 'options': uvdat_simulations.NODE_RECOVERY_MODES,
             },
+        ],
+    },
+    'SEGMENT_CURBS': {
+        'description': """
+            Use tile2net to detect roads, sidewalks, footpaths,
+            and crosswalks in the selected image.
+        """,
+        'output_type': 'dataset',
+        'func': uvdat_simulations.segment_curbs,
+        'args': [
+            {
+                'name': 'imagery_layer',
+                'type': RasterMapLayer,
+                'options_query': {'dataset__category': 'imagery'},
+            }
         ],
     },
 }
