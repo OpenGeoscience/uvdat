@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.8.1 (2025-01-10)
+
+### Bug Fixes
+
+- Change `FileItem.file_size` from `IntegerField` to `PositiveBigIntegerField`
+  ([`0562ccd`](https://github.com/OpenGeoscience/uvdat/commit/0562ccd131bc27183367a6b9758d3f2f6b608d38))
+
+
 ## v0.8.0 (2025-01-10)
 
 ### Bug Fixes
