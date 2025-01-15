@@ -82,14 +82,15 @@ class LayerRepresentation:
                     frame for frame in self.frames if frame.get('index') == self.frame_index
                 ]
                 for frame in current_frames:
+                    tile_size = 256
                     frame_name = frame.get('name')
                     self.frame_name_label.value = f'Frame Name: {frame_name}'
                     url_path, metadata = self.get_frame_path_and_metadata(frame)
+                    if metadata is not None:
+                        tile_size = metadata.get('tileWidth', 256)
                     url_suffix = 'tiles/{z}/{x}/{y}'
                     layer_class = None
-                    layer_kwargs = dict(
-                        min_zoom=0, max_zoom=20, tile_size=metadata.get('tileWidth', 256)
-                    )
+                    layer_kwargs = dict(min_zoom=0, max_zoom=20, tile_size=tile_size)
                     query = dict(token=self.token)
                     source_filters = frame.get('source_filters')
                     if source_filters is not None and source_filters != dict(band=1):
