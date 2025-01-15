@@ -9,16 +9,18 @@ from ipytree import Node, Tree
 import ipywidgets as widgets
 import requests
 
-CENTER = [42.36, -71.06]
-ZOOM = 14
+DEFAULT_CENTER = [42.36, -71.06]
+DEFAULT_ZOOM = 14
 
 
 class LayerRepresentation:
-    def __init__(self, layer, api_url, session, token):
+    def __init__(self, layer, api_url, session, token, center, zoom):
         self.layer = layer
         self.session = session
         self.api_url = api_url
         self.token = token
+        self.center = center
+        self.zoom = zoom
 
         self.output = widgets.Output()
         self.frame_index = 0
@@ -43,8 +45,8 @@ class LayerRepresentation:
         self.map = Map(
             crs=projections.EPSG3857,
             basemap=basemaps.OpenStreetMap.Mapnik,
-            center=CENTER,
-            zoom=ZOOM,
+            center=self.center,
+            zoom=self.zoom,
             max_zoom=20,
             min_zoom=0,
             scroll_wheel_zoom=True,
@@ -120,7 +122,7 @@ class LayerRepresentation:
 
 
 class UVDATExplorer:
-    def __init__(self, api_url=None, email=None, password=None):
+    def __init__(self, api_url=None, email=None, password=None, center=None, zoom=None):
         if api_url is None:
             msg = 'UVDATExplorer missing argument: %s must be specified.'
             raise ValueError(msg % '`api_url`')
@@ -132,6 +134,8 @@ class UVDATExplorer:
         self.authenticated = False
         self.email = email
         self.password = password
+        self.center = center or DEFAULT_CENTER
+        self.zoom = zoom or DEFAULT_ZOOM
 
         # Widgets
         self.tree = None
@@ -228,7 +232,14 @@ class UVDATExplorer:
             node_id = node._id
             layer = self.tree_nodes[node_id]
 
-            self.map = LayerRepresentation(layer, self.api_url, self.session, self.token)
+            self.map = LayerRepresentation(
+                layer,
+                self.api_url,
+                self.session,
+                self.token,
+                self.center,
+                self.zoom,
+            )
             children = [self.tree, self.output, self.map.get_widget()]
             self.update_display(children)
 
