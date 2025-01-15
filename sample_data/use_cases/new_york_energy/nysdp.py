@@ -59,16 +59,8 @@ def fetch_vector_features(service_name=None, **kwargs):
 
 
 def create_vector_features(dataset, service_name=None, **kwargs):
-    Layer.objects.filter(dataset=dataset).delete()
-
-    layer = Layer.objects.create(name=dataset.name, dataset=dataset)
-    vector_data = VectorData.objects.create(dataset=dataset)
-    layer_frame = LayerFrame.objects.create(
-        name=dataset.name,
-        layer=layer,
-        index=0,
-        vector=vector_data,
-    )
+    VectorData.objects.filter(dataset=dataset).delete()
+    vector_data = VectorData.objects.create(dataset=dataset, name=dataset.name)
     feature_sets = fetch_vector_features(service_name=service_name)
     vector_features = []
     for index, feature_set in feature_sets.items():

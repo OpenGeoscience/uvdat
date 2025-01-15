@@ -8,43 +8,18 @@ from .networks import create_network
 from .regions import create_source_regions
 
 
-@shared_task
-def convert_dataset(
-    dataset_id,
-    layer_options=None,
-    network_options=None,
-    region_options=None,
-):
-    dataset = Dataset.objects.get(id=dataset_id)
-    dataset.processing = True
-    dataset.save()
-
+def create_layers_and_frames(dataset, layer_options=None):
     Layer.objects.filter(dataset=dataset).delete()
     LayerFrame.objects.filter(layer__dataset=dataset).delete()
-    VectorData.objects.filter(dataset=dataset).delete()
-    RasterData.objects.filter(dataset=dataset).delete()
-
-    for file_to_convert in FileItem.objects.filter(dataset=dataset):
-        convert_file_item(file_to_convert)
-
     vectors = VectorData.objects.filter(dataset=dataset)
     rasters = RasterData.objects.filter(dataset=dataset)
-    for vector_data in vectors.all():
-        if network_options:
-            create_network(vector_data, network_options)
-        elif region_options:
-            create_source_regions(vector_data, region_options)
-
-        # Create vector features after geojson_data may have
-        # been altered by create_network or create_source_regions
-        create_vector_features(vector_data)
 
     if layer_options is None:
         layer_options = [
-            dict(name=data.name, frames=[]) for data in [*vectors.all(), *rasters.all()]
+            dict(name=data.name, frames=None, data=data.name)
+            for data in [*vectors.all(), *rasters.all()]
         ]
 
-    # Create layers and layer frames according to layer_options
     for layer_info in layer_options:
         layer = Layer.objects.create(
             dataset=dataset,
@@ -54,18 +29,22 @@ def convert_dataset(
         frames = layer_info.get('frames')
         if frames is None:
             frames = []
-            layer_dataname = layer_info.get('data')
+            kwargs = dict(dataset=dataset)
+            data_name = layer_info.get('data')
+            source_file_name = layer_info.get('source_file')
+            if data_name is not None:
+                kwargs['name'] = data_name
+            if source_file_name is not None:
+                kwargs['source_file__name'] = source_file_name
+
             for layer_data in [
-                *VectorData.objects.filter(dataset=dataset, source_file__name=layer_dataname)
-                .order_by('source_file__name')
-                .all(),
-                *RasterData.objects.filter(dataset=dataset, source_file__name=layer_dataname)
-                .order_by('source_file__name')
-                .all(),
+                *VectorData.objects.filter(**kwargs).order_by('name').all(),
+                *RasterData.objects.filter(**kwargs).order_by('name').all(),
             ]:
                 frame_property = layer_info.get('frame_property')
-                properties = layer_data.metadata.get('properties')
-                bands = layer_data.metadata.get('bands')
+                metadata = layer_data.metadata or {}
+                properties = metadata.get('properties')
+                bands = metadata.get('bands')
                 if properties and frame_property and frame_property in properties:
                     for value in properties[frame_property]:
                         frames.append(
@@ -113,6 +92,37 @@ def convert_dataset(
                     raster=raster,
                     source_filters=frame_info.get('source_filters', dict(band=1)),
                 )
+
+
+@shared_task
+def convert_dataset(
+    dataset_id,
+    layer_options=None,
+    network_options=None,
+    region_options=None,
+):
+    dataset = Dataset.objects.get(id=dataset_id)
+    dataset.processing = True
+    dataset.save()
+
+    VectorData.objects.filter(dataset=dataset).delete()
+    RasterData.objects.filter(dataset=dataset).delete()
+
+    for file_to_convert in FileItem.objects.filter(dataset=dataset):
+        convert_file_item(file_to_convert)
+
+    vectors = VectorData.objects.filter(dataset=dataset)
+    for vector_data in vectors.all():
+        if network_options:
+            create_network(vector_data, network_options)
+        elif region_options:
+            create_source_regions(vector_data, region_options)
+
+        # Create vector features after geojson_data may have
+        # been altered by create_network or create_source_regions
+        create_vector_features(vector_data)
+
+    create_layers_and_frames(dataset, layer_options)
 
     dataset.processing = False
     dataset.save()

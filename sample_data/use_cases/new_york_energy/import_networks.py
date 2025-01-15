@@ -25,10 +25,11 @@ def get_metadata(feature):
 def create_network(dataset, network_name, geodata):
     print(f'\t\tCreating network for {network_name}.')
     vector_data = VectorData.objects.create(
-        name=f'{dataset.name} Network',
+        name=network_name,
         dataset=dataset,
     )
     network = Network.objects.create(
+        name=network_name,
         dataset=dataset,
         category='energy',
         vector_data=vector_data,

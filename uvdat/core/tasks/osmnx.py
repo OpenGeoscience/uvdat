@@ -2,16 +2,7 @@ from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
 import osmnx
 
-from uvdat.core.models import (
-    Dataset,
-    Layer,
-    LayerFrame,
-    Network,
-    NetworkEdge,
-    NetworkNode,
-    Project,
-    VectorData,
-)
+from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode, Project, VectorData
 from uvdat.core.tasks.data import create_vector_features
 from uvdat.core.tasks.networks import geojson_from_network
 
@@ -95,8 +86,6 @@ def load_roads(project_id, location):
         edge.save()
 
     vector_data = VectorData.objects.create(dataset=dataset)
-    layer = Layer.objects.create(name=dataset.name, dataset=dataset, metadata=dict(network=True))
-    LayerFrame.objects.create(layer=layer, vector=vector_data)
     vector_data.write_geojson_data(geojson_from_network(dataset))
     create_vector_features(vector_data)
     print('Done.')
