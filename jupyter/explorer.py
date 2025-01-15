@@ -89,9 +89,9 @@ class LayerRepresentation:
                         min_zoom=0, max_zoom=20, tile_size=metadata.get('tileWidth', 256)
                     )
                     query = dict(token=self.token)
-                    band_ref = frame.get('band_ref')
-                    if band_ref is not None and band_ref != dict(band=1):
-                        query.update(band_ref)
+                    source_filters = frame.get('source_filters')
+                    if source_filters is not None and source_filters != dict(band=1):
+                        query.update(source_filters)
 
                     if 'raster' in url_path:
                         url_suffix += '.png'
@@ -99,7 +99,7 @@ class LayerRepresentation:
                         query.update(projection='EPSG:3857')
                     elif 'vector' in url_path:
                         layer_class = VectorTileLayer
-                        band_ref = frame.get('band_ref')
+                        source_filters = frame.get('source_filters')
                     if layer_class is not None:
                         query_string = urlencode(query)
                         map_layer = layer_class(
