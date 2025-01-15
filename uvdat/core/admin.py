@@ -59,14 +59,18 @@ class RasterDataAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_source_file_name']
 
     def get_source_file_name(self, obj):
-        return obj.source_file.name
+        if obj.source_file is not None:
+            return obj.source_file.name
+        return ''
 
 
 class VectorDataAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_source_file_name']
 
     def get_source_file_name(self, obj):
-        return obj.source_file.name
+        if obj.source_file is not None:
+            return obj.source_file.name
+        return ''
 
 
 class VectorFeatureAdmin(admin.ModelAdmin):
