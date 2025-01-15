@@ -62,11 +62,11 @@ def create_vector_features(dataset, service_name=None, **kwargs):
     Layer.objects.filter(dataset=dataset).delete()
 
     layer = Layer.objects.create(name=dataset.name, dataset=dataset)
-    vector_data = VectorData.objects.create()
+    vector_data = VectorData.objects.create(dataset=dataset)
     layer_frame = LayerFrame.objects.create(
-        name=f'Frame {index}',
+        name=dataset.name,
         layer=layer,
-        index=index,
+        index=0,
         vector=vector_data,
     )
     feature_sets = fetch_vector_features(service_name=service_name)
@@ -165,9 +165,18 @@ def create_consolidated_network(dataset, **kwargs):
 
     with ThreadPoolExecutor(max_workers=10) as pool:
         results = pool.map(interpret_group, groups)
-    for result in results:
+    for i, result in enumerate(results):
         nodes, edges = result
-        network = Network.objects.create(dataset=dataset)
+        vector_data = VectorData.objects.create(
+            name=f'{dataset.name} Network {i}',
+            dataset=dataset,
+        )
+        network = Network.objects.create(
+            name=vector_data.name,
+            dataset=dataset,
+            vector_data=vector_data,
+            category='energy'
+        )
         NetworkNode.objects.bulk_create([
             NetworkNode(
                 network=network,
