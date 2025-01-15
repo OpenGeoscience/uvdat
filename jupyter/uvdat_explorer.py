@@ -149,8 +149,9 @@ class UVDATExplorer:
             children.append(self.password_input)
 
         if email and password:
-            self.authenticate()
-            children.append(widgets.Label('Session Authenticated.'))
+            authenticated = self.authenticate()
+            if authenticated:
+                children.append(widgets.Label('Session Authenticated.'))
         children.append(self.button)
 
         # Display
@@ -179,8 +180,10 @@ class UVDATExplorer:
                 self.token = response.json().get('token')
                 self.session.headers['Authorization'] = f'Token {self.token}'
                 self.authenticated = True
+                return True
             else:
                 print('Invalid login.')
+                return False
 
     def get_datasets(self, *args):
         with self.output:
