@@ -5,6 +5,7 @@ rabbitmq/*
 .vscode/
 staticfiles/
 sample_data/downloads/*
+jupyter/.ipynb_checkpoints
 
 # osmnx data cache folder
 cache
