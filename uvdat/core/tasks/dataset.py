@@ -73,7 +73,7 @@ def convert_dataset(
                                 name=value,
                                 index=len(frames),
                                 data=layer_data.name,
-                                band_ref={frame_property: value},
+                                source_filters={frame_property: value},
                             )
                         )
                 elif bands and len(bands) > 1:
@@ -83,7 +83,7 @@ def convert_dataset(
                                 name=band,
                                 index=len(frames),
                                 data=layer_data.name,
-                                band_ref=dict(band=band),
+                                source_filters=dict(band=band),
                             )
                         )
                 else:
@@ -111,7 +111,7 @@ def convert_dataset(
                     index=index,
                     vector=vector,
                     raster=raster,
-                    band_ref=frame_info.get('band_ref', dict(band=1)),
+                    source_filters=frame_info.get('source_filters', dict(band=1)),
                 )
 
     dataset.processing = False

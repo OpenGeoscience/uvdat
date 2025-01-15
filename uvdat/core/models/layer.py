@@ -4,7 +4,7 @@ from .data import RasterData, VectorData
 from .dataset import Dataset
 
 
-def default_band_ref():
+def default_source_filters():
     return dict(band=1)
 
 
@@ -20,7 +20,7 @@ class LayerFrame(models.Model):
     vector = models.ForeignKey(VectorData, null=True, on_delete=models.CASCADE)
     raster = models.ForeignKey(RasterData, null=True, on_delete=models.CASCADE)
     index = models.PositiveIntegerField(default=0)
-    band_ref = models.JSONField(default=default_band_ref)
+    source_filters = models.JSONField(default=default_source_filters)
     metadata = models.JSONField(blank=True, null=True)
 
     class Meta:
