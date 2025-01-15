@@ -1,6 +1,3 @@
-# pip install ipyleaflet ipywidgets ipytree girder-cli-oauth-client
-# jupyter labextension enable ipyleaflet
-
 from urllib.parse import urlencode
 
 from IPython import display
