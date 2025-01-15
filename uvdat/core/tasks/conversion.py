@@ -14,6 +14,7 @@ import shapefile
 from uvdat.core.models import RasterData, VectorData
 
 RASTER_FILETYPES = ['tif', 'tiff', 'nc', 'jp2']
+IGNORE_FILETYPES = ['dbf', 'sbn', 'sbx', 'cpg', '.shp.xml', 'shx', 'vrt', 'hdf']
 
 
 def get_cog_path(file):
@@ -52,11 +53,14 @@ def get_cog_path(file):
     return cog_path
 
 
-def convert_files(*files, file_item=None):
+def convert_files(*files, file_item=None, combine=False):
+    source_projection = 4326
+    geodata_set = []
+    cog_set = []
+    metadata = dict(source_filenames=[])
     for file in files:
-        metadata = dict(source_filename=file.name)
         metadata.update(file_item.metadata)
-        source_projection = 4326
+        metadata['source_filenames'].append(file_item.name)
         features = []
         geodata = None
         cog_path = None
@@ -64,6 +68,7 @@ def convert_files(*files, file_item=None):
             with open(file, 'rb') as f:
                 contents = f.read()
                 source_projection = contents.decode()
+                continue
         elif file.name.endswith('.shp'):
             reader = shapefile.Reader(file)
             features.extend(reader.__geo_interface__['features'])
@@ -81,38 +86,54 @@ def convert_files(*files, file_item=None):
             geodata = json.loads(gdf.to_json())
 
         if geodata is not None:
-            properties = {}
-            for feature in geodata.get('features'):
-                for name, value in feature.get('properties', {}).items():
-                    if name not in properties:
-                        properties[name] = []
-                    if value not in properties[name]:
-                        properties[name].append(value)
-            metadata['properties'] = properties
-            vector_data = VectorData.objects.create(
-                name=file.name,
-                dataset=file_item.dataset,
-                source_file=file_item,
-                metadata=metadata,
-            )
-            vector_data.write_geojson_data(geodata)
-            print('\t\t', str(vector_data), 'created for ' + file.name)
-
+            geodata_set.append(dict(name=file.name, data=geodata))
         elif cog_path is not None:
-            source = large_image.open(cog_path)
-            metadata.update(source.getMetadata())
-            raster_data = RasterData.objects.create(
-                name=file.name,
-                dataset=file_item.dataset,
-                source_file=file_item,
-                metadata=metadata,
-            )
-            with open(cog_path, 'rb') as f:
-                raster_data.cloud_optimized_geotiff.save(cog_path.name, ContentFile(f.read()))
-            print('\t\t', str(raster_data), 'created for ' + file.name)
-
-        else:
+            cog_set.append(dict(name=file.name, path=cog_path))
+        elif not any(file.name.endswith(suffix) for suffix in IGNORE_FILETYPES):
             print('\t\tUnable to convert', file.name)
+
+    if combine:
+        # combine only works for vector data currently, assumes consistent projection
+        all_features = []
+        for geodata in geodata_set:
+            all_features += geodata.get('data').get('features')
+        gdf = geopandas.GeoDataFrame.from_features(all_features)
+        gdf = gdf.set_crs(source_projection, allow_override=True)
+        gdf = gdf.to_crs(4326)
+        geodata_set = [dict(name=file_item.name, data=json.loads(gdf.to_json()))]
+
+    for geodata in geodata_set:
+        data = geodata.get('data')
+        properties = {}
+        for feature in data.get('features'):
+            for name, value in feature.get('properties', {}).items():
+                if name not in properties:
+                    properties[name] = []
+                if value not in properties[name]:
+                    properties[name].append(value)
+        metadata['properties'] = properties
+        vector_data = VectorData.objects.create(
+            name=geodata.get('name'),
+            dataset=file_item.dataset,
+            source_file=file_item,
+            metadata=metadata,
+        )
+        vector_data.write_geojson_data(data)
+        print('\t\t', str(vector_data), 'created for ' + geodata.get('name'))
+
+    for cog in cog_set:
+        cog_path = cog.get('path')
+        source = large_image.open(cog_path)
+        metadata.update(source.getMetadata())
+        raster_data = RasterData.objects.create(
+            name=cog.get('name'),
+            dataset=file_item.dataset,
+            source_file=file_item,
+            metadata=metadata,
+        )
+        with open(cog_path, 'rb') as f:
+            raster_data.cloud_optimized_geotiff.save(cog_path.name, ContentFile(f.read()))
+        print('\t\t', str(raster_data), 'created for ' + cog.get('name'))
 
 
 def convert_file_item(file_item):
@@ -130,7 +151,8 @@ def convert_file_item(file_item):
                             with open(filepath, 'wb') as f:
                                 f.write(zip_archive.open(file).read())
                             files.append(filepath)
-                    convert_files(*files, file_item=file_item)
+                    combine = file_item.metadata.get('combine_contents', False)
+                    convert_files(*files, file_item=file_item, combine=combine)
         else:
             filepath = Path(temp_dir, file_item.name)
             with open(filepath, 'wb') as f:

@@ -6,7 +6,10 @@
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
-                "path": "boston/mbta_rapid_transit.zip"
+                "path": "boston/mbta_rapid_transit.zip",
+                "metadata": {
+                    "combine_contents": "true"
+                }
             }
         ],
         "network_options": {
@@ -22,7 +25,10 @@
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
-                "path": "boston/commuter_rail.zip"
+                "path": "boston/commuter_rail.zip",
+                "metadata": {
+                    "combine_contents": "true"
+                }
             }
         ]
     },
@@ -324,7 +330,10 @@
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64b80188cf6a0eaef6c1416e/download",
-                "path": "washington/DC_Metro.zip"
+                "path": "washington/DC_Metro.zip",
+                "metadata": {
+                    "combine_contents": "true"
+                }
             }
         ],
         "network_options": {
