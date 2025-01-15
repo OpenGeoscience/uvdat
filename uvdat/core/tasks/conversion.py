@@ -14,7 +14,7 @@ import shapefile
 from uvdat.core.models import RasterData, VectorData
 
 RASTER_FILETYPES = ['tif', 'tiff', 'nc', 'jp2']
-IGNORE_FILETYPES = ['dbf', 'sbn', 'sbx', 'cpg', '.shp.xml', 'shx', 'vrt', 'hdf']
+IGNORE_FILETYPES = ['dbf', 'sbn', 'sbx', 'cpg', 'shp.xml', 'shx', 'vrt', 'hdf', 'lyr']
 
 
 def get_cog_path(file):
