@@ -3,6 +3,8 @@ from .import_networks import perform_import
 from .export_networks import perform_export
 from .nysdp import create_consolidated_network, create_vector_features
 
+from uvdat.core.tasks.dataset import create_layers_and_frames
+
 
 DOWNLOADS_FOLDER = DOWNLOADS_FOLDER = Path('../../sample_data/downloads')
 PULL_LATEST = False
@@ -18,13 +20,16 @@ def convert_dataset(dataset, options):
             perform_export()
         else:
             perform_import(dataset, downloads_folder=DOWNLOADS_FOLDER)
+        create_layers_and_frames(dataset)
     elif dataset.name == 'National Grid CompanyBoundary':
         create_vector_features(dataset, 'CompanyBoundary')
+        create_layers_and_frames(dataset)
     elif dataset.name == 'National Grid Substations':
         create_vector_features(dataset, 'Substations')
+        create_layers_and_frames(dataset)
     else:
         dataset.spawn_conversion_task(
-            style_options=options.get('style_options'),
+            layer_options=options.get('layers'),
             network_options=options.get('network_options'),
             region_options=options.get('region_options'),
             asynchronous=False,

@@ -8,7 +8,6 @@
         "name": "County Boundaries",
         "description": "From https://gis.ny.gov/civil-boundaries",
         "category": "region",
-        "type": "vector",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/66a2a19a5d2551c516b1e502/download",
@@ -17,12 +16,6 @@
         ],
         "region_options": {
             "name_property": "NAME"
-        },
-        "style_options": {
-            "outline": "white",
-            "palette": [
-                "grey"
-            ]
         }
     },
     {

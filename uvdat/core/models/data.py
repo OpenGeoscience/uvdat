@@ -6,26 +6,19 @@ from django.contrib.gis.db import models as geomodels
 from django.core.files.base import ContentFile
 from django.db import models
 from django.dispatch import receiver
-from django_extensions.db.models import TimeStampedModel
 import large_image
 from s3_file_field import S3FileField
 
 from .dataset import Dataset
+from .file_item import FileItem
 
 
-class AbstractMapLayer(TimeStampedModel):
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True)
+class RasterData(models.Model):
+    name = models.CharField(max_length=255, default='Raster Data')
+    dataset = models.ForeignKey(Dataset, related_name='rasters', on_delete=models.CASCADE)
+    source_file = models.ForeignKey(FileItem, null=True, on_delete=models.CASCADE)
+    cloud_optimized_geotiff = S3FileField(null=True)
     metadata = models.JSONField(blank=True, null=True)
-    default_style = models.JSONField(blank=True, null=True)
-    index = models.IntegerField(null=True)
-
-    class Meta:
-        abstract = True
-
-
-class RasterMapLayer(AbstractMapLayer):
-    cloud_optimized_geotiff = S3FileField()
-    # TODO: Store data x/y min/max bounds on model
 
     def get_image_data(self, resolution: float = 1.0):
         with tempfile.TemporaryDirectory() as tmp:
@@ -41,8 +34,12 @@ class RasterMapLayer(AbstractMapLayer):
             return data.tolist()
 
 
-class VectorMapLayer(AbstractMapLayer):
-    geojson_file = S3FileField(null=True)
+class VectorData(models.Model):
+    name = models.CharField(max_length=255, default='Vector Data')
+    dataset = models.ForeignKey(Dataset, related_name='vectors', on_delete=models.CASCADE)
+    source_file = models.ForeignKey(FileItem, null=True, on_delete=models.CASCADE)
+    geojson_data = S3FileField(null=True)
+    metadata = models.JSONField(blank=True, null=True)
 
     def write_geojson_data(self, content: str | dict):
         if isinstance(content, str):
@@ -52,26 +49,28 @@ class VectorMapLayer(AbstractMapLayer):
         else:
             raise Exception(f'Invalid content type supplied: {type(content)}')
 
-        self.geojson_file.save('vectordata.geojson', ContentFile(data.encode()))
+        self.geojson_data.save('vectordata.geojson', ContentFile(data.encode()))
 
     def read_geojson_data(self) -> dict:
-        """Read and load the data from geojson_file into a dict."""
-        return json.load(self.geojson_file.open())
+        """Read and load the data from geojson_data into a dict."""
+        return json.load(self.geojson_data.open())
 
 
 class VectorFeature(models.Model):
-    map_layer = models.ForeignKey(VectorMapLayer, on_delete=models.CASCADE)
+    vector_data = models.ForeignKey(
+        VectorData, on_delete=models.CASCADE, related_name='features', null=True
+    )
     geometry = geomodels.GeometryField()
     properties = models.JSONField()
 
 
-@receiver(models.signals.post_delete, sender=RasterMapLayer)
+@receiver(models.signals.post_delete, sender=RasterData)
 def delete_raster_content(sender, instance, **kwargs):
     if instance.cloud_optimized_geotiff:
         instance.cloud_optimized_geotiff.delete(save=False)
 
 
-@receiver(models.signals.post_delete, sender=VectorMapLayer)
+@receiver(models.signals.post_delete, sender=VectorData)
 def delete_vector_content(sender, instance, **kwargs):
-    if instance.geojson_file:
-        instance.geojson_file.delete(save=False)
+    if instance.geojson_data:
+        instance.geojson_data.delete(save=False)

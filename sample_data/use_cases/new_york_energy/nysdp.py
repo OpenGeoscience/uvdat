@@ -6,8 +6,18 @@ from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
-from django.contrib.gis.geos import GEOSGeometry, Point, LineString
-from uvdat.core.models import Dataset, Network, NetworkNode, NetworkEdge, VectorMapLayer, VectorFeature, SourceRegion
+from django.contrib.gis.geos import GEOSGeometry, LineString, Point
+from uvdat.core.models import (
+    Dataset,
+    Layer,
+    LayerFrame,
+    Network,
+    NetworkEdge,
+    NetworkNode,
+    SourceRegion,
+    VectorData,
+    VectorFeature,
+)
 from uvdat.core.tasks.networks import create_vector_features_from_network
 
 from .interpret_network import interpret_group
@@ -49,16 +59,15 @@ def fetch_vector_features(service_name=None, **kwargs):
 
 
 def create_vector_features(dataset, service_name=None, **kwargs):
-    VectorMapLayer.objects.filter(dataset=dataset).delete()
-
+    VectorData.objects.filter(dataset=dataset).delete()
+    vector_data = VectorData.objects.create(dataset=dataset, name=dataset.name)
     feature_sets = fetch_vector_features(service_name=service_name)
     vector_features = []
     for index, feature_set in feature_sets.items():
-        map_layer = VectorMapLayer.objects.create(dataset=dataset, index=index)
         for feature in feature_set:
             vector_features.append(
                 VectorFeature(
-                    map_layer=map_layer,
+                    vector_data=vector_data,
                     geometry=GEOSGeometry(json.dumps(feature['geometry'])),
                     properties=feature['properties'],
                 )
@@ -123,7 +132,7 @@ def download_all_deduped_vector_features(**kwargs):
 def create_consolidated_network(dataset, **kwargs):
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
-    VectorMapLayer.objects.filter(dataset=network.dataset).delete()
+    VectorData.objects.filter(dataset=network.dataset).delete()
     gdf = download_all_deduped_vector_features(**kwargs)
 
     zones_dataset_name = kwargs.get('zones_dataset_name')
@@ -148,9 +157,18 @@ def create_consolidated_network(dataset, **kwargs):
 
     with ThreadPoolExecutor(max_workers=10) as pool:
         results = pool.map(interpret_group, groups)
-    for result in results:
+    for i, result in enumerate(results):
         nodes, edges = result
-        network = Network.objects.create(dataset=dataset)
+        vector_data = VectorData.objects.create(
+            name=f'{dataset.name} Network {i}',
+            dataset=dataset,
+        )
+        network = Network.objects.create(
+            name=vector_data.name,
+            dataset=dataset,
+            vector_data=vector_data,
+            category='energy'
+        )
         NetworkNode.objects.bulk_create([
             NetworkNode(
                 network=network,

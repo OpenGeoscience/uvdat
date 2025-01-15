@@ -16,9 +16,8 @@
             "Boston Neighborhoods",
             "Boston Census 2020 Block Groups",
             "Boston Zip Codes",
-            "Boston Sea Level Rises",
-            "Boston 10-Year Flood Events",
-            "Boston 100-Year Flood Events"
+            "Boston Projected Flood Events",
+            "Boston Flood Timeseries"
         ]
     },
     {

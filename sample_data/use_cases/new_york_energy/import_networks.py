@@ -8,7 +8,7 @@ from pathlib import Path
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point, LineString
-from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorMapLayer
+from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorData
 from uvdat.core.tasks.networks import create_vector_features_from_network
 
 
@@ -24,9 +24,15 @@ def get_metadata(feature):
 
 def create_network(dataset, network_name, geodata):
     print(f'\t\tCreating network for {network_name}.')
+    vector_data = VectorData.objects.create(
+        name=network_name,
+        dataset=dataset,
+    )
     network = Network.objects.create(
+        name=network_name,
         dataset=dataset,
         category='energy',
+        vector_data=vector_data,
         metadata=dict(name=network_name)
     )
     features = geodata.get('features')
@@ -82,7 +88,7 @@ def perform_import(dataset, **kwargs):
     print('\tEstimated time: 45 minutes.')
     start = datetime.now()
     Network.objects.filter(dataset=dataset).delete()
-    VectorMapLayer.objects.filter(dataset=dataset).delete()
+    VectorData.objects.filter(dataset=dataset).delete()
     for file_item in dataset.source_files.all():
         with tempfile.TemporaryDirectory() as temp_dir:
             archive_path = Path(temp_dir, 'archive.zip')

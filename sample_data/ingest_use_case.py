@@ -28,16 +28,16 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
     file_location = Path(DOWNLOADS_FOLDER, file_path)
     file_type = file_path.split('.')[-1]
     if not file_location.exists():
-        print(f'\t Downloading data file {file_name}.')
+        print(f'\t\t Downloading data file {file_name}.')
         file_location.parent.mkdir(parents=True, exist_ok=True)
         with open(file_location, 'wb') as f:
             r = requests.get(file_url)
             r.raise_for_status()
             f.write(r.content)
 
-    existing = FileItem.objects.filter(name=file_name)
+    existing = FileItem.objects.filter(dataset=dataset, name=file_name)
     if existing.count():
-        print('\t', f'FileItem {file_name} already exists.')
+        print('\t\t', f'FileItem {file_name} already exists.')
     else:
         new_file_item = FileItem.objects.create(
             name=file_name,
@@ -51,7 +51,7 @@ def ingest_file(file_info, index=0, dataset=None, chart=None):
             ),
             index=index,
         )
-        print('\t', f'FileItem {new_file_item.name} created.')
+        print('\t\t', f'FileItem {new_file_item.name} created.')
         with file_location.open('rb') as f:
             new_file_item.file.save(file_path, ContentFile(f.read()))
 
@@ -74,7 +74,7 @@ def ingest_projects(use_case):
                 },
             )
             if created:
-                print('\t', f'Project {project_for_setting.name} created.')
+                print('\t\t', f'Project {project_for_setting.name} created.')
 
             project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
             project_for_setting.set_permissions(owner=User.objects.filter(is_superuser=True).first())
@@ -100,7 +100,7 @@ def ingest_charts(use_case):
                         metadata=chart.get('metadata'),
                         editable=chart.get('editable', False),
                     )
-                    print('\t', f'Chart {new_chart.name} created.')
+                    print('\t\t', f'Chart {new_chart.name} created.')
                     for index, file_info in enumerate(chart.get('files', [])):
                         ingest_file(
                             file_info,
@@ -109,7 +109,7 @@ def ingest_charts(use_case):
                         )
                     chart_for_conversion = new_chart
 
-                print('\t', f'Converting data for {chart_for_conversion.name}...')
+                print('\t\t', f'Converting data for {chart_for_conversion.name}.')
                 chart_for_conversion.spawn_conversion_task(
                     conversion_options=chart.get('conversion_options'),
                     asynchronous=False,
@@ -124,6 +124,7 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
             data = json.load(datasets_json)
             for index, dataset in enumerate(data):
                 if dataset_indexes is None or index in dataset_indexes:
+                    print('\t- ', dataset['name'])
                     existing = Dataset.objects.filter(name=dataset['name'])
                     if existing.count():
                         dataset_for_conversion = existing.first()
@@ -133,10 +134,8 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
                             name=dataset['name'],
                             description=dataset['description'],
                             category=dataset['category'],
-                            dataset_type=dataset.get('type', 'vector').upper(),
                             metadata=dataset.get('metadata', {}),
                         )
-                        print('\t', f'Dataset {new_dataset.name} created.')
                         for index, file_info in enumerate(dataset.get('files', [])):
                             ingest_file(
                                 file_info,
