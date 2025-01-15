@@ -63,6 +63,17 @@
                 "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
                 "path": "boston/easternmass.tif"
             }
+        ],
+        "layers": [
+            {
+                "name": "Elevation",
+                "frames": [
+                    {
+                        "name": "Band 1",
+                        "data": "easternmass.tif"
+                    }
+                ]
+            }
         ]
     },
     {
@@ -315,7 +326,7 @@
         "layers": [
             {
                 "name": "45-hour flood from many files",
-                "data": "flood_simulation.zip"
+                "source_file": "flood_simulation.zip"
             },
             {
                 "name": "45-hour flood from one multiband file",

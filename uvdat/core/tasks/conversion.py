@@ -47,7 +47,7 @@ def get_cog_path(file):
             output_data.write(band, 1)
             output_data.close()
 
-    cog_path = file.parent / 'cog.tiff'
+    cog_path = file.parent / file.name.replace(file.suffix, 'tiff')
     # use large_image to convert new raster data to COG
     large_image_converter.convert(str(raster_path), str(cog_path), overwrite=True)
     return cog_path
@@ -61,9 +61,6 @@ def convert_files(*files, file_item=None, combine=False):
     for file in files:
         metadata.update(file_item.metadata)
         metadata['source_filenames'].append(file_item.name)
-        features = []
-        geodata = None
-        cog_path = None
         if file.name.endswith('.prj'):
             with open(file, 'rb') as f:
                 contents = f.read()
@@ -71,24 +68,16 @@ def convert_files(*files, file_item=None, combine=False):
                 continue
         elif file.name.endswith('.shp'):
             reader = shapefile.Reader(file)
-            features.extend(reader.__geo_interface__['features'])
+            geodata_set.append(dict(name=file.name, features=reader.__geo_interface__['features']))
         elif any(file.name.endswith(suffix) for suffix in ['.json', '.geojson']):
             with open(file, 'rb') as f:
-                geodata = json.load(f)
-                source_projection = geodata.get('crs', {}).get('properties', {}).get('name')
+                data = json.load(f)
+                geodata_set.append(dict(name=file.name, features=data.get('features')))
+                source_projection = data.get('crs', {}).get('properties', {}).get('name')
         elif any(file.name.endswith(suffix) for suffix in RASTER_FILETYPES):
             cog_path = get_cog_path(file)
-
-        if geodata is None and len(features):
-            gdf = geopandas.GeoDataFrame.from_features(features)
-            gdf = gdf.set_crs(source_projection, allow_override=True)
-            gdf = gdf.to_crs(4326)
-            geodata = json.loads(gdf.to_json())
-
-        if geodata is not None:
-            geodata_set.append(dict(name=file.name, data=geodata))
-        elif cog_path is not None:
-            cog_set.append(dict(name=file.name, path=cog_path))
+            if cog_path:
+                cog_set.append(dict(name=file.name, path=cog_path))
         elif not any(file.name.endswith(suffix) for suffix in IGNORE_FILETYPES):
             print('\t\tUnable to convert', file.name)
 
@@ -96,14 +85,16 @@ def convert_files(*files, file_item=None, combine=False):
         # combine only works for vector data currently, assumes consistent projection
         all_features = []
         for geodata in geodata_set:
-            all_features += geodata.get('data').get('features')
-        gdf = geopandas.GeoDataFrame.from_features(all_features)
-        gdf = gdf.set_crs(source_projection, allow_override=True)
-        gdf = gdf.to_crs(4326)
-        geodata_set = [dict(name=file_item.name, data=json.loads(gdf.to_json()))]
+            all_features += geodata.get('features')
+        geodata_set = [dict(name=file_item.name, features=all_features)]
 
     for geodata in geodata_set:
-        data = geodata.get('data')
+        data, features = geodata.get('data'), geodata.get('features')
+        if data is None and len(features):
+            gdf = geopandas.GeoDataFrame.from_features(features)
+            gdf = gdf.set_crs(source_projection, allow_override=True)
+            gdf = gdf.to_crs(4326)
+            data = json.loads(gdf.to_json())
         properties = {}
         for feature in data.get('features'):
             for name, value in feature.get('properties', {}).items():
