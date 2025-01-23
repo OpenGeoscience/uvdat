@@ -1,7 +1,7 @@
 from urllib.parse import urlencode
 
 from IPython import display
-from ipyleaflet import Map, TileLayer, VectorTileLayer, basemaps, projections
+from ipyleaflet import FullScreenControl, Map, TileLayer, VectorTileLayer, basemaps, projections
 from ipytree import Node, Tree
 import ipywidgets as widgets
 import requests
@@ -50,6 +50,7 @@ class LayerRepresentation:
             dragging=True,
             attribution_control=False,
         )
+        self.map.add(FullScreenControl())
         self.map_layers = []
         self.update_frame(dict(name='value'))
 
