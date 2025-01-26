@@ -3,6 +3,7 @@
 import { Map, IControl, Popup, ControlPosition } from "maplibre-gl";
 import { onMounted, ref } from "vue";
 import {
+  theme,
   map,
   showMapTooltip,
   tooltipOverlay,
@@ -15,6 +16,22 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
+
+const ATTRIBUTION =
+  "\
+<a target='_blank' href='https://www.maptiler.com/copyright'>© MapTiler</a>\
+<span> | </span>\
+<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>\
+";
+
+const BASE_MAPS = {
+  light: [
+    `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${process.env.VUE_APP_MAPTILER_API_KEY}`,
+  ],
+  dark: [
+    `https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${process.env.VUE_APP_MAPTILER_API_KEY}`,
+  ],
+};
 
 class VueMapControl implements IControl {
   _vueElement: HTMLElement;
@@ -64,7 +81,7 @@ export default {
         // transformRequest adds auth headers to tile requests (excluding OSM requests)
         transformRequest: (url) => {
           let headers = {};
-          if (!url.includes("openstreetmap")) {
+          if (!url.includes("maptiler")) {
             headers = oauthClient?.authHeaders;
           }
           return {
@@ -75,22 +92,18 @@ export default {
         style: {
           version: 8,
           sources: {
-            osm: {
+            base: {
               type: "raster",
-              tiles: [
-                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              attribution: "© OpenStreetMap contributors",
+              tiles: BASE_MAPS[theme.value],
+              tileSize: 512,
+              attribution: ATTRIBUTION,
             },
           },
           layers: [
             {
-              id: "osm-tiles",
+              id: "base-tiles",
               type: "raster",
-              source: "osm",
+              source: "base",
               minzoom: 0,
               // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
               maxzoom: 22 + 1,

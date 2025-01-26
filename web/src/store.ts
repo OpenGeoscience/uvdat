@@ -14,6 +14,8 @@ import {
 // import { MapLayer } from "@/data";
 import { Map, Popup } from "maplibre-gl";
 
+export const theme = ref<"dark" | "light">("light");
+
 // Project
 export const availableProjects = ref<Project[]>([]);
 export const currentProject = ref<Project>();
