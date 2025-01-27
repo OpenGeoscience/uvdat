@@ -26,6 +26,10 @@ import {
   currentError,
   tooltipOverlay,
   clickedFeatureCandidates,
+  panelArrangement,
+  draggingPanel,
+  draggingFrom,
+  dragModes,
 } from "./store";
 import { getProjects, getDataset } from "@/api/rest";
 import {
@@ -34,7 +38,7 @@ import {
   styleNetworkVectorTileLayer,
   updateBaseLayer,
 } from "./layers";
-import { Project } from "./types";
+import { FloatingPanelConfig, Project } from "./types";
 
 export function clearState() {
   availableDatasets.value = undefined;
@@ -56,6 +60,128 @@ export function clearState() {
   currentNetworkGCC.value = undefined;
   currentError.value = undefined;
   polls.value = {};
+  panelArrangement.value = [
+    { id: "datasets", label: "Datasets", visible: true, closeable: false },
+    {
+      id: "layers",
+      label: "Selected Layers",
+      visible: true,
+      closeable: false,
+    },
+    {
+      id: "legend",
+      label: "Legend",
+      visible: true,
+      closeable: true,
+      right: true,
+    },
+    {
+      id: "charts",
+      label: "Charts",
+      visible: true,
+      closeable: true,
+      right: true,
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      visible: true,
+      closeable: true,
+      right: true,
+    },
+  ];
+  draggingPanel.value = undefined;
+  draggingFrom.value = undefined;
+  dragModes.value = [];
+}
+
+export function startDrag(
+  event: MouseEvent,
+  panel: FloatingPanelConfig | undefined,
+  modes: ("position" | "width" | "height")[]
+) {
+  if (panel) {
+    draggingPanel.value = panel.id;
+  }
+  draggingFrom.value = {
+    x: event.clientX,
+    y: event.clientY,
+  };
+  dragModes.value = modes;
+}
+
+export function dragPanel(event: MouseEvent) {
+  let offsetX = 40;
+  const offsetY = 40;
+  const snapToleranceX = 300;
+  const snapToleranceY = 100;
+  const minHeight = 100;
+  const minWidth = 150;
+
+  const panel = panelArrangement.value.find(
+    (p) => p.id === draggingPanel.value
+  );
+  if (!panel) return undefined;
+
+  if (panel.right) offsetX += document.body.clientWidth - 350;
+  const position = {
+    x: event.clientX - offsetX,
+    y: event.clientY - offsetY,
+  };
+  if (dragModes.value?.includes("position")) {
+    if (!panel.initialPosition) {
+      panel.initialPosition = position;
+    }
+    if (panel.initialPosition) {
+      if (
+        Math.abs(position.x - panel.initialPosition.x) < snapToleranceX &&
+        Math.abs(position.y - panel.initialPosition.y) < snapToleranceY
+      ) {
+        // snap to sidebar
+        panel.position = undefined;
+        panel.width = undefined;
+        panel.height = undefined;
+      } else {
+        // convert to floating
+        panel.position = position;
+        panel.width = 250;
+        panel.height = 150;
+      }
+    }
+  }
+  if (draggingFrom.value) {
+    const from: { x: number; y: number } = { ...draggingFrom.value };
+    if (dragModes.value?.includes("height") && draggingFrom.value) {
+      if (!panel.height && panel.dockedHeight) {
+        panel.height = panel.dockedHeight;
+      }
+      if (panel.height) {
+        const heightDelta = event.clientY - draggingFrom.value.y;
+        if (panel.height + heightDelta > minHeight) {
+          panel.height = panel.height + heightDelta;
+          from.y = event.clientY;
+        }
+      }
+    }
+    if (
+      dragModes.value?.includes("width") &&
+      draggingFrom.value &&
+      panel.width
+    ) {
+      const widthDelta = event.clientX - draggingFrom.value.x;
+      if (panel.width + widthDelta > minWidth) {
+        panel.width = panel.width + widthDelta;
+        from.x = event.clientX;
+      }
+    }
+    draggingFrom.value = from;
+  }
+}
+
+export function stopDrag() {
+  draggingPanel.value = undefined;
+  draggingFrom.value = undefined;
+  dragModes.value = [];
 }
 
 export function getMap() {

@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
-import { currentUser, currentError, projectConfigMode } from "./store";
+import {
+  currentUser,
+  currentError,
+  projectConfigMode,
+  draggingPanel,
+} from "./store";
 import { oauthClient } from "./api/auth";
-import { loadProjects } from "./storeFunctions";
+import {
+  clearState,
+  loadProjects,
+  dragPanel,
+  stopDrag,
+} from "./storeFunctions";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/SideBars.vue";
 import ProjectConfig from "./components/ProjectConfig.vue";
@@ -11,6 +21,7 @@ const showError = computed(() => currentError.value !== undefined);
 
 function onReady() {
   if (currentUser.value) {
+    clearState();
     loadProjects();
   }
 }
@@ -60,7 +71,11 @@ watch(projectConfigMode, loadProjects);
     </v-overlay>
     <ProjectConfig v-if="projectConfigMode" />
     <div v-else>
-      <div class="main-area">
+      <div
+        :class="draggingPanel ? 'main-area no-select' : 'main-area'"
+        @mousemove="dragPanel"
+        @mouseup="stopDrag"
+      >
         <Map />
         <SideBars />
       </div>
@@ -73,5 +88,11 @@ watch(projectConfigMode, loadProjects);
   position: absolute;
   height: 100%;
   width: 100%;
+}
+.no-select * {
+  /* Prevent text highlighting during drag events */
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 </style>

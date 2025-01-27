@@ -275,3 +275,17 @@ export interface SimulationResult {
   created: string;
   modified: string;
 }
+
+export interface FloatingPanelConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  closeable: boolean;
+  collapsed?: boolean;
+  right?: boolean;
+  dockedHeight?: number;
+  initialPosition?: { x: number; y: number } | undefined;
+  position?: { x: number; y: number } | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+}

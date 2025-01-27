@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, Ref } from "vue";
 
-import { currentUser, openSidebars } from "@/store";
+import { currentUser, openSidebars, panelArrangement } from "@/store";
 import { logout } from "@/api/auth";
+
+import FloatingPanel from "./FloatingPanel.vue";
+import { FloatingPanelConfig } from "@/types";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -20,6 +23,13 @@ function toggleSidebar(sidebar: "left" | "right") {
   } else {
     openSidebars.value = [...openSidebars.value, sidebar];
   }
+}
+
+function togglePanelVisibility(panel: FloatingPanelConfig) {
+  panelArrangement.value = panelArrangement.value.map((p) => {
+    if (p.id == panel.id) p.visible = !p.visible;
+    return p;
+  });
 }
 </script>
 
@@ -79,6 +89,10 @@ function toggleSidebar(sidebar: "left" | "right") {
           @click="toggleSidebar('left')"
         ></v-icon>
       </v-toolbar>
+      <div class="panel-set">
+        <FloatingPanel id="datasets"></FloatingPanel>
+        <FloatingPanel id="layers"></FloatingPanel>
+      </div>
     </v-navigation-drawer>
 
     <v-navigation-drawer
@@ -91,7 +105,11 @@ function toggleSidebar(sidebar: "left" | "right") {
           : 'sidebar right closed'
       "
     >
-      <v-toolbar class="toolbar px-5 right">
+      <v-toolbar
+        :class="
+          openSidebars.includes('right') ? 'toolbar px-5' : 'toolbar px-5 right'
+        "
+      >
         <v-icon
           icon="mdi-dock-right"
           class="mr-5"
@@ -114,6 +132,41 @@ function toggleSidebar(sidebar: "left" | "right") {
           </v-btn>
         </div>
       </v-toolbar>
+      <div :style="{ height: '30px', 'text-align': 'right' }">
+        <v-menu :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+            <v-icon
+              v-bind="props"
+              icon="mdi-menu"
+              class="mr-3 mt-1"
+              v-tooltip="'Panel Visibility'"
+            ></v-icon>
+          </template>
+          <v-list
+            :items="panelArrangement.filter((p) => p.right)"
+            item-title="label"
+            item-value="id"
+            selectable
+            :selected="panelArrangement.filter((p) => p.visible)"
+            select-strategy="leaf"
+            return-object
+          >
+            <template v-slot:prepend="{ item, isSelected }">
+              <v-list-item-action start>
+                <v-checkbox-btn
+                  :model-value="isSelected"
+                  @change="togglePanelVisibility(item)"
+                ></v-checkbox-btn>
+              </v-list-item-action>
+            </template>
+          </v-list>
+        </v-menu>
+      </div>
+      <div class="panel-set">
+        <FloatingPanel id="legend"></FloatingPanel>
+        <FloatingPanel id="charts"></FloatingPanel>
+        <FloatingPanel id="analytics"></FloatingPanel>
+      </div>
     </v-navigation-drawer>
   </div>
 </template>
@@ -123,6 +176,11 @@ function toggleSidebar(sidebar: "left" | "right") {
   margin: 10px;
   border-radius: 6px;
   width: 325px !important;
+}
+.sidebar > .v-navigation-drawer__content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .sidebar.left {
   max-height: calc(100% - 20px);
@@ -160,5 +218,14 @@ function toggleSidebar(sidebar: "left" | "right") {
 }
 .v-toolbar__content > .v-toolbar-title {
   margin-inline-start: 0px !important;
+}
+.panel-set {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  max-height: calc(100% - 70px);
+}
+.right .panel-set {
+  max-height: calc(100% - 100px);
 }
 </style>

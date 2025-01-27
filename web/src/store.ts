@@ -10,13 +10,17 @@ import {
   RasterDatasetLayer,
   ClickedFeatureData,
   RasterTooltipData,
+  FloatingPanelConfig,
 } from "./types.js";
-// import { MapLayer } from "@/data";
 import { Map, Popup } from "maplibre-gl";
 
 // UI Config
 export const theme = ref<"dark" | "light">("light");
 export const openSidebars = ref<("left" | "right")[]>(["left", "right"]);
+export const panelArrangement = ref<FloatingPanelConfig[]>([]);
+export const draggingPanel = ref<string | undefined>();
+export const draggingFrom = ref<{ x: number; y: number } | undefined>();
+export const dragModes = ref<("position" | "height" | "width")[]>();
 
 // Project
 export const availableProjects = ref<Project[]>([]);
