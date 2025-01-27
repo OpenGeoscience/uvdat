@@ -1,5 +1,5 @@
 <!-- eslint-disable vue/multi-word-component-names -->
-<script lang="ts">
+<script setup lang="ts">
 import { Map, IControl, Popup, ControlPosition } from "maplibre-gl";
 import { onMounted, ref } from "vue";
 import {
@@ -65,113 +65,98 @@ class VueMapControl implements IControl {
   }
 }
 
-export default {
-  components: {
-    ActiveLayers,
-    MapTooltip,
-  },
-  setup() {
-    // OpenLayers refs
-    const tooltip = ref<HTMLElement>();
-    const activelayers = ref<HTMLElement>();
+// OpenLayers refs
+const tooltip = ref<HTMLElement>();
+const activelayers = ref<HTMLElement>();
 
-    function createMap() {
-      const newMap = new Map({
-        container: "mapContainer",
-        // transformRequest adds auth headers to tile requests (excluding OSM requests)
-        transformRequest: (url) => {
-          let headers = {};
-          if (!url.includes("maptiler")) {
-            headers = oauthClient?.authHeaders;
-          }
-          return {
-            url,
-            headers,
-          };
-        },
-        style: {
-          version: 8,
-          sources: {
-            base: {
-              type: "raster",
-              tiles: BASE_MAPS[theme.value],
-              tileSize: 512,
-              attribution: ATTRIBUTION,
-            },
-          },
-          layers: [
-            {
-              id: "base-tiles",
-              type: "raster",
-              source: "base",
-              minzoom: 0,
-              // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
-              maxzoom: 22 + 1,
-            },
-          ],
-        },
-        center: [-75.5, 43.0], // Coordinates for the center of New York State
-        zoom: 7, // Initial zoom level
-      });
-
-      // Add spinner while loading
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const mapContainer = document.getElementById("mapContainer")!;
-      mapContainer.classList.add("spinner");
-      newMap.on("load", () => {
-        mapContainer.classList.remove("spinner");
-      });
-
-      /**
-       * This is called on every click, and technically hides the tooltip on every click.
-       * However, if a feature layer is clicked, that event is fired after this one, and the
-       * tooltip is re-enabled and rendered with the desired contents. The net result is that
-       * this only has a real effect when the base map is clicked, as that means that no other
-       * feature layer can "catch" the event, and the tooltip stays hidden.
-       */
-      newMap.on("click", () => {
-        clickedFeature.value = undefined;
-        showMapTooltip.value = false;
-      });
-
-      // Order is important as the following function relies on the ref being set
-      map.value = newMap;
-      createMapControls();
-    }
-
-    function createMapControls() {
-      if (!map.value || !tooltip.value || !activelayers.value) {
-        throw new Error("Map or refs not initialized!");
+function createMap() {
+  const newMap = new Map({
+    container: "mapContainer",
+    // transformRequest adds auth headers to tile requests (excluding OSM requests)
+    transformRequest: (url) => {
+      let headers = {};
+      if (!url.includes("maptiler")) {
+        headers = oauthClient?.authHeaders;
       }
+      return {
+        url,
+        headers,
+      };
+    },
+    style: {
+      version: 8,
+      sources: {
+        base: {
+          type: "raster",
+          tiles: BASE_MAPS[theme.value],
+          tileSize: 512,
+          attribution: ATTRIBUTION,
+        },
+      },
+      layers: [
+        {
+          id: "base-tiles",
+          type: "raster",
+          source: "base",
+          minzoom: 0,
+          // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
+          maxzoom: 22 + 1,
+        },
+      ],
+    },
+    center: [-75.5, 43.0], // Coordinates for the center of New York State
+    zoom: 7, // Initial zoom level
+  });
 
-      // Add overlay to display active layers
-      map.value.addControl(new VueMapControl(activelayers.value));
+  // Add spinner while loading
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const mapContainer = document.getElementById("mapContainer")!;
+  mapContainer.classList.add("spinner");
+  newMap.on("load", () => {
+    mapContainer.classList.remove("spinner");
+  });
 
-      // Add tooltip overlay
-      tooltipOverlay.value = new Popup({
-        anchor: "bottom-left",
-        closeOnClick: false,
-        maxWidth: "none",
-        closeButton: true,
-      });
+  /**
+   * This is called on every click, and technically hides the tooltip on every click.
+   * However, if a feature layer is clicked, that event is fired after this one, and the
+   * tooltip is re-enabled and rendered with the desired contents. The net result is that
+   * this only has a real effect when the base map is clicked, as that means that no other
+   * feature layer can "catch" the event, and the tooltip stays hidden.
+   */
+  newMap.on("click", () => {
+    clickedFeature.value = undefined;
+    showMapTooltip.value = false;
+  });
 
-      // Link overlay ref to dom, allowing for modification elsewhere
-      tooltipOverlay.value.setDOMContent(tooltip.value);
-    }
+  // Order is important as the following function relies on the ref being set
+  map.value = newMap;
+  createMapControls();
+}
 
-    onMounted(() => {
-      createMap();
-      setMapCenter(undefined, true);
-    });
+function createMapControls() {
+  if (!map.value || !tooltip.value || !activelayers.value) {
+    throw new Error("Map or refs not initialized!");
+  }
 
-    return {
-      activelayers,
-      tooltip,
-      showMapTooltip,
-      showMapBaseLayer,
-    };
-  },
-};
+  // Add overlay to display active layers
+  map.value.addControl(new VueMapControl(activelayers.value));
+
+  // Add tooltip overlay
+  tooltipOverlay.value = new Popup({
+    anchor: "bottom-left",
+    closeOnClick: false,
+    maxWidth: "none",
+    closeButton: true,
+  });
+
+  // Link overlay ref to dom, allowing for modification elsewhere
+  tooltipOverlay.value.setDOMContent(tooltip.value);
+}
+
+onMounted(() => {
+  createMap();
+  setMapCenter(undefined, true);
+});
 </script>
 
 <template>
