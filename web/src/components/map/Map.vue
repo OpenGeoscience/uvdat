@@ -1,6 +1,12 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { Map, IControl, Popup, ControlPosition } from "maplibre-gl";
+import {
+  Map,
+  IControl,
+  Popup,
+  ControlPosition,
+  AttributionControl,
+} from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
 import {
   theme,
@@ -9,6 +15,7 @@ import {
   tooltipOverlay,
   clickedFeature,
   showMapBaseLayer,
+  openSidebars,
 } from "@/store";
 import { setMapCenter } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -17,12 +24,13 @@ import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
 
-const ATTRIBUTION =
-  "\
-<a target='_blank' href='https://www.maptiler.com/copyright'>© MapTiler</a>\
-<span> | </span>\
-<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>\
-";
+const ATTRIBUTION = [
+  "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
+  "<span> | </span>",
+  "<a target='_blank' href='https://www.maptiler.com/copyright'>© MapTiler</a>",
+  "<span> | </span>",
+  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>",
+];
 
 const BASE_MAPS = {
   light: [
@@ -65,14 +73,43 @@ class VueMapControl implements IControl {
   }
 }
 
-// OpenLayers refs
+// MapLibre refs
 const tooltip = ref<HTMLElement>();
 const activelayers = ref<HTMLElement>();
+const attributionControl = new AttributionControl({
+  compact: true,
+  customAttribution: ATTRIBUTION,
+});
+attributionControl.onAdd = (map: Map): HTMLElement => {
+  attributionControl._map = map;
+  const container = document.createElement("div");
+  container.innerHTML = ATTRIBUTION.join("");
+  attributionControl._container = container;
+  setAttributionControlStyle();
+  return container;
+};
+
+function setAttributionControlStyle() {
+  const container = attributionControl._container;
+  container.style.padding = "3px 8px";
+  container.style.marginRight = "5px";
+  container.style.borderRadius = "15px";
+  container.style.position = "relative";
+  container.style.right = openSidebars.value.includes("right")
+    ? "350px"
+    : "0px";
+  container.style.background = theme.value === "light" ? "white" : "black";
+  container.childNodes.forEach((child) => {
+    const childElement = child as HTMLElement;
+    childElement.style.color = theme.value === "light" ? "black" : "white";
+  });
+}
 
 function createMap() {
   const newMap = new Map({
     container: "mapContainer",
-    // transformRequest adds auth headers to tile requests (excluding OSM requests)
+    attributionControl: false,
+    // transformRequest adds auth headers to tile requests (excluding MapTiler requests)
     transformRequest: (url) => {
       let headers = {};
       if (!url.includes("maptiler")) {
@@ -90,13 +127,11 @@ function createMap() {
           type: "raster",
           tiles: BASE_MAPS.light,
           tileSize: 512,
-          attribution: ATTRIBUTION,
         },
         dark: {
           type: "raster",
           tiles: BASE_MAPS.dark,
           tileSize: 512,
-          attribution: ATTRIBUTION,
         },
       },
       layers: [
@@ -113,6 +148,8 @@ function createMap() {
     center: [-75.5, 43.0], // Coordinates for the center of New York State
     zoom: 7, // Initial zoom level
   });
+
+  newMap.addControl(attributionControl);
 
   // Add spinner while loading
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -173,6 +210,11 @@ watch(theme, () => {
     minzoom: 0,
     maxzoom: 22 + 1,
   });
+  setAttributionControlStyle();
+});
+
+watch(openSidebars, () => {
+  setAttributionControlStyle();
 });
 </script>
 

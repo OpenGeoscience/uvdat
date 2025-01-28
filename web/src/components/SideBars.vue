@@ -206,17 +206,12 @@ watch(darkMode, () => {
   margin: 10px;
   border-radius: 6px;
   width: 325px !important;
+  max-height: calc(100% - 15px);
 }
 .sidebar > .v-navigation-drawer__content {
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-.sidebar.left {
-  max-height: calc(100% - 20px);
-}
-.sidebar.right {
-  max-height: calc(100% - 50px);
 }
 .sidebar.closed {
   visibility: hidden;
