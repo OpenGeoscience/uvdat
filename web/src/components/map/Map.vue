@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { Map, IControl, Popup, ControlPosition } from "maplibre-gl";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import {
   theme,
   map,
@@ -86,9 +86,15 @@ function createMap() {
     style: {
       version: 8,
       sources: {
-        base: {
+        light: {
           type: "raster",
-          tiles: BASE_MAPS[theme.value],
+          tiles: BASE_MAPS.light,
+          tileSize: 512,
+          attribution: ATTRIBUTION,
+        },
+        dark: {
+          type: "raster",
+          tiles: BASE_MAPS.dark,
           tileSize: 512,
           attribution: ATTRIBUTION,
         },
@@ -97,7 +103,7 @@ function createMap() {
         {
           id: "base-tiles",
           type: "raster",
-          source: "base",
+          source: theme.value,
           minzoom: 0,
           // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
           maxzoom: 22 + 1,
@@ -156,6 +162,17 @@ function createMapControls() {
 onMounted(() => {
   createMap();
   setMapCenter(undefined, true);
+});
+
+watch(theme, () => {
+  map.value?.removeLayer("base-tiles");
+  map.value?.addLayer({
+    id: "base-tiles",
+    type: "raster",
+    source: theme.value,
+    minzoom: 0,
+    maxzoom: 22 + 1,
+  });
 });
 </script>
 

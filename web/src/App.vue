@@ -42,6 +42,7 @@ watch(projectConfigMode, loadProjects);
       absolute
       persistent
       :opacity="0.8"
+      scrim="secondary-darken-1"
       class="align-center justify-center"
     >
       <v-btn @click="login"> Log in to Continue </v-btn>

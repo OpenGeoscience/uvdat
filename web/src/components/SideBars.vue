@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, Ref } from "vue";
+import { ref, Ref, watch } from "vue";
+import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { currentUser, openSidebars, panelArrangement } from "@/store";
+import { currentUser, openSidebars, panelArrangement, theme } from "@/store";
 import { logout } from "@/api/auth";
 
 import FloatingPanel from "./FloatingPanel.vue";
@@ -10,6 +11,9 @@ import { FloatingPanelConfig } from "@/types";
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
+
+const themeManager = useTheme();
+const darkMode = ref<boolean>(theme.value === "dark");
 
 function copyToClipboard(content: string) {
   navigator.clipboard.writeText(content).then(() => {
@@ -31,6 +35,11 @@ function togglePanelVisibility(panel: FloatingPanelConfig) {
     return p;
   });
 }
+
+watch(darkMode, () => {
+  theme.value = darkMode.value ? "dark" : "light";
+  themeManager.global.name.value = theme.value;
+});
 </script>
 
 <template>
@@ -118,18 +127,39 @@ function togglePanelVisibility(panel: FloatingPanelConfig) {
         ></v-icon>
         <div v-if="currentUser">
           {{ currentUser.first_name }}
-          <v-btn v-tooltip="'Logout'" icon>
-            <v-icon>mdi-logout</v-icon>
-            <v-dialog activator="parent" max-width="300">
-              <template v-slot:default="{ isActive }">
-                <v-card class="pa-3">
-                  <v-card-title>Log out?</v-card-title>
-                  <v-btn @click="isActive.value = false" text="Cancel" />
-                  <v-btn @click="logout" color="red" text="Confirm" />
-                </v-card>
-              </template>
-            </v-dialog>
-          </v-btn>
+
+          <v-menu :close-on-content-click="false">
+            <template v-slot:activator="{ props }">
+              <v-icon v-bind="props" icon="mdi-cog" class="px-3"></v-icon>
+            </template>
+            <v-list>
+              <v-list-item density="compact">
+                Logout
+                <template v-slot:append>
+                  <v-icon icon="mdi-logout"></v-icon>
+                  <v-dialog activator="parent" max-width="300">
+                    <template v-slot:default="{ isActive }">
+                      <v-card class="pa-3">
+                        <v-card-title>Log out?</v-card-title>
+                        <v-btn @click="isActive.value = false" text="Cancel" />
+                        <v-btn @click="logout" color="red" text="Confirm" />
+                      </v-card>
+                    </template>
+                  </v-dialog>
+                </template>
+              </v-list-item>
+              <v-list-item density="compact">
+                Dark Mode
+                <template v-slot:append>
+                  <v-switch
+                    v-model="darkMode"
+                    class="ml-5"
+                    hide-details
+                  ></v-switch>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </div>
       </v-toolbar>
       <div :style="{ height: '30px', 'text-align': 'right' }">
