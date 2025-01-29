@@ -15,7 +15,6 @@ import {
 } from "./storeFunctions";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/SideBars.vue";
-import ProjectConfig from "./components/ProjectConfig.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
 const showError = computed(() => currentError.value !== undefined);
@@ -71,8 +70,7 @@ watch(projectConfigMode, loadProjects);
         </v-card-text>
       </v-card>
     </v-overlay>
-    <ProjectConfig v-if="projectConfigMode" />
-    <div v-else>
+    <div>
       <div
         :class="draggingPanel ? 'main-area no-select' : 'main-area'"
         @mousemove="dragPanel"

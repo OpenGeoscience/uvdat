@@ -7,6 +7,7 @@ import { logout } from "@/api/auth";
 
 import FloatingPanel from "./FloatingPanel.vue";
 import { FloatingPanelConfig } from "@/types";
+import ProjectConfig from "./ProjectConfig.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -98,6 +99,7 @@ watch(darkMode, () => {
           @click="toggleSidebar('left')"
         ></v-icon>
       </v-toolbar>
+      <ProjectConfig />
       <div class="panel-set">
         <FloatingPanel id="datasets"></FloatingPanel>
         <FloatingPanel id="layers"></FloatingPanel>
@@ -205,7 +207,7 @@ watch(darkMode, () => {
 .sidebar {
   margin: 10px;
   border-radius: 6px;
-  width: 325px !important;
+  width: 350px !important;
   max-height: calc(100% - 15px);
 }
 .sidebar > .v-navigation-drawer__content {
@@ -248,7 +250,7 @@ watch(darkMode, () => {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  max-height: calc(100% - 70px);
+  max-height: calc(100% - 140px);
 }
 .right .panel-set {
   max-height: calc(100% - 100px);

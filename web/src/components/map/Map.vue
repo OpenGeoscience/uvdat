@@ -56,7 +56,7 @@ function setAttributionControlStyle() {
   container.style.borderRadius = "15px";
   container.style.position = "relative";
   container.style.right = openSidebars.value.includes("right")
-    ? "350px"
+    ? "360px"
     : "0px";
   container.style.background = theme.value === "light" ? "white" : "black";
   container.childNodes.forEach((child) => {
