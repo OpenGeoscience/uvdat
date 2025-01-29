@@ -16,6 +16,7 @@ import {
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/SideBars.vue";
 import ProjectConfig from "./components/ProjectConfig.vue";
+import ControlsBar from "./components/ControlsBar.vue";
 
 const showError = computed(() => currentError.value !== undefined);
 
@@ -79,6 +80,7 @@ watch(projectConfigMode, loadProjects);
       >
         <Map />
         <SideBars />
+        <ControlsBar />
       </div>
     </div>
   </v-app>

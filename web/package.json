@@ -16,6 +16,7 @@
     "buffer": "^6.0.3",
     "core-js": "^3.8.3",
     "git-describe": "^4.1.1",
+    "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",
     "maplibre-gl": "^4.6.0",
     "shpjs": "^4.0.4",

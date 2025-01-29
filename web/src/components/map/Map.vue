@@ -1,12 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import {
-  Map,
-  IControl,
-  Popup,
-  ControlPosition,
-  AttributionControl,
-} from "maplibre-gl";
+import { Map, Popup, AttributionControl } from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
 import {
   theme,
@@ -14,13 +8,12 @@ import {
   showMapTooltip,
   tooltipOverlay,
   clickedFeature,
-  showMapBaseLayer,
   openSidebars,
+  showMapBaseLayer,
 } from "@/store";
 import { setMapCenter } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
 
@@ -41,41 +34,8 @@ const BASE_MAPS = {
   ],
 };
 
-class VueMapControl implements IControl {
-  _vueElement: HTMLElement;
-
-  _map: Map | undefined;
-  _container: HTMLElement | undefined;
-
-  constructor(vueElement: HTMLElement) {
-    this._vueElement = vueElement;
-    this._container = undefined;
-    this._map = undefined;
-  }
-
-  onAdd(map: Map) {
-    this._map = map;
-    this._container = this._vueElement;
-    return this._container;
-  }
-
-  onRemove() {
-    if (this._container === undefined) {
-      return;
-    }
-
-    this._container.parentNode?.removeChild(this._container);
-    this._map = undefined;
-  }
-
-  getDefaultPosition(): ControlPosition {
-    return "top-left";
-  }
-}
-
 // MapLibre refs
 const tooltip = ref<HTMLElement>();
-const activelayers = ref<HTMLElement>();
 const attributionControl = new AttributionControl({
   compact: true,
   customAttribution: ATTRIBUTION,
@@ -109,6 +69,7 @@ function createMap() {
   const newMap = new Map({
     container: "mapContainer",
     attributionControl: false,
+    preserveDrawingBuffer: true, // allows screenshots
     // transformRequest adds auth headers to tile requests (excluding MapTiler requests)
     transformRequest: (url) => {
       let headers = {};
@@ -177,12 +138,9 @@ function createMap() {
 }
 
 function createMapControls() {
-  if (!map.value || !tooltip.value || !activelayers.value) {
+  if (!map.value || !tooltip.value) {
     throw new Error("Map or refs not initialized!");
   }
-
-  // Add overlay to display active layers
-  map.value.addControl(new VueMapControl(activelayers.value));
 
   // Add tooltip overlay
   tooltipOverlay.value = new Popup({
@@ -209,6 +167,9 @@ watch(theme, () => {
     source: theme.value,
     minzoom: 0,
     maxzoom: 22 + 1,
+    layout: {
+      visibility: showMapBaseLayer.value ? "visible" : "none",
+    },
   });
   setAttributionControlStyle();
 });
@@ -220,19 +181,6 @@ watch(openSidebars, () => {
 
 <template>
   <div id="mapContainer" class="map">
-    <div class="base-layer-control">
-      <v-btn icon>
-        <v-checkbox
-          v-model="showMapBaseLayer"
-          true-icon="mdi-map-check"
-          false-icon="mdi-map-outline"
-          style="margin-top: -4px"
-        />
-      </v-btn>
-    </div>
-    <div ref="activelayers" class="maplibregl-ctrl active-layers-control">
-      <ActiveLayers />
-    </div>
     <div
       id="map-tooltip"
       ref="tooltip"
