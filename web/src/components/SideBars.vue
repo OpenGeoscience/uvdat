@@ -197,7 +197,6 @@ watch(darkMode, () => {
         </v-menu>
       </div>
       <div class="panel-set">
-        <FloatingPanel id="legend"></FloatingPanel>
         <FloatingPanel id="charts">
           <ChartsPanel></ChartsPanel>
         </FloatingPanel>
