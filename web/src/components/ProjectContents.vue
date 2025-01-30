@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, Ref, watch, computed, defineProps } from "vue";
+import { ref, Ref, watch, computed } from "vue";
 import { Project, Dataset, Chart, SimulationType } from "../types";
 import {
   getDatasetLayers,

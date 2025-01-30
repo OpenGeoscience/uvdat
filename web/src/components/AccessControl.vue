@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { onMounted, ref, Ref, defineProps, defineEmits } from "vue";
+import { onMounted, ref, Ref } from "vue";
 import { Project, ProjectPermissions, User } from "@/types";
 import { getUsers, updateProjectPermissions } from "@/api/rest";
 

@@ -7,9 +7,6 @@ import {
   computed,
   ComputedRef,
   watch,
-  defineProps,
-  defineEmits,
-  withDefaults,
 } from "vue";
 import { Dataset } from "@/types";
 import { getDatasetLayers } from "@/api/rest";

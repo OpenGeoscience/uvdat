@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, computed, ref } from "vue";
+import { computed, ref } from "vue";
 
 import { panelArrangement } from "@/store";
 import { startDrag } from "@/storeFunctions";
