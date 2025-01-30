@@ -31,7 +31,7 @@ import {
   draggingFrom,
   dragModes,
 } from "./store";
-import { getProjects, getDataset, getProjectCharts } from "@/api/rest";
+import { getProjects, getDataset, getProjectCharts, getProjectSimulationTypes } from "@/api/rest";
 import {
   clearMapLayers,
   datasetLayerFromMapLayerID,
@@ -277,12 +277,12 @@ watch(currentProject, () => {
   if (currentProject.value) {
     getProjectCharts(currentProject.value.id).then((charts) => {
       availableCharts.value = charts;
-      if (currentChart.value) {
-        currentChart.value = charts.find(
-          (c) => c.id === currentChart.value?.id
-        );
-      }
+      currentChart.value = undefined;
     });
+    getProjectSimulationTypes(currentProject.value.id).then((types) => {
+      availableSimulationTypes.value = types;
+      currentSimulationType.value = undefined;
+    })
   }
 });
 watch(currentDataset, () => {

@@ -9,6 +9,7 @@ import { FloatingPanelConfig } from "@/types";
 import FloatingPanel from "./FloatingPanel.vue";
 import ProjectConfig from "./ProjectConfig.vue";
 import ChartsPanel from "./ChartsPanel.vue";
+import AnalyticsPanel from "./AnalyticsPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -200,7 +201,9 @@ watch(darkMode, () => {
         <FloatingPanel id="charts">
           <ChartsPanel></ChartsPanel>
         </FloatingPanel>
-        <FloatingPanel id="analytics"></FloatingPanel>
+        <FloatingPanel id="analytics">
+          <AnalyticsPanel></AnalyticsPanel>
+        </FloatingPanel>
       </div>
     </v-navigation-drawer>
   </div>
