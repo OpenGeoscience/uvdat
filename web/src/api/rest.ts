@@ -126,10 +126,6 @@ export async function getRasterData(layerId: number): Promise<RasterData> {
   };
 }
 
-export async function clearChart(chartId: number) {
-  await apiClient.post(`charts/${chartId}/clear/`);
-}
-
 export async function runSimulation(
   simulationId: number,
   projectId: number,

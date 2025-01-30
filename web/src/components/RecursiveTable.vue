@@ -31,3 +31,9 @@ export default {
     </tbody>
   </v-table>
 </template>
+
+<style>
+.v-expansion-panel-text__wrapper {
+  padding: 0px !important;
+}
+</style>

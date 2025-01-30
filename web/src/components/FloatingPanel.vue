@@ -114,7 +114,7 @@ function panelUpdated() {
         </div>
         <v-card-text class="pa-2">{{ panel.label }}</v-card-text>
         <v-card-text v-if="!panel.collapsed" class="pa-2 panel-content">
-          Content here
+          <slot></slot>
           <v-icon
             v-if="panel.position"
             icon="mdi-resize-bottom-right"
@@ -168,6 +168,7 @@ function panelUpdated() {
 }
 .panel-content {
   overflow: auto;
+  height: calc(100% - 50px);
 }
 .draggable-divider {
   display: flex;
@@ -178,5 +179,16 @@ function panelUpdated() {
 .draggable-corner {
   bottom: 5px;
   cursor: nw-resize;
+}
+.panel-content-outer {
+  height: 100%
+}
+.panel-content-outer.with-search {
+  height: calc(100% - 40px)
+}
+.panel-content-inner {
+  padding: 0px !important;
+  overflow: auto;
+  height: 100%;
 }
 </style>

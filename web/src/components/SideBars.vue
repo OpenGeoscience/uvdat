@@ -4,10 +4,11 @@ import { useTheme } from "vuetify/lib/framework.mjs";
 
 import { currentUser, openSidebars, panelArrangement, theme } from "@/store";
 import { logout } from "@/api/auth";
+import { FloatingPanelConfig } from "@/types";
 
 import FloatingPanel from "./FloatingPanel.vue";
-import { FloatingPanelConfig } from "@/types";
 import ProjectConfig from "./ProjectConfig.vue";
+import ChartsPanel from "./ChartsPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -196,7 +197,9 @@ watch(darkMode, () => {
       </div>
       <div class="panel-set">
         <FloatingPanel id="legend"></FloatingPanel>
-        <FloatingPanel id="charts"></FloatingPanel>
+        <FloatingPanel id="charts">
+          <ChartsPanel></ChartsPanel>
+        </FloatingPanel>
         <FloatingPanel id="analytics"></FloatingPanel>
       </div>
     </v-navigation-drawer>

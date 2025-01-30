@@ -31,7 +31,7 @@ import {
   draggingFrom,
   dragModes,
 } from "./store";
-import { getProjects, getDataset } from "@/api/rest";
+import { getProjects, getDataset, getProjectCharts } from "@/api/rest";
 import {
   clearMapLayers,
   datasetLayerFromMapLayerID,
@@ -274,6 +274,16 @@ watch(currentProject, () => {
   clearState();
   setMapCenter(currentProject.value);
   clearMapLayers();
+  if (currentProject.value) {
+    getProjectCharts(currentProject.value.id).then((charts) => {
+      availableCharts.value = charts;
+      if (currentChart.value) {
+        currentChart.value = charts.find(
+          (c) => c.id === currentChart.value?.id
+        );
+      }
+    });
+  }
 });
 watch(currentDataset, () => {
   rasterTooltipEnabled.value = false;
