@@ -14,6 +14,9 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
     # Dataset permissions not yet implemented, and as such, all datasets are visible to all users
     if model == models.Dataset:
         return queryset
+    # RasterData and VectorData permissions should inherit from Dataset permissions
+    if model in [models.RasterData, models.VectorData]:
+        return queryset
 
     if model == models.Project:
         return queryset.filter(id__in=projects.values_list('id', flat=True))
