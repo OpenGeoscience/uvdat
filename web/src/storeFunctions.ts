@@ -4,12 +4,10 @@ import {
   availableProjects,
   currentProject,
   availableDatasets,
-  selectedDatasets,
-  currentDataset,
   map,
   showMapTooltip,
-  selectedDatasetLayers,
-  clickedDatasetLayer,
+  selectedLayers,
+  clickedLayer,
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
@@ -30,22 +28,23 @@ import {
   draggingPanel,
   draggingFrom,
   dragModes,
+  loadingDatasets,
+  loadingSimulationTypes,
+  loadingCharts,
 } from "./store";
-import { getProjects, getDataset, getProjectCharts, getProjectSimulationTypes } from "@/api/rest";
+import { getProjects, getDataset, getProjectCharts, getProjectSimulationTypes, getProjectDatasets, getDatasetLayers } from "@/api/rest";
 import {
   clearMapLayers,
   datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
   updateBaseLayer,
 } from "./layers";
-import { FloatingPanelConfig, Project } from "./types";
+import { Dataset, FloatingPanelConfig, Project } from "./types";
 
 export function clearState() {
   availableDatasets.value = undefined;
-  selectedDatasets.value = [];
-  currentDataset.value = undefined;
-  selectedDatasetLayers.value = [];
-  clickedDatasetLayer.value = undefined;
+  selectedLayers.value = [];
+  clickedLayer.value = undefined;
   showMapBaseLayer.value = true;
   clickedFeature.value = undefined;
   rasterTooltipEnabled.value = false;
@@ -275,24 +274,33 @@ watch(currentProject, () => {
   setMapCenter(currentProject.value);
   clearMapLayers();
   if (currentProject.value) {
+    loadingDatasets.value = true;
+    loadingCharts.value = true;
+    loadingSimulationTypes.value = true;
+    getProjectDatasets(currentProject.value.id).then(async (datasets) => {
+      availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
+        dataset.layers = await getDatasetLayers(dataset.id);
+        return dataset;
+      }));
+      loadingDatasets.value = false;
+    });
     getProjectCharts(currentProject.value.id).then((charts) => {
       availableCharts.value = charts;
       currentChart.value = undefined;
+      loadingCharts.value = false;
     });
     getProjectSimulationTypes(currentProject.value.id).then((types) => {
       availableSimulationTypes.value = types;
       currentSimulationType.value = undefined;
+      loadingSimulationTypes.value = false;
     })
   }
-});
-watch(currentDataset, () => {
-  rasterTooltipEnabled.value = false;
 });
 
 export function clearClickedFeatureData() {
   clickedFeature.value = undefined;
   showMapTooltip.value = false;
-  clickedDatasetLayer.value = undefined;
+  clickedLayer.value = undefined;
 }
 
 /* eslint-disable @typescript-eslint/ban-ts-comment */
@@ -330,7 +338,7 @@ watch(clickedFeatureCandidates, (features) => {
   // @ts-ignore
   clickedFeature.value = selectedFeature;
   showMapTooltip.value = true;
-  clickedDatasetLayer.value = datasetLayerFromMapLayerID(
+  clickedLayer.value = datasetLayerFromMapLayerID(
     selectedFeature.feature.layer.id
   );
 

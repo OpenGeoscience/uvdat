@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { currentChart, availableCharts, currentError } from "@/store";
+import { currentChart, availableCharts, loadingCharts } from "@/store";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -218,6 +218,7 @@ const downloadReady = computed(() => {
           </template>
         </v-list-item>
       </v-list>
+      <v-progress-linear v-else-if="loadingCharts" indeterminate></v-progress-linear>
       <v-card-text v-else>No available Charts.</v-card-text>
     </v-card>
   </div>

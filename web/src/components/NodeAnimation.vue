@@ -4,12 +4,9 @@ import {
   currentNetworkDataset,
   currentNetworkDatasetLayer,
   deactivatedNodes,
-  selectedDatasets,
   selectedDatasetLayers,
 } from "@/store";
-import { deactivatedNodesUpdated, fetchDatasetNetwork } from "@/utils";
-import { getDatasetLayerForDataObject } from "@/layers";
-import { isVectorDatasetLayer } from "@/types";
+import { deactivatedNodesUpdated } from "@/utils";
 
 export default {
   props: {
@@ -39,20 +36,21 @@ export default {
     });
 
     async function findCurrentNetworkDataset() {
-      currentNetworkDataset.value = selectedDatasets.value.find((d) =>
-        d.map_layers?.some((l) => l.metadata?.network)
-      );
-      if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
-        fetchDatasetNetwork(currentNetworkDataset.value);
-      }
-      if (currentNetworkDataset.value) {
-        const datasetLayer = await getDatasetLayerForDataObject(
-          currentNetworkDataset.value
-        );
-        if (isVectorDatasetLayer(datasetLayer)) {
-          currentNetworkDatasetLayer.value = datasetLayer;
-        }
-      }
+      // TODO: get current network from selected layers instead of datasets
+      // currentNetworkDataset.value = selectedDatasets.value.find((d) =>
+      //   d.map_layers?.some((l) => l.metadata?.network)
+      // );
+      // if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
+      //   fetchDatasetNetwork(currentNetworkDataset.value);
+      // }
+      // if (currentNetworkDataset.value) {
+      //   const datasetLayer = await getDatasetLayerForDataObject(
+      //     currentNetworkDataset.value
+      //   );
+      //   if (isVectorDatasetLayer(datasetLayer)) {
+      //     currentNetworkDatasetLayer.value = datasetLayer;
+      //   }
+      // }
     }
 
     function pause() {
@@ -95,7 +93,6 @@ export default {
       deactivatedNodesUpdated();
     });
 
-    watch(selectedDatasets, findCurrentNetworkDataset);
     onMounted(findCurrentNetworkDataset);
 
     return {

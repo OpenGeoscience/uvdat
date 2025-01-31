@@ -4,10 +4,9 @@ import {
   Project,
   Chart,
   Dataset,
+  Layer,
   SourceRegion,
   SimulationType,
-  VectorDatasetLayer,
-  RasterDatasetLayer,
   ClickedFeatureData,
   RasterTooltipData,
   FloatingPanelConfig,
@@ -28,21 +27,15 @@ export const currentProject = ref<Project>();
 export const projectConfigMode = ref<"new" | "existing">();
 
 // Datasets
+export const loadingDatasets = ref<boolean>(false);
 export const availableDatasets = ref<Dataset[]>();
-export const selectedDatasets = ref<Dataset[]>([]);
-export const currentDataset = ref<Dataset>();
+
+// Layers
+export const selectedLayers = ref<Layer[]>([]);
 
 // Map
 export const map = ref<Map>();
-export const availableDatasetLayers = ref<
-  (VectorDatasetLayer | RasterDatasetLayer)[]
->([]);
-export const selectedDatasetLayers = ref<
-  (VectorDatasetLayer | RasterDatasetLayer)[]
->([]);
-export const clickedDatasetLayer = ref<
-  VectorDatasetLayer | RasterDatasetLayer
->();
+export const clickedLayer = ref<Layer[]>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);
 export const tooltipOverlay = ref<Popup>();
@@ -54,8 +47,10 @@ export const clickedFeature = ref<ClickedFeatureData>();
 export const rasterTooltipValue = ref<RasterTooltipData | undefined>();
 
 // Charts & Simulations
+export const loadingCharts = ref<boolean>(false);
 export const availableCharts = ref<Chart[]>();
 export const currentChart = ref<Chart>();
+export const loadingSimulationTypes = ref<boolean>(false);
 export const availableSimulationTypes = ref<SimulationType[]>();
 export const currentSimulationType = ref<SimulationType>();
 
@@ -64,7 +59,7 @@ export const selectedSourceRegions = ref<SourceRegion[]>([]);
 
 // Network
 export const currentNetworkDataset = ref<Dataset>();
-export const currentNetworkDatasetLayer = ref<VectorDatasetLayer>();
+export const currentNetworkDatasetLayer = ref<Layer>();
 export const deactivatedNodes = ref<number[]>([]);
 export const currentNetworkGCC = ref();
 

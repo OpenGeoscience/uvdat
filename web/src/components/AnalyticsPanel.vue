@@ -3,9 +3,10 @@ import { ref, watch } from "vue";
 import {
   currentSimulationType,
   currentProject,
-  selectedDatasetLayers,
+  selectedLayers,
   availableDatasets,
   availableSimulationTypes,
+  loadingSimulationTypes,
 } from "@/store";
 import {
   getDatasetLayers,
@@ -15,11 +16,8 @@ import {
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import {
-  isRasterDatasetLayer,
-  isVectorDatasetLayer,
-  RasterDatasetLayer,
   SimulationResult,
-  VectorDatasetLayer,
+  Layer,
 } from "@/types";
 import { isDatasetLayerVisible, toggleDatasetLayer } from "@/layers";
 
@@ -30,7 +28,7 @@ const activeResultInputs = ref<
   {
     key: string;
     viewable: boolean;
-    datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
+    datasetLayer: Layer | undefined;
     value: { name: string };
   }[]
 >([]);
@@ -96,13 +94,7 @@ async function populateActiveResultInputs() {
         return;
       }
 
-      let datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
-      if (
-        isVectorDatasetLayer(selectedOption) ||
-        isRasterDatasetLayer(selectedOption)
-      ) {
-        datasetLayer = selectedOption;
-      }
+      let datasetLayer: Layer | undefined = selectedOption;
 
       // TODO: Populate network objects with correct map layer
 
@@ -117,7 +109,7 @@ async function populateActiveResultInputs() {
   activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
     key: string;
     viewable: boolean;
-    datasetLayer: VectorDatasetLayer | RasterDatasetLayer | undefined;
+    datasetLayer: Layer | undefined;
     value: { name: string };
   }[];
 }
@@ -132,7 +124,7 @@ async function populateActiveResultOutputs() {
       availableDatasets.value
         .filter((d) => datasetIds.includes(d.id))
         .map(async (d) => {
-          d.map_layers = await getDatasetLayers(d.id);
+          d.layers = await getDatasetLayers(d.id);
           return d;
         })
     );
@@ -181,7 +173,7 @@ watch(activeResult, () => {
   }
 });
 
-watch(selectedDatasetLayers, populateActiveResultInputs);
+watch(selectedLayers, populateActiveResultInputs);
 </script>
 
 <template>
@@ -316,8 +308,8 @@ watch(selectedDatasetLayers, populateActiveResultInputs);
                             <td>{{ dataset.name }}</td>
                             <td>
                               <v-btn
-                                v-if="dataset.map_layers"
-                                @click="toggleDatasetLayer(dataset.map_layers[0])"
+                                v-if="dataset.layers"
+                                @click="toggleDatasetLayer(dataset.layers[0])"
                               >
                                 Show on Map
                               </v-btn>
@@ -353,6 +345,7 @@ watch(selectedDatasetLayers, populateActiveResultInputs);
           </template>
         </v-list-item>
       </v-list>
+      <v-progress-linear v-else-if="loadingSimulationTypes" indeterminate></v-progress-linear>
       <v-card-text v-else>No available Analytics.</v-card-text>
     </v-card>
   </div>

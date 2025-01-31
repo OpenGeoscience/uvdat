@@ -20,11 +20,53 @@ export interface Dataset {
   description: string;
   category: string;
   processing: boolean;
+  layers: Layer[];
   metadata: Record<string, unknown>;
-  dataset_type: "VECTOR" | "RASTER";
-  map_layers?: (VectorDatasetLayer | RasterDatasetLayer)[];
-  current_layer_index?: number;
-  network?: Network;
+}
+
+export interface Layer {
+  id: number;
+  name: string;
+  dataset: Dataset;
+  frames: LayerFrame[];
+  metadata: Record<string, unknown>;
+}
+
+export interface LayerFrame {
+  id: number;
+  name: string;
+  index: number;
+  layer: Layer;
+  vector: VectorData | null;
+  raster: RasterData | null;
+}
+
+export interface VectorData {
+  id: number;
+  name: string;
+  dataset: number;
+  geojson_data: string | null;
+  source_file: null | number;
+  metadata: Record<string, unknown>;
+}
+
+export interface RasterData {
+  id: number;
+  name: string;
+  cloud_optimized_geotiff: string | null;
+  dataset: number;
+  source_file: null | number;
+  metadata: Record<string, unknown>;
+}
+
+export interface RasterDataValues {
+  sourceBounds: {
+    xmax: number;
+    xmin: number;
+    ymax: number;
+    ymin: number;
+  };
+  data: number[][];
 }
 
 export interface SourceRegion {
@@ -121,73 +163,6 @@ export interface DefaultStyle {
   color_delimiter?: string;
   color_property?: string;
   outline?: string;
-}
-
-export interface DatasetLayerMetadata {
-  network?: boolean;
-  [key: string]: unknown;
-}
-
-export interface AbstractDatasetLayer {
-  id: number;
-  name: string;
-  file_item?: {
-    id: number;
-    name: string;
-  };
-  metadata: DatasetLayerMetadata;
-  // default_style: Record<string, unknown> | DefaultStyle;
-  default_style: DefaultStyle;
-  index: number;
-  dataset_id?: number;
-  dataset_category: string;
-}
-
-export function isNonNullObject(obj: unknown): obj is object {
-  return typeof obj === "object" && obj !== null;
-}
-
-export interface RasterDatasetLayer extends AbstractDatasetLayer {
-  cloud_optimized_geotiff: string;
-  type: "raster";
-}
-
-export function isRasterDatasetLayer(obj: unknown): obj is RasterDatasetLayer {
-  return isNonNullObject(obj) && "type" in obj && obj.type === "raster";
-}
-
-export interface RasterData {
-  sourceBounds: {
-    xmax: number;
-    xmin: number;
-    ymax: number;
-    ymin: number;
-  };
-  data: number[][];
-}
-
-export interface VectorDatasetLayer extends AbstractDatasetLayer {
-  type: "vector";
-}
-
-export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
-  return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
-}
-
-export type StyleLayer = NonNullable<ReturnType<Map["getLayer"]>>;
-export interface UserLayer extends StyleLayer {
-  metadata: {
-    id: number;
-    type: "vector" | "raster";
-  };
-}
-
-export function isUserLayer(layer: StyleLayer): layer is UserLayer {
-  return (
-    isNonNullObject(layer.metadata) &&
-    "id" in layer.metadata &&
-    layer.metadata.id !== undefined
-  );
 }
 
 export interface VectorTile {

@@ -1,8 +1,7 @@
 import {
-  getDatasetNetwork,
   getNetworkGCC,
   getProjectCharts,
-  getRasterData,
+  getRasterDataValues,
 } from "@/api/rest";
 import {
   rasterTooltipEnabled,
@@ -13,19 +12,16 @@ import {
   currentChart,
   currentNetworkDataset,
   currentNetworkDatasetLayer,
-  availableDatasets,
   rasterTooltipValue,
   showMapTooltip,
 } from "@/store";
 import {
   Dataset,
   RasterData,
-  RasterDatasetLayer,
-  VectorDatasetLayer,
+  RasterDataValues,
 } from "./types";
 import {
   createRasterLayerPolygonMask,
-  isDatasetLayerVisible,
   styleNetworkVectorTileLayer,
 } from "./layers";
 import { MapLayerMouseEvent } from "maplibre-gl";
@@ -52,19 +48,19 @@ export const rasterColormaps = [
   "gray",
 ];
 
-export const rasterTooltipDataCache: Record<number, RasterData | undefined> =
+export const rasterTooltipDataCache: Record<number, RasterDataValues | undefined> =
   {};
 
-export async function cacheRasterData(layer: RasterDatasetLayer) {
-  if (rasterTooltipDataCache[layer.id] !== undefined) {
+export async function cacheRasterData(raster: RasterData) {
+  if (rasterTooltipDataCache[raster.id] !== undefined) {
     return;
   }
 
-  const data = await getRasterData(layer.id);
-  rasterTooltipDataCache[layer.id] = data;
+  const data = await getRasterDataValues(raster.id);
+  rasterTooltipDataCache[raster.id] = data;
 
   // This will allow the raster tooltip to display data
-  createRasterLayerPolygonMask(layer);
+  createRasterLayerPolygonMask(raster);
 }
 
 export function valueAtCursor(
@@ -182,46 +178,48 @@ export function deactivatedNodesUpdated() {
 }
 
 export function fetchDatasetNetwork(dataset: Dataset) {
-  getDatasetNetwork(dataset.id).then((data) => {
-    // TODO: Handle datasets with multiple networks
-    const network = data[0];
+  // TODO: rewrite this
+  // getDatasetNetwork(dataset.id).then((data) => {
+  //   // TODO: Handle datasets with multiple networks
+  //   const network = data[0];
 
-    // Assign this network data to its dataset
-    // Do this by mapping to ensure the change is propogated
-    availableDatasets.value = availableDatasets.value?.map((d) => {
-      if (d.id === dataset.id) {
-        d.network = network;
-      }
+  //   // Assign this network data to its dataset
+  //   // Do this by mapping to ensure the change is propogated
+  //   availableDatasets.value = availableDatasets.value?.map((d) => {
+  //     if (d.id === dataset.id) {
+  //       d.network = network;
+  //     }
 
-      return d;
-    });
+  //     return d;
+  //   });
 
-    // Set the dataset currently performing network operations on
-    currentNetworkDataset.value = availableDatasets.value?.find(
-      (d) => d.id === dataset.id
-    );
-  });
+  //   // Set the dataset currently performing network operations on
+  //   currentNetworkDataset.value = availableDatasets.value?.find(
+  //     (d) => d.id === dataset.id
+  //   );
+  // });
 }
 
 export function toggleNodeActive(
   nodeId: number,
   dataset: Dataset,
-  datasetLayer: VectorDatasetLayer
+  // datasetLayer: VectorDatasetLayer
 ) {
-  if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) {
-    return;
-  }
+  // TODO: rewrite this
+  // if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) {
+  //   return;
+  // }
 
-  if (!dataset.network) {
-    fetchDatasetNetwork(dataset);
-  }
+  // if (!dataset.network) {
+  //   fetchDatasetNetwork(dataset);
+  // }
 
-  currentNetworkDataset.value = dataset as Dataset;
-  currentNetworkDatasetLayer.value = datasetLayer as VectorDatasetLayer;
-  if (deactivatedNodes.value.includes(nodeId)) {
-    deactivatedNodes.value = deactivatedNodes.value.filter((v) => v !== nodeId);
-  } else {
-    deactivatedNodes.value = [...deactivatedNodes.value, nodeId];
-  }
-  deactivatedNodesUpdated();
+  // currentNetworkDataset.value = dataset as Dataset;
+  // currentNetworkDatasetLayer.value = datasetLayer as VectorDatasetLayer;
+  // if (deactivatedNodes.value.includes(nodeId)) {
+  //   deactivatedNodes.value = deactivatedNodes.value.filter((v) => v !== nodeId);
+  // } else {
+  //   deactivatedNodes.value = [...deactivatedNodes.value, nodeId];
+  // }
+  // deactivatedNodesUpdated();
 }
