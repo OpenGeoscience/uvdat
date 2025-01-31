@@ -14,8 +14,8 @@ from uvdat.core.models import (
     NetworkNode,
     Project,
     RasterData,
+    Region,
     SimulationResult,
-    SourceRegion,
     VectorData,
 )
 
@@ -127,9 +127,9 @@ class RasterDataSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SourceRegionSerializer(serializers.ModelSerializer):
+class RegionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SourceRegion
+        model = Region
         fields = '__all__'
 
 

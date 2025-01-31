@@ -13,8 +13,8 @@ from uvdat.core.rest import (
     LayerViewSet,
     ProjectViewSet,
     RasterDataViewSet,
+    RegionViewSet,
     SimulationViewSet,
-    SourceRegionViewSet,
     UserViewSet,
     VectorDataViewSet,
 )
@@ -35,7 +35,7 @@ router.register(r'layers', LayerViewSet, basename='layers')
 router.register(r'layer-frames', LayerFrameViewSet, basename='layer-frames')
 router.register(r'rasters', RasterDataViewSet, basename='rasters')
 router.register(r'vectors', VectorDataViewSet, basename='vectors')
-router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
+router.register(r'source-regions', RegionViewSet, basename='source-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
 
 urlpatterns = [

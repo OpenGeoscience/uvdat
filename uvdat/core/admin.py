@@ -11,8 +11,8 @@ from uvdat.core.models import (
     NetworkNode,
     Project,
     RasterData,
+    Region,
     SimulationResult,
-    SourceRegion,
     VectorData,
     VectorFeature,
 )
@@ -80,7 +80,7 @@ class VectorFeatureAdmin(admin.ModelAdmin):
         return obj.vector_data.dataset.name
 
 
-class SourceRegionAdmin(admin.ModelAdmin):
+class RegionAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_dataset_name']
 
     def get_dataset_name(self, obj):
@@ -130,7 +130,7 @@ admin.site.register(LayerFrame, LayerFrameAdmin)
 admin.site.register(RasterData, RasterDataAdmin)
 admin.site.register(VectorData, VectorDataAdmin)
 admin.site.register(VectorFeature, VectorFeatureAdmin)
-admin.site.register(SourceRegion, SourceRegionAdmin)
+admin.site.register(Region, RegionAdmin)
 admin.site.register(Network, NetworkAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
 admin.site.register(NetworkEdge, NetworkEdgeAdmin)

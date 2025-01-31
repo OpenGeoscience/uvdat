@@ -32,6 +32,6 @@ class Dataset(models.Model):
         return size
 
     def get_regions(self):
-        from uvdat.core.models import SourceRegion
+        from uvdat.core.models import Region
 
-        return SourceRegion.objects.filter(dataset=self)
+        return Region.objects.filter(dataset=self)

@@ -5,7 +5,7 @@ from .file_item import FileItem
 from .layer import Layer, LayerFrame
 from .networks import Network, NetworkEdge, NetworkNode
 from .project import Project
-from .regions import SourceRegion
+from .regions import Region
 from .simulations import SimulationResult
 
 __all__ = [
@@ -18,7 +18,7 @@ __all__ = [
     VectorFeature,
     Layer,
     LayerFrame,
-    SourceRegion,
+    Region,
     Network,
     NetworkEdge,
     NetworkNode,

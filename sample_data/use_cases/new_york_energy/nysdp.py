@@ -14,7 +14,7 @@ from uvdat.core.models import (
     Network,
     NetworkEdge,
     NetworkNode,
-    SourceRegion,
+    Region,
     VectorData,
     VectorFeature,
 )
@@ -138,7 +138,7 @@ def create_consolidated_network(dataset, **kwargs):
     zones_dataset_name = kwargs.get('zones_dataset_name')
     if zones_dataset_name is None:
         raise ValueError('`zones_dataset_name` is required.')
-    zones = SourceRegion.objects.filter(dataset__name=zones_dataset_name)
+    zones = Region.objects.filter(dataset__name=zones_dataset_name)
     if zones.count() == 0:
         raise ValueError(f'No regions found with dataset name "{zones_dataset_name}".')
 

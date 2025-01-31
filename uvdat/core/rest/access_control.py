@@ -26,7 +26,7 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
         models.FileItem,
         models.Layer,
         models.Network,
-        models.SourceRegion,
+        models.Region,
     ]:
         return queryset.filter(dataset__project__in=projects)
     if model == models.LayerFrame:

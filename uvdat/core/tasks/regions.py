@@ -3,13 +3,13 @@ import secrets
 from django.contrib.gis.geos import GEOSGeometry
 import geopandas
 
-from uvdat.core.models import SourceRegion
+from uvdat.core.models import Region
 
 
 def create_source_regions(vector_data, region_options):
     # Overwrite previous results
     dataset = vector_data.dataset
-    SourceRegion.objects.filter(dataset=dataset).delete()
+    Region.objects.filter(dataset=dataset).delete()
 
     name_property = region_options.get('name_property')
     geodata = vector_data.read_geojson_data()
@@ -31,7 +31,7 @@ def create_source_regions(vector_data, region_options):
             geometry['coordinates'] = [geometry['coordinates']]
 
         # Create region with properties and MultiPolygon
-        region = SourceRegion(
+        region = Region(
             name=name,
             boundary=GEOSGeometry(str(geometry)),
             metadata=properties,

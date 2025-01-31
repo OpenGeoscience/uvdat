@@ -5,7 +5,7 @@ from .data import VectorFeature
 from .dataset import Dataset
 
 
-class SourceRegion(models.Model):
+class Region(models.Model):
     name = models.CharField(max_length=255)
     vector_feature = models.ForeignKey(
         VectorFeature, on_delete=models.CASCADE, related_name='regions', null=True

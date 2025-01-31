@@ -4,7 +4,7 @@ import shapely
 from datetime import datetime
 from pathlib import Path
 
-from uvdat.core.models import Network, SourceRegion
+from uvdat.core.models import Network, Region
 
 
 OUTPUT_FOLDER = Path('sample_data/use_cases/new_york_energy/networks')
@@ -13,7 +13,7 @@ OUTPUT_FOLDER = Path('sample_data/use_cases/new_york_energy/networks')
 def perform_export():
     start = datetime.now()
     networks = Network.objects.filter(dataset__name='National Grid Network')
-    zones = SourceRegion.objects.filter(dataset__name='County Boundaries')
+    zones = Region.objects.filter(dataset__name='County Boundaries')
 
     for network in networks:
         sample_node = network.nodes.first()
