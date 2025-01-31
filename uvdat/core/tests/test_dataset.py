@@ -35,7 +35,7 @@ def test_rest_dataset_gcc_no_networks(authenticated_api_client, dataset: Dataset
 def test_rest_dataset_gcc_empty_network(
     authenticated_api_client, project: Project, network: Network
 ):
-    dataset = network.dataset
+    dataset = network.vector_data.dataset
     project.datasets.add(dataset)
     resp = authenticated_api_client.get(
         f'/api/v1/datasets/{dataset.id}/gcc/?project={project.id}&exclude_nodes=1'
@@ -78,7 +78,7 @@ def test_rest_dataset_gcc(
     #  |
     #  *
 
-    dataset = network.dataset
+    dataset = network.vector_data.dataset
     project.datasets.add(dataset)
     resp = authenticated_api_client.get(
         f'/api/v1/datasets/{dataset.id}/gcc/'
@@ -143,7 +143,7 @@ def test_rest_dataset_network_no_network(authenticated_api_client, dataset: Data
 @pytest.mark.django_db
 def test_rest_dataset_network(authenticated_api_client, network_edge):
     network = network_edge.network
-    dataset = network.dataset
+    dataset = network.vector_data.dataset
     assert network_edge.from_node != network_edge.to_node
 
     resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/network/')

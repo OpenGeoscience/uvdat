@@ -115,7 +115,7 @@ class NetworkFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Network
 
-    dataset = factory.SubFactory(DatasetFactory)
+    vector_data = factory.SubFactory(VectorDataFactory)
 
 
 class NetworkNodeFactory(factory.django.DjangoModelFactory):

@@ -31,6 +31,11 @@ class Dataset(models.Model):
                 size += file_item.file_size
         return size
 
+    def get_networks(self):
+        from uvdat.core.models import Network
+
+        return Network.objects.filter(vector_data__dataset=self)
+
     def get_regions(self):
         from uvdat.core.models import Region
 

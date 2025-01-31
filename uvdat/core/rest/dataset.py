@@ -59,7 +59,7 @@ class DatasetViewSet(ReadOnlyModelViewSet):
     def network(self, request, **kwargs):
         dataset = self.get_object()
         networks = []
-        for network in dataset.networks.all():
+        for network in dataset.get_networks().all():
             networks.append(
                 {
                     'nodes': [
@@ -85,12 +85,12 @@ class DatasetViewSet(ReadOnlyModelViewSet):
         project_id = serializer.validated_data['project']
         exclude_nodes = [int(n) for n in serializer.validated_data['exclude_nodes'].split(',')]
 
-        if not dataset.networks.exists():
+        if not dataset.get_networks().exists():
             return Response(data='No networks exist in selected dataset', status=400)
 
         # Find the GCC for each network in the dataset
         network_gccs: list[list[int]] = []
-        for network in dataset.networks.all():
+        for network in dataset.get_networks().all():
             network: Network
             network_gccs.append(network.get_gcc(excluded_nodes=exclude_nodes))
 
