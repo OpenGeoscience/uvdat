@@ -2,7 +2,7 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { currentUser, openSidebars, panelArrangement, theme } from "@/store";
+import { availableDatasets, currentUser, openSidebars, panelArrangement, theme } from "@/store";
 import { logout } from "@/api/auth";
 import { FloatingPanelConfig } from "@/types";
 
@@ -10,6 +10,7 @@ import FloatingPanel from "./FloatingPanel.vue";
 import ProjectConfig from "./ProjectConfig.vue";
 import ChartsPanel from "./ChartsPanel.vue";
 import AnalyticsPanel from "./AnalyticsPanel.vue";
+import DatasetPanel from "./DatasetPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -103,7 +104,9 @@ watch(darkMode, () => {
       </v-toolbar>
       <ProjectConfig />
       <div class="panel-set">
-        <FloatingPanel id="datasets"></FloatingPanel>
+        <FloatingPanel id="datasets">
+          <DatasetPanel :datasets="availableDatasets"/>
+        </FloatingPanel>
         <FloatingPanel id="layers"></FloatingPanel>
       </div>
     </v-navigation-drawer>
@@ -198,10 +201,10 @@ watch(darkMode, () => {
       </div>
       <div class="panel-set">
         <FloatingPanel id="charts">
-          <ChartsPanel></ChartsPanel>
+          <ChartsPanel/>
         </FloatingPanel>
         <FloatingPanel id="analytics">
-          <AnalyticsPanel></AnalyticsPanel>
+          <AnalyticsPanel/>
         </FloatingPanel>
       </div>
     </v-navigation-drawer>

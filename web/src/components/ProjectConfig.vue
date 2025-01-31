@@ -5,8 +5,9 @@ import {
   projectConfigMode,
   currentProject,
   currentUser,
+  loadingDatasets,
 } from "@/store";
-import DatasetList from "./DatasetList.vue";
+import DatasetPanel from "./DatasetPanel.vue";
 import AccessControl from "./AccessControl.vue";
 import {
   getDatasets,
@@ -14,6 +15,7 @@ import {
   createProject,
   deleteProject,
   patchProject,
+  getDatasetLayers,
 } from "@/api/rest";
 import { Project, Dataset } from "@/types";
 import {
@@ -141,12 +143,17 @@ function saveProjectMapLocation(project: Project | undefined) {
   }
 }
 
-function selectProject(v: Record<string, unknown>) {
-  if (selectedProject.value?.id !== v.id) {
-    getProjectDatasets(v.id as number).then((data) => {
-      projDatasets.value = data;
+function selectProject(project: Project) {
+  if (selectedProject.value?.id !== project.id) {
+    selectedProject.value = availableProjects.value.find((p) => p.id === project.id);
+    loadingDatasets.value = true;
+    getDatasets().then(async (datasets) => {
+      allDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
+        dataset.layers = await getDatasetLayers(dataset.id);
+        return dataset;
+      }));
     });
-    selectedProject.value = availableProjects.value.find((p) => p.id === v.id);
+    refreshProjectDatasets(null);
   }
 }
 
@@ -155,17 +162,11 @@ function loadSelectedProject() {
   projectConfigMode.value = undefined;
 }
 
-function toggleOtherDatasetSelection({
-  show,
-  datasets,
-}: {
-  show: boolean;
-  datasets: Dataset[];
-}) {
+function toggleOtherDatasetSelection(datasets: Dataset[]) {
   datasets.forEach((dataset: Dataset) => {
-    if (show && !otherSelectedDatasetIds.value.includes(dataset.id)) {
+    if (!otherSelectedDatasetIds.value.includes(dataset.id)) {
       otherSelectedDatasetIds.value.push(dataset.id);
-    } else if (!show && otherSelectedDatasetIds.value.includes(dataset.id)) {
+    } else {
       otherSelectedDatasetIds.value = otherSelectedDatasetIds.value.filter(
         (id) => id !== dataset.id
       );
@@ -173,17 +174,11 @@ function toggleOtherDatasetSelection({
   });
 }
 
-function toggleProjDatasetSelection({
-  show,
-  datasets,
-}: {
-  show: boolean;
-  datasets: Dataset[];
-}) {
+function toggleProjDatasetSelection(datasets: Dataset[]) {
   datasets.forEach((dataset: Dataset) => {
-    if (show && !projSelectedDatasetIds.value.includes(dataset.id)) {
+    if (!projSelectedDatasetIds.value.includes(dataset.id)) {
       projSelectedDatasetIds.value.push(dataset.id);
-    } else if (!show && projSelectedDatasetIds.value.includes(dataset.id)) {
+    } else {
       projSelectedDatasetIds.value = projSelectedDatasetIds.value.filter(
         (id) => id !== dataset.id
       );
@@ -217,14 +212,13 @@ function saveDatasetsToProject(ids: number[]) {
   if (selectedProject.value) {
     patchProject(selectedProject.value.id, {
       datasets: ids,
-    }).then((project) => {
-      getProjectDatasets(project.id).then((datasets) => {
-        projDatasets.value = datasets;
+    }).then(() => {
+      refreshProjectDatasets(() => {
         saving.value = "done";
         setTimeout(() => {
           saving.value = undefined;
         }, 2000);
-      });
+      })
     });
   }
 }
@@ -234,25 +228,17 @@ function updateSelectedProject(newProjectData: Project) {
   selectedProject.value = newProjectData;
 }
 
-watch(selectedProject, () => {
-  resetProjectEdit();
-});
-
-watch(projectConfigMode, () => {
-  if (projectConfigMode) {
-    getDatasets().then((data) => {
-      allDatasets.value = data;
+function refreshProjectDatasets(callback: Function | null) {
+  if (selectedProject.value) {
+    getProjectDatasets(selectedProject.value.id).then(async (datasets) => {
+      projDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
+        dataset.layers = await getDatasetLayers(dataset.id);
+        return dataset;
+      }));
+      if (callback) callback();
     });
   }
-});
-
-onMounted(() => {
-  window.addEventListener("keydown", (e) => {
-    if (e.key == "Escape" && projectConfigMode.value) {
-      projectConfigMode.value = undefined;
-    }
-  });
-});
+}
 
 function resetProjectEdit() {
   projectConfigMode.value = "existing";
@@ -262,10 +248,27 @@ function resetProjectEdit() {
 }
 
 function handleEditFocus(focused: boolean) {
-  if (!focused) {
+  if (!focused && !newProjectName) {
     resetProjectEdit();
   }
 }
+
+onMounted(() => {
+  window.addEventListener("keydown", (e) => {
+    if (e.key == "Escape" && projectConfigMode.value) {
+      projectConfigMode.value = undefined;
+    }
+  });
+});
+
+watch(selectedProject, resetProjectEdit);
+
+watch(otherDatasets, () => {
+  if (allDatasets.value && projDatasets.value) {
+    loadingDatasets.value = false;
+  }
+})
+
 </script>
 
 <template>
@@ -388,19 +391,20 @@ function handleEditFocus(focused: boolean) {
             />
           </v-card>
           <v-list
-            :items="filteredProjects"
-            item-title="name"
-            item-value="id"
             class="transparent"
             color="primary"
             selectable
-            @click:select="selectProject"
           >
-            <template v-slot:title="{ title, item }">
+            <v-list-item
+              v-for="project in filteredProjects"
+              :title="project.name"
+              @click="() => selectProject(project)"
+            >
+            <template v-slot:title="{ title }">
               <v-text-field
-                v-if="projectToEdit?.id === item.id"
+                v-if="projectToEdit?.id === project.id"
                 v-model="newProjectName"
-                :placeholder="item.name"
+                :placeholder="project.name"
                 label="Project Name"
                 density="compact"
                 hide-details
@@ -412,17 +416,17 @@ function handleEditFocus(focused: boolean) {
               />
               <span v-else>{{ title }}</span>
             </template>
-            <template v-slot:append="{ item }">
+            <template v-slot:append>
               <div
-                v-if="['owner', 'collaborator'].includes(permissions[item.id])"
+                v-if="['owner', 'collaborator'].includes(permissions[project.id])"
               >
                 <v-icon
                   icon="mdi-pencil"
                   v-if="!projectToEdit && !projectToDelete"
-                  @click.stop="projectToEdit = item"
+                  @click.stop="projectToEdit = project"
                 />
                 <v-btn
-                  v-else-if="projectToEdit?.id === item.id"
+                  v-else-if="projectToEdit?.id === project.id"
                   color="primary"
                   variant="flat"
                   style="min-width: 40px; min-height: 40px"
@@ -432,14 +436,15 @@ function handleEditFocus(focused: boolean) {
                   <v-icon icon="mdi-content-save" />
                 </v-btn>
               </div>
-              <div v-if="['owner'].includes(permissions[item.id])">
+              <div v-if="['owner'].includes(permissions[project.id])">
                 <v-icon
                   icon="mdi-trash-can"
                   v-if="!projectToEdit && !projectToDelete"
-                  @click.stop="projectToDelete = item"
+                  @click.stop="projectToDelete = project"
                 />
               </div>
             </template>
+            </v-list-item>
           </v-list>
           <div class="pa-2 d-flex" v-if="projectConfigMode === 'new'">
             <v-text-field
@@ -474,7 +479,7 @@ function handleEditFocus(focused: boolean) {
             @click="loadSelectedProject"
             color="primary"
           >
-            Load Project On Map
+            Load Project
           </v-btn>
         </div>
         <div v-if="selectedProject" class="tab-content">
@@ -483,72 +488,74 @@ function handleEditFocus(focused: boolean) {
             <v-tab value="users">Access Control</v-tab>
           </v-tabs>
           <div
-            v-if="currentTab === 'datasets' && projDatasets"
-            class="py-3 px-6 d-flex"
+            v-if="currentTab === 'datasets'"
           >
-            <div style="width: 30%">
-              <v-card-text>Available Datasets</v-card-text>
-              <v-card class="pa-2 dataset-card">
-                <dataset-list
-                  :datasets="otherDatasets"
-                  :selected-ids="otherSelectedDatasetIds"
-                  @toggle-datasets="toggleOtherDatasetSelection"
-                  id-prefix="all"
-                />
-              </v-card>
-              <v-btn
-                color="primary"
-                @click="addAllSelectionToProject"
-                :disabled="!!saving || !otherSelectedDatasetIds.length"
-                class="mt-2"
-              >
-                Add
-                <v-icon icon="mdi-chevron-double-right" />
-                <v-icon
-                  v-if="saving === 'done'"
-                  icon="mdi-check"
-                  color="green"
-                  class="ml-4"
-                />
-                <v-progress-circular
-                  v-else-if="saving"
-                  size="25"
-                  indeterminate
-                  class="ml-4"
-                />
-              </v-btn>
-            </div>
-            <div class="ml-10" style="width: 30%">
-              <v-card-text>Project Datasets</v-card-text>
-              <v-card class="pa-2 dataset-card">
-                <dataset-list
-                  :datasets="projDatasets"
-                  :selected-ids="projSelectedDatasetIds"
-                  @toggle-datasets="toggleProjDatasetSelection"
-                  id-prefix="proj"
-                />
-              </v-card>
-              <v-btn
-                color="primary"
-                @click="removeProjSelectionFromProject"
-                :disabled="!!saving || !projSelectedDatasetIds.length"
-                class="mt-2"
-              >
-                <v-icon icon="mdi-chevron-double-left" />
-                Remove
-                <v-icon
-                  v-if="saving === 'done'"
-                  icon="mdi-check"
-                  color="green"
-                  class="ml-4"
-                />
-                <v-progress-circular
-                  v-else-if="saving"
-                  size="25"
-                  indeterminate
-                  class="ml-4"
-                />
-              </v-btn>
+            <v-progress-linear v-if="loadingDatasets" indeterminate></v-progress-linear>
+            <div v-else class="py-3 px-6 d-flex">
+              <div style="width: 30%">
+                <v-card-text>Available Datasets</v-card-text>
+                <v-card class="pa-2 dataset-card">
+                  <DatasetPanel
+                    :datasets="otherDatasets"
+                    :selected-ids="otherSelectedDatasetIds"
+                    @toggleDatasets="toggleOtherDatasetSelection"
+                    id-prefix="all"
+                  />
+                </v-card>
+                <v-btn
+                  color="primary"
+                  @click="addAllSelectionToProject"
+                  :disabled="!!saving || !otherSelectedDatasetIds.length"
+                  class="mt-2"
+                >
+                  Add
+                  <v-icon icon="mdi-chevron-double-right" />
+                  <v-icon
+                    v-if="saving === 'done'"
+                    icon="mdi-check"
+                    color="green"
+                    class="ml-4"
+                  />
+                  <v-progress-circular
+                    v-else-if="saving"
+                    size="25"
+                    indeterminate
+                    class="ml-4"
+                  />
+                </v-btn>
+              </div>
+              <div class="ml-10" style="width: 30%">
+                <v-card-text>Project Datasets</v-card-text>
+                <v-card class="pa-2 dataset-card">
+                  <DatasetPanel
+                    :datasets="projDatasets"
+                    :selected-ids="projSelectedDatasetIds"
+                    @toggleDatasets="toggleProjDatasetSelection"
+                    id-prefix="proj"
+                  />
+                </v-card>
+                <v-btn
+                  color="primary"
+                  @click="removeProjSelectionFromProject"
+                  :disabled="!!saving || !projSelectedDatasetIds.length"
+                  class="mt-2"
+                >
+                  <v-icon icon="mdi-chevron-double-left" />
+                  Remove
+                  <v-icon
+                    v-if="saving === 'done'"
+                    icon="mdi-check"
+                    color="green"
+                    class="ml-4"
+                  />
+                  <v-progress-circular
+                    v-else-if="saving"
+                    size="25"
+                    indeterminate
+                    class="ml-4"
+                  />
+                </v-btn>
+              </div>
             </div>
           </div>
           <div v-if="currentTab === 'users'" class="py-3 px-6">

@@ -75,9 +75,10 @@ onMounted(() => {
     <v-list>
       <v-list-subheader>
         Owner
-        <v-tooltip activator="parent" location="end">
-          Permissions: Read, Write, Delete, Access Control
-        </v-tooltip>
+        <v-icon
+          icon="mdi-information-outline"
+          v-tooltip="'Permissions: Read, Write, Delete, Access Control'"
+        />
       </v-list-subheader>
       <v-list-item
         v-if="project.owner"
@@ -118,9 +119,10 @@ onMounted(() => {
       </v-list-item>
       <v-list-subheader>
         Collaborators
-        <v-tooltip activator="parent" location="end">
-          Permissions: Read, Write
-        </v-tooltip>
+        <v-icon
+          icon="mdi-information-outline"
+          v-tooltip="'Permissions: Read & Write'"
+        />
       </v-list-subheader>
       <v-list-item
         v-for="collaborator in project.collaborators"
@@ -164,9 +166,10 @@ onMounted(() => {
       />
       <v-list-subheader>
         Followers
-        <v-tooltip activator="parent" location="end">
-          Permissions: Read, Write
-        </v-tooltip>
+        <v-icon
+          icon="mdi-information-outline"
+          v-tooltip="'Permissions: Read Only'"
+        />
       </v-list-subheader>
       <v-list-item
         v-for="follower in project.followers"
@@ -221,7 +224,7 @@ onMounted(() => {
     </v-btn>
     <v-dialog v-model="showUserSelectDialog" width="500">
       <v-card>
-        <v-card-title class="pa-3 bg-grey-lighten-2 text-grey-darken-2">
+        <v-card-title class="pa-3">
           {{
             userSelectDialogMode === "add" ? "Add Users" : "Select New Owner"
           }}
@@ -298,7 +301,7 @@ onMounted(() => {
     </v-dialog>
     <v-dialog :model-value="!!userToRemove" width="500">
       <v-card>
-        <v-card-title class="pa-3 bg-grey-lighten-2 text-grey-darken-2">
+        <v-card-title class="pa-3">
           Remove User
           <v-btn
             class="close-button transparent"
