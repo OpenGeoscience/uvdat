@@ -12,7 +12,7 @@ OUTPUT_FOLDER = Path('sample_data/use_cases/new_york_energy/networks')
 
 def perform_export():
     start = datetime.now()
-    networks = Network.objects.filter(dataset__name='National Grid Network')
+    networks = Network.objects.filter(vector_data__dataset__name='National Grid Network')
     zones = Region.objects.filter(dataset__name='County Boundaries')
 
     for network in networks:

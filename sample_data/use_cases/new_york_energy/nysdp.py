@@ -131,7 +131,7 @@ def download_all_deduped_vector_features(**kwargs):
 
 def create_consolidated_network(dataset, **kwargs):
     start = datetime.now()
-    Network.objects.filter(dataset=dataset).delete()
+    Network.objects.filter(vector_data__dataset=dataset).delete()
     VectorData.objects.filter(dataset=network.dataset).delete()
     gdf = download_all_deduped_vector_features(**kwargs)
 
@@ -165,7 +165,6 @@ def create_consolidated_network(dataset, **kwargs):
         )
         network = Network.objects.create(
             name=vector_data.name,
-            dataset=dataset,
             vector_data=vector_data,
             category='energy'
         )

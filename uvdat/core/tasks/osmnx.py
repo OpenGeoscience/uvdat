@@ -17,7 +17,7 @@ def get_or_create_road_dataset(project, location):
         project.datasets.add(dataset)
 
     print('Clearing previous results...')
-    Network.objects.filter(dataset=dataset).delete()
+    Network.objects.filter(vector_data__dataset=dataset).delete()
     return dataset
 
 
@@ -33,8 +33,11 @@ def metadata_for_row(row):
 def load_roads(project_id, location):
     project = Project.objects.get(id=project_id)
     dataset = get_or_create_road_dataset(project, location)
+    vector_data = VectorData.objects.create(dataset=dataset)
     network = Network.objects.create(
-        dataset=dataset, category='roads', metadata={'source': 'Fetched with OSMnx.'}
+        category='roads',
+        vector_data=vector_data,
+        metadata={'source': 'Fetched with OSMnx.'},
     )
 
     print(f'Fetching road data for {location}...')
@@ -85,7 +88,6 @@ def load_roads(project_id, location):
         edge.metadata = metadata_for_row(edge_data)
         edge.save()
 
-    vector_data = VectorData.objects.create(dataset=dataset)
     vector_data.write_geojson_data(geojson_from_network(dataset))
     create_vector_features(vector_data)
     print('Done.')

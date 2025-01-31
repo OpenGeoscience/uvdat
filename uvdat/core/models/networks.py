@@ -2,7 +2,6 @@ from django.contrib.gis.db import models as geo_models
 from django.db import connection, models
 
 from .data import VectorData, VectorFeature
-from .dataset import Dataset
 
 GCC_QUERY = """
 WITH RECURSIVE n as (
@@ -45,10 +44,7 @@ SELECT id FROM n ORDER BY id
 
 class Network(models.Model):
     name = models.CharField(max_length=255, default='Network')
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='networks')
-    vector_data = models.ForeignKey(
-        VectorData, on_delete=models.CASCADE, related_name='networks', null=True
-    )
+    vector_data = models.ForeignKey(VectorData, on_delete=models.CASCADE, related_name='networks')
     category = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
 

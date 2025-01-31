@@ -30,7 +30,6 @@ def create_network(dataset, network_name, geodata):
     )
     network = Network.objects.create(
         name=network_name,
-        dataset=dataset,
         category='energy',
         vector_data=vector_data,
         metadata=dict(name=network_name)
@@ -87,7 +86,7 @@ def create_network(dataset, network_name, geodata):
 def perform_import(dataset, **kwargs):
     print('\tEstimated time: 45 minutes.')
     start = datetime.now()
-    Network.objects.filter(dataset=dataset).delete()
+    Network.objects.filter(vector_data__dataset=dataset).delete()
     VectorData.objects.filter(dataset=dataset).delete()
     for file_item in dataset.source_files.all():
         with tempfile.TemporaryDirectory() as temp_dir:

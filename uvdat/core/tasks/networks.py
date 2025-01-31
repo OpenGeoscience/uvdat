@@ -23,9 +23,11 @@ NODE_RECOVERY_MODES = [
 def create_network(vector_data, network_options):
     # Overwrite previous results
     dataset = vector_data.dataset
-    Network.objects.filter(dataset=dataset).delete()
+    Network.objects.filter(vector_data__dataset=dataset).delete()
     network = Network.objects.create(
-        dataset=dataset, category=dataset.category, metadata={'source': 'Parsed from GeoJSON.'}
+        category=dataset.category,
+        vector_data=vector_data,
+        metadata={'source': 'Parsed from GeoJSON.'},
     )
 
     connection_column = network_options.get('connection_column')
@@ -179,7 +181,7 @@ def create_network(vector_data, network_options):
 
 def geojson_from_network(dataset):
     new_feature_set = []
-    for n in NetworkNode.objects.filter(network__dataset=dataset):
+    for n in NetworkNode.objects.filter(network__vector_data__dataset=dataset):
         node_as_feature = {
             'id': n.id,
             'type': 'Feature',
@@ -191,7 +193,7 @@ def geojson_from_network(dataset):
         }
         new_feature_set.append(node_as_feature)
 
-    for e in NetworkEdge.objects.filter(network__dataset=dataset):
+    for e in NetworkEdge.objects.filter(network__vector_data__dataset=dataset):
         edge_as_feature = {
             'id': e.id,
             'type': 'Feature',
