@@ -105,8 +105,6 @@ def test_rest_dataset_layers(
     data: list[dict] = resp.json()
     assert len(data) == 3
 
-    print(data)
-
     # Assert these lists are the same objects
     assert sorted([x['id'] for x in data]) == sorted([x.id for x in layers])
 
