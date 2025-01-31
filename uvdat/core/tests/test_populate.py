@@ -29,9 +29,9 @@ def test_populate():
     # smaller subset for faster evaluation
     # 0 is MBTA Rapid Transit, tests network eval
     # 4 is Massachusetts Elevation Data, tests raster eval
-    # 5 is Boston Neighborhoods, tests regions eval
-    # 8 is Boston Sea Level Rises, tests multilayer dataset eval
-    dataset_indexes = [0, 4, 5, 8]
+    # 6 is Boston Neighborhoods, tests regions eval
+    # 9 is Boston Projected Flood Events, tests multilayer/multiframe dataset eval
+    dataset_indexes = [0, 4, 6, 9]
 
     call_command(
         'populate',
@@ -43,15 +43,14 @@ def test_populate():
     assert Chart.objects.all().count() == 1
     assert Project.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
-    assert FileItem.objects.all().count() == 7
-    # TODO use correct expected counts
-    assert Layer.objects.all().count() == -1
-    assert LayerFrame.objects.all().count() == -1
+    assert FileItem.objects.all().count() == 13
+    assert Layer.objects.all().count() == 6
+    assert LayerFrame.objects.all().count() == 12
     assert Network.objects.all().count() == 1
     assert NetworkEdge.objects.all().count() == 164
     assert NetworkNode.objects.all().count() == 158
     assert RasterData.objects.all().count() == 1
     assert SimulationResult.objects.all().count() == 0
     assert Region.objects.all().count() == 24
-    assert VectorData.objects.all().count() == 5
-    assert VectorFeature.objects.count() == 351
+    assert VectorData.objects.all().count() == 11
+    assert VectorFeature.objects.count() == 357
