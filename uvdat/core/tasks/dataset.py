@@ -16,7 +16,7 @@ def create_layers_and_frames(dataset, layer_options=None):
 
     if layer_options is None:
         layer_options = [
-            dict(name=data.name, frames=None, data=data.name)
+            dict(name=data.name.split('.')[0].replace('_', ' '), frames=None, data=data.name)
             for data in [*vectors.all(), *rasters.all()]
         ]
 
