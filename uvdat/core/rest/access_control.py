@@ -25,12 +25,13 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
     if model in [
         models.FileItem,
         models.Layer,
-        models.Network,
         models.Region,
     ]:
         return queryset.filter(dataset__project__in=projects)
     if model == models.LayerFrame:
         return queryset.filter(layer__dataset__project__in=projects)
+    if model == models.Network:
+        return queryset.filter(vector_data__dataset__project__in=projects)
     if model in [models.NetworkNode, models.NetworkEdge]:
         return queryset.filter(network__dataset__project__in=projects)
 

@@ -147,11 +147,6 @@ class NetworkSerializer(serializers.ModelSerializer):
         model = Network
         fields = '__all__'
 
-    name = serializers.SerializerMethodField('get_name')
-
-    def get_name(self, obj):
-        return obj.dataset.name
-
 
 class NetworkNodeSerializer(serializers.ModelSerializer):
     class Meta:
