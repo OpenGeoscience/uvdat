@@ -1,4 +1,3 @@
-import ast
 import json
 
 from django.db import connection
@@ -78,7 +77,6 @@ def get_filter_string(filters: dict | None = None):
         key_path = key.replace('.', ',')
         return_str += f" AND t.properties #>> '{{{key_path}}}' = '{value}'"
     return return_str
-
 
 
 class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
