@@ -103,7 +103,6 @@ class LayerRepresentation:
                     source_filters = frame.get('source_filters')
                     if source_filters is not None and source_filters != dict(band=1):
                         query.update(self.get_flat_filters(source_filters))
-                        self.frame_name_label.value = str(query)
 
                     if 'raster' in url_path:
                         url_suffix += '.png'
