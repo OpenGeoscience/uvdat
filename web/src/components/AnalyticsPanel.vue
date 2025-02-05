@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import {
   currentSimulationType,
   currentProject,
@@ -22,6 +22,12 @@ import {
 import { isDatasetLayerVisible, toggleDatasetLayer } from "@/layers";
 
 const searchText = ref();
+const filteredSimulationTypes = computed(() => {
+  return availableSimulationTypes.value?.filter((sim_type) => {
+    return  !searchText.value ||
+    sim_type.name.toLowerCase().includes(searchText.value.toLowerCase())
+  })
+})
 const tab = ref();
 const activeResult = ref<SimulationResult>();
 const activeResultInputs = ref<
@@ -188,7 +194,7 @@ watch(selectedLayers, populateActiveResultInputs);
       hide-details
     />
     <v-card class="panel-content-inner">
-      <div  v-if="currentSimulationType">
+      <div v-if="currentSimulationType">
         <div style="position: absolute; right: 0">
           <v-tooltip text="Close" location="bottom">
             <template v-slot:activator="{ props }">
@@ -330,11 +336,11 @@ watch(selectedLayers, populateActiveResultInputs);
         </v-window>
       </div>
       <v-list
-        v-else-if="availableSimulationTypes && availableSimulationTypes.length"
+        v-else-if="filteredSimulationTypes?.length"
         density="compact"
       >
         <v-list-item
-          v-for="simType in availableSimulationTypes"
+          v-for="simType in filteredSimulationTypes"
           :key="simType.id"
           @click="currentSimulationType=simType"
         >

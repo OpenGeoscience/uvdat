@@ -26,6 +26,12 @@ ChartJS.register(
 );
 
 const searchText = ref();
+const filteredCharts = computed(() => {
+  return availableCharts.value?.filter((chart) => {
+    return  !searchText.value ||
+    chart.name.toLowerCase().includes(searchText.value.toLowerCase())
+  })
+})
 const defaultChartData = {
   labels: [],
   datasets: [
@@ -207,10 +213,10 @@ const downloadReady = computed(() => {
           </v-expansion-panels>
       </div>
       <v-list
-        v-else-if="availableCharts && availableCharts.length"
+        v-else-if="filteredCharts?.length"
         density="compact"
       >
-        <v-list-item v-for="chart in availableCharts" :key="chart.id" @click="currentChart=chart">
+        <v-list-item v-for="chart in filteredCharts" :key="chart.id" @click="currentChart=chart">
           {{ chart.name }}
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
