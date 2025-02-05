@@ -42,6 +42,7 @@ def create_layers_and_frames(dataset, layer_options=None):
                 *RasterData.objects.filter(**kwargs).order_by('name').all(),
             ]:
                 frame_property = layer_info.get('frame_property')
+                additional_filters = layer_info.get('additional_filters', {})
                 metadata = layer_data.metadata or {}
                 properties = metadata.get('properties')
                 bands = metadata.get('bands')
@@ -52,7 +53,7 @@ def create_layers_and_frames(dataset, layer_options=None):
                                 name=value,
                                 index=len(frames),
                                 data=layer_data.name,
-                                source_filters={frame_property: value},
+                                source_filters={frame_property: value, **additional_filters},
                             )
                         )
                 elif bands and len(bands) > 1:
