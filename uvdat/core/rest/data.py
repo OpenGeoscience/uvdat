@@ -69,25 +69,16 @@ SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 """
 
 
-def get_filter_string(filters=None, string=None, key_prefix=None):
-    if string is None:
-        string = ''
-    if key_prefix is None:
-        key_prefix = ''
-    else:
-        key_prefix += ','
-    if filters is not None:
-        for key, value in filters.items():
-            try:
-                value = ast.literal_eval(value)
-            except ValueError:
-                pass
-            if isinstance(value, dict):
-                string = get_filter_string(value, string, key_prefix + key)
-            else:
-                key_path = '{' + key_prefix + key + '}'
-                string += f"\n\t\tAND t.properties #>> '{key_path}' = '{value}'"
-    return string
+def get_filter_string(filters: dict | None = None):
+    if filters is None:
+        return ''
+
+    return_str = ''
+    for key, value in filters.items():
+        key_path = key.replace('.', ',')
+        return_str += f" AND t.properties #>> '{{{key_path}}}' = '{value}'"
+    return return_str
+
 
 
 class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
