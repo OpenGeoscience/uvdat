@@ -26,6 +26,7 @@ export interface Dataset {
 
 export interface Layer {
   id: number;
+  copy_id: number;
   name: string;
   dataset: Dataset;
   frames: LayerFrame[];

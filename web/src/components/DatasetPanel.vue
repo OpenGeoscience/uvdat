@@ -50,11 +50,15 @@ function toggleSelected(items: (Dataset | Layer)[]) {
     // list of Layers
     items.forEach((item) => {
       const layer = item as Layer;
-      if (selectedLayers.value.includes(layer)) {
-        selectedLayers.value = selectedLayers.value.filter((l) => l !== layer)
-      } else {
-        selectedLayers.value.push(layer);
+      let name = layer.name;
+      const existing = selectedLayers.value.filter((l) => l.id == layer.id)
+      if (existing) {
+        name = `${layer.name} (${existing.length})`;
       }
+      selectedLayers.value = [
+        ...selectedLayers.value,
+        {...layer, name, copy_id: existing.length}
+      ];
     })
     console.log('selected layers', selectedLayers.value)
   }
@@ -104,6 +108,7 @@ watch(filteredDatasets, expandAllDatasets)
               item-value="id"
               item-title="name"
               item-children="layers"
+              open-on-click
             >
               <template v-slot:title="{title, item}">
                 <div class="dataset-title">
