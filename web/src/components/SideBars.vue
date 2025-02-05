@@ -10,7 +10,8 @@ import FloatingPanel from "./FloatingPanel.vue";
 import ProjectConfig from "./ProjectConfig.vue";
 import ChartsPanel from "./ChartsPanel.vue";
 import AnalyticsPanel from "./AnalyticsPanel.vue";
-import DatasetPanel from "./DatasetPanel.vue";
+import DatasetsPanel from "./DatasetsPanel.vue";
+import LayersPanel from "./LayersPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -107,7 +108,9 @@ watch(darkMode, () => {
         <FloatingPanel id="datasets">
           <DatasetPanel :datasets="availableDatasets"/>
         </FloatingPanel>
-        <FloatingPanel id="layers"></FloatingPanel>
+        <FloatingPanel id="layers">
+          <LayersPanel />
+        </FloatingPanel>
       </div>
     </v-navigation-drawer>
 
