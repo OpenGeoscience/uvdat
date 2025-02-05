@@ -1,3 +1,4 @@
+import ast
 import json
 
 from django.db import connection
@@ -61,11 +62,32 @@ mvtgeom as (
             ST_Transform(t.geometry, %(srid)s),
             ST_Transform(bounds.geom, %(srid)s)
         )
-        FILTERS
+        REPLACE_WITH_FILTERS
 )
 SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 ;
 """
+
+
+def get_filter_string(filters=None, string=None, key_prefix=None):
+    if string is None:
+        string = ''
+    if key_prefix is None:
+        key_prefix = ''
+    else:
+        key_prefix += ','
+    if filters is not None:
+        for key, value in filters.items():
+            try:
+                value = ast.literal_eval(value)
+            except ValueError:
+                pass
+            if isinstance(value, dict):
+                string = get_filter_string(value, string, key_prefix + key)
+            else:
+                key_path = '{' + key_prefix + key + '}'
+                string += f"\n\t\tAND t.properties #>> '{key_path}' = '{value}'"
+    return string
 
 
 class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
@@ -107,15 +129,12 @@ class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
         url_name='tiles',
     )
     def get_vector_tile(self, request, id: str, x: str, y: str, z: str):
-        filters_string = ''
         filters = request.query_params.copy()
         filters.pop('token', None)
-        for key, value in filters.items():
-            filters_string += f"\n\t\tAND t.properties::jsonb ? '{key}'"
-            filters_string += f"\n\t\tAND t.properties::jsonb ->> '{key}' = '{value}'"
+        filters_string = get_filter_string(filters)
         with connection.cursor() as cursor:
             cursor.execute(
-                VECTOR_TILE_SQL.replace('FILTERS', filters_string),
+                VECTOR_TILE_SQL.replace('REPLACE_WITH_FILTERS', filters_string),
                 {
                     'z': z,
                     'x': x,
