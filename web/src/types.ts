@@ -31,6 +31,7 @@ export interface Layer {
   dataset: Dataset;
   frames: LayerFrame[];
   metadata: Record<string, unknown>;
+  visible: boolean;
 }
 
 export interface LayerFrame {

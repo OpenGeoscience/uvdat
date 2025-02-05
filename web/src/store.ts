@@ -35,6 +35,7 @@ export const selectedLayers = ref<Layer[]>([]);
 
 // Map
 export const map = ref<Map>();
+export const mapLayerManager = ref<Record<number, Record<number, any>>>({});
 export const clickedLayer = ref<Layer[]>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);

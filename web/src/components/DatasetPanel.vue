@@ -3,7 +3,7 @@
 import { onMounted, ref, computed, watch } from "vue";
 import { VTreeview } from 'vuetify/labs/VTreeview'
 import { Dataset, Layer } from "@/types";
-import { loadingDatasets, selectedLayers } from "@/store";
+import { loadingDatasets, mapLayerManager, selectedLayers } from "@/store";
 
 const props = withDefaults(
   defineProps<{
@@ -51,13 +51,14 @@ function toggleSelected(items: (Dataset | Layer)[]) {
     items.forEach((item) => {
       const layer = item as Layer;
       let name = layer.name;
-      const existing = selectedLayers.value.filter((l) => l.id == layer.id)
-      if (existing) {
-        name = `${layer.name} (${existing.length})`;
+      let copy_id = 0;
+      if (mapLayerManager.value[layer.id]) {
+        copy_id = Object.keys(mapLayerManager.value[layer.id]).length;
+        name = `${layer.name} (${copy_id})`;
       }
       selectedLayers.value = [
         ...selectedLayers.value,
-        {...layer, name, copy_id: existing.length}
+        {...layer, name, copy_id, visible: true}
       ];
     })
     console.log('selected layers', selectedLayers.value)
