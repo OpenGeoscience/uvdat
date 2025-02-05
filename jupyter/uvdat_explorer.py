@@ -68,6 +68,16 @@ class LayerRepresentation:
             metadata = vector.get('metadata')
         return path, metadata
 
+    def get_flat_filters(self, filters):
+        flat = {}
+        for key, value in filters.items():
+            if isinstance(value, dict):
+                for k, v in self.get_flat_filters(value).items():
+                    flat[f'{key}.{k}'] = v
+            else:
+                flat[key] = value
+        return flat
+
     def update_frame(self, event):
         with self.output:
             if event.get('name') == 'value':
@@ -92,7 +102,8 @@ class LayerRepresentation:
                     query = dict(token=self.token)
                     source_filters = frame.get('source_filters')
                     if source_filters is not None and source_filters != dict(band=1):
-                        query.update(source_filters)
+                        query.update(self.get_flat_filters(source_filters))
+                        self.frame_name_label.value = str(query)
 
                     if 'raster' in url_path:
                         url_suffix += '.png'
@@ -100,7 +111,6 @@ class LayerRepresentation:
                         query.update(projection='EPSG:3857')
                     elif 'vector' in url_path:
                         layer_class = VectorTileLayer
-                        source_filters = frame.get('source_filters')
                     if layer_class is not None:
                         query_string = urlencode(query)
                         map_layer = layer_class(
