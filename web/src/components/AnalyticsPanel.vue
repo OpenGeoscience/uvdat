@@ -15,11 +15,13 @@ import {
   runSimulation,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import {
-  SimulationResult,
-  Layer,
-} from "@/types";
-import { isDatasetLayerVisible, toggleDatasetLayer } from "@/layers";
+import { SimulationResult, Layer, Dataset } from "@/types";
+
+interface Input {
+  key: string;
+  viewable: boolean;
+  value: { name: string };
+}
 
 const searchText = ref();
 const filteredSimulationTypes = computed(() => {
@@ -30,14 +32,7 @@ const filteredSimulationTypes = computed(() => {
 })
 const tab = ref();
 const activeResult = ref<SimulationResult>();
-const activeResultInputs = ref<
-  {
-    key: string;
-    viewable: boolean;
-    datasetLayer: Layer | undefined;
-    value: { name: string };
-  }[]
->([]);
+const activeResultInputs = ref<Input[]>([]);
 const availableResults = ref<SimulationResult[]>([]);
 const inputForm = ref();
 const selectedInputs = ref<Record<string, object[]>>({});
@@ -46,6 +41,11 @@ const inputSelectionRules = [
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (v: any) => (v ? true : "Selection required."),
 ];
+
+function toggleVisible(arg: Input | Dataset) {
+  // TODO: Implement
+  console.log('toggle visibility of', arg)
+}
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
@@ -100,15 +100,12 @@ async function populateActiveResultInputs() {
         return;
       }
 
-      let datasetLayer: Layer | undefined = selectedOption;
-
-      // TODO: Populate network objects with correct map layer
+      // TODO:  Update this logic
 
       return {
         key: argName.replaceAll("_", " "),
         value: selectedOption,
-        datasetLayer,
-        viewable: datasetLayer && !isDatasetLayerVisible(datasetLayer),
+        viewable: true,
       };
     })
   );
@@ -264,7 +261,7 @@ watch(selectedLayers, populateActiveResultInputs);
                         <td>{{ arg.value.name || arg.value }}</td>
                         <td>
                           <v-btn
-                            @click="toggleDatasetLayer(arg.datasetLayer)"
+                            @click="toggleVisible(arg)"
                             v-if="arg.viewable"
                           >
                             Show on Map
@@ -315,7 +312,7 @@ watch(selectedLayers, populateActiveResultInputs);
                             <td>
                               <v-btn
                                 v-if="dataset.layers"
-                                @click="toggleDatasetLayer(dataset.layers[0])"
+                                @click="toggleVisible(dataset)"
                               >
                                 Show on Map
                               </v-btn>

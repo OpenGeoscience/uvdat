@@ -262,9 +262,9 @@ export function clearCurrentNetwork() {
   deactivatedNodes.value = [];
   currentNetworkGCC.value = undefined;
 
-  if (datasetLayer !== undefined) {
-    styleNetworkVectorTileLayer(datasetLayer);
-  }
+  // if (datasetLayer !== undefined) {
+  //   styleNetworkVectorTileLayer(datasetLayer);
+  // }
 }
 
 watch(currentProject, () => {

@@ -4,145 +4,23 @@ import {
   getRasterDataValues,
 } from "@/api/rest";
 import {
-  rasterTooltipEnabled,
   currentProject,
   deactivatedNodes,
   currentNetworkGCC,
   availableCharts,
   currentChart,
   currentNetworkDataset,
-  currentNetworkDatasetLayer,
-  rasterTooltipValue,
-  showMapTooltip,
+  rasterTooltipDataCache,
 } from "@/store";
-import {
-  Dataset,
-  RasterData,
-  RasterDataValues,
-} from "./types";
-import {
-  createRasterLayerPolygonMask,
-  styleNetworkVectorTileLayer,
-} from "./layers";
-import { MapLayerMouseEvent } from "maplibre-gl";
-
-export const rasterColormaps = [
-  "terrain",
-  "plasma",
-  "viridis",
-  "magma",
-  "cividis",
-  "rainbow",
-  "jet",
-  "spring",
-  "summer",
-  "autumn",
-  "winter",
-  "coolwarm",
-  "cool",
-  "hot",
-  "seismic",
-  "twilight",
-  "tab20",
-  "hsv",
-  "gray",
-];
-
-export const rasterTooltipDataCache: Record<number, RasterDataValues | undefined> =
-  {};
+import { Dataset, RasterData } from "./types";
 
 export async function cacheRasterData(raster: RasterData) {
-  if (rasterTooltipDataCache[raster.id] !== undefined) {
+  if (rasterTooltipDataCache.value[raster.id] !== undefined) {
     return;
   }
 
   const data = await getRasterDataValues(raster.id);
-  rasterTooltipDataCache[raster.id] = data;
-
-  // This will allow the raster tooltip to display data
-  createRasterLayerPolygonMask(raster);
-}
-
-export function valueAtCursor(
-  evt: MapLayerMouseEvent,
-  datasetLayerId: number
-): number | undefined {
-  const cached = rasterTooltipDataCache[datasetLayerId];
-  if (!cached) {
-    return;
-  }
-
-  const { data, sourceBounds } = cached;
-  if (!(data && data.length > 0)) {
-    return;
-  }
-
-  // Check if out of bounds in longitude (X)
-  if (
-    evt.lngLat.lng < sourceBounds.xmin ||
-    evt.lngLat.lng > sourceBounds.xmax
-  ) {
-    return;
-  }
-
-  // Check if out of bounds in latitude (Y)
-  if (
-    evt.lngLat.lat < sourceBounds.ymin ||
-    evt.lngLat.lat > sourceBounds.ymax
-  ) {
-    return;
-  }
-
-  // Convert lat/lng to array indices
-  const xProportion =
-    (evt.lngLat.lng - sourceBounds.xmin) /
-    (sourceBounds.xmax - sourceBounds.xmin);
-  const yProportion =
-    1 -
-    (evt.lngLat.lat - sourceBounds.ymin) /
-      (sourceBounds.ymax - sourceBounds.ymin);
-
-  // Use floor, as otherwise rounding up can reach out of bounds
-  const xIndex = Math.floor(xProportion * data[0].length);
-  const yIndex = Math.floor(yProportion * data.length);
-
-  return data[yIndex][xIndex];
-}
-
-export function setRasterTooltipValue(
-  evt: MapLayerMouseEvent,
-  datasetLayerId: number
-) {
-  // If the toggle to show the tooltip is disabled, we show nothing.
-  if (!rasterTooltipEnabled.value) {
-    return;
-  }
-
-  // Start with empty data
-  rasterTooltipValue.value = undefined;
-
-  // Convert lat/lng to data array index
-  const value = valueAtCursor(evt, datasetLayerId);
-  if (value === undefined) {
-    return;
-  }
-
-  // Add to map and enable, since we have data to display
-  rasterTooltipValue.value = {
-    pos: evt.lngLat,
-    text: `~ ${Math.round(value)} m`,
-  };
-  showMapTooltip.value = true;
-}
-
-export function randomColor() {
-  return (
-    "#" +
-    Math.floor(Math.random() * 16777215)
-      .toString(16)
-      .padStart(6, "0")
-      .slice(0, 6)
-  );
+  rasterTooltipDataCache.value[raster.id] = data;
 }
 
 export function deactivatedNodesUpdated() {
@@ -161,9 +39,9 @@ export function deactivatedNodesUpdated() {
     }
     currentNetworkGCC.value = gcc;
 
-    if (currentNetworkDatasetLayer.value) {
-      styleNetworkVectorTileLayer(currentNetworkDatasetLayer.value);
-    }
+    // if (currentNetworkDatasetLayer.value) {
+    //   styleNetworkVectorTileLayer(currentNetworkDatasetLayer.value);
+    // }
 
     // update chart
     getProjectCharts(currentProject.value.id).then((charts) => {
@@ -203,8 +81,8 @@ export function fetchDatasetNetwork(dataset: Dataset) {
 export function toggleNodeActive(
   nodeId: number,
   dataset: Dataset,
-  // datasetLayer: VectorDatasetLayer
 ) {
+  console.log('toggle node', nodeId, 'in dataset', dataset)
   // TODO: rewrite this
   // if (!dataset || !datasetLayer || !isDatasetLayerVisible(datasetLayer)) {
   //   return;
@@ -216,10 +94,10 @@ export function toggleNodeActive(
 
   // currentNetworkDataset.value = dataset as Dataset;
   // currentNetworkDatasetLayer.value = datasetLayer as VectorDatasetLayer;
-  // if (deactivatedNodes.value.includes(nodeId)) {
-  //   deactivatedNodes.value = deactivatedNodes.value.filter((v) => v !== nodeId);
-  // } else {
-  //   deactivatedNodes.value = [...deactivatedNodes.value, nodeId];
-  // }
+  if (deactivatedNodes.value.includes(nodeId)) {
+    deactivatedNodes.value = deactivatedNodes.value.filter((v) => v !== nodeId);
+  } else {
+    deactivatedNodes.value = [...deactivatedNodes.value, nodeId];
+  }
   // deactivatedNodesUpdated();
 }
