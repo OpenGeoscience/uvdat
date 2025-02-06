@@ -5,7 +5,6 @@ import {
   currentProject,
   availableDatasets,
   map,
-  showMapTooltip,
   selectedLayers,
   clickedLayer,
   clickedFeature,
@@ -23,7 +22,6 @@ import {
   deactivatedNodes,
   currentError,
   tooltipOverlay,
-  clickedFeatureCandidates,
   panelArrangement,
   draggingPanel,
   draggingFrom,
@@ -35,7 +33,6 @@ import {
 import { getProjects, getDataset, getProjectCharts, getProjectSimulationTypes, getProjectDatasets, getDatasetLayers } from "@/api/rest";
 import {
   clearMapLayers,
-  datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
   updateBaseLayer,
   updateLayersShown,
@@ -300,52 +297,8 @@ watch(currentProject, () => {
 
 export function clearClickedFeatureData() {
   clickedFeature.value = undefined;
-  showMapTooltip.value = false;
   clickedLayer.value = undefined;
 }
-
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// See all of the clicked features, and display the one that's at the highest layer
-watch(clickedFeatureCandidates, (features) => {
-  if (!features.length) {
-    return;
-  }
-
-  const map = getMap();
-  const layerIds = map.getLayersOrder();
-
-  // TypeScript complains about this type being too complex for some reason.
-  // @ts-ignore
-  const featureLayerIDs = new Set(features.map((f) => f.feature.layer.id));
-
-  // Find the highest layer that was clicked
-  // TypeScript complains about this type being too complex for some reason.
-  // @ts-ignore
-  const selectedLayerID = layerIds.toReversed().find((id) => {
-    return featureLayerIDs.has(id);
-  });
-  const selectedFeature = features.find(
-    (f) => f.feature.layer.id === selectedLayerID
-  );
-
-  // If none found, just reset values
-  if (selectedLayerID === undefined || selectedFeature === undefined) {
-    clearClickedFeatureData();
-    return;
-  }
-
-  // Set new values
-  // TypeScript complains about this type being too complex for some reason.
-  // @ts-ignore
-  clickedFeature.value = selectedFeature;
-  showMapTooltip.value = true;
-  clickedLayer.value = datasetLayerFromMapLayerID(
-    selectedFeature.feature.layer.id
-  );
-
-  // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
-  clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
-});
 
 watch(selectedLayers, updateLayersShown)
 

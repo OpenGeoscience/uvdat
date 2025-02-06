@@ -1,4 +1,4 @@
-import { reactive, ref } from "vue";
+import { ref } from "vue";
 import {
   User,
   Project,
@@ -38,12 +38,10 @@ export const map = ref<Map>();
 export const mapSources = ref<Record<number, Record<number, Record<number, Source[]>>>>({});
 export const clickedLayer = ref<Layer[]>();
 export const showMapBaseLayer = ref(true);
-export const showMapTooltip = ref(false);
 export const tooltipOverlay = ref<Popup>();
 export const rasterTooltipEnabled = ref(false);
 
 // Features
-export const clickedFeatureCandidates = reactive<ClickedFeatureData[]>([]);
 export const clickedFeature = ref<ClickedFeatureData>();
 export const rasterTooltipValue = ref<RasterTooltipData | undefined>();
 

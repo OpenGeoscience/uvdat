@@ -4,7 +4,7 @@ import {
   currentNetworkDataset,
   currentNetworkDatasetLayer,
   deactivatedNodes,
-  selectedDatasetLayers,
+  selectedLayers,
 } from "@/store";
 import { deactivatedNodesUpdated } from "@/utils";
 
@@ -98,7 +98,7 @@ export default {
     return {
       currentNetworkDataset,
       currentNetworkDatasetLayer,
-      selectedDatasetLayers,
+      selectedLayers,
       nodeChanges,
       currentTick,
       seconds,
@@ -115,7 +115,7 @@ export default {
     v-if="
       !currentNetworkDataset ||
       !currentNetworkDatasetLayer ||
-      !selectedDatasetLayers.includes(currentNetworkDatasetLayer)
+      !selectedLayers.includes(currentNetworkDatasetLayer)
     "
   >
     Show network dataset layer to begin.

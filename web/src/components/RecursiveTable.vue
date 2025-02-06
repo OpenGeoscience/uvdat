@@ -36,4 +36,7 @@ export default {
 .v-expansion-panel-text__wrapper {
   padding: 0px !important;
 }
+.v-table--density-default {
+  --v-table-row-height: 24px !important;
+}
 </style>

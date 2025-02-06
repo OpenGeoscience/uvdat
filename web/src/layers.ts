@@ -1,6 +1,6 @@
-import { mapSources, selectedLayers, showMapBaseLayer, theme } from "./store";
+import { clickedFeature, mapSources, selectedLayers, showMapBaseLayer, theme } from "./store";
 import { getMap } from "./storeFunctions";
-import { Layer, RasterData, VectorData } from "./types";
+import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { THEMES } from "./themes";
@@ -8,6 +8,31 @@ import { THEMES } from "./themes";
 // ------------------
 // Exported functions
 // ------------------
+
+export interface SourceDBObjects {
+    dataset?: Dataset,
+    layer?: Layer,
+    frame?: LayerFrame,
+}
+
+export function getDBObjectsForSourceID(sourceId: string) {
+    const DBObjects:  SourceDBObjects = {}
+    const [
+        layerId, layerCopyId, frameId, type
+    ] = sourceId.split('.');
+    selectedLayers.value.forEach((layer) => {
+        if (layer.id === parseInt(layerId) && layer.copy_id === parseInt(layerCopyId)) {
+            DBObjects.dataset = layer.dataset;
+            DBObjects.layer = layer;
+            layer.frames.forEach((frame) => {
+                if (frame.id === parseInt(frameId)) {
+                    DBObjects.frame = frame;
+                }
+            })
+        }
+    })
+    return DBObjects
+}
 
 export function updateLayersShown () {
     const map = getMap();
@@ -237,21 +262,19 @@ function createRasterFeatureMapLayers(source: Source) {
 }
 
 function handleLayerClick(e: MapLayerMouseEvent) {
-    if (!e.features) {
+    if (!e.features?.length) {
       return;
     }
 
     // While multiple features may be clicked in the same layer, just choose the first one.
     // Our functions operate at the granularity of a single layer, so it would make no difference.
     const feature = e.features[0];
-
-    // TypeScript complains about this type being too complex for some reason.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    clickedFeatureCandidates.push({
-      feature,
-      pos: e.lngLat,
-    });
+    if (feature) {
+        clickedFeature.value = {
+            feature,
+            pos: e.lngLat,
+        };
+    }
 }
 
 function getDefaultColor() {
