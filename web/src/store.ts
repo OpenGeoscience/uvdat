@@ -11,7 +11,7 @@ import {
   RasterTooltipData,
   FloatingPanelConfig,
 } from "./types.js";
-import { Map, Popup } from "maplibre-gl";
+import { Map, Popup, Source } from "maplibre-gl";
 
 // UI Config
 export const theme = ref<"dark" | "light">("light");
@@ -35,7 +35,7 @@ export const selectedLayers = ref<Layer[]>([]);
 
 // Map
 export const map = ref<Map>();
-export const mapLayerManager = ref<Record<number, Record<number, any>>>({});
+export const mapSources = ref<Record<number, Record<number, Record<number, Source[]>>>>({});
 export const clickedLayer = ref<Layer[]>();
 export const showMapBaseLayer = ref(true);
 export const showMapTooltip = ref(false);

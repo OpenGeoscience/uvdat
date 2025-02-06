@@ -1,4 +1,4 @@
-import { LngLatLike, Map, MapGeoJSONFeature } from "maplibre-gl";
+import { LngLatLike, MapGeoJSONFeature } from "maplibre-gl";
 
 export interface Network {
   nodes: NetworkNode[];
@@ -32,6 +32,7 @@ export interface Layer {
   frames: LayerFrame[];
   metadata: Record<string, unknown>;
   visible: boolean;
+  current_frame: number;
 }
 
 export interface LayerFrame {

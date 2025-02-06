@@ -106,7 +106,7 @@ watch(darkMode, () => {
       <ProjectConfig />
       <div class="panel-set">
         <FloatingPanel id="datasets">
-          <DatasetPanel :datasets="availableDatasets"/>
+          <DatasetsPanel :datasets="availableDatasets"/>
         </FloatingPanel>
         <FloatingPanel id="layers">
           <LayersPanel />

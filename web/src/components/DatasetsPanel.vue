@@ -3,7 +3,7 @@
 import { onMounted, ref, computed, watch } from "vue";
 import { VTreeview } from 'vuetify/labs/VTreeview'
 import { Dataset, Layer } from "@/types";
-import { loadingDatasets, mapLayerManager, selectedLayers } from "@/store";
+import { loadingDatasets, mapSources, selectedLayers } from "@/store";
 
 const props = withDefaults(
   defineProps<{
@@ -52,16 +52,15 @@ function toggleSelected(items: (Dataset | Layer)[]) {
       const layer = item as Layer;
       let name = layer.name;
       let copy_id = 0;
-      if (mapLayerManager.value[layer.id]) {
-        copy_id = Object.keys(mapLayerManager.value[layer.id]).length;
+      if (mapSources.value[layer.id]) {
+        copy_id = Object.keys(mapSources.value[layer.id]).length;
         name = `${layer.name} (${copy_id})`;
       }
       selectedLayers.value = [
         ...selectedLayers.value,
-        {...layer, name, copy_id, visible: true}
+        {...layer, name, copy_id, visible: true, current_frame: 0}
       ];
     })
-    console.log('selected layers', selectedLayers.value)
   }
 }
 
@@ -163,6 +162,10 @@ watch(filteredDatasets, expandAllDatasets)
 </template>
 
 <style>
+.dataset-list {
+  height: 100%;
+  overflow: auto;
+}
 .dataset-list .v-expansion-panel-title {
   min-height: 0 !important;
   display: flex;
@@ -190,5 +193,6 @@ watch(filteredDatasets, expandAllDatasets)
 .dataset-title {
   display: flex;
   justify-content: space-between;
+  font-size: 0.875rem;
 }
 </style>

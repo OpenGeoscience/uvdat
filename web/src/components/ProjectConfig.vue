@@ -7,7 +7,7 @@ import {
   currentUser,
   loadingDatasets,
 } from "@/store";
-import DatasetPanel from "./DatasetPanel.vue";
+import DatasetsPanel from "./DatasetsPanel.vue";
 import AccessControl from "./AccessControl.vue";
 import {
   getDatasets,
@@ -269,6 +269,9 @@ watch(otherDatasets, () => {
   }
 })
 
+watch(projectConfigMode, () => {
+  if (currentProject.value) selectProject(currentProject.value)
+})
 </script>
 
 <template>
@@ -398,6 +401,7 @@ watch(otherDatasets, () => {
             <v-list-item
               v-for="project in filteredProjects"
               :title="project.name"
+              :active="project.id === selectedProject?.id"
               @click="() => selectProject(project)"
             >
             <template v-slot:title="{ title }">
@@ -495,7 +499,7 @@ watch(otherDatasets, () => {
               <div style="width: 30%">
                 <v-card-text>Available Datasets</v-card-text>
                 <v-card class="pa-2 dataset-card">
-                  <DatasetPanel
+                  <DatasetsPanel
                     :datasets="otherDatasets"
                     :selected-ids="otherSelectedDatasetIds"
                     @toggleDatasets="toggleOtherDatasetSelection"
@@ -527,7 +531,7 @@ watch(otherDatasets, () => {
               <div class="ml-10" style="width: 30%">
                 <v-card-text>Project Datasets</v-card-text>
                 <v-card class="pa-2 dataset-card">
-                  <DatasetPanel
+                  <DatasetsPanel
                     :datasets="projDatasets"
                     :selected-ids="projSelectedDatasetIds"
                     @toggleDatasets="toggleProjDatasetSelection"

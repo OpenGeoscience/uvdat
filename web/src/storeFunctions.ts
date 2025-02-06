@@ -38,6 +38,7 @@ import {
   datasetLayerFromMapLayerID,
   styleNetworkVectorTileLayer,
   updateBaseLayer,
+  updateLayersShown,
 } from "./layers";
 import { Dataset, FloatingPanelConfig, Project } from "./types";
 
@@ -345,6 +346,8 @@ watch(clickedFeatureCandidates, (features) => {
   // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
   clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
 });
+
+watch(selectedLayers, updateLayersShown)
 
 watch(showMapBaseLayer, updateBaseLayer);
 /* eslint-enable @typescript-eslint/ban-ts-comment */
