@@ -9,6 +9,7 @@ import { restoreLogin } from "./api/auth";
 import { theme } from "@/store";
 
 import "@mdi/font/css/materialdesignicons.css";
+import { THEMES } from "./themes";
 
 let defaultTheme: "light" | "dark" = "light";
 if (
@@ -24,45 +25,7 @@ const vuetify = createVuetify({
   directives,
   theme: {
     defaultTheme,
-    themes: {
-      light: {
-        colors: {
-          primary: "#166db7",
-          secondary: "#bdddf9",
-          background: "#ffffff",
-          surface: "#d1d5db",
-          success: "#4caf50",
-          "surface-bright": "#FFFFFF",
-          "surface-light": "#EEEEEE",
-          "surface-variant": "#424242",
-          "on-surface-variant": "#EEEEEE",
-          "primary-darken-1": "#1F5592",
-          "secondary-darken-1": "#018786",
-          error: "#B00020",
-          info: "#2196F3",
-          warning: "#FB8C00",
-        },
-      },
-      dark: {
-        dark: true,
-        colors: {
-          primary: "#166db7",
-          secondary: "#bdddf9",
-          background: "#0a0a0b",
-          surface: "#1f2937",
-          success: "#d1f4d3",
-          "surface-bright": "#FFFFFF",
-          "surface-light": "#EEEEEE",
-          "surface-variant": "#424242",
-          "on-surface-variant": "#EEEEEE",
-          "primary-darken-1": "#1F5592",
-          "secondary-darken-1": "#018786",
-          error: "#B00020",
-          info: "#2196F3",
-          warning: "#FB8C00",
-        },
-      },
-    },
+    themes: THEMES
   },
 });
 
