@@ -3,13 +3,13 @@ import { computed, watch } from "vue";
 import {
   deactivatedNodes,
   clickedFeature,
-  rasterTooltipEnabled,
-  rasterTooltipValue,
   selectedLayers,
+  rasterTooltipDataCache,
 } from "@/store";
 import { getMap, getTooltip } from "@/storeFunctions";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
+import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
 import { getDBObjectsForSourceID } from "@/layers";
@@ -33,6 +33,34 @@ const clickedFeatureProperties = computed(() => {
     )
   );
 });
+
+const clickedFeatureSourceType = computed(() => {
+  if (clickedFeature.value) {
+    const feature = clickedFeature.value.feature;
+    if (feature.source.includes('vector')) return 'vector'
+    if (feature.source.includes('raster')) return 'raster'
+  }
+})
+
+const rasterValue = computed(() => {
+  if (clickedFeature.value && clickedFeatureSourceType.value === 'raster') {
+    const feature = clickedFeature.value.feature;
+    const { raster } = getDBObjectsForSourceID(feature.source);
+    if (raster?.id) {
+      const data = rasterTooltipDataCache.value[raster.id]?.data;
+      if (data) {
+        const {lng, lat} = clickedFeature.value.pos;
+        let {xmin, xmax, ymin, ymax, srs} = raster.metadata.bounds;
+        [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
+        [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+        // Convert lat/lng to array indices
+        const x = Math.floor((lng - xmin) / (xmax - xmin) * data[0].length);
+        const y = Math.floor((1 - (lat - ymin) / (ymax - ymin)) * data.length);
+        return data[y][x];
+      }
+    }
+  }
+})
 
 const clickedRegion = computed(() => {
   const props = clickedFeature.value?.feature?.properties;
@@ -79,21 +107,15 @@ watch(selectedLayers, () => {
 // Handle clicked features and raster tooltip behavior.
 // Feature clicks are given tooltip priority.
 watch(
-  [clickedFeature, rasterTooltipValue],
-  ([featureData, rasterTooltipData]) => {
+  clickedFeature,
+  () => {
     const tooltip = getTooltip();
-    if (featureData === undefined && rasterTooltipData === undefined) {
+    if (clickedFeature.value === undefined) {
       tooltip.remove();
       return;
     }
-
     // Set tooltip position. Give feature clicks priority
-    if (featureData !== undefined) {
-      tooltip.setLngLat(featureData.pos);
-    } else if (rasterTooltipData !== undefined) {
-      tooltip.setLngLat(rasterTooltipData.pos);
-    }
-
+    tooltip.setLngLat(clickedFeature.value.pos);
     // This makes the tooltip visible
     tooltip.addTo(getMap());
   }
@@ -122,7 +144,7 @@ function toggleNodeHandler() {
 </script>
 
 <template>
-  <div v-if="clickedFeature">
+  <div v-if="clickedFeature && clickedFeatureSourceType === 'vector'">
     <RecursiveTable :data="clickedFeatureProperties" />
 
     <!-- Render for Source Regions -->
@@ -147,17 +169,20 @@ function toggleNodeHandler() {
   </div>
 
   <!-- Check for raster tooltip data after, to give clicked features priority -->
-  <div v-else-if="rasterTooltipEnabled && rasterTooltipValue">
-    <div v-if="rasterTooltipValue.text === ''">waiting for data...</div>
-    <div v-else>
-      <span>{{ rasterTooltipValue.text }}</span>
+  <div v-else-if="clickedFeatureSourceType === 'raster'">
+    <div v-if="rasterValue === undefined">
+      <span>fetching raster data...</span>
     </div>
+    <div v-else class="mr-3">Value: {{ rasterValue }}</div>
   </div>
 </template>
 
 <style>
-.maplibregl-popup-content, .maplibregl-popup-tip {
+.maplibregl-popup-content {
   background-color: rgb(var(--v-theme-surface)) !important;
+  border-top-color: rgb(var(--v-theme-surface)) !important;
+}
+.maplibregl-popup-tip {
   border-top-color: rgb(var(--v-theme-surface)) !important;
 }
 .maplibregl-popup-close-button {

@@ -1,4 +1,4 @@
-import { LngLatLike, MapGeoJSONFeature } from "maplibre-gl";
+import { MapGeoJSONFeature } from "maplibre-gl";
 
 export interface Network {
   nodes: NetworkNode[];
@@ -59,7 +59,56 @@ export interface RasterData {
   cloud_optimized_geotiff: string | null;
   dataset: number;
   source_file: null | number;
-  metadata: Record<string, unknown>;
+  metadata: RasterMetadata;
+}
+
+export interface RasterMetadata {
+  bandCount: number;
+  bands: Record<number, {
+    interpretation: string;
+    max: number;
+    min: number;
+    mean: number;
+    stdev: number;
+  }>;
+  bounds: {
+    srs: string;
+    ll: {x: number; y: number};
+    lr: {x: number; y: number};
+    ul: {x: number; y: number};
+    ur: {x: number; y: number};
+    xmin: number;
+    xmax: number;
+    ymin: number;
+    ymax: number;
+  };
+  sourceBounds: {
+    srs: string;
+    ll: {x: number; y: number};
+    lr: {x: number; y: number};
+    ul: {x: number; y: number};
+    ur: {x: number; y: number};
+    xmin: number;
+    xmax: number;
+    ymin: number;
+    ymax: number;
+  };
+  dtype: string;
+  geospatial: boolean;
+  levels: number;
+  sourceLevels: number;
+  magnification: number | null;
+  mm_x: number;
+  mm_y: number;
+  projection: string | null;
+  sizeX: number;
+  sizeY: number;
+  sourceSizeX: number;
+  sourceSizeY: number;
+  tileWidth: number;
+  tileHeight: number;
+  source_filenames: string[];
+  uploaded: string;
 }
 
 export interface RasterDataValues {
@@ -123,13 +172,8 @@ export interface Feature {
 }
 
 export interface ClickedFeatureData {
-  pos: LngLatLike;
+  pos: { lng: number; lat: number; };
   feature: MapGeoJSONFeature;
-}
-
-export interface RasterTooltipData {
-  pos: LngLatLike;
-  text: string;
 }
 
 export interface NetworkNode {

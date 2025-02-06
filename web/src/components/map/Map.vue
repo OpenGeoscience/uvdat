@@ -220,7 +220,8 @@ watch(openSidebars, () => {
   padding: 10px 20px;
   word-break: break-word;
   text-wrap: wrap;
-  min-width: 200px;
+  width: fit-content;
+  min-width: 50px;
   max-width: 350px;
 }
 

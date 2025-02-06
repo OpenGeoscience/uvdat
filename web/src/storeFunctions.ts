@@ -10,7 +10,6 @@ import {
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
-  rasterTooltipEnabled,
   polls,
   availableCharts,
   currentChart,
@@ -31,12 +30,7 @@ import {
   loadingCharts,
 } from "./store";
 import { getProjects, getDataset, getProjectCharts, getProjectSimulationTypes, getProjectDatasets, getDatasetLayers } from "@/api/rest";
-import {
-  clearMapLayers,
-  styleNetworkVectorTileLayer,
-  updateBaseLayer,
-  updateLayersShown,
-} from "./layers";
+import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
 import { Dataset, FloatingPanelConfig, Project } from "./types";
 
 export function clearState() {
@@ -45,7 +39,6 @@ export function clearState() {
   clickedLayer.value = undefined;
   showMapBaseLayer.value = true;
   clickedFeature.value = undefined;
-  rasterTooltipEnabled.value = false;
   availableCharts.value = undefined;
   currentChart.value = undefined;
   availableSimulationTypes.value = undefined;

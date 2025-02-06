@@ -4,6 +4,8 @@ import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { THEMES } from "./themes";
+import { cacheRasterData } from "./utils";
+import proj4 from "proj4";
 
 // ------------------
 // Exported functions
@@ -13,6 +15,8 @@ export interface SourceDBObjects {
     dataset?: Dataset,
     layer?: Layer,
     frame?: LayerFrame,
+    vector?: VectorData,
+    raster?: RasterData,
 }
 
 export function getDBObjectsForSourceID(sourceId: string) {
@@ -27,6 +31,8 @@ export function getDBObjectsForSourceID(sourceId: string) {
             layer.frames.forEach((frame) => {
                 if (frame.id === parseInt(frameId)) {
                     DBObjects.frame = frame;
+                    if (frame.vector && sourceId.includes("vector")) DBObjects.vector = frame.vector;
+                    if (frame.raster && sourceId.includes("raster")) DBObjects.raster = frame.raster;
                 }
             })
         }
@@ -156,10 +162,28 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
         type: "raster",
         tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],
     });
-    const source = map.getSource(sourceId);
-    if (source) {
-        createRasterFeatureMapLayers(source);
-        return source;
+    const tileSource = map.getSource(sourceId);
+
+    const bounds = raster.metadata.bounds;
+    const boundsSourceId = sourceId + '.bounds';
+    let {xmin, xmax, ymin, ymax, srs} = bounds;
+    [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
+    [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+    map.addSource(boundsSourceId, {
+        type: "geojson",
+        data: {
+            type: "Polygon",
+            coordinates: [[
+                [xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin],
+            ]]
+        }
+    });
+    const boundsSource = map.getSource(boundsSourceId);
+
+    if (tileSource && boundsSource) {
+        createRasterFeatureMapLayers(tileSource, boundsSource);
+        cacheRasterData(raster);
+        return tileSource;
     }
 }
 
@@ -243,9 +267,9 @@ function createVectorFeatureMapLayers(source: Source) {
     map.on("click", source.id + '.circle', handleLayerClick);
 }
 
-function createRasterFeatureMapLayers(source: Source) {
+function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) {
     const map = getMap();
-    const sourceIdentifiers = source.id.split('.');
+    const sourceIdentifiers = tileSource.id.split('.');
     const metadata = {
         layer_id: sourceIdentifiers[0],
         layer_copy_id: sourceIdentifiers[1],
@@ -254,11 +278,22 @@ function createRasterFeatureMapLayers(source: Source) {
 
     // Tile Layer
     map.addLayer({
-        id: source.id + '.tile',
+        id: tileSource.id + '.tile',
         type: "raster",
-        source: source.id,
+        source: tileSource.id,
         metadata,
     });
+
+    map.addLayer({
+        id: boundsSource.id + '.mask',
+        type: "fill",
+        source: boundsSource.id,
+        paint: {
+            "fill-opacity": 0,
+        },
+    });
+
+    map.on("click", boundsSource.id + '.mask', handleLayerClick);
 }
 
 function handleLayerClick(e: MapLayerMouseEvent) {
