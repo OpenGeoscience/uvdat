@@ -52,13 +52,17 @@ function toggleSelected(items: (Dataset | Layer)[]) {
       const layer = item as Layer;
       let name = layer.name;
       let copy_id = 0;
-      if (mapSources.value[layer.id]) {
-        copy_id = Object.keys(mapSources.value[layer.id]).length;
+      const existing = Object.keys(mapSources.value).filter((sourceId) => {
+        const [layerId] = sourceId.split('.');
+        return parseInt(layerId) === layer.id
+      })
+      if (existing.length) {
+        copy_id = existing.length;
         name = `${layer.name} (${copy_id})`;
       }
       selectedLayers.value = [
+        {...layer, name, copy_id, visible: true, current_frame: 0},
         ...selectedLayers.value,
-        {...layer, name, copy_id, visible: true, current_frame: 0}
       ];
     })
   }

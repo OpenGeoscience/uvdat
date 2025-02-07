@@ -4,6 +4,7 @@ import { Layer } from "@/types";
 import { computed, ref } from "vue";
 
 import draggable from "vuedraggable";
+import LayerStyle from "./LayerStyle.vue";
 
 
 const searchText = ref();
@@ -25,6 +26,23 @@ function setVisibility(layers: Layer[], visible=true) {
     })
 }
 
+function updateFrame(layer: Layer, value: number) {
+    value = value - 1;  // slider values are 1-indexed
+    selectedLayers.value = selectedLayers.value.map((l) => {
+        if (l.id === layer.id && l.copy_id === layer.copy_id) {
+            l.current_frame = value;
+        }
+        return l;
+    })
+}
+
+function getFrameInputWidth(layer: Layer) {
+    // With a minimum of 40 pixels, add 10 pixels for each digit shown in the input
+    let width = 40;
+    width += layer.current_frame.toString().length * 10;
+    width += layer.frames.length.toString().length * 10;
+    return width + 'px';
+}
 </script>
 
 <template>
@@ -61,23 +79,81 @@ function setVisibility(layers: Layer[], visible=true) {
                     item-key="id"
                 >
                     <template #item="{ element }">
-                        <v-list-item>
-                            <v-icon
-                                color="secondary"
-                                icon="mdi-close"
-                                @click="() => removeLayers([element])"
-                                style="vertical-align: inherit;"
-                            />
-                            <v-checkbox-btn
-                                :model-value="element.visible"
-                                @click="() => setVisibility([element], !element.visible)"
-                                style="display: inline"
-                            />
-                            {{ element.name }}
-                            <template v-slot:append>
-                                <v-icon icon="mdi-drag-horizontal" size="small" class="ml-2"></v-icon>
-                            </template>
-                        </v-list-item>
+                        <div>
+                            <v-list-item class="layer">
+                                <template v-slot:prepend>
+                                    <v-icon
+                                        color="secondary"
+                                        icon="mdi-close"
+                                        @click="() => removeLayers([element])"
+                                        style="vertical-align: inherit;"
+                                    />
+                                    <v-checkbox-btn
+                                        :model-value="element.visible"
+                                        @click="() => setVisibility([element], !element.visible)"
+                                        style="display: inline"
+                                    />
+                                </template>
+                                {{ element.name }}
+                                <template v-slot:append>
+                                    <v-checkbox
+                                        v-if="element.frames.length > 1"
+                                        true-icon="mdi-menu-down"
+                                        false-icon="mdi-menu-up"
+                                        class="layer-menu-toggle"
+                                        @click="element.hideFrameMenu = !element.hideFrameMenu"
+                                        hide-details
+                                    >
+                                        <template v-slot:prepend>
+                                            <v-icon icon="mdi-dots-horizontal" />
+                                        </template>
+                                    </v-checkbox>
+                                    <v-btn class="layer-menu-toggle" flat>
+                                        <v-icon icon="mdi-cog" size="small">
+                                        </v-icon>
+                                        <v-menu activator="parent" :close-on-content-click="false">
+                                            <LayerStyle :layer="element" />
+                                        </v-menu>
+                                    </v-btn>
+                                    <v-icon icon="mdi-drag-horizontal" size="small" class="ml-2" />
+                                </template>
+                            </v-list-item>
+                            <div v-if="element.frames.length > 1 && !element.hideFrameMenu" class="frame-menu">
+                                <v-slider
+                                    :model-value="element.current_frame + 1"
+                                    :max="element.frames.length"
+                                    min="1"
+                                    color="primary"
+                                    show-ticks="always"
+                                    tick-size="6"
+                                    thumb-size="15"
+                                    track-size="8"
+                                    step="1"
+                                    hide-details
+                                    type="number"
+                                    @update:modelValue="(value: number) => updateFrame(element, value)"
+                                >
+                                <template v-slot:append>
+                                    <v-text-field
+                                        :model-value="element.current_frame + 1"
+                                        :max="element.frames.length"
+                                        min="1"
+                                        density="compact"
+                                        class="frame-input"
+                                        :style="{'width': getFrameInputWidth(element)}"
+                                        type="number"
+                                        hide-details
+                                        single-line
+                                        @update:modelValue="(value: string) => updateFrame(element, parseInt(value))"
+                                    >
+                                        <template v-slot:default>
+                                            {{ element.current_frame + 1 }}/{{ element.frames.length }}
+                                        </template>
+                                    </v-text-field>
+                                    </template>
+                                </v-slider>
+                            </div>
+                        </div>
                     </template>
                 </draggable>
             </v-list>
@@ -91,7 +167,45 @@ function setVisibility(layers: Layer[], visible=true) {
     position: sticky;
     height: 30px;
     border-bottom: 1px solid rgb(var(--v-theme-on-surface-variant));
-    margin: 4px 8px;
-    padding: 4px 8px;
+    margin: 4px;
+}
+.layer.v-list-item {
+    padding: 0px 4px !important;
+    position: relative;
+    min-height: 0 !important;
+}
+.layer .v-list-item__prepend .v-list-item__spacer,
+.layer .v-list-item__append .v-list-item__spacer {
+    width: 5px !important;
+}
+.layer .v-list-item__prepend {
+  align-self: baseline !important;
+}
+.layer .v-list-item__append {
+    align-self: start;
+}
+.layer .v-list-item__content {
+  align-self: normal !important;
+}
+.layer-menu-toggle {
+    height: 20px !important;
+    min-width: 0;
+    padding: 0px;
+    margin: 0px;
+}
+.frame-menu {
+    padding: 0px 20px;
+    margin-bottom: 5px;
+}
+.frame-menu .v-input__append {
+    margin-left: 15px !important;
+}
+.frame-input .v-field__input {
+    padding: 0px 5px;
+    min-height: 0;
+}
+.frame-input .v-field__input input {
+    /* make default input number transparent */
+    color: rgba(0, 0, 0, 0);
 }
 </style>

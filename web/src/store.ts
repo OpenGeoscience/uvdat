@@ -10,6 +10,7 @@ import {
   ClickedFeatureData,
   RasterDataValues,
   FloatingPanelConfig,
+  Style,
 } from "./types.js";
 import { Map, Popup, Source } from "maplibre-gl";
 
@@ -32,13 +33,14 @@ export const availableDatasets = ref<Dataset[]>();
 
 // Layers
 export const selectedLayers = ref<Layer[]>([]);
+export const selectedLayerStyles = ref<Record<string, Style>>({});
 
 // Data Sources
 export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
 // Map
 export const map = ref<Map>();
-export const mapSources = ref<Record<number, Record<number, Record<number, Source[]>>>>({});
+export const mapSources = ref<Record<string, Source>>({});
 export const clickedLayer = ref<Layer[]>();
 export const showMapBaseLayer = ref(true);
 export const tooltipOverlay = ref<Popup>();

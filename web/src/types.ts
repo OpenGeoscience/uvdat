@@ -44,6 +44,13 @@ export interface LayerFrame {
   raster: RasterData | null;
 }
 
+export interface Style {
+  visible?: boolean;
+  opacity?: number;
+  colormap?: string;
+  colormap_range?: number[];
+}
+
 export interface VectorData {
   id: number;
   name: string;
@@ -195,21 +202,6 @@ export interface NetworkEdge {
   directed: boolean;
   from_node: number;
   to_node: number;
-}
-
-export interface DefaultStyle {
-  // Both
-  palette?: string;
-
-  // Raster
-  data_range?: [number, number];
-  transparency_threshold?: number;
-  trim_distribution_percentage?: number;
-
-  // Vector
-  color_delimiter?: string;
-  color_property?: string;
-  outline?: string;
 }
 
 export interface VectorTile {

@@ -1,10 +1,11 @@
-import { clickedFeature, mapSources, selectedLayers, showMapBaseLayer, theme } from "./store";
+import { clickedFeature, mapSources, selectedLayers, selectedLayerStyles, showMapBaseLayer, theme } from "./store";
 import { getMap } from "./storeFunctions";
 import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { THEMES } from "./themes";
 import { cacheRasterData } from "./utils";
+import { setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
 // ------------------
@@ -22,7 +23,7 @@ export interface SourceDBObjects {
 export function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects:  SourceDBObjects = {}
     const [
-        layerId, layerCopyId, frameId, type
+        layerId, layerCopyId, frameId
     ] = sourceId.split('.');
     selectedLayers.value.forEach((layer) => {
         if (layer.id === parseInt(layerId) && layer.copy_id === parseInt(layerCopyId)) {
@@ -31,8 +32,8 @@ export function getDBObjectsForSourceID(sourceId: string) {
             layer.frames.forEach((frame) => {
                 if (frame.id === parseInt(frameId)) {
                     DBObjects.frame = frame;
-                    if (frame.vector && sourceId.includes("vector")) DBObjects.vector = frame.vector;
-                    if (frame.raster && sourceId.includes("raster")) DBObjects.raster = frame.raster;
+                    if (frame.vector) DBObjects.vector = frame.vector;
+                    else if (frame.raster) DBObjects.raster = frame.raster;
                 }
             })
         }
@@ -44,52 +45,52 @@ export function updateLayersShown () {
     const map = getMap();
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
-        if (!mapSources.value[layer.id]) {
-            mapSources.value[layer.id] = {}
-        }
-        if (!mapSources.value[layer.id][layer.copy_id]) {
-            mapSources.value[layer.id][layer.copy_id] = {}
-        }
         layer.frames.forEach((frame) => {
-            const sourceIDPrefix = `${layer.id}.${layer.copy_id}.${frame.id}`
-            if (!mapSources.value[layer.id][layer.copy_id][frame.id]) {
-                const sources: Source[] = []
+            let sourceId = `${layer.id}.${layer.copy_id}.${frame.id}`
+            if (!mapSources.value[sourceId]) {
                 if (frame.vector) {
-                    const source = createVectorTileSource(frame.vector, sourceIDPrefix + '.vector')
-                    if (source) sources.push(source)
+                    const vector = createVectorTileSource(frame.vector, sourceId);
+                    if (vector) mapSources.value[sourceId] = vector;
+
                 }
                 if (frame.raster) {
-                    const source = createRasterTileSource(frame.raster, sourceIDPrefix + '.raster')
-                    if (source) sources.push(source)
+                    const raster = createRasterTileSource(frame.raster, sourceId);
+                    if (raster) mapSources.value[sourceId] = raster;
                 }
-                mapSources.value[layer.id][layer.copy_id][frame.id] = sources
             }
-
-            map.getLayersOrder().forEach((id) => {
-                if (id !== 'base-tiles') {
-                    const identifiers = id.split('.').map((s) => parseInt(s));
-                    if (
-                        identifiers[0] === layer.id &&
-                        identifiers[1] === layer.copy_id &&
-                        identifiers[2] === frame.id
-                    ) {
-                        map.moveLayer(id);  // handles reordering
-                        map.setLayoutProperty(
-                            id,
-                            "visibility",
-                            layer.visible && layer.current_frame === frame.index ? "visible" : "none"
-                        );
+            map.getLayersOrder().forEach((mapLayerId) => {
+                if (mapLayerId !== 'base-tiles') {
+                    if (mapLayerId.includes(sourceId)) {
+                        map.moveLayer(mapLayerId);  // handles reordering
+                        setMapLayerStyle(mapLayerId, {
+                            visible: layer.visible && layer.current_frame === frame.index,
+                        })
                     }
                 }
             });
         })
     })
     // hide any removed layers
-    map.getLayersOrder().forEach((id) => {
-        if (id !== 'base-tiles') {
-            const identifiers = id.split('.').map((s) => parseInt(s));
-            if (!selectedLayers.value.map((l) => l.id).includes(identifiers[0])) {
-                map.setLayoutProperty(id, "visibility", "none");
+    map.getLayersOrder().forEach((mapLayerId) => {
+        if (mapLayerId !== 'base-tiles') {
+            const [layerId, layerCopyId] = mapLayerId.split('.');
+            if (!selectedLayers.value.some((l) => {
+               return l.id == parseInt(layerId) && l.copy_id == parseInt(layerCopyId)
+            })) {
+                map.setLayoutProperty(mapLayerId, "visibility", "none");
+            }
+        }
+    });
+}
+
+export function updateLayerStyles(layer: Layer) {
+    const map = getMap();
+    map.getLayersOrder().forEach((mapLayerId) => {
+        if (mapLayerId !== 'base-tiles') {
+            const [layerId, layerCopyId] = mapLayerId.split('.');
+            if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
+                const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+                setMapLayerStyle(mapLayerId, currentStyle);
             }
         }
     });
@@ -117,24 +118,6 @@ export function clearMapLayers () {
     });
 }
 
-export function datasetLayerFromMapLayerID (id: string | number) {
-    const layers: Layer[] = []
-    return layers;
-}
-
-export function styleNetworkVectorTileLayer (layer: Layer) {
-}
-
-export function createRasterLayerPolygonMask (raster: RasterData) {
-}
-
-export function isDatasetLayerVisible (Layer: Layer | undefined) {
-    return false;
-}
-
-export function toggleDatasetLayer (Layer: Layer | undefined) {
-}
-
 // ------------------
 // Internal functions
 // ------------------
@@ -158,11 +141,12 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
         projection: 'EPSG:3857'
     }
     const tileParamString = new URLSearchParams(params).toString();
-    map.addSource(sourceId, {
+    const tilesSourceId = sourceId + 'tiles';
+    map.addSource(tilesSourceId, {
         type: "raster",
         tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],
     });
-    const tileSource = map.getSource(sourceId);
+    const tileSource = map.getSource(tilesSourceId);
 
     const bounds = raster.metadata.bounds;
     const boundsSourceId = sourceId + '.bounds';

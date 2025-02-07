@@ -28,6 +28,7 @@ import {
   loadingDatasets,
   loadingSimulationTypes,
   loadingCharts,
+  selectedLayerStyles,
 } from "./store";
 import { getProjects, getDataset, getProjectCharts, getProjectSimulationTypes, getProjectDatasets, getDatasetLayers } from "@/api/rest";
 import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
@@ -36,6 +37,7 @@ import { Dataset, FloatingPanelConfig, Project } from "./types";
 export function clearState() {
   availableDatasets.value = undefined;
   selectedLayers.value = [];
+  selectedLayerStyles.value = {};
   clickedLayer.value = undefined;
   showMapBaseLayer.value = true;
   clickedFeature.value = undefined;
