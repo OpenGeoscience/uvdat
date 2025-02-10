@@ -1,0 +1,11 @@
+[
+    {
+        "name": "Los Angeles Wildfires (Jan 2025)",
+        "default_map_center": [
+            34.27,
+            -118.47
+        ],
+        "default_map_zoom": 10,
+        "datasets": []
+    }
+]
