@@ -192,6 +192,8 @@ def create_vector_map_layer(file_item, style_options):
         if source_projection:
             geojson_data = geojson_data.set_crs(source_projection)
             geojson_data = geojson_data.to_crs(4326)
+    else:
+        raise ValueError(f'Cannot handle file type "{file_item.file_type}"')
 
     geojson_data = add_styling(geojson_data, style_options)
     new_map_layer.write_geojson_data(geojson_data.to_json())
