@@ -14,6 +14,9 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
     # Dataset permissions not yet implemented, and as such, all datasets are visible to all users
     if model == models.Dataset:
         return queryset
+    # RasterData and VectorData permissions should inherit from Dataset permissions
+    if model in [models.RasterData, models.VectorData]:
+        return queryset
 
     if model == models.Project:
         return queryset.filter(id__in=projects.values_list('id', flat=True))
@@ -21,12 +24,14 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
         return queryset.filter(project__in=projects)
     if model in [
         models.FileItem,
-        models.RasterMapLayer,
-        models.VectorMapLayer,
-        models.Network,
-        models.SourceRegion,
+        models.Layer,
+        models.Region,
     ]:
         return queryset.filter(dataset__project__in=projects)
+    if model == models.LayerFrame:
+        return queryset.filter(layer__dataset__project__in=projects)
+    if model == models.Network:
+        return queryset.filter(vector_data__dataset__project__in=projects)
     if model in [models.NetworkNode, models.NetworkEdge]:
         return queryset.filter(network__dataset__project__in=projects)
 

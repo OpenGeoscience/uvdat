@@ -6,8 +6,7 @@ import factory.django
 from factory.faker import faker
 import factory.fuzzy
 
-from uvdat.core.models import Dataset, Project
-from uvdat.core.models.map_layers import RasterMapLayer, VectorMapLayer
+from uvdat.core.models import Dataset, Layer, LayerFrame, Project, RasterData, VectorData
 from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
 
 
@@ -57,7 +56,6 @@ class DatasetFactory(factory.django.DjangoModelFactory):
         model = Dataset
 
     name = factory.Faker('name')
-    dataset_type = Dataset.DatasetType.VECTOR
     category = factory.Faker(
         'random_element',
         elements=[
@@ -71,11 +69,53 @@ class DatasetFactory(factory.django.DjangoModelFactory):
     )
 
 
+class RasterDataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = RasterData
+
+    name = factory.Faker('name')
+    dataset = factory.SubFactory(DatasetFactory)
+    cloud_optimized_geotiff = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='tif'),
+        from_path=Path(__file__).parent / 'data' / 'sample_cog.tif',
+    )
+
+
+class VectorDataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VectorData
+
+    name = factory.Faker('name')
+    dataset = factory.SubFactory(DatasetFactory)
+    geojson_data = factory.django.FileField(
+        filename=factory.Faker('file_name', extension='json'),
+        from_path=Path(__file__).parent / 'data' / 'sample_geo.json',
+    )
+
+
+class LayerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Layer
+
+    name = factory.Faker('name')
+    dataset = factory.SubFactory(DatasetFactory)
+
+
+class LayerFrameFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LayerFrame
+
+    name = factory.Faker('name')
+    layer = factory.SubFactory(LayerFactory)
+    vector = factory.SubFactory(VectorDataFactory)
+    raster = factory.SubFactory(RasterDataFactory)
+
+
 class NetworkFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Network
 
-    dataset = factory.SubFactory(DatasetFactory)
+    vector_data = factory.SubFactory(VectorDataFactory)
 
 
 class NetworkNodeFactory(factory.django.DjangoModelFactory):
@@ -102,25 +142,3 @@ class NetworkEdgeFactory(factory.django.DjangoModelFactory):
     @factory.lazy_attribute
     def line_geometry(self):
         return LineString(self.from_node.location, self.to_node.location)
-
-
-class RasterMapLayerFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = RasterMapLayer
-
-    dataset = factory.SubFactory(DatasetFactory)
-    cloud_optimized_geotiff = factory.django.FileField(
-        filename=factory.Faker('file_name', extension='tif'),
-        from_path=Path(__file__).parent / 'data' / 'sample_cog.tif',
-    )
-
-
-class VectorMapLayerFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = VectorMapLayer
-
-    dataset = factory.SubFactory(DatasetFactory)
-    geojson_file = factory.django.FileField(
-        filename=factory.Faker('file_name', extension='json'),
-        from_path=Path(__file__).parent / 'data' / 'sample_geo.json',
-    )

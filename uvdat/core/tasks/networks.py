@@ -6,7 +6,7 @@ import networkx as nx
 import numpy
 import shapely
 
-from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature, VectorMapLayer
+from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature
 
 NODE_RECOVERY_MODES = [
     'random',
@@ -20,21 +20,23 @@ NODE_RECOVERY_MODES = [
 ]
 
 
-def create_network(vector_map_layer, network_options):
+def create_network(vector_data, network_options):
     # Overwrite previous results
-    dataset = vector_map_layer.dataset
-    Network.objects.filter(dataset=dataset).delete()
+    dataset = vector_data.dataset
+    Network.objects.filter(vector_data__dataset=dataset).delete()
     network = Network.objects.create(
-        dataset=dataset, category=dataset.category, metadata={'source': 'Parsed from GeoJSON.'}
+        category=dataset.category,
+        vector_data=vector_data,
+        metadata={'source': 'Parsed from GeoJSON.'},
     )
 
     connection_column = network_options.get('connection_column')
     connection_column_delimiter = network_options.get('connection_column_delimiter')
     node_id_column = network_options.get('node_id_column')
 
-    source_data = vector_map_layer.read_geojson_data()
+    source_data = vector_data.read_geojson_data()
     geodata = geopandas.GeoDataFrame.from_features(source_data.get('features')).set_crs(4326)
-    geodata[connection_column].fillna('', inplace=True)
+    geodata.fillna({'connection_column': ''}, inplace=True)
     edge_set = geodata[geodata.geom_type != 'Point']
     node_set = geodata[geodata.geom_type == 'Point']
 
@@ -167,17 +169,19 @@ def create_network(vector_map_layer, network_options):
                         line_geometry=edge_line_geometry,
                         metadata=metadata,
                     )
-    # rewrite vector_map_layer geojson_data with updated features
-    vector_map_layer.write_geojson_data(geojson_from_network(vector_map_layer.dataset))
-    vector_map_layer.metadata['network'] = True
-    vector_map_layer.save()
+
+    all_nodes = NetworkNode.objects.filter(network=network)
+    all_edges = NetworkEdge.objects.filter(network=network)
+    print('\t\t', f'{all_nodes.count()} nodes and {all_edges.count()} edges created.')
+    # rewrite vector_data geojson_data with updated features
+    vector_data.write_geojson_data(geojson_from_network(vector_data.dataset))
+    vector_data.metadata['network'] = True
+    vector_data.save()
 
 
 def geojson_from_network(dataset):
-    total_nodes = 0
-    total_edges = 0
     new_feature_set = []
-    for n in NetworkNode.objects.filter(network__dataset=dataset):
+    for n in NetworkNode.objects.filter(network__vector_data__dataset=dataset):
         node_as_feature = {
             'id': n.id,
             'type': 'Feature',
@@ -188,9 +192,8 @@ def geojson_from_network(dataset):
             'properties': dict(node_id=n.id, **n.metadata),
         }
         new_feature_set.append(node_as_feature)
-        total_nodes += 1
 
-    for e in NetworkEdge.objects.filter(network__dataset=dataset):
+    for e in NetworkEdge.objects.filter(network__vector_data__dataset=dataset):
         edge_as_feature = {
             'id': e.id,
             'type': 'Feature',
@@ -206,19 +209,17 @@ def geojson_from_network(dataset):
             ),
         }
         new_feature_set.append(edge_as_feature)
-        total_edges += 1
 
     new_geodata = geopandas.GeoDataFrame.from_features(new_feature_set)
-    print('\t', f'GeoJSON feature set created for {total_nodes} nodes and {total_edges} edges.')
     return new_geodata.to_json()
 
 
 def create_vector_features_from_network(network):
-    map_layer, _ = VectorMapLayer.objects.get_or_create(dataset=network.dataset, index=0)
+    vector_data = network.vector_data
     VectorFeature.objects.bulk_create(
         [
             VectorFeature(
-                map_layer=map_layer,
+                vector_data=vector_data,
                 geometry=node.location,
                 properties=dict(node_id=node.id, **node.metadata),
             )
@@ -228,7 +229,7 @@ def create_vector_features_from_network(network):
     VectorFeature.objects.bulk_create(
         [
             VectorFeature(
-                map_layer=map_layer,
+                vector_data=vector_data,
                 geometry=edge.line_geometry,
                 properties=dict(
                     edge_id=edge.id,

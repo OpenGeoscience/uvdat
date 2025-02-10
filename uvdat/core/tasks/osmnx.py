@@ -2,8 +2,8 @@ from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
 import osmnx
 
-from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode, Project, VectorMapLayer
-from uvdat.core.tasks.map_layers import save_vector_features
+from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode, Project, VectorData
+from uvdat.core.tasks.data import create_vector_features
 from uvdat.core.tasks.networks import geojson_from_network
 
 
@@ -11,14 +11,13 @@ def get_or_create_road_dataset(project, location):
     dataset, created = Dataset.objects.get_or_create(
         name=f'{location} Road Network',
         description='Roads and intersections retrieved from OpenStreetMap via OSMnx',
-        dataset_type=Dataset.DatasetType.VECTOR,
         category='transportation',
     )
     if created:
         project.datasets.add(dataset)
 
     print('Clearing previous results...')
-    Network.objects.filter(dataset=dataset).delete()
+    Network.objects.filter(vector_data__dataset=dataset).delete()
     return dataset
 
 
@@ -34,8 +33,11 @@ def metadata_for_row(row):
 def load_roads(project_id, location):
     project = Project.objects.get(id=project_id)
     dataset = get_or_create_road_dataset(project, location)
+    vector_data = VectorData.objects.create(dataset=dataset)
     network = Network.objects.create(
-        dataset=dataset, category='roads', metadata={'source': 'Fetched with OSMnx.'}
+        category='roads',
+        vector_data=vector_data,
+        metadata={'source': 'Fetched with OSMnx.'},
     )
 
     print(f'Fetching road data for {location}...')
@@ -86,11 +88,6 @@ def load_roads(project_id, location):
         edge.metadata = metadata_for_row(edge_data)
         edge.save()
 
-    vector_map_layer = VectorMapLayer.objects.create(
-        dataset=dataset,
-        metadata=dict(network=True),
-        index=0,
-    )
-    vector_map_layer.write_geojson_data(geojson_from_network(dataset))
-    save_vector_features(vector_map_layer)
+    vector_data.write_geojson_data(geojson_from_network(dataset))
+    create_vector_features(vector_data)
     print('Done.')
