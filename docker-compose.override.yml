@@ -1,10 +1,9 @@
-version: '3'
 services:
   django:
     build:
       context: .
       dockerfile: ./dev/Dockerfile
-    command: [ "./manage.py", "runserver", "0.0.0.0:8000" ]
+    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
     # Log printing via Rich is enhanced by a TTY
     tty: true
     env_file: ./dev/.env.docker-compose
@@ -34,7 +33,7 @@ services:
         "worker",
         "--loglevel",
         "INFO",
-        "--without-heartbeat"
+        "--without-heartbeat",
       ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
@@ -59,15 +58,18 @@ services:
 
   web:
     image: node:latest
-    command: [ "npm", "run", "serve" ]
+    command: ["npm", "run", "serve"]
     working_dir: /web
+    env_file:
+      # git ignored file for VUE_APP_MAPTILER_API_KEY
+      - path: ./dev/.env.web.docker-compose
+        required: false
     volumes:
       - ./web:/web
-      - ./.git:/web/.git  # allow fetching version tag
+      - ./.git:/web/.git # allow fetching version tag
     ports:
       - 8080:8080
     environment:
       - VUE_APP_OAUTH_CLIENT_ID=cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj
       - VUE_APP_API_ROOT=http://localhost:8000/
       - VUE_APP_OAUTH_API_ROOT=http://localhost:8000/oauth/
-      - VUE_APP_MAPTILER_API_KEY=myMapTilerKey
