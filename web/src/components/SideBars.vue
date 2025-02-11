@@ -108,7 +108,7 @@ watch(darkMode, () => {
         <FloatingPanel id="datasets">
           <DatasetsPanel :datasets="availableDatasets"/>
         </FloatingPanel>
-        <FloatingPanel id="layers">
+        <FloatingPanel id="layers" bottom>
           <LayersPanel />
         </FloatingPanel>
       </div>
@@ -206,7 +206,7 @@ watch(darkMode, () => {
         <FloatingPanel id="charts">
           <ChartsPanel/>
         </FloatingPanel>
-        <FloatingPanel id="analytics">
+        <FloatingPanel id="analytics" bottom>
           <AnalyticsPanel/>
         </FloatingPanel>
       </div>

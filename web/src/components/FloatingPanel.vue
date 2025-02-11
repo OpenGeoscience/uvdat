@@ -6,6 +6,7 @@ import { startDrag } from "@/storeFunctions";
 
 const props = defineProps<{
   id: string;
+  bottom?: boolean;
 }>();
 
 const panel = computed(() =>
@@ -26,7 +27,7 @@ function getPanelContainerStyle() {
   if (!panel.value?.position) {
     if (panel.value?.height && !panel.value.collapsed) {
       styleObj.height = panel.value?.height + "px";
-      styleObj["flex-grow"] = "unset";
+      styleObj.flex = "unset";
     }
   }
   return styleObj;
@@ -40,13 +41,12 @@ function getPanelStyle() {
     styleObj.position = "absolute";
     styleObj.top = panel.value.position.y + "px";
     styleObj.left = panel.value.position.x + "px";
-  }
-  if (panel.value?.width) {
-    styleObj.width = panel.value?.width + "px";
+    if (panel.value?.width) {
+      styleObj.width = panel.value?.width + "px";
+    }
   }
   if (panel.value?.height && !panel.value.collapsed) {
     styleObj.height = panel.value?.height + "px";
-    styleObj["flex-grow"] = "unset";
   }
   return styleObj;
 }
@@ -65,13 +65,9 @@ function closePanel() {
   }
 }
 
-function updateDockedHeight() {
+function updatePanelElement() {
   if (panel.value) {
-    if (!panel.value.position) {
-      panel.value.dockedHeight = element.value.clientHeight;
-    } else {
-      panel.value.dockedHeight = undefined;
-    }
+    panel.value.element = element.value;
     panelUpdated();
   }
 }
@@ -102,8 +98,11 @@ function panelUpdated() {
           ></v-icon>
           <v-icon
             icon="mdi-drag"
-            v-tooltip="'Drag Floating Panel'"
-            @mousedown="(e) => startDrag(e, panel, ['position'])"
+            class="draggable"
+            @mousedown="(e) => {
+              updatePanelElement();
+              startDrag(e, panel, ['position'])
+            }"
           ></v-icon>
           <v-icon
             v-if="panel.closeable"
@@ -121,6 +120,7 @@ function panelUpdated() {
             class="right mr-2 draggable-corner"
             @mousedown="
               (e) => {
+                updatePanelElement();
                 startDrag(e, panel, ['width', 'height']);
               }
             "
@@ -130,10 +130,10 @@ function panelUpdated() {
     </div>
     <div
       class="draggable-divider"
-      v-if="!panel.position"
+      v-if="!panel.position && !props.bottom"
       @mousedown="
         (e) => {
-          updateDockedHeight();
+          updatePanelElement();
           startDrag(e, panel, ['height']);
         }
       "
@@ -151,24 +151,29 @@ function panelUpdated() {
 
 <style>
 .panel-container {
-  flex-grow: 1;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 .panel {
   position: relative;
   margin: 6px;
   border-radius: 10px;
-  flex-grow: 1;
+  flex: 1;
   min-height: 50px;
   overflow: auto;
 }
 .panel.closed {
-  flex-grow: 0;
+  flex: 0;
 }
 .panel-content {
   overflow: auto;
   height: calc(100% - 50px);
+}
+.draggable {
+  cursor: move;
 }
 .draggable-divider {
   display: flex;

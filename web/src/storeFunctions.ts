@@ -103,10 +103,10 @@ export function startDrag(
 }
 
 export function dragPanel(event: MouseEvent) {
-  let offsetX = 40;
-  const offsetY = 40;
-  const snapToleranceX = 300;
-  const snapToleranceY = 100;
+  let offsetX = -5;
+  const offsetY = 30;
+  const snapToleranceX = 200;
+  const snapToleranceY = 300;
   const minHeight = 100;
   const minWidth = 150;
 
@@ -115,37 +115,38 @@ export function dragPanel(event: MouseEvent) {
   );
   if (!panel) return undefined;
 
-  if (panel.right) offsetX += document.body.clientWidth - 350;
+  if (panel.right) offsetX += document.body.clientWidth - 390;
   const position = {
-    x: event.clientX - offsetX,
+    x: event.clientX - offsetX - (panel.element?.clientWidth || 0),
     y: event.clientY - offsetY,
   };
   if (dragModes.value?.includes("position")) {
-    if (!panel.initialPosition) {
-      panel.initialPosition = position;
-    }
-    if (panel.initialPosition) {
-      if (
-        Math.abs(position.x - panel.initialPosition.x) < snapToleranceX &&
-        Math.abs(position.y - panel.initialPosition.y) < snapToleranceY
-      ) {
-        // snap to sidebar
-        panel.position = undefined;
-        panel.width = undefined;
-        panel.height = undefined;
-      } else {
+    if (
+      panel.initialPosition &&
+      Math.abs(position.x - panel.initialPosition.x) < snapToleranceX &&
+      Math.abs(position.y - panel.initialPosition.y) < snapToleranceY
+    ) {
+      // snap to sidebar
+      panel.position = undefined;
+    } else {
+      if (!panel.initialPosition) {
         // convert to floating
+        panel.width = 300;
+        panel.height = 200;
+        panel.initialPosition = position;
+      } else if (
+        panel.width && position.x + panel.width < document.body.clientWidth &&
+        panel.height && position.y + panel.height < document.body.clientHeight
+      ) {
         panel.position = position;
-        panel.width = 250;
-        panel.height = 150;
       }
     }
   }
   if (draggingFrom.value) {
     const from: { x: number; y: number } = { ...draggingFrom.value };
     if (dragModes.value?.includes("height") && draggingFrom.value) {
-      if (!panel.height && panel.dockedHeight) {
-        panel.height = panel.dockedHeight;
+      if(!panel.height) {
+        panel.height = panel.element?.clientHeight
       }
       if (panel.height) {
         const heightDelta = event.clientY - draggingFrom.value.y;

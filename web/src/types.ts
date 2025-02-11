@@ -297,9 +297,9 @@ export interface FloatingPanelConfig {
   closeable: boolean;
   collapsed?: boolean;
   right?: boolean;
-  dockedHeight?: number;
   initialPosition?: { x: number; y: number } | undefined;
   position?: { x: number; y: number } | undefined;
   width?: number | undefined;
   height?: number | undefined;
+  element?: HTMLElement;
 }
