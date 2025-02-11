@@ -35,21 +35,8 @@ import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
 import { Dataset, FloatingPanelConfig, Project } from "./types";
 
 export function clearState() {
-  availableDatasets.value = undefined;
-  selectedLayers.value = [];
-  selectedLayerStyles.value = {};
-  clickedLayer.value = undefined;
+  clearProjectState();
   showMapBaseLayer.value = true;
-  clickedFeature.value = undefined;
-  availableCharts.value = undefined;
-  currentChart.value = undefined;
-  availableSimulationTypes.value = undefined;
-  currentSimulationType.value = undefined;
-  selectedSourceRegions.value = [];
-  currentNetworkDataset.value = undefined;
-  currentNetworkDatasetLayer.value = undefined;
-  deactivatedNodes.value = [];
-  currentNetworkGCC.value = undefined;
   currentError.value = undefined;
   polls.value = {};
   panelArrangement.value = [
@@ -85,6 +72,23 @@ export function clearState() {
   draggingPanel.value = undefined;
   draggingFrom.value = undefined;
   dragModes.value = [];
+}
+
+export function clearProjectState() {
+  availableDatasets.value = undefined;
+  selectedLayers.value = [];
+  selectedLayerStyles.value = {};
+  clickedLayer.value = undefined;
+  clickedFeature.value = undefined;
+  availableCharts.value = undefined;
+  currentChart.value = undefined;
+  availableSimulationTypes.value = undefined;
+  currentSimulationType.value = undefined;
+  selectedSourceRegions.value = [];
+  currentNetworkDataset.value = undefined;
+  currentNetworkDatasetLayer.value = undefined;
+  deactivatedNodes.value = [];
+  currentNetworkGCC.value = undefined;
 }
 
 export function startDrag(
@@ -264,7 +268,7 @@ export function clearCurrentNetwork() {
 }
 
 watch(currentProject, () => {
-  clearState();
+  clearProjectState();
   setMapCenter(currentProject.value);
   clearMapLayers();
   if (currentProject.value) {
