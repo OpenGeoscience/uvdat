@@ -5,7 +5,14 @@
             34.27,
             -118.47
         ],
-        "default_map_zoom": 10,
-        "datasets": []
+        "default_map_zoom": 9,
+        "datasets": [
+            "MODIS 1km 48h USA + Hawaii",
+            "USA Current Wildfire Perimeters",
+            "USA Current Wildfire Incidents",
+            "California Fire Perimeters",
+            "Palisades Satellite Imagery",
+            "Eaton/Altadena Satellite Imagery"
+        ]
     }
 ]
