@@ -37,8 +37,8 @@ const clickedFeatureProperties = computed(() => {
 const clickedFeatureSourceType = computed(() => {
   if (clickedFeature.value) {
     const feature = clickedFeature.value.feature;
-    if (feature.source.includes('vector')) return 'vector'
-    if (feature.source.includes('raster')) return 'raster'
+    if (feature.source.includes('.vector')) return 'vector'
+    if (feature.source.includes('.bounds')) return 'raster'
   }
 })
 

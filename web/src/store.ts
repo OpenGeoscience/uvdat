@@ -41,7 +41,6 @@ export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | unde
 // Map
 export const map = ref<Map>();
 export const mapSources = ref<Record<string, Source>>({});
-export const clickedLayer = ref<Layer[]>();
 export const showMapBaseLayer = ref(true);
 export const tooltipOverlay = ref<Popup>();
 export const clickedFeature = ref<ClickedFeatureData>();

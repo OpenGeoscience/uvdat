@@ -6,7 +6,6 @@ import {
   availableDatasets,
   map,
   selectedLayers,
-  clickedLayer,
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
@@ -78,7 +77,6 @@ export function clearProjectState() {
   availableDatasets.value = undefined;
   selectedLayers.value = [];
   selectedLayerStyles.value = {};
-  clickedLayer.value = undefined;
   clickedFeature.value = undefined;
   availableCharts.value = undefined;
   currentChart.value = undefined;
@@ -297,7 +295,6 @@ watch(currentProject, () => {
 
 export function clearClickedFeatureData() {
   clickedFeature.value = undefined;
-  clickedLayer.value = undefined;
 }
 
 watch(selectedLayers, updateLayersShown)

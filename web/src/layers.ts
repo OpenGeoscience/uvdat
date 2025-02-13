@@ -1,7 +1,13 @@
-import { clickedFeature, mapSources, selectedLayers, selectedLayerStyles, showMapBaseLayer } from "./store";
+import {
+    clickedFeature,
+    mapSources,
+    selectedLayers,
+    selectedLayerStyles,
+    showMapBaseLayer
+} from "./store";
 import { getMap } from "./storeFunctions";
 import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
-import { MapLayerMouseEvent, Source } from "maplibre-gl";
+import { MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { cacheRasterData } from "./utils";
 import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
@@ -117,17 +123,22 @@ export function clearMapLayers () {
     });
 }
 
+export function handleMapClick(e: MapMouseEvent) {
+    clickedFeature.value = undefined;
+}
+
 // ------------------
 // Internal functions
 // ------------------
 
 function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
     const map = getMap();
-    map.addSource(sourceId, {
+    const vectorSourceId = sourceId + '.vector'
+    map.addSource(vectorSourceId, {
         type: "vector",
         tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
     });
-    const source = map.getSource(sourceId);
+    const source = map.getSource(vectorSourceId);
     if (source) {
         createVectorFeatureMapLayers(source);
         return source;
@@ -140,7 +151,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
         projection: 'EPSG:3857'
     }
     const tileParamString = new URLSearchParams(params).toString();
-    const tilesSourceId = sourceId + 'tiles';
+    const tilesSourceId = sourceId + '.tiles';
     map.addSource(tilesSourceId, {
         type: "raster",
         tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],
@@ -283,11 +294,15 @@ function handleLayerClick(e: MapLayerMouseEvent) {
     if (!e.features?.length) {
       return;
     }
+    const map = getMap();
+    const featQuery = map.queryRenderedFeatures(e.point).toSorted(
+        (feat) => map.style._order.indexOf(feat.layer.id)
+    ).toReversed();
 
     // While multiple features may be clicked in the same layer, just choose the first one.
     // Our functions operate at the granularity of a single layer, so it would make no difference.
     const feature = e.features[0];
-    if (feature) {
+    if (featQuery.length && feature && feature.source === featQuery[0].source) {
         clickedFeature.value = {
             feature,
             pos: e.lngLat,
