@@ -53,13 +53,14 @@ watch(darkMode, () => {
       floating
       width="300"
       location="left"
+      color="background"
       :class="
         openSidebars.includes('left') ? 'sidebar left' : 'sidebar left closed'
       "
     >
-      <v-toolbar class="toolbar px-5">
+      <v-toolbar class="toolbar px-5" color="background">
         <v-toolbar-title>
-          UVDAT
+          <span class="secondary-text">UVDAT</span>
           <v-menu
             activator="parent"
             :open-on-hover="true"
@@ -118,6 +119,7 @@ watch(darkMode, () => {
       floating
       width="300"
       location="right"
+      color="background"
       :class="
         openSidebars.includes('right')
           ? 'sidebar right'
@@ -128,6 +130,7 @@ watch(darkMode, () => {
         :class="
           openSidebars.includes('right') ? 'toolbar px-5' : 'toolbar px-5 right'
         "
+        color="background"
       >
         <v-icon
           icon="mdi-dock-right"
@@ -140,7 +143,11 @@ watch(darkMode, () => {
 
           <v-menu :close-on-content-click="false">
             <template v-slot:activator="{ props }">
-              <v-icon v-bind="props" icon="mdi-cog" class="px-3"></v-icon>
+              <v-icon
+                v-bind="props"
+                icon="mdi-cog"
+                class="px-3"
+              ></v-icon>
             </template>
             <v-list>
               <v-list-item density="compact">
@@ -163,6 +170,7 @@ watch(darkMode, () => {
                 <template v-slot:append>
                   <v-switch
                     v-model="darkMode"
+                    color="primary"
                     class="ml-5"
                     hide-details
                   ></v-switch>
@@ -232,7 +240,8 @@ watch(darkMode, () => {
 }
 .toolbar {
   visibility: visible;
-  border-radius: 6px !important;
+  border-radius: 6px 6px 0px 0px !important;
+  border-bottom: 1px solid rgb(var(--v-theme-border)) !important;
 }
 .toolbar > .v-toolbar__content {
   display: flex;
@@ -265,5 +274,14 @@ watch(darkMode, () => {
 }
 .right .panel-set {
   max-height: calc(100% - 100px);
+}
+.v-icon {
+  color: rgb(var(--v-theme-secondary-text)) !important;
+}
+.v-btn.bg-primary .v-icon {
+  color: rgb(var(--v-theme-button-text)) !important;
+}
+.v-text-field {
+  background-color: rgb(var(--v-theme-background))
 }
 </style>

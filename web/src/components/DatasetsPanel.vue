@@ -102,8 +102,9 @@ watch(filteredDatasets, expandAllDatasets)
           v-for="[groupName, groupDatasets] in Object.entries(datasetGroups)"
           :key="groupName"
           :value="groupName"
+          bg-color="background"
         >
-          <v-expansion-panel-title style="font-weight: bold" class="capitalize">
+          <v-expansion-panel-title style="font-weight: bold" class="capitalize secondary-text">
             {{ groupName }}
           </v-expansion-panel-title>
           <v-expansion-panel-text>
@@ -140,7 +141,7 @@ watch(filteredDatasets, expandAllDatasets)
                       v-tooltip="item.layers.length + ' layers'"
                       class="ml-2"
                     ></v-icon>
-                    {{ item.layers.length }}
+                    <span class="secondary-text">{{ item.layers.length }}</span>
                     <v-icon
                       icon="mdi-information-outline"
                       size="small"
@@ -193,6 +194,9 @@ watch(filteredDatasets, expandAllDatasets)
 }
 .capitalize {
   text-transform: capitalize !important;
+}
+.secondary-text {
+  color: rgb(var(--v-theme-secondary-text))
 }
 .dataset-title {
   display: flex;

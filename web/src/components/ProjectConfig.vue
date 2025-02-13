@@ -276,7 +276,7 @@ watch(projectConfigMode, () => {
 
 <template>
   <div>
-    <div class="project-row">
+    <div class="project-row my-2">
       <v-select
         label="Current Project"
         placeholder="Select a Project"
@@ -369,7 +369,7 @@ watch(projectConfigMode, () => {
         </v-card>
       </v-menu>
     </div>
-    <v-card v-if="projectConfigMode" flat class="config">
+    <v-card v-if="projectConfigMode" flat class="config" color="background">
       <v-card-title class="pa-3">
         Projects Configuration
         <v-btn
@@ -383,7 +383,7 @@ watch(projectConfigMode, () => {
       </v-card-title>
       <v-card-text class="d-flex pa-0" style="height: 100%">
         <div class="sidebar">
-          <v-card flat class="position-sticky top-0 pa-3" style="z-index: 2">
+          <v-card flat class="position-sticky top-0 pa-3" style="z-index: 2" color="background">
             <v-text-field
               v-model="searchText"
               label="Search Projects"

@@ -57,7 +57,7 @@ watch(currentStyle, _.debounce(() => {
 </script>
 
 <template>
-    <v-card v-if="currentStyle" class="layer-style-card">
+    <v-card v-if="currentStyle" class="layer-style-card" color="background">
         <v-card-subtitle class="pa-2">
           <span style="font-weight: bold;">Layer: </span>
           {{ layer.name }}
@@ -103,6 +103,7 @@ watch(currentStyle, _.debounce(() => {
                     v-model="currentStyle.colormap"
                     :items="rasterColormaps"
                     label="Color Map"
+                    density="compact"
                 />
                 <v-label v-if="currentStyle.colormap" class="pa-2">
                     Colormap Range
@@ -155,7 +156,7 @@ watch(currentStyle, _.debounce(() => {
 
 <style>
 .layer-style-card {
-    width: 400px
+    width: 400px;
 }
 .layer-style-card  .v-label {
     font-size: 14px;

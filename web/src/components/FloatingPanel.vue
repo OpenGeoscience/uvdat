@@ -89,7 +89,7 @@ function panelUpdated() {
     :style="getPanelContainerStyle()"
   >
     <div class="panel" :style="getPanelStyle()" ref="element">
-      <v-card color="surface-bright fill-height">
+      <v-card class="fill-height">
         <div class="mr-3 right">
           <v-icon
             :icon="panel.collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'"
@@ -195,5 +195,6 @@ function panelUpdated() {
   padding: 0px !important;
   overflow: auto;
   height: 100%;
+  background-color: rgb(var(--v-theme-background)) !important;
 }
 </style>

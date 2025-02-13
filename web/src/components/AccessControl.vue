@@ -98,12 +98,15 @@ onMounted(() => {
             class="mx-3 user-circle"
             :ripple="false"
           >
-            {{ project.owner.first_name[0] }}
-            {{ project.owner.last_name[0] }}
-            <v-tooltip activator="parent" location="end">
-              {{ project.owner.first_name }}
-              {{ project.owner.last_name }}
-            </v-tooltip>
+            <span v-if="project.owner.first_name || project.owner.lastname">
+              {{ project.owner.first_name[0] }}
+              {{ project.owner.last_name[0] }}
+              <v-tooltip activator="parent" location="end">
+                {{ project.owner.first_name }}
+                {{ project.owner.last_name }}
+              </v-tooltip>
+            </span>
+            <v-icon v-else icon="mdi-account"></v-icon>
           </v-btn>
         </template>
         <template v-slot:append>

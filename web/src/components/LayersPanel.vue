@@ -59,7 +59,7 @@ function getFrameInputWidth(layer: Layer) {
         <v-card class="panel-content-inner">
             <div class="layers-header" v-if="filteredLayers?.length">
                 <v-icon
-                    color="secondary"
+                    color="primary"
                     icon="mdi-close"
                     @click="() => removeLayers(selectedLayers)"
                     style="vertical-align: inherit;"
@@ -83,7 +83,7 @@ function getFrameInputWidth(layer: Layer) {
                             <v-list-item class="layer">
                                 <template v-slot:prepend>
                                     <v-icon
-                                        color="secondary"
+                                        color="primary"
                                         icon="mdi-close"
                                         @click="() => removeLayers([element])"
                                         style="vertical-align: inherit;"
@@ -108,7 +108,7 @@ function getFrameInputWidth(layer: Layer) {
                                             <v-icon icon="mdi-dots-horizontal" />
                                         </template>
                                     </v-checkbox>
-                                    <v-btn class="layer-menu-toggle" flat>
+                                    <v-btn class="layer-menu-toggle bg-transparent" flat>
                                         <v-icon icon="mdi-cog" size="small">
                                         </v-icon>
                                         <v-menu activator="parent" :close-on-content-click="false">

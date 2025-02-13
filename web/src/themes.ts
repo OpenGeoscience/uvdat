@@ -1,37 +1,47 @@
 export const THEMES = {
     light: {
         colors: {
-            primary: "#166db7",
-            secondary: "#bdddf9",
-            background: "#ffffff",
-            surface: "#d1d5db", // sidebars, menus
+            primary: "#1976D2",
+            secondary: "#E7F3FD",
+            background: "#FFFFFF",
+            surface: "#EDEEF0", // sidebars, menus
             "surface-bright": "#FFFFFF", // floating panels
-            "surface-light": "#EEEEEE", // toolbars
-            "surface-variant": "#424242", //tooltip background
-            "on-surface-variant": "#EEEEEE", // tooltip text
+            "surface-light": "#F5F5F5", // toolbars
+            "surface-variant": "#FFFFFF", // tooltip background
+            "on-surface-variant": "#141516", // tooltip text
             "secondary-darken-1": "#018786", // overlay scrim
-            success: "#4caf50",
-            error: "#B00020",
+            "primary-text": "#141516",
+            "secondary-text": "#757575",
+            "helper-text": "#B9B9B9",
+            "button-text": "#FFFFFF",
+            border: "#C9CBCE",
+            success: "#4CAF50",
+            error: "#F44336",
             info: "#2196F3",
-            warning: "#FB8C00",
+            warning: "#FFC107",
         },
     },
     dark: {
         dark: true,
         colors: {
-            primary: "#166db7",
-            secondary: "#bdddf9",
-            background: "#0a0a0b",
-            surface: "#1f2937", // sidebars, menus
-            "surface-bright": "#474747", // floating panels
-            "surface-light": "#222222", // toolbars
-            "surface-variant": "#333333", // tooltip background
-            "on-surface-variant": "#ffffff", // tooltip text
-            "secondary-darken-1": "#0a0a0b", // overlay scrim
-            success: "#d1f4d3",
-            error: "#B00020",
-            info: "#2196F3",
-            warning: "#FB8C00",
+            primary: "#ABD9FF",
+            secondary: "#3C3C3C",
+            background: "#141516",
+            surface: "#343536", // sidebars, menus
+            "surface-bright": "#141516", // floating panels
+            "surface-light": "#3C3C3C", // toolbars
+            "surface-variant": "#141516", // tooltip background
+            "on-surface-variant": "#FFFFFF", // tooltip text
+            "secondary-darken-1": "#0A0A0B", // overlay scrim
+            "primary-text": "#FFFFFF",
+            "secondary-text": "#CACACA",
+            "helper-text": "#757575",
+            "button-text": "#141516",
+            border: "#C9CBCE",
+            success: "#66BB6A",
+            error: "#EF5350",
+            info: "#42A5F5",
+            warning: "#FFB74D",
         },
     },
 };

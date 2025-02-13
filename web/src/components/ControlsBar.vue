@@ -60,10 +60,10 @@ function takeScreenshot(save: boolean) {
       openSidebars.includes('left') ? 'controls-bar shifted' : 'controls-bar'
     "
   >
-    <v-btn color="primary" class="control-btn" @click="toggleBaseLayer">
+    <v-btn color="primary" class="control-btn" @click="toggleBaseLayer" variant="flat">
       <v-icon icon="mdi-layers" v-tooltip="'Toggle Base Layer'"></v-icon>
     </v-btn>
-    <v-btn class="control-btn">
+    <v-btn class="control-btn" variant="flat">
       <v-icon icon="mdi-camera"></v-icon>
       <v-menu
         v-model="copyMenuShown"
@@ -84,7 +84,7 @@ function takeScreenshot(save: boolean) {
         </v-card>
       </v-menu>
     </v-btn>
-    <v-btn class="control-btn">
+    <v-btn class="control-btn" variant="flat">
       <v-icon icon="mdi-information-outline"></v-icon>
       <v-menu
         activator="parent"
@@ -130,9 +130,10 @@ function takeScreenshot(save: boolean) {
   opacity: 80%;
   background-color: rgb(var(--v-theme-surface));
   display: flex;
+  border-radius: 8px;
 }
 .controls-bar.shifted {
-  left: 355px;
+  left: 375px;
 }
 .control-btn {
   min-width: 0 !important;
