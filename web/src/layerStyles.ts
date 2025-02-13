@@ -1,6 +1,8 @@
 import { RasterTileSource } from "maplibre-gl";
 import { getMap } from "./storeFunctions";
 import { Style } from "./types";
+import { THEMES } from "./themes";
+import { mapSources, theme } from "./store";
 
 
 export const rasterColormaps = [
@@ -24,6 +26,21 @@ export const rasterColormaps = [
     "hsv",
     "gray",
 ];
+
+export function getDefaultColor() {
+    let colorList = THEMES.light.colors;
+    if (theme.value === 'dark') {
+        colorList = THEMES.dark.colors;
+    }
+    const colorNames = ['info', 'success', 'warning', 'error'];
+    const colors = Object.values(Object.fromEntries(
+        Object.entries(colorList)
+        .filter(([name,]) => colorNames.includes(name))
+        .toSorted(([name,]) => colorNames.indexOf(name))
+    ))
+    const i = Object.keys(mapSources.value).length % colors.length;
+    return colors[i];
+}
 
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
     const map = getMap();

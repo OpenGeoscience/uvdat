@@ -1,11 +1,10 @@
-import { clickedFeature, mapSources, selectedLayers, selectedLayerStyles, showMapBaseLayer, theme } from "./store";
+import { clickedFeature, mapSources, selectedLayers, selectedLayerStyles, showMapBaseLayer } from "./store";
 import { getMap } from "./storeFunctions";
 import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
-import { THEMES } from "./themes";
 import { cacheRasterData } from "./utils";
-import { setMapLayerStyle } from "./layerStyles";
+import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
 // ------------------
@@ -294,10 +293,4 @@ function handleLayerClick(e: MapLayerMouseEvent) {
             pos: e.lngLat,
         };
     }
-}
-
-function getDefaultColor() {
-    if (theme.value === 'dark') {
-        return THEMES.dark.colors.primary;
-    } else return THEMES.light.colors.primary;
 }
