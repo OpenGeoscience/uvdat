@@ -142,12 +142,6 @@ class RegionFeatureCollectionSerializer(geojson.Serializer):
         return val
 
 
-class NetworkSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Network
-        fields = '__all__'
-
-
 class NetworkNodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = NetworkNode
@@ -157,6 +151,15 @@ class NetworkNodeSerializer(serializers.ModelSerializer):
 class NetworkEdgeSerializer(serializers.ModelSerializer):
     class Meta:
         model = NetworkEdge
+        fields = '__all__'
+
+
+class NetworkSerializer(serializers.ModelSerializer):
+    nodes = NetworkNodeSerializer(many=True, read_only=True)
+    edges = NetworkEdgeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Network
         fields = '__all__'
 
 

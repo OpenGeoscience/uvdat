@@ -25,6 +25,7 @@ def create_network(vector_data, network_options):
     dataset = vector_data.dataset
     Network.objects.filter(vector_data__dataset=dataset).delete()
     network = Network.objects.create(
+        name=dataset.name + ' Network',
         category=dataset.category,
         vector_data=vector_data,
         metadata={'source': 'Parsed from GeoJSON.'},
