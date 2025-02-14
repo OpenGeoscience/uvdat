@@ -183,6 +183,21 @@ export interface ClickedFeatureData {
   feature: MapGeoJSONFeature;
 }
 
+export interface Network {
+  id: number;
+  name: string;
+  category: string;
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+  metadata: Record<string, unknown>;
+  vector_data: number;
+  deactivated?: {
+    nodes: number[];
+    edges: number[];
+  };
+  gcc: number[];
+}
+
 export interface NetworkNode {
   id: number;
   name: string;

@@ -82,18 +82,17 @@ export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
   return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
 }
 
-export async function getDatasetNetwork(datasetId: number): Promise<Network[]> {
-  return (await apiClient.get(`datasets/${datasetId}/network`)).data;
+export async function getDatasetNetworks(datasetId: number): Promise<Network[]> {
+  return (await apiClient.get(`datasets/${datasetId}/networks`)).data;
 }
 
 export async function getNetworkGCC(
-  datasetId: number,
-  projectId: number,
+  networkId: number,
   exclude_nodes: number[]
-): Promise<NetworkNode[]> {
+): Promise<number[]> {
   return (
     await apiClient.get(
-      `datasets/${datasetId}/gcc?project=${projectId}&exclude_nodes=${exclude_nodes.toString()}`
+      `networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
 }

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import {
-  deactivatedNodes,
   clickedFeature,
   selectedLayers,
   rasterTooltipDataCache,
+  availableNetworks,
 } from "@/store";
 import { getMap, getTooltip } from "@/storeFunctions";
 import type { SourceRegion } from "@/types";
@@ -13,7 +13,7 @@ import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
 import { getDBObjectsForSourceID } from "@/layers";
-import { toggleNodeActive } from "@/utils";
+import { toggleNodeActive } from "@/networks";
 
 const clickedFeatureProperties = computed(() => {
   if (clickedFeature.value === undefined) {
@@ -124,9 +124,11 @@ watch(
 const clickedFeatureIsDeactivatedNode = computed(
   () =>
     clickedFeature.value &&
-    deactivatedNodes.value.includes(
-      clickedFeature.value.feature.properties.node_id
-    )
+    availableNetworks.value.find((network) => {
+      return network.deactivated?.nodes.includes(
+        clickedFeature.value?.feature.properties.node_id
+      )
+    })
 );
 
 function toggleNodeHandler() {

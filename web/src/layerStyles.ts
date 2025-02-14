@@ -1,9 +1,12 @@
 import { RasterTileSource } from "maplibre-gl";
 import { getMap } from "./storeFunctions";
-import { Style } from "./types";
+import { Network, Style } from "./types";
 import { THEMES } from "./themes";
 import { mapSources, theme } from "./store";
 
+// ------------------
+// Exported functions
+// ------------------
 
 export const rasterColormaps = [
     "terrain",
@@ -79,6 +82,83 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
     }
 }
 
+export function showGCC(network: Network) {
+    const vectorId = network.vector_data;
+    const map = getMap();
+    map.getLayersOrder().forEach((mapLayerId) => {
+        if (mapLayerId.includes(".vector." + vectorId)) {
+            if (mapLayerId.includes(".circle")) {
+                let defaultStrokeColor = map.getPaintProperty(mapLayerId, "circle-stroke-color");
+                if (Array.isArray(defaultStrokeColor)) {
+                    defaultStrokeColor = defaultStrokeColor[defaultStrokeColor.length - 1]
+                }
+                if (network.deactivated?.nodes.length) {
+                    ["circle-opacity", "circle-stroke-opacity"].forEach((key) => {
+                        map.setPaintProperty(
+                            mapLayerId,
+                            key,
+                            [
+                                "case",
+                                ["in", ["get", "node_id"], ["literal", network.deactivated?.nodes]],
+                                0.4,
+                                1,
+                            ]
+                        )
+                    })
+                    map.setPaintProperty(
+                        mapLayerId,
+                        "circle-stroke-color",
+                        [
+                            "case",
+                            // If node is part of GCC, set its stroke color to yellow
+                            ["in", ["get", "node_id"], ["literal", network.gcc]],
+                            "yellow",
+                            // else, set it to its normal color
+                            defaultStrokeColor,
+                        ]
+                    )
+                } else {
+                    ["circle-opacity", "circle-stroke-opacity"].forEach((key) => {
+                        map.setPaintProperty(mapLayerId, key, 1)
+                    })
+                    map.setPaintProperty(
+                        mapLayerId, "circle-stroke-color", defaultStrokeColor,
+                    )
+                }
+            } else if (mapLayerId.includes(".line")) {
+                let defaultLineColor = map.getPaintProperty(mapLayerId, "line-color");
+                if (Array.isArray(defaultLineColor)) {
+                    defaultLineColor = defaultLineColor[defaultLineColor.length - 1]
+                }
+                if (network.deactivated?.nodes.length) {
+                    map.setPaintProperty(
+                        mapLayerId,
+                        "line-color",
+                        [
+                            "case",
+                            [
+                                "all",
+                                // If node is part of GCC, set its stroke color to yellow
+                                ["in", ["get", "from_node_id"], ["literal", network.gcc]],
+                                ["in", ["get", "to_node_id"], ["literal", network.gcc]],
+                            ],
+                            "yellow",
+                            // else, set it to its normal color
+                            defaultLineColor,
+                        ]
+                    )
+                } else {
+                    map.setPaintProperty(mapLayerId, "line-color", defaultLineColor)
+                }
+            }
+        }
+    });
+}
+
+// ------------------
+// Internal functions
+// ------------------
+
 function getRasterTilesQuery(style: Style) {
     const query:  Record<string, string> = {
         projection: "EPSG:3857",
@@ -86,10 +166,10 @@ function getRasterTilesQuery(style: Style) {
     if (style.colormap) {
         query.palette = style.colormap;
         query.band = "1";
-      }
-      if (Array.isArray(style.colormap_range) && style.colormap_range?.length === 2) {
+    }
+    if (Array.isArray(style.colormap_range) && style.colormap_range?.length === 2) {
         query.min = style.colormap_range[0].toString();
         query.max = style.colormap_range[1].toString();
-      }
+    }
     return query;
 }

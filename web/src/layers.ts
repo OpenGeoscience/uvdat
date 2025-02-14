@@ -1,6 +1,7 @@
 import {
     clickedFeature,
     mapSources,
+    rasterTooltipDataCache,
     selectedLayers,
     selectedLayerStyles,
     showMapBaseLayer
@@ -9,7 +10,7 @@ import { getMap } from "./storeFunctions";
 import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
-import { cacheRasterData } from "./utils";
+import { getRasterDataValues } from "./api/rest";
 import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
@@ -133,7 +134,7 @@ export function handleMapClick(e: MapMouseEvent) {
 
 function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
     const map = getMap();
-    const vectorSourceId = sourceId + '.vector'
+    const vectorSourceId = sourceId + '.vector.' + vector.id
     map.addSource(vectorSourceId, {
         type: "vector",
         tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
@@ -151,7 +152,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
         projection: 'EPSG:3857'
     }
     const tileParamString = new URLSearchParams(params).toString();
-    const tilesSourceId = sourceId + '.tiles';
+    const tilesSourceId = sourceId + '.tiles.' + raster.id;
     map.addSource(tilesSourceId, {
         type: "raster",
         tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],
@@ -159,7 +160,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
     const tileSource = map.getSource(tilesSourceId);
 
     const bounds = raster.metadata.bounds;
-    const boundsSourceId = sourceId + '.bounds';
+    const boundsSourceId = sourceId + '.bounds.' + raster.id;
     let {xmin, xmax, ymin, ymax, srs} = bounds;
     [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
     [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
@@ -288,6 +289,14 @@ function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) 
     });
 
     map.on("click", boundsSource.id + '.mask', handleLayerClick);
+}
+
+async function cacheRasterData(raster: RasterData) {
+    if (rasterTooltipDataCache.value[raster.id] !== undefined) {
+      return;
+    }
+    const data = await getRasterDataValues(raster.id);
+    rasterTooltipDataCache.value[raster.id] = data;
 }
 
 function handleLayerClick(e: MapLayerMouseEvent) {

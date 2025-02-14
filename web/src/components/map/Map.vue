@@ -8,8 +8,9 @@ import {
   tooltipOverlay,
   openSidebars,
   showMapBaseLayer,
+  clickedFeature,
 } from "@/store";
-import { clearClickedFeatureData, setMapCenter } from "@/storeFunctions";
+import { setMapCenter } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
@@ -125,7 +126,7 @@ function createMap() {
    * this only has a real effect when the base map is clicked, as that means that no other
    * feature layer can "catch" the event, and the tooltip stays hidden.
    */
-  newMap.on("click", clearClickedFeatureData);
+  newMap.on("click", () => {clickedFeature.value = undefined});
 
   // Order is important as the following function relies on the ref being set
   map.value = newMap;

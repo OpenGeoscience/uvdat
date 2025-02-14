@@ -12,12 +12,9 @@ import {
   polls,
   availableCharts,
   currentChart,
+  availableNetworks,
   availableSimulationTypes,
   currentSimulationType,
-  currentNetworkDataset,
-  currentNetworkDatasetLayer,
-  currentNetworkGCC,
-  deactivatedNodes,
   currentError,
   tooltipOverlay,
   panelArrangement,
@@ -80,13 +77,10 @@ export function clearProjectState() {
   clickedFeature.value = undefined;
   availableCharts.value = undefined;
   currentChart.value = undefined;
+  availableNetworks.value = [];
   availableSimulationTypes.value = undefined;
   currentSimulationType.value = undefined;
   selectedSourceRegions.value = [];
-  currentNetworkDataset.value = undefined;
-  currentNetworkDatasetLayer.value = undefined;
-  deactivatedNodes.value = [];
-  currentNetworkGCC.value = undefined;
 }
 
 export function startDrag(
@@ -249,22 +243,6 @@ export function pollForProcessingDataset(datasetId: number) {
   }, 10000);
 }
 
-/**
- * If a network analysis is going on, reset it to its starting state.
- */
-export function clearCurrentNetwork() {
-  const datasetLayer = currentNetworkDatasetLayer.value;
-
-  currentNetworkDataset.value = undefined;
-  currentNetworkDatasetLayer.value = undefined;
-  deactivatedNodes.value = [];
-  currentNetworkGCC.value = undefined;
-
-  // if (datasetLayer !== undefined) {
-  //   styleNetworkVectorTileLayer(datasetLayer);
-  // }
-}
-
 watch(currentProject, () => {
   clearProjectState();
   setMapCenter(currentProject.value);
@@ -293,11 +271,6 @@ watch(currentProject, () => {
   }
 });
 
-export function clearClickedFeatureData() {
-  clickedFeature.value = undefined;
-}
-
 watch(selectedLayers, updateLayersShown)
 
 watch(showMapBaseLayer, updateBaseLayer);
-/* eslint-enable @typescript-eslint/ban-ts-comment */
