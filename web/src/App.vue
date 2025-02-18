@@ -7,12 +7,8 @@ import {
   draggingPanel,
 } from "./store";
 import { oauthClient } from "./api/auth";
-import {
-  clearState,
-  loadProjects,
-  dragPanel,
-  stopDrag,
-} from "./storeFunctions";
+import { clearState, loadProjects } from "./storeFunctions";
+import { dragPanel, stopDrag } from "@/drag";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";

@@ -2,7 +2,7 @@
 import { computed, ref } from "vue";
 
 import { panelArrangement } from "@/store";
-import { startDrag } from "@/storeFunctions";
+import { startDrag } from "@/drag";
 
 const props = defineProps<{
   id: string;
