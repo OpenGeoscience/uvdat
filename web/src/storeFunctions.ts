@@ -51,13 +51,6 @@ export function clearState() {
       closeable: false,
     },
     {
-      id: "legend",
-      label: "Legend",
-      visible: true,
-      closeable: true,
-      right: true,
-    },
-    {
       id: "charts",
       label: "Charts",
       visible: true,

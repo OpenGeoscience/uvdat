@@ -34,9 +34,9 @@ function toggleSidebar(sidebar: "left" | "right") {
   }
 }
 
-function togglePanelVisibility(panel: FloatingPanelConfig) {
+function togglePanelVisibility(id: string) {
   panelArrangement.value = panelArrangement.value.map((p) => {
-    if (p.id == panel.id) p.visible = !p.visible;
+    if (p.id == id) p.visible = !p.visible;
     return p;
   });
 }
@@ -196,6 +196,7 @@ watch(darkMode, () => {
             item-value="id"
             selectable
             :selected="panelArrangement.filter((p) => p.visible)"
+            @click:select="(item) => togglePanelVisibility(item.id as string)"
             select-strategy="leaf"
             return-object
           >
@@ -203,7 +204,7 @@ watch(darkMode, () => {
               <v-list-item-action start>
                 <v-checkbox-btn
                   :model-value="isSelected"
-                  @change="togglePanelVisibility(item)"
+                  @change="togglePanelVisibility(item.id)"
                 ></v-checkbox-btn>
               </v-list-item-action>
             </template>
@@ -245,6 +246,7 @@ watch(darkMode, () => {
 }
 .toolbar > .v-toolbar__content {
   display: flex;
+  height: 50px !important;
   justify-content: space-between;
 }
 .sidebar.closed > .v-navigation-drawer__content > .toolbar {

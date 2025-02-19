@@ -129,7 +129,7 @@ watch(filteredDatasets, expandAllDatasets)
                     <v-checkbox-btn
                       v-else-if="item.layers && props.selectedIds"
                       :model-value="props.selectedIds.includes(item.id)"
-                      @click="() => toggleSelected([item])"
+                      @click.stop="() => toggleSelected([item])"
                       style="display: inline"
                     />
                     {{ title }}

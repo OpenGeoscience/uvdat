@@ -193,7 +193,7 @@ function panelUpdated() {
 }
 .panel-content-inner {
   padding: 0px !important;
-  overflow: auto;
+  overflow: auto !important;
   height: 100%;
   background-color: rgb(var(--v-theme-background)) !important;
 }

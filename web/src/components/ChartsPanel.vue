@@ -48,7 +48,6 @@ const currentXStart = ref(0);
 const currentXRange = ref(500);
 const downloadButton = ref();
 
-watch(currentChart, console.log)
 const options = computed(() => {
   if (!currentChart.value) {
     return defaultOptions;

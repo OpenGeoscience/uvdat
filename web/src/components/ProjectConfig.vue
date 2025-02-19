@@ -79,10 +79,11 @@ function openProjectConfig(create = false) {
 
 function create() {
   const { center, zoom } = getCurrentMapPosition();
-  createProject(newProjectName.value, center, zoom).then(() => {
+  createProject(newProjectName.value, center, zoom).then((project) => {
     newProjectName.value = undefined;
     projectConfigMode.value = "existing";
     loadProjects();
+    selectProject(project);
   });
 }
 
@@ -134,6 +135,10 @@ function saveProjectMapLocation(project: Project | undefined) {
         }
         return p;
       });
+      if (currentProject.value) {
+        currentProject.value.default_map_center = project.default_map_center
+        currentProject.value.default_map_zoom = project.default_map_zoom
+      }
       setMapCenter(project);
       saving.value = "done";
       setTimeout(() => {
@@ -145,7 +150,7 @@ function saveProjectMapLocation(project: Project | undefined) {
 
 function selectProject(project: Project) {
   if (selectedProject.value?.id !== project.id) {
-    selectedProject.value = availableProjects.value.find((p) => p.id === project.id);
+    selectedProject.value = project;
     loadingDatasets.value = true;
     getDatasets().then(async (datasets) => {
       allDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
@@ -270,7 +275,12 @@ watch(otherDatasets, () => {
 })
 
 watch(projectConfigMode, () => {
-  if (currentProject.value) selectProject(currentProject.value)
+  if (currentProject.value) {
+    if (projectConfigMode.value) selectProject(currentProject.value)
+    else currentProject.value = availableProjects.value.find(
+      (p) => p.id === currentProject.value?.id
+    )  // trigger project reload
+  }
 })
 </script>
 
@@ -280,6 +290,7 @@ watch(projectConfigMode, () => {
       <v-select
         label="Current Project"
         placeholder="Select a Project"
+        no-data-text="No available projects."
         :items="availableProjects"
         :autofocus="!currentProject"
         v-model="currentProject"
@@ -315,6 +326,14 @@ watch(projectConfigMode, () => {
         </v-tooltip>
       </v-btn>
     </div>
+    <v-card
+      v-if="availableProjects.length === 0"
+      class="tutorial-popup"
+    >
+      <v-card-text>
+        To get started, create a project and add datasets to it.
+      </v-card-text>
+    </v-card>
     <div class="project-row" v-if="currentProject">
       <span>
         <v-icon icon="mdi-database-outline" v-tooltip="'Datasets'"></v-icon>
@@ -609,6 +628,12 @@ watch(projectConfigMode, () => {
   margin: 0px 8px;
   align-items: center;
   justify-content: space-between;
+}
+.tutorial-popup {
+  position: absolute !important;
+  z-index: 1 !important;
+  left: 280px;
+  width: 150px;
 }
 .config {
   top: 0px;

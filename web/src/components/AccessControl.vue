@@ -98,7 +98,7 @@ onMounted(() => {
             class="mx-3 user-circle"
             :ripple="false"
           >
-            <span v-if="project.owner.first_name || project.owner.lastname">
+            <span v-if="project.owner.first_name || project.owner.last_name">
               {{ project.owner.first_name[0] }}
               {{ project.owner.last_name[0] }}
               <v-tooltip activator="parent" location="end">
@@ -226,7 +226,7 @@ onMounted(() => {
       Add Users
     </v-btn>
     <v-dialog v-model="showUserSelectDialog" width="500">
-      <v-card>
+      <v-card color="background">
         <v-card-title class="pa-3">
           {{
             userSelectDialogMode === "add" ? "Add Users" : "Select New Owner"

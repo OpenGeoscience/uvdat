@@ -36,6 +36,10 @@ function updateFrame(layer: Layer, value: number) {
     })
 }
 
+function getLayerMaxFrames(layer: Layer) {
+    return [...new Set(layer.frames.map((f) => f.index))].length
+}
+
 function getFrameInputWidth(layer: Layer) {
     // With a minimum of 40 pixels, add 10 pixels for each digit shown in the input
     let width = 40;
@@ -97,7 +101,7 @@ function getFrameInputWidth(layer: Layer) {
                                 {{ element.name }}
                                 <template v-slot:append>
                                     <v-checkbox
-                                        v-if="element.frames.length > 1"
+                                        v-if="getLayerMaxFrames(element) > 1"
                                         true-icon="mdi-menu-down"
                                         false-icon="mdi-menu-up"
                                         class="layer-menu-toggle"
@@ -118,10 +122,10 @@ function getFrameInputWidth(layer: Layer) {
                                     <v-icon icon="mdi-drag-horizontal" size="small" class="ml-2" />
                                 </template>
                             </v-list-item>
-                            <div v-if="element.frames.length > 1 && !element.hideFrameMenu" class="frame-menu">
+                            <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">
                                 <v-slider
                                     :model-value="element.current_frame + 1"
-                                    :max="element.frames.length"
+                                    :max="getLayerMaxFrames(element)"
                                     min="1"
                                     color="primary"
                                     show-ticks="always"
@@ -136,7 +140,7 @@ function getFrameInputWidth(layer: Layer) {
                                 <template v-slot:append>
                                     <v-text-field
                                         :model-value="element.current_frame + 1"
-                                        :max="element.frames.length"
+                                        :max="getLayerMaxFrames(element)"
                                         min="1"
                                         density="compact"
                                         class="frame-input"
@@ -147,7 +151,7 @@ function getFrameInputWidth(layer: Layer) {
                                         @update:modelValue="(value: string) => updateFrame(element, parseInt(value))"
                                     >
                                         <template v-slot:default>
-                                            {{ element.current_frame + 1 }}/{{ element.frames.length }}
+                                            {{ element.current_frame + 1 }}/{{ getLayerMaxFrames(element) }}
                                         </template>
                                     </v-text-field>
                                     </template>
