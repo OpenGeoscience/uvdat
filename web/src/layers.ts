@@ -101,9 +101,14 @@ export function updateLayerStyles(layer: Layer) {
     const map = getMap();
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId !== 'base-tiles') {
-            const [layerId, layerCopyId] = mapLayerId.split('.');
+            const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
             if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
                 const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+                const frame = layer.frames.find((f) => f.id === parseInt(frameId))
+                currentStyle.visible = false;
+                if (frame) {
+                    currentStyle.visible = layer.visible && layer.current_frame === frame.index
+                }
                 setMapLayerStyle(mapLayerId, currentStyle);
             }
         }
