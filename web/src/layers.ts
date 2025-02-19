@@ -152,7 +152,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
         projection: 'EPSG:3857'
     }
     const tileParamString = new URLSearchParams(params).toString();
-    const tilesSourceId = sourceId + '.tiles.' + raster.id;
+    const tilesSourceId = sourceId + '.raster.' + raster.id;
     map.addSource(tilesSourceId, {
         type: "raster",
         tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],

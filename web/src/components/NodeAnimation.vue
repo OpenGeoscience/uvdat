@@ -1,133 +1,89 @@
-<script lang="ts">
-import { ref, watch, computed, onMounted } from "vue";
-import {
-  currentNetworkDataset,
-  currentNetworkDatasetLayer,
-  deactivatedNodes,
-  selectedLayers,
-} from "@/store";
-import { deactivatedNodesUpdated } from "@/utils";
+<script setup lang="ts">
+import { getNetwork, setNetworkDeactivatedNodes } from "@/networks";
+import { Layer } from "@/types";
+import { ref, watch, computed } from "vue";
 
-export default {
-  props: {
-    nodeFailures: {
-      required: true,
-      type: Array<number>,
-    },
-    nodeRecoveries: {
-      required: false,
-      type: Array<number>,
-    },
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setup(props: any) {
-    const currentTick = ref(0);
-    const ticker = ref();
-    const seconds = ref(1);
+const props = defineProps<{
+  nodeFailures: Array<number>,
+  nodeRecoveries?:  Array<number>,
+  layer: Layer | undefined,
+}>();
 
-    const startState = computed(() => {
-      if (props.nodeRecoveries?.length) return props.nodeFailures;
-      else return [];
-    });
+const currentTick = ref(0);
+const ticker = ref();
+const seconds = ref(1);
 
-    const nodeChanges = computed(() => {
-      if (props.nodeRecoveries?.length) return props.nodeRecoveries;
-      else return props.nodeFailures;
-    });
+const startState = computed(() => {
+  if (props.nodeRecoveries?.length) return props.nodeFailures;
+  else return [];
+});
 
-    async function findCurrentNetworkDataset() {
-      // TODO: get current network from selected layers instead of datasets
-      // currentNetworkDataset.value = selectedDatasets.value.find((d) =>
-      //   d.map_layers?.some((l) => l.metadata?.network)
-      // );
-      // if (currentNetworkDataset.value && !currentNetworkDataset.value.network) {
-      //   fetchDatasetNetwork(currentNetworkDataset.value);
-      // }
-      // if (currentNetworkDataset.value) {
-      //   const datasetLayer = await getDatasetLayerForDataObject(
-      //     currentNetworkDataset.value
-      //   );
-      //   if (isVectorDatasetLayer(datasetLayer)) {
-      //     currentNetworkDatasetLayer.value = datasetLayer;
-      //   }
-      // }
-    }
+const nodeChanges = computed(() => {
+  if (props.nodeRecoveries?.length) return props.nodeRecoveries;
+  else return props.nodeFailures;
+});
 
-    function pause() {
-      clearInterval(ticker.value);
-      ticker.value = undefined;
-    }
+function pause() {
+  clearInterval(ticker.value);
+  ticker.value = undefined;
+}
 
-    function play() {
+function play() {
+  pause();
+  ticker.value = setInterval(() => {
+    if (currentTick.value < nodeChanges.value.length) {
+      currentTick.value += 1;
+    } else {
       pause();
-      ticker.value = setInterval(() => {
-        if (currentTick.value < nodeChanges.value.length) {
-          currentTick.value += 1;
-        } else {
-          pause();
-        }
-      }, seconds.value * 1000);
     }
+  }, seconds.value * 1000);
+}
 
-    function rewind() {
+function rewind() {
+  pause();
+  ticker.value = setInterval(() => {
+    if (currentTick.value > 0) {
+      currentTick.value -= 1;
+    } else {
       pause();
-      ticker.value = setInterval(() => {
-        if (currentTick.value > 0) {
-          currentTick.value -= 1;
-        } else {
-          pause();
-        }
-      }, seconds.value * 1000);
     }
+  }, seconds.value * 1000);
+}
 
-    watch(currentTick, () => {
-      const slice: number[] = nodeChanges.value.slice(0, currentTick.value);
-      if (props.nodeRecoveries) {
-        // recovery mode
-        deactivatedNodes.value = startState.value.filter(
-          (i: number) => !slice.includes(i)
-        );
-      } else {
-        deactivatedNodes.value = slice;
-      }
-      deactivatedNodesUpdated();
-    });
+async function getCurrentNetwork() {
+  let nodeId;
+  if (props.nodeFailures.length) nodeId = props.nodeFailures[0]
+  else if (props.nodeRecoveries?.length) nodeId = props.nodeRecoveries[0]
+  if (nodeId && props.layer?.dataset) {
+    return await getNetwork(nodeId, props.layer.dataset)
+  }
+}
 
-    onMounted(findCurrentNetworkDataset);
-
-    return {
-      currentNetworkDataset,
-      currentNetworkDatasetLayer,
-      selectedLayers,
-      nodeChanges,
-      currentTick,
-      seconds,
-      play,
-      pause,
-      rewind,
-    };
-  },
-};
+watch(currentTick, async () => {
+  let deactivated = nodeChanges.value.slice(0, currentTick.value);
+  if (props.nodeRecoveries) {
+    deactivated = startState.value.filter(
+      (i: number) => !deactivated.includes(i)
+    )
+  }
+  const network = await getCurrentNetwork()
+  if (network) setNetworkDeactivatedNodes(network, deactivated);
+});
 </script>
 
 <template>
-  <div
-    v-if="
-      !currentNetworkDataset ||
-      !currentNetworkDatasetLayer ||
-      !selectedLayers.includes(currentNetworkDatasetLayer)
-    "
-  >
-    Show network dataset layer to begin.
-  </div>
-  <div v-else class="d-flex" style="align-items: center">
-    <v-btn @click="play" icon="mdi-play" variant="text" />
-    <v-btn @click="pause" icon="mdi-pause" variant="text" />
-    <v-btn @click="rewind" icon="mdi-rewind" variant="text" />
+  <div class="d-flex pb-3" style="align-items: center">
+    <v-icon @click="play" icon="mdi-play" variant="text" />
+    <v-icon @click="pause" icon="mdi-pause" variant="text" />
+    <v-icon @click="rewind" icon="mdi-rewind" variant="text" />
     <v-slider
       v-model="currentTick"
       show-ticks="always"
-      tick-size="5"
+      color="primary"
+      class="ml-5"
+      tick-size="6"
+      thumb-size="15"
+      track-size="8"
       min="0"
       step="1"
       :max="nodeChanges.length"

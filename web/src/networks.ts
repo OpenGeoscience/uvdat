@@ -2,7 +2,7 @@ import {
     getDatasetNetworks,
     getNetworkGCC,
 } from "@/api/rest";
-import { Dataset, Network} from "./types";
+import { Dataset, Network } from "./types";
 import { availableNetworks } from './store';
 import { showGCC } from "./layerStyles";
 
@@ -17,32 +17,35 @@ export async function toggleNodeActive(
 ) {
     const network = await getNetwork(nodeId, dataset);
     if (network) {
-        if (network.deactivated === undefined) network.deactivated = {
-            nodes: [],
-            edges: [],
-        };
-        if (network.deactivated.nodes.includes(nodeId)) {
-            network.deactivated.nodes = network.deactivated.nodes.filter((n) => n !== nodeId)
+        let deactivated = network?.deactivated?.nodes || []
+        if (!deactivated.includes(nodeId)) {
+            deactivated.push(nodeId)
         } else {
-            network.deactivated.nodes = [
-                ...network.deactivated.nodes,
-                nodeId,
-            ]
+            deactivated = deactivated.filter((id) => id !== nodeId)
         }
-        if (network.deactivated.nodes.length) {
-            network.gcc = await getNetworkGCC(network.id, network.deactivated.nodes);
-        } else {
-            network.gcc = network.nodes.map((n) => n.id)
-        }
-        showGCC(network);
+        await setNetworkDeactivatedNodes(network, deactivated)
     }
 }
 
-// ------------------
-// Internal functions
-// ------------------
+export async function setNetworkDeactivatedNodes(network: Network, nodeIds: number[]) {
+    if (!network.deactivated) network.deactivated = {
+        nodes: [],
+        edges: []
+    }
+    network.deactivated.nodes = nodeIds;
+    if (nodeIds.length) {
+        network.gcc = await getNetworkGCC(network.id, network.deactivated.nodes);
+    } else {
+        network.gcc = network.nodes.map((n) => n.id)
+    }
+    showGCC(network)
+    availableNetworks.value = availableNetworks.value.map((n) => {
+        if (n.id === network.id) return network
+        return n
+    })
+}
 
-async function getNetwork(
+export async function getNetwork(
     nodeId: number,
     dataset: Dataset,
 ): Promise<Network | undefined> {

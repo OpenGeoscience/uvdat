@@ -67,7 +67,7 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
             if (opacity === undefined) opacity = 1;
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-        } else if (mapLayerId.includes("tiles")) {
+        } else if (mapLayerId.includes("raster")) {
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
             if (source?.tiles?.length) {
@@ -78,7 +78,6 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
                 }
             }
         }
-
     }
 }
 

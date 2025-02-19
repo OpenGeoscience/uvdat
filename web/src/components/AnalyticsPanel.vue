@@ -10,6 +10,7 @@ import {
 } from "@/store";
 import {
   getDatasetLayers,
+  getNetwork,
   getProjectDatasets,
   getSimulationResults,
   runSimulation,
@@ -17,10 +18,11 @@ import {
 import NodeAnimation from "./NodeAnimation.vue";
 import { SimulationResult, Layer, Dataset } from "@/types";
 
+
 interface Input {
   key: string;
-  viewable: boolean;
-  value: { name: string };
+  type: string;
+  value: any;
 }
 
 const searchText = ref();
@@ -37,14 +39,80 @@ const availableResults = ref<SimulationResult[]>([]);
 const inputForm = ref();
 const selectedInputs = ref<Record<string, object[]>>({});
 const outputPoll = ref();
+const networkArg = ref();
 const inputSelectionRules = [
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (v: any) => (v ? true : "Selection required."),
 ];
 
-function toggleVisible(arg: Input | Dataset) {
-  // TODO: Implement
-  console.log('toggle visibility of', arg)
+function getLayerForArg(arg: Input | undefined): Layer | undefined {
+  let retLayer;
+  if (arg) {
+    availableDatasets.value?.forEach((dataset) => {
+      dataset.layers.forEach((layer) => {
+        layer.frames.forEach((frame) => {
+          if (
+            (arg.value.cloud_optimized_geotiff && frame.raster?.id === arg.value.id ) ||
+            (arg.value.geojson_data && frame.vector?.id === arg.value.id) ||
+            (arg.value.nodes && frame.vector?.id === arg.value.vector_data )
+          ) {
+            retLayer = layer;
+          }
+        })
+      })
+    })
+  }
+  return retLayer;
+}
+
+async function getNetworkArg() {
+  let networkArg = activeResultInputs.value.find((input) => input.key === 'network');
+  if (!networkArg) {
+    // For simulations that use other results as inputs, those results may point to a network
+    await Promise.all(activeResultInputs.value.map(async (input) => {
+      if (input.type === 'SimulationResult') {
+        const networkId = input.value.input_args.network;
+        if (networkId) networkArg = {
+          key: input.key,
+          type: input.type,
+          value: await getNetwork(networkId)
+        }
+      }
+    }))
+  }
+  return networkArg;
+}
+
+function isArgVisible(arg: Input | undefined) {
+  if (!arg) return false;
+  const layer = getLayerForArg(arg);
+  return !!selectedLayers.value.find((l) => l.id === layer?.id)?.visible
+}
+
+function toggleVisibleArg(arg: Input) {
+  const layer = getLayerForArg(arg);
+  if (!layer) return;
+  toggleLayer(layer)
+}
+
+function toggleVisibleDataset(dataset: Dataset) {
+  if (dataset.layers.length) {
+    // select first layer by default
+    toggleLayer(dataset.layers[0])
+  }
+}
+
+function toggleLayer(layer: Layer) {
+  if (selectedLayers.value.some((l) => l.id === layer.id)) {
+    selectedLayers.value = selectedLayers.value.map((l) => {
+      if (l.id === layer.id) l.visible = true;
+      return l
+    })
+  } else {
+    selectedLayers.value = [
+    {...layer, name: layer.name, copy_id: 0, visible: true, current_frame: 0},
+    ...selectedLayers.value,
+    ];
+  }
 }
 
 function run() {
@@ -88,7 +156,6 @@ async function populateActiveResultInputs() {
   const args = Object.entries(activeResult.value.input_args);
   const inputInfo = await Promise.all(
     args.map(async ([argName, argValue]) => {
-      // const [argName, argValue] = args[i];
       const argDef = currentSimulationType.value?.args.find(
         (a: { name: string }) => a.name === argName
       );
@@ -100,37 +167,41 @@ async function populateActiveResultInputs() {
         return;
       }
 
-      // TODO:  Update this logic
-
       return {
         key: argName.replaceAll("_", " "),
+        type: argDef?.type,
         value: selectedOption,
-        viewable: true,
       };
     })
   );
   activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
     key: string;
-    viewable: boolean;
+    type: string;
     datasetLayer: Layer | undefined;
     value: { name: string };
   }[];
+  networkArg.value = await getNetworkArg()
 }
 
 async function populateActiveResultOutputs() {
   if (activeResult.value && currentProject.value) {
-    availableDatasets.value = await getProjectDatasets(
-      currentProject.value.id
-    );
+    getProjectDatasets(currentProject.value.id).then(async (datasets) => {
+      availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
+        dataset.layers = await getDatasetLayers(dataset.id);
+        return dataset;
+      }));
+    });
     const datasetIds = activeResult.value.output_data?.dataset_ids;
-    activeResult.value.output_data.datasets = await Promise.all(
-      availableDatasets.value
+    if (datasetIds && availableDatasets.value) {
+      activeResult.value.output_data.datasets = await Promise.all(
+        availableDatasets.value
         .filter((d) => datasetIds.includes(d.id))
         .map(async (d) => {
           d.layers = await getDatasetLayers(d.id);
           return d;
         })
-    );
+      );
+    }
   }
 }
 
@@ -191,7 +262,7 @@ watch(selectedLayers, populateActiveResultInputs);
       hide-details
     />
     <v-card class="panel-content-inner">
-      <div v-if="currentSimulationType">
+      <div v-if="currentSimulationType" style="height: 100%; overflow: auto">
         <div style="position: absolute; right: 0">
           <v-tooltip text="Close" location="bottom">
             <template v-slot:activator="{ props }">
@@ -248,9 +319,10 @@ watch(selectedLayers, populateActiveResultInputs);
                 :key="result.id"
                 :value="result"
                 :title="timestampToTitle(result.modified)"
+                bg-color="background"
               >
                 <v-expansion-panel-text>
-                  <v-table>
+                  <v-table class="bg-transparent arg-table">
                     <tbody>
                       <tr
                         v-for="arg in activeResultInputs"
@@ -261,19 +333,20 @@ watch(selectedLayers, populateActiveResultInputs);
                         <td>{{ arg.value.name || arg.value }}</td>
                         <td>
                           <v-btn
-                            @click="toggleVisible(arg)"
-                            v-if="arg.viewable"
+                            @click="toggleVisibleArg(arg)"
+                            v-if="!isArgVisible(arg) && !['SimulationResult', 'str'].includes(arg.type)"
+                            style="padding: 0px"
+                            density="compact"
+                            color="primary"
                           >
-                            Show on Map
+                            Show
                           </v-btn>
                         </td>
                       </tr>
                     </tbody>
                   </v-table>
                   <div
-                    v-if="
-                      !result.output_data && !result.error_message && outputPoll
-                    "
+                    v-if="!result.output_data && !result.error_message && outputPoll"
                     style="width: 100%; text-align: center"
                   >
                     <v-progress-circular indeterminate />
@@ -293,16 +366,20 @@ watch(selectedLayers, populateActiveResultInputs);
                         No nodes are affected in this scenario.
                       </div>
                       <node-animation
-                        v-else
+                        v-else-if="isArgVisible(networkArg)"
                         :nodeFailures="result.output_data.node_failures"
                         :nodeRecoveries="result.output_data.node_recoveries"
+                        :layer="getLayerForArg(networkArg)"
                       />
+                      <div v-else>
+                        Show network to begin.
+                      </div>
                     </div>
                     <div
-                      v-if="currentSimulationType.output_type === 'dataset'"
+                      v-else-if="currentSimulationType.output_type === 'dataset'"
                       class="pa-5"
                     >
-                      <v-table>
+                      <v-table class="bg-transparent">
                         <tbody>
                           <tr
                             v-for="dataset in result.output_data.datasets"
@@ -312,9 +389,11 @@ watch(selectedLayers, populateActiveResultInputs);
                             <td>
                               <v-btn
                                 v-if="dataset.layers"
-                                @click="toggleVisible(dataset)"
+                                color="primary"
+                                density="compact"
+                                @click="toggleVisibleDataset(dataset)"
                               >
-                                Show on Map
+                                Show
                               </v-btn>
                             </td>
                           </tr>
@@ -364,5 +443,8 @@ watch(selectedLayers, populateActiveResultInputs);
   max-width: calc(100% - 20px);
   max-height: 45%;
   overflow: auto;
+}
+.arg-table td {
+  padding: 0px 5px !important;
 }
 </style>

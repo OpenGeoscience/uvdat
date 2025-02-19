@@ -281,6 +281,7 @@ export interface SimulationType {
   output_type: string;
   args: {
     name: string;
+    type: string;
     options: {
       id: number;
       name: string;
