@@ -48,25 +48,28 @@ export function getDefaultColor() {
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
     const map = getMap();
     let opacity = style.opacity;
+    let color = style.color;
     if (!style.visible) {
         // use opacity to control visibility
         // toggling layout.visibility causes tiles to reload when layer becomes visible again
         // opacity has a smooth transition, too.
         opacity = 0;
     }
+    if (opacity === undefined) opacity = 1
 
     const mapLayer = map.getLayer(mapLayerId);
     if (mapLayer) {
         if (mapLayerId.includes("fill")) {
-            if (opacity === undefined) opacity = 0.5;
-            map.setPaintProperty(mapLayerId, 'fill-opacity', opacity);
+            map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
+            map.setPaintProperty(mapLayerId, 'fill-color', color);
         } else if (mapLayerId.includes("line")) {
-            if (opacity === undefined) opacity = 1;
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
+            map.setPaintProperty(mapLayerId, 'line-color', color);
         } else if (mapLayerId.includes("circle")) {
-            if (opacity === undefined) opacity = 1;
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
+            map.setPaintProperty(mapLayerId, 'circle-color', color);
+            map.setPaintProperty(mapLayerId, 'circle-stroke-color', color);
         } else if (mapLayerId.includes("raster")) {
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;

@@ -47,6 +47,7 @@ export interface LayerFrame {
 export interface Style {
   visible?: boolean;
   opacity?: number;
+  color?: string;
   colormap?: string;
   colormap_range?: number[];
 }

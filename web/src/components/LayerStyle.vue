@@ -19,8 +19,10 @@ const currentStyle = computed(() => {
         selectedLayerStyles.value[styleKey.value] = {
             visible: true,
             opacity: 1,
-            colormap_range: dataRange.value,
         }
+    }
+    if (!selectedLayerStyles.value[styleKey.value].colormap_range) {
+        selectedLayerStyles.value[styleKey.value].colormap_range = dataRange.value
     }
     return selectedLayerStyles.value[styleKey.value];
 });

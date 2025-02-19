@@ -52,7 +52,16 @@ export function updateLayersShown () {
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
         layer.frames.forEach((frame) => {
-            let sourceId = `${layer.id}.${layer.copy_id}.${frame.id}`
+            const styleId = `${layer.id}.${layer.copy_id}`
+            const sourceId = `${styleId}.${frame.id}`
+            if (!selectedLayerStyles.value[styleId]) {
+                selectedLayerStyles.value[styleId] = {
+                    color: getDefaultColor(),
+                    opacity: 1,
+                    visible: true,
+                }
+            }
+            const currentStyle = selectedLayerStyles.value[styleId];
             if (!mapSources.value[sourceId]) {
                 if (frame.vector) {
                     const vector = createVectorTileSource(frame.vector, sourceId);
@@ -68,9 +77,8 @@ export function updateLayersShown () {
                 if (mapLayerId !== 'base-tiles') {
                     if (mapLayerId.includes(sourceId)) {
                         map.moveLayer(mapLayerId);  // handles reordering
-                        setMapLayerStyle(mapLayerId, {
-                            visible: layer.visible && layer.current_frame === frame.index,
-                        })
+                        currentStyle.visible = layer.visible && layer.current_frame === frame.index
+                        setMapLayerStyle(mapLayerId, currentStyle)
                     }
                 }
             });
@@ -209,7 +217,7 @@ function createVectorFeatureMapLayers(source: Source) {
             visibility: "visible",
         },
         paint: {
-            "fill-color": getDefaultColor(),
+            "fill-color": "black",
             "fill-opacity": 0.5,
         },
     });
@@ -227,7 +235,7 @@ function createVectorFeatureMapLayers(source: Source) {
             visibility: "visible",
         },
         paint: {
-            "line-color": getDefaultColor(),
+            "line-color": "black",
             "line-width": 2,
             "line-opacity": 1,
         },
@@ -245,9 +253,9 @@ function createVectorFeatureMapLayers(source: Source) {
         "source-layer": "default",
         filter: ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
         paint: {
-            "circle-color": getDefaultColor(),
+            "circle-color": "black",
             "circle-opacity": 1,
-            "circle-stroke-color": getDefaultColor(),
+            "circle-stroke-color": "black",
             "circle-stroke-opacity": 1,
             "circle-stroke-width": 2,
             "circle-radius": 5,
