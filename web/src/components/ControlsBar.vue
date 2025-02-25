@@ -6,6 +6,7 @@ import { openSidebars, showMapBaseLayer } from "@/store";
 
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);
+const mapOnly = ref(false);
 
 function toggleBaseLayer() {
   showMapBaseLayer.value = !showMapBaseLayer.value;
@@ -19,7 +20,8 @@ function takeScreenshot(save: boolean) {
       ignoreElements: (element) => {
         return (
           element.id === "controls-bar" ||
-          element.classList.contains("control-menu")
+          element.classList.contains("control-menu") ||
+          (mapOnly.value && element.classList.contains('v-navigation-drawer'))
         );
       },
     }).then((canvas) => {
@@ -74,6 +76,9 @@ function takeScreenshot(save: boolean) {
         <v-card class="control-menu">
           <div class="control-menu-title">Take Screenshot</div>
           <v-card-text class="pa-3">
+            <div class="control-menu-row">
+              <v-checkbox v-model="mapOnly" label="Map Only" density="compact" hide-details/>
+            </div>
             <div class="control-menu-row" @click="() => takeScreenshot(false)">
               <div>Copy image to clipboard</div>
             </div>
