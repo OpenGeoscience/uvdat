@@ -100,26 +100,23 @@ function getFrameInputWidth(layer: Layer) {
                                 </template>
                                 {{ element.name }}
                                 <template v-slot:append>
-                                    <v-checkbox
+                                    <span
                                         v-if="getLayerMaxFrames(element) > 1"
-                                        true-icon="mdi-menu-down"
-                                        false-icon="mdi-menu-up"
-                                        class="layer-menu-toggle"
                                         @click="element.hideFrameMenu = !element.hideFrameMenu"
-                                        hide-details
                                     >
-                                        <template v-slot:prepend>
-                                            <v-icon icon="mdi-dots-horizontal" />
-                                        </template>
-                                    </v-checkbox>
+                                        <v-icon icon="mdi-dots-horizontal"/>
+                                        <v-icon :icon="element.hideFrameMenu ? 'mdi-menu-down' :'mdi-menu-up'" />
+                                    </span>
                                     <v-btn class="layer-menu-toggle bg-transparent" flat>
-                                        <v-icon icon="mdi-cog" size="small">
+                                        <v-icon icon="mdi-cog">
                                         </v-icon>
                                         <v-menu activator="parent" :close-on-content-click="false">
                                             <LayerStyle :layer="element" />
                                         </v-menu>
                                     </v-btn>
-                                    <v-icon icon="mdi-drag-horizontal" size="small" class="ml-2" />
+                                    <span class="material-symbols-outlined">
+                                        format_line_spacing
+                                    </span>
                                 </template>
                             </v-list-item>
                             <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">

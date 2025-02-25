@@ -81,6 +81,12 @@ watch(projectConfigMode, loadProjects);
 </template>
 
 <style scoped>
+* {
+  font-family: "Inter", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
 .main-area {
   position: absolute;
   height: 100%;
