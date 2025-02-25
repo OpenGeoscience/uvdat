@@ -313,8 +313,8 @@ export interface FloatingPanelConfig {
   visible: boolean;
   closeable: boolean;
   collapsed?: boolean;
-  right?: boolean;
-  initialPosition?: { x: number; y: number } | undefined;
+  dock: 'left' | 'right';
+  order: number;
   position?: { x: number; y: number } | undefined;
   width?: number | undefined;
   height?: number | undefined;

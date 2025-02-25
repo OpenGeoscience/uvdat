@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { panelArrangement } from "@/store";
+import ChartsPanel from "./ChartsPanel.vue";
+import AnalyticsPanel from "./AnalyticsPanel.vue";
+import DatasetsPanel from "./DatasetsPanel.vue";
+import LayersPanel from "./LayersPanel.vue";
+
+import { panelArrangement, availableDatasets } from "@/store";
 import { startDrag } from "@/drag";
 
 const props = defineProps<{
@@ -24,6 +29,7 @@ function getPanelContainerClass() {
 
 function getPanelContainerStyle() {
   let styleObj: Record<string, string> = {};
+  styleObj.order = panel.value?.order.toString() || '0';
   if (!panel.value?.position) {
     if (panel.value?.height && !panel.value.collapsed) {
       styleObj.height = panel.value?.height + "px";
@@ -36,7 +42,7 @@ function getPanelContainerStyle() {
 function getPanelStyle() {
   let styleObj: Record<string, string> = {};
   if (panel.value?.position) {
-    styleObj["z-index"] = "10000"; // above vuetify navigation drawer
+    styleObj["z-index"] = "2"; // above vuetify navigation drawer
     styleObj.visibility = "visible"; // prevent hiding when sidebar closes
     styleObj.position = "absolute";
     styleObj.top = panel.value.position.y + "px";
@@ -113,7 +119,10 @@ function panelUpdated() {
         </div>
         <v-card-text class="pa-2">{{ panel.label }}</v-card-text>
         <v-card-text v-if="!panel.collapsed" class="pa-2 panel-content">
-          <slot></slot>
+          <DatasetsPanel v-if="props.id === 'datasets'" :datasets="availableDatasets"/>
+          <LayersPanel v-else-if="props.id === 'layers'"/>
+          <ChartsPanel v-else-if="props.id === 'charts'"/>
+          <AnalyticsPanel v-else-if="props.id === 'analytics'"/>
           <v-icon
             v-if="panel.position"
             icon="mdi-resize-bottom-right"

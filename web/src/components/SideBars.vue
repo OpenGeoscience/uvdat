@@ -2,16 +2,11 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { availableDatasets, currentUser, openSidebars, panelArrangement, theme } from "@/store";
+import { currentUser, openSidebars, panelArrangement, theme } from "@/store";
 import { logout } from "@/api/auth";
-import { FloatingPanelConfig } from "@/types";
 
 import FloatingPanel from "./FloatingPanel.vue";
 import ProjectConfig from "./ProjectConfig.vue";
-import ChartsPanel from "./ChartsPanel.vue";
-import AnalyticsPanel from "./AnalyticsPanel.vue";
-import DatasetsPanel from "./DatasetsPanel.vue";
-import LayersPanel from "./LayersPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -106,12 +101,11 @@ watch(darkMode, () => {
       </v-toolbar>
       <ProjectConfig />
       <div class="panel-set">
-        <FloatingPanel id="datasets">
-          <DatasetsPanel :datasets="availableDatasets"/>
-        </FloatingPanel>
-        <FloatingPanel id="layers" bottom>
-          <LayersPanel />
-        </FloatingPanel>
+        <FloatingPanel
+          v-for="panel, index in panelArrangement.filter((p) => p.dock == 'left')"
+          :id="panel.id"
+          :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
+        />
       </div>
     </v-navigation-drawer>
 
@@ -191,7 +185,7 @@ watch(darkMode, () => {
             ></v-icon>
           </template>
           <v-list
-            :items="panelArrangement.filter((p) => p.right)"
+            :items="panelArrangement.filter((p) => p.closeable)"
             item-title="label"
             item-value="id"
             selectable
@@ -212,12 +206,11 @@ watch(darkMode, () => {
         </v-menu>
       </div>
       <div class="panel-set">
-        <FloatingPanel id="charts">
-          <ChartsPanel/>
-        </FloatingPanel>
-        <FloatingPanel id="analytics" bottom>
-          <AnalyticsPanel/>
-        </FloatingPanel>
+        <FloatingPanel
+          v-for="panel, index in panelArrangement.filter((p) => p.dock == 'right')"
+          :id="panel.id"
+          :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
+        />
       </div>
     </v-navigation-drawer>
   </div>
@@ -229,6 +222,7 @@ watch(darkMode, () => {
   border-radius: 6px;
   width: 350px !important;
   max-height: calc(100% - 15px);
+  z-index: 1 !important;
 }
 .sidebar > .v-navigation-drawer__content {
   height: 100%;

@@ -19,8 +19,6 @@ export function startDrag(
 export function dragPanel(event: MouseEvent) {
     let offsetX = -5;
     const offsetY = 30;
-    const snapToleranceX = 200;
-    const snapToleranceY = 300;
     const minHeight = 100;
     const minWidth = 150;
 
@@ -28,42 +26,55 @@ export function dragPanel(event: MouseEvent) {
         (p) => p.id === draggingPanel.value
     );
     if (!panel) return undefined;
+    if (draggingFrom.value) {
+        const from: { x: number; y: number } = { ...draggingFrom.value };
 
-    if (panel.right) offsetX += document.body.clientWidth - 390;
-    const position = {
-        x: event.clientX - offsetX - (panel.element?.clientWidth || 0),
-        y: event.clientY - offsetY,
-    };
-    if (dragModes.value?.includes("position")) {
-        const sidebarOpen = (
-            (panel.right && openSidebars.value.includes("right")) ||
-            (!panel.right && openSidebars.value.includes("left"))
-        )
-        if (
-            sidebarOpen &&
-            panel.initialPosition &&
-            Math.abs(position.x - panel.initialPosition.x) < snapToleranceX &&
-            Math.abs(position.y - panel.initialPosition.y) < snapToleranceY
-        ) {
-            // snap to sidebar
-            panel.position = undefined;
-        } else {
-            if (!panel.initialPosition) {
-                // convert to floating
+        if (panel.dock == 'right') offsetX += document.body.clientWidth - 390;
+        const position = {
+            x: event.clientX - offsetX - (panel.element?.clientWidth || 0),
+            y: event.clientY - offsetY,
+        };
+        if (dragModes.value?.includes("position")) {
+            const allowDock = (
+                Math.abs(from.x - event.clientX) > 10 &&
+                Math.abs(from.y - event.clientY) > 10
+            )
+            if (
+                allowDock &&
+                openSidebars.value.includes("left") &&
+                event.clientX < 350
+            ) {
+                // dock left
+                panel.dock = 'left';
+                panel.position = undefined;
+                panel.width = undefined;
+                panel.height = undefined;
+                // determine order
+                const currentDocked = panelArrangement.value.filter((p) => p.dock === 'left' && !p.position)
+                panel.order = Math.ceil(event.clientY / (document.body.clientHeight / currentDocked.length))
+            } else if (
+                allowDock &&
+                openSidebars.value.includes("right") &&
+                event.clientX > document.body.clientWidth - 350
+            ) {
+                // dock right
+                panel.dock = 'right';
+                panel.position = undefined;
+                panel.width = undefined;
+                panel.height = undefined;
+                // determine order
+                const currentDocked = panelArrangement.value.filter((p) => p.dock === 'right' && !p.position)
+                panel.order = Math.ceil(event.clientY / (document.body.clientHeight / currentDocked.length))
+            } else if (!panel.position) {
+                // float
                 panel.width = 300;
                 panel.height = 200;
-                panel.initialPosition = position;
-            } else if (
-                panel.width && position.x + panel.width < document.body.clientWidth &&
-                panel.height && position.y + panel.height < document.body.clientHeight
-            ) {
+                panel.position = position;
+            } else {
                 panel.position = position;
             }
         }
-    }
-    if (draggingFrom.value) {
-        const from: { x: number; y: number } = { ...draggingFrom.value };
-        if (dragModes.value?.includes("height") && draggingFrom.value) {
+        if (dragModes.value?.includes("height")) {
             if(!panel.height) {
                 panel.height = panel.element?.clientHeight
             }
@@ -75,11 +86,7 @@ export function dragPanel(event: MouseEvent) {
                 }
             }
         }
-        if (
-            dragModes.value?.includes("width") &&
-            draggingFrom.value &&
-            panel.width
-        ) {
+        if (dragModes.value?.includes("width") && panel.width) {
             const widthDelta = event.clientX - draggingFrom.value.x;
             if (panel.width + widthDelta > minWidth) {
                 panel.width = panel.width + widthDelta;

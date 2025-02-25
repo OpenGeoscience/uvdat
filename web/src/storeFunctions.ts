@@ -43,26 +43,36 @@ export function clearState() {
   currentError.value = undefined;
   polls.value = {};
   panelArrangement.value = [
-    { id: "datasets", label: "Datasets", visible: true, closeable: false },
+    { id: "datasets",
+      label: "Datasets",
+      visible: true,
+      closeable: false,
+      dock: 'left',
+      order: 1
+    },
     {
       id: "layers",
       label: "Selected Layers",
       visible: true,
       closeable: false,
+      dock: 'left',
+      order: 2,
     },
     {
       id: "charts",
       label: "Charts",
       visible: true,
       closeable: true,
-      right: true,
+      dock: 'right',
+      order: 1,
     },
     {
       id: "analytics",
       label: "Analytics",
       visible: true,
       closeable: true,
-      right: true,
+      dock: 'right',
+      order: 2,
     },
   ];
   draggingPanel.value = undefined;
