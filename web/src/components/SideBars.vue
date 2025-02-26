@@ -222,7 +222,6 @@ watch(darkMode, () => {
   border-radius: 6px;
   width: 350px !important;
   max-height: calc(100% - 15px);
-  z-index: 1 !important;
 }
 .sidebar > .v-navigation-drawer__content {
   height: 100%;
