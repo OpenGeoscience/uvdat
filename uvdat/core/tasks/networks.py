@@ -23,9 +23,10 @@ NODE_RECOVERY_MODES = [
 def create_network(vector_data, network_options):
     # Overwrite previous results
     dataset = vector_data.dataset
-    Network.objects.filter(vector_data__dataset=dataset).delete()
+    Network.objects.filter(vector_data=vector_data).delete()
+    existing = Network.objects.filter(vector_data__dataset=dataset)
     network = Network.objects.create(
-        name=dataset.name + ' Network',
+        name=f'{dataset.name} Network {existing.count() + 1}',
         category=dataset.category,
         vector_data=vector_data,
         metadata={'source': 'Parsed from GeoJSON.'},
