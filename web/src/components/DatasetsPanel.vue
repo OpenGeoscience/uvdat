@@ -116,24 +116,32 @@ watch(filteredDatasets, expandAllDatasets)
               open-on-click
             >
               <template v-slot:title="{title, item}">
-                <div class="dataset-title">
-                  <div style="text-wrap: wrap; align-items: center;">
+                <div class="item-title">
+                  <div
+                    v-if="!item.layers && !props.selectedIds"
+                    style="text-wrap: wrap; align-items: center; width: 100%"
+                    @click.stop="() => toggleSelected([item])"
+                  >
                     <v-icon
-                      v-if="!item.layers && !props.selectedIds"
                       icon="mdi-plus"
                       size="small"
                       color="primary"
                       v-tooltip="'Add to Selected Layers'"
-                      @click="() => toggleSelected([item])"
                     ></v-icon>
+                    {{ title }}
+                  </div>
+                  <div
+                    v-else-if="item.layers && props.selectedIds"
+                    style="text-wrap: wrap; align-items: center;"
+                  >
                     <v-checkbox-btn
-                      v-else-if="item.layers && props.selectedIds"
                       :model-value="props.selectedIds.includes(item.id)"
-                      @click.stop="() => toggleSelected([item])"
                       style="display: inline"
+                      @click.stop="() => toggleSelected([item])"
                     />
                     {{ title }}
                   </div>
+                  <div v-else>{{ title }}</div>
                   <div v-if="item.layers">
                     <v-icon
                       icon="mdi-layers"
@@ -198,7 +206,7 @@ watch(filteredDatasets, expandAllDatasets)
 .secondary-text {
   color: rgb(var(--v-theme-secondary-text))
 }
-.dataset-title {
+.item-title {
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
