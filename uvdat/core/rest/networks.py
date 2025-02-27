@@ -13,6 +13,10 @@ class GCCQueryParamSerializer(serializers.Serializer):
     exclude_nodes = serializers.RegexField(r'^\d+(,\s?\d+)*$')
 
 
+class GCCResultSerializer(serializers.Serializer):
+    gcc = serializers.ListField(child=serializers.IntegerField())
+
+
 class NetworkViewSet(ModelViewSet):
     queryset = Network.objects.all()
     serializer_class = NetworkSerializer
@@ -31,4 +35,6 @@ class NetworkViewSet(ModelViewSet):
         exclude_nodes = [int(n) for n in serializer.validated_data['exclude_nodes'].split(',')]
 
         gcc = network.get_gcc(excluded_nodes=exclude_nodes)
-        return Response(gcc, status=200)
+        result = GCCResultSerializer(data=dict(gcc=gcc))
+        if result.is_valid():
+            return Response(result.data.get('gcc'), status=200)
