@@ -114,7 +114,7 @@ function getFrameInputWidth(layer: Layer) {
                                             <LayerStyle :layer="element" />
                                         </v-menu>
                                     </v-btn>
-                                    <span class="material-symbols-outlined">
+                                    <span class="material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>
                                 </template>
