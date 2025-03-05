@@ -108,6 +108,7 @@ watch(filteredDatasets, expandAllGroups)
   justify-content: space-between;
   font-size: 0.875rem;
   margin-left: 10px;
+  width: 100%;
 }
 .item-title + .v-expansion-panel-title__icon {
     position: absolute !important;

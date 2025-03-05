@@ -17,23 +17,22 @@ function toggleSelected(items: Dataset[]) {
 <template>
   <DatasetList :datasets="props.datasets">
     <template v-slot:list="{ data }">
-      <v-expansion-panels>
+      <v-expansion-panels multiple variant="accordion" elevation="0" bg-color="transparent">
         <v-expansion-panel
           v-for="dataset in data"
           :key="dataset.id"
-          elevation="0"
-          variant="accordion"
-          bg-color="transparent"
         >
           <v-expansion-panel-title>
             <div class="item-title">
-              <v-checkbox-btn
-                :model-value="props.selectedIds?.includes(dataset.id)"
-                style="display: inline"
-                class="mr-2"
-                @click.stop="() => toggleSelected([dataset])"
-              />
-              {{ dataset.name }}
+                <div>
+                    <v-checkbox-btn
+                      :model-value="props.selectedIds?.includes(dataset.id)"
+                      style="display: inline"
+                      class="mr-2"
+                      @click.stop="() => toggleSelected([dataset])"
+                    />
+                    {{ dataset.name }}
+                </div>
               <div>
                 <v-icon
                   icon="mdi-layers"
@@ -47,11 +46,6 @@ function toggleSelected(items: Dataset[]) {
                   size="small"
                   v-tooltip="dataset.description"
                   class="mx-1"
-                ></v-icon>
-                <v-icon
-                  icon="mdi-database-outline"
-                  size="small"
-                  class="mr-2"
                 ></v-icon>
               </div>
             </div>

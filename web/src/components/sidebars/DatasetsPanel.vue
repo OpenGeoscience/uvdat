@@ -32,13 +32,10 @@ function toggleSelected(items: Layer[]) {
 <template>
   <DatasetList :datasets="props.datasets">
     <template v-slot:list="{ data }">
-      <v-expansion-panels>
+      <v-expansion-panels multiple variant="accordion" elevation="0" bg-color="transparent">
         <v-expansion-panel
           v-for="dataset in data"
           :key="dataset.id"
-          elevation="0"
-          variant="accordion"
-          bg-color="transparent"
         >
           <v-expansion-panel-title>
             <div class="item-title">
@@ -57,11 +54,6 @@ function toggleSelected(items: Layer[]) {
                   v-tooltip="dataset.description"
                   class="mx-1"
                 ></v-icon>
-                <v-icon
-                  icon="mdi-database-outline"
-                  size="small"
-                  class="mr-2"
-                ></v-icon>
               </div>
             </div>
           </v-expansion-panel-title>
@@ -71,7 +63,7 @@ function toggleSelected(items: Layer[]) {
               class="item-title"
             >
               <div
-                style="text-wrap: wrap; align-items: center; width: 100%"
+                style="text-wrap: wrap; align-items: center; width: 90%"
                 @click.stop="() => toggleSelected([layer])"
               >
                 <v-icon
