@@ -2,11 +2,15 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { currentUser, openSidebars, panelArrangement, theme } from "@/store";
+import { currentUser, openSidebars, panelArrangement, theme, availableDatasets } from "@/store";
 import { logout } from "@/api/auth";
 
 import FloatingPanel from "./FloatingPanel.vue";
 import ProjectConfig from "./ProjectConfig.vue";
+import ChartsPanel from "./ChartsPanel.vue";
+import AnalyticsPanel from "./AnalyticsPanel.vue";
+import DatasetsPanel from "./DatasetsPanel.vue";
+import LayersPanel from "./LayersPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -105,7 +109,12 @@ watch(darkMode, () => {
           v-for="panel, index in panelArrangement.filter((p) => p.dock == 'left')"
           :id="panel.id"
           :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
-        />
+        >
+          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
+          <LayersPanel v-else-if="panel.id === 'layers'"/>
+          <ChartsPanel v-else-if="panel.id === 'charts'"/>
+          <AnalyticsPanel v-else-if="panel.id === 'analytics'"/>
+        </FloatingPanel>
       </div>
     </v-navigation-drawer>
 
@@ -210,7 +219,12 @@ watch(darkMode, () => {
           v-for="panel, index in panelArrangement.filter((p) => p.dock == 'right')"
           :id="panel.id"
           :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
-        />
+        >
+          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
+          <LayersPanel v-else-if="panel.id === 'layers'"/>
+          <ChartsPanel v-else-if="panel.id === 'charts'"/>
+          <AnalyticsPanel v-else-if="panel.id === 'analytics'"/>
+        </FloatingPanel>
       </div>
     </v-navigation-drawer>
   </div>
