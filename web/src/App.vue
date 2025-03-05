@@ -10,7 +10,7 @@ import { oauthClient } from "./api/auth";
 import { clearState, loadProjects } from "./storeFunctions";
 import { dragPanel, stopDrag } from "@/drag";
 import Map from "./components/map/Map.vue";
-import SideBars from "./components/SideBars.vue";
+import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
 const showError = computed(() => currentError.value !== undefined);

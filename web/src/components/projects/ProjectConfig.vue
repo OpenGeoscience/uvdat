@@ -7,8 +7,8 @@ import {
   currentUser,
   loadingDatasets,
 } from "@/store";
-import DatasetsPanel from "./DatasetsPanel.vue";
-import AccessControl from "./AccessControl.vue";
+import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
+import AccessControl from "@/components/projects/AccessControl.vue";
 import {
   getDatasets,
   getProjectDatasets,

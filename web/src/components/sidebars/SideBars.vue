@@ -5,12 +5,12 @@ import { useTheme } from "vuetify/lib/framework.mjs";
 import { currentUser, openSidebars, panelArrangement, theme, availableDatasets } from "@/store";
 import { logout } from "@/api/auth";
 
-import FloatingPanel from "./FloatingPanel.vue";
-import ProjectConfig from "./ProjectConfig.vue";
-import ChartsPanel from "./ChartsPanel.vue";
-import AnalyticsPanel from "./AnalyticsPanel.vue";
-import DatasetsPanel from "./DatasetsPanel.vue";
-import LayersPanel from "./LayersPanel.vue";
+import ProjectConfig from "@/components/projects/ProjectConfig.vue";
+import FloatingPanel from "@/components/sidebars/FloatingPanel.vue";
+import ChartsPanel from "@/components/sidebars/ChartsPanel.vue";
+import AnalyticsPanel from "@/components/sidebars/AnalyticsPanel.vue";
+import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
+import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
