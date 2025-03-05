@@ -7,7 +7,7 @@ import {
   currentUser,
   loadingDatasets,
 } from "@/store";
-import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
+import DatasetSelect from "@/components/projects/DatasetSelect.vue";
 import AccessControl from "@/components/projects/AccessControl.vue";
 import {
   getDatasets,
@@ -518,11 +518,10 @@ watch(projectConfigMode, () => {
               <div style="width: 30%">
                 <v-card-text>Available Datasets</v-card-text>
                 <v-card class="pa-2 dataset-card">
-                  <DatasetsPanel
+                  <DatasetSelect
                     :datasets="otherDatasets"
                     :selected-ids="otherSelectedDatasetIds"
                     @toggleDatasets="toggleOtherDatasetSelection"
-                    id-prefix="all"
                   />
                 </v-card>
                 <v-btn
@@ -550,11 +549,10 @@ watch(projectConfigMode, () => {
               <div class="ml-10" style="width: 30%">
                 <v-card-text>Project Datasets</v-card-text>
                 <v-card class="pa-2 dataset-card">
-                  <DatasetsPanel
+                  <DatasetSelect
                     :datasets="projDatasets"
                     :selected-ids="projSelectedDatasetIds"
                     @toggleDatasets="toggleProjDatasetSelection"
-                    id-prefix="proj"
                   />
                 </v-card>
                 <v-btn

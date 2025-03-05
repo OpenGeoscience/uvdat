@@ -209,4 +209,7 @@ function getFrameInputWidth(layer: Layer) {
     /* make default input number transparent */
     color: rgba(0, 0, 0, 0);
 }
+.v-selection-control--density-default {
+  --v-selection-control-size: 20px!important;
+}
 </style>

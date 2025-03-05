@@ -1,31 +1,16 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
-import { Dataset, Layer } from '@/types';
-import { mapSources, selectedLayers } from "@/store";
-
+import { Dataset } from '@/types';
 
 const props = defineProps<{
   datasets: Dataset[] | undefined;
+  selectedIds: number[] | undefined;
 }>();
+const emit = defineEmits(["toggleDatasets"]);
 
-function toggleSelected(items: Layer[]) {
-  items.forEach((item) => {
-    const layer = item as Layer;
-    let name = layer.name;
-    let copy_id = 0;
-    const existing = Object.keys(mapSources.value).filter((sourceId) => {
-      const [layerId] = sourceId.split('.');
-      return parseInt(layerId) === layer.id
-    })
-    if (existing.length) {
-      copy_id = existing.length;
-      name = `${layer.name} (${copy_id})`;
-    }
-    selectedLayers.value = [
-      {...layer, name, copy_id, visible: true, current_frame: 0},
-      ...selectedLayers.value,
-    ];
-  })
+
+function toggleSelected(items: Dataset[]) {
+    emit("toggleDatasets", items);
 }
 </script>
 
@@ -42,6 +27,12 @@ function toggleSelected(items: Layer[]) {
         >
           <v-expansion-panel-title>
             <div class="item-title">
+              <v-checkbox-btn
+                :model-value="props.selectedIds?.includes(dataset.id)"
+                style="display: inline"
+                class="mr-2"
+                @click.stop="() => toggleSelected([dataset])"
+              />
               {{ dataset.name }}
               <div>
                 <v-icon
@@ -70,16 +61,7 @@ function toggleSelected(items: Layer[]) {
               v-for="layer in dataset.layers"
               class="item-title"
             >
-              <div
-                style="text-wrap: wrap; align-items: center; width: 100%"
-                @click.stop="() => toggleSelected([layer])"
-              >
-                <v-icon
-                  icon="mdi-plus"
-                  size="small"
-                  color="primary"
-                  v-tooltip="'Add to Selected Layers'"
-                ></v-icon>
+              <div style="text-wrap: wrap; align-items: center; width: 100%">
                 {{ layer.name }}
               </div>
             </div>
