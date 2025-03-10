@@ -5,6 +5,7 @@ import {
   projectConfigMode,
   currentProject,
   currentUser,
+  loadingProjects,
   loadingDatasets,
 } from "@/store";
 import DatasetSelect from "@/components/projects/DatasetSelect.vue";
@@ -327,7 +328,7 @@ watch(projectConfigMode, () => {
       </v-btn>
     </div>
     <v-card
-      v-if="availableProjects.length === 0"
+      v-if="!loadingProjects && availableProjects.length === 0"
       class="tutorial-popup"
     >
       <v-card-text>

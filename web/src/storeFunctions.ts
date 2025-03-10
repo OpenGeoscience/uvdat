@@ -25,6 +25,7 @@ import {
   loadingSimulationTypes,
   loadingCharts,
   selectedLayerStyles,
+  loadingProjects,
 } from "./store";
 import {
   getProjects,
@@ -111,6 +112,7 @@ export function loadProjects() {
   clearState();
   getProjects().then((data) => {
     availableProjects.value = data;
+    loadingProjects.value = false;
   });
 }
 

@@ -24,6 +24,7 @@ export const draggingFrom = ref<{ x: number; y: number } | undefined>();
 export const dragModes = ref<("position" | "height" | "width")[]>();
 
 // Project
+export const loadingProjects = ref<boolean>(true);
 export const availableProjects = ref<Project[]>([]);
 export const currentProject = ref<Project>();
 export const projectConfigMode = ref<"new" | "existing">();
