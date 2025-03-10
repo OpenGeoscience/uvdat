@@ -140,6 +140,9 @@ function takeScreenshot(save: boolean) {
 .controls-bar.shifted {
   left: 375px;
 }
+.controls-bar i {
+  font-size: 24px;
+}
 .control-btn {
   min-width: 0 !important;
   width: 40px;

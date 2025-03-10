@@ -233,9 +233,9 @@ watch(darkMode, () => {
 <style>
 .sidebar {
   margin: 10px;
-  border-radius: 6px;
+  border-radius: 10px;
   width: 350px !important;
-  max-height: calc(100% - 15px);
+  max-height: calc(100% - 20px);
 }
 .sidebar > .v-navigation-drawer__content {
   height: 100%;
@@ -248,7 +248,7 @@ watch(darkMode, () => {
 }
 .toolbar {
   visibility: visible;
-  border-radius: 6px 6px 0px 0px !important;
+  border-radius: 10px 10px 0px 0px !important;
   border-bottom: 1px solid rgb(var(--v-theme-border)) !important;
 }
 .toolbar > .v-toolbar__content {
@@ -256,7 +256,8 @@ watch(darkMode, () => {
   height: 50px !important;
   justify-content: space-between;
 }
-.sidebar.closed > .v-navigation-drawer__content > .toolbar {
+.sidebar.closed .toolbar {
+  border-radius: 10px !important;
   width: fit-content !important;
 }
 .sidebar.closed
@@ -279,7 +280,7 @@ watch(darkMode, () => {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  max-height: calc(100% - 140px);
+  max-height: calc(100% - 175px);
 }
 .right .panel-set {
   max-height: calc(100% - 100px);

@@ -286,7 +286,7 @@ watch(projectConfigMode, () => {
 
 <template>
   <div>
-    <div class="project-row my-2">
+    <div class="project-row my-5">
       <v-select
         label="Current Project"
         placeholder="Select a Project"
@@ -335,7 +335,7 @@ watch(projectConfigMode, () => {
       </v-card-text>
     </v-card>
     <div class="project-row" v-if="currentProject">
-      <span>
+      <span class="item-counts">
         <v-icon icon="mdi-database-outline" v-tooltip="'Datasets'"></v-icon>
         {{ currentProject.item_counts.datasets || 0 }}
         <v-icon
@@ -627,11 +627,19 @@ watch(projectConfigMode, () => {
   align-items: center;
   justify-content: space-between;
 }
+.item-counts {
+  display: flex;
+  align-items: baseline;
+  column-gap: 4px;
+}
 .tutorial-popup {
   position: absolute !important;
   z-index: 1 !important;
-  left: 280px;
-  width: 150px;
+  left: 275px;
+  top: 110px;
+  width: 250px;
+  background-color: rgba(1, 1, 1, 0.8) !important;
+  color: white !important;
 }
 .config {
   top: 0px;

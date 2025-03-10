@@ -91,28 +91,30 @@ function panelUpdated() {
   >
     <div class="panel" :style="getPanelStyle()" ref="element">
       <v-card class="fill-height">
-        <div class="mr-3 right">
-          <v-icon
-            :icon="panel.collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'"
-            v-tooltip="panel.collapsed ? 'Expand' : 'Collapse'"
-            @mousedown="togglePanelCollapsed"
-          ></v-icon>
-          <v-icon
-            icon="mdi-drag"
-            class="draggable"
-            @mousedown="(e) => {
-              updatePanelElement();
-              startDrag(e, panel, ['position'])
-            }"
-          ></v-icon>
-          <v-icon
-            v-if="panel.closeable"
-            icon="mdi-close"
-            v-tooltip="'Close Panel'"
-            @mousedown="closePanel"
-          ></v-icon>
+        <div style="display: flex; align-items: center;">
+          <v-card-text class="pa-3" style="font-size: 18px;">{{ panel.label }}</v-card-text>
+          <div class="mr-3">
+            <v-icon
+              :icon="panel.collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'"
+              v-tooltip="panel.collapsed ? 'Expand' : 'Collapse'"
+              @mousedown="togglePanelCollapsed"
+            ></v-icon>
+            <v-icon
+              icon="mdi-drag"
+              class="draggable"
+              @mousedown="(e) => {
+                updatePanelElement();
+                startDrag(e, panel, ['position'])
+              }"
+            ></v-icon>
+            <v-icon
+              v-if="panel.closeable"
+              icon="mdi-close"
+              v-tooltip="'Close Panel'"
+              @mousedown="closePanel"
+            ></v-icon>
+          </div>
         </div>
-        <v-card-text class="pa-2">{{ panel.label }}</v-card-text>
         <v-card-text v-if="!panel.collapsed" class="pa-2 panel-content">
           <slot></slot>
           <v-icon
@@ -171,7 +173,7 @@ function panelUpdated() {
 }
 .panel-content {
   overflow: auto;
-  height: calc(100% - 50px);
+  height: calc(100% - 12px);
 }
 .draggable {
   cursor: move;
@@ -195,7 +197,7 @@ function panelUpdated() {
 .panel-content-inner {
   padding: 0px !important;
   overflow: auto !important;
-  height: 100%;
+  height: calc(100% - 45px);
   background-color: rgb(var(--v-theme-background)) !important;
 }
 </style>

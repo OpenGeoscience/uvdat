@@ -338,5 +338,6 @@ onMounted(() => {
 .user-circle {
   letter-spacing: -2px;
   font-weight: bold;
+  font-size: 14px;
 }
 </style>

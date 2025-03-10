@@ -32,7 +32,7 @@ function toggleSelected(items: Layer[]) {
 <template>
   <DatasetList :datasets="props.datasets">
     <template v-slot:list="{ data }">
-      <v-expansion-panels multiple variant="accordion" elevation="0" bg-color="transparent">
+      <v-expansion-panels multiple flat variant="accordion" elevation="0" bg-color="transparent">
         <v-expansion-panel
           v-for="dataset in data"
           :key="dataset.id"
@@ -40,9 +40,9 @@ function toggleSelected(items: Layer[]) {
           <v-expansion-panel-title>
             <div class="item-title">
               {{ dataset.name }}
-              <div>
+              <div style="min-width: 75px; text-align: right">
                 <v-icon
-                  icon="mdi-layers"
+                  icon="mdi-layers-outline"
                   size="small"
                   v-tooltip="dataset.layers.length + ' layers'"
                   class="ml-2"

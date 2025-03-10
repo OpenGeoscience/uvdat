@@ -54,8 +54,10 @@ watch(filteredDatasets, expandAllGroups)
         v-if="props.datasets?.length"
         v-model="expandedGroups"
         variant="accordion"
-        class="dataset-list"
+        class="dataset-list ml-4 pr-4"
+        style="height: fit-content;"
         multiple
+        flat
       >
         <v-expansion-panel
           v-for="[groupName, groupDatasets] in Object.entries(datasetGroups)"
@@ -63,8 +65,8 @@ watch(filteredDatasets, expandAllGroups)
           :value="groupName"
           bg-color="background"
         >
-          <v-expansion-panel-title style="font-weight: bold" class="capitalize secondary-text">
-            {{ groupName }}
+          <v-expansion-panel-title style="font-weight: bold" class="ml-0">
+            <span class="capitalize secondary-text">{{ groupName }}</span>
           </v-expansion-panel-title>
           <v-expansion-panel-text>
             <slot name="list" :data="groupDatasets"></slot>
@@ -80,13 +82,15 @@ watch(filteredDatasets, expandAllGroups)
 <style>
 .dataset-list {
   height: 100%;
-  overflow: auto;
+  width: calc(100% - 20px) !important;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .dataset-list .v-expansion-panel-title {
   min-height: 0 !important;
   display: flex;
   justify-content: space-between;
-  padding: 12px !important;
+  padding: 12px 0px !important;
 }
 .dataset-list .v-selection-control__input, .dataset-list .v-selection-control__wrapper {
   height: inherit;
@@ -107,11 +111,11 @@ watch(filteredDatasets, expandAllGroups)
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
-  margin-left: 10px;
+  margin-left: 24px;
   width: 100%;
 }
 .item-title + .v-expansion-panel-title__icon {
-    position: absolute !important;
-    left: 0 !important;
+  position: absolute !important;
+  left: 0 !important;
 }
 </style>
