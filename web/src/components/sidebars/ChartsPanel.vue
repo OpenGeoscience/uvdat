@@ -224,7 +224,7 @@ const downloadReady = computed(() => {
         </v-list-item>
       </v-list>
       <v-progress-linear v-else-if="loadingCharts" indeterminate></v-progress-linear>
-      <v-card-text v-else>No available Charts.</v-card-text>
+      <v-card-text v-else class="help-text">No available Charts.</v-card-text>
     </v-card>
   </div>
 </template>

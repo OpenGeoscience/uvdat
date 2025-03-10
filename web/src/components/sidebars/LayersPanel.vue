@@ -158,7 +158,7 @@ function getFrameInputWidth(layer: Layer) {
                     </template>
                 </draggable>
             </v-list>
-            <v-card-text v-else>No selected layers.</v-card-text>
+            <v-card-text v-else class="help-text">No selected layers.</v-card-text>
         </v-card>
     </div>
 </template>

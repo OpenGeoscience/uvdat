@@ -428,7 +428,7 @@ watch(selectedLayers, populateActiveResultInputs);
         </v-list-item>
       </v-list>
       <v-progress-linear v-else-if="loadingSimulationTypes" indeterminate></v-progress-linear>
-      <v-card-text v-else>No available Analytics.</v-card-text>
+      <v-card-text v-else class="help-text">No available Analytics.</v-card-text>
     </v-card>
   </div>
 </template>

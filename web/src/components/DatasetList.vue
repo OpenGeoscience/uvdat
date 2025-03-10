@@ -74,7 +74,7 @@ watch(filteredDatasets, expandAllGroups)
         </v-expansion-panel>
       </v-expansion-panels>
       <v-progress-linear v-else-if="loadingDatasets" indeterminate></v-progress-linear>
-      <v-card-text v-else>No available Datasets.</v-card-text>
+      <v-card-text class="help-text" v-else>No available Datasets.</v-card-text>
     </v-card>
   </div>
 </template>

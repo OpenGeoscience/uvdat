@@ -200,4 +200,7 @@ function panelUpdated() {
   height: calc(100% - 45px);
   background-color: rgb(var(--v-theme-background)) !important;
 }
+.help-text {
+  color: rgb(var(--v-theme-helper-text))
+}
 </style>
