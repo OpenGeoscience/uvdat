@@ -203,4 +203,10 @@ function panelUpdated() {
 .help-text {
   color: rgb(var(--v-theme-helper-text))
 }
+.layer-select-button {
+  vertical-align: inherit;
+  background-color: rgb(var(--v-theme-secondary));
+  color: rgb(var(--v-theme-primary));
+  border-radius: 5px;
+}
 </style>

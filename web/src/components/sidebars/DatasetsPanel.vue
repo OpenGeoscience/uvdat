@@ -68,9 +68,9 @@ function toggleSelected(items: Layer[]) {
               >
                 <v-icon
                   icon="mdi-plus"
-                  size="small"
                   color="primary"
                   v-tooltip="'Add to Selected Layers'"
+                  class="layer-select-button"
                 ></v-icon>
                 {{ layer.name }}
               </div>

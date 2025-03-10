@@ -66,7 +66,7 @@ function getFrameInputWidth(layer: Layer) {
                     color="primary"
                     icon="mdi-close"
                     @click="() => removeLayers(selectedLayers)"
-                    style="vertical-align: inherit;"
+                    class="layer-select-button"
                 />
                 <v-checkbox-btn
                     :model-value="selectedLayers.every((l) => l.visible)"
@@ -90,7 +90,7 @@ function getFrameInputWidth(layer: Layer) {
                                         color="primary"
                                         icon="mdi-close"
                                         @click="() => removeLayers([element])"
-                                        style="vertical-align: inherit;"
+                                        class="layer-select-button"
                                     />
                                     <v-checkbox-btn
                                         :model-value="element.visible"
