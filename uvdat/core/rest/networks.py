@@ -36,5 +36,5 @@ class NetworkViewSet(ModelViewSet):
 
         gcc = network.get_gcc(excluded_nodes=exclude_nodes)
         result = GCCResultSerializer(data=dict(gcc=gcc))
-        if result.is_valid():
-            return Response(result.data.get('gcc'), status=200)
+        result.is_valid(raise_exception=True)
+        return Response(result.validated_data['gcc'], status=200)
