@@ -7,6 +7,9 @@ from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 
 class TokenAuth(OAuth2Authentication):
     def authenticate(self, request):
+        auth = super().authenticate(request)
+        if auth is not None:
+            return auth
         token = request.query_params.get('token')
         if token is None:
             token_string = request.headers.get('Authorization')

@@ -88,10 +88,7 @@ class RegionAdmin(admin.ModelAdmin):
 
 
 class NetworkAdmin(admin.ModelAdmin):
-    list_display = ['id', 'category', 'get_dataset_name']
-
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    list_display = ['id', 'category']
 
 
 class NetworkEdgeAdmin(admin.ModelAdmin):
