@@ -58,27 +58,29 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
     if (opacity === undefined) opacity = 1
 
     const mapLayer = map.getLayer(mapLayerId);
-    if (mapLayer) {
-        if (mapLayerId.includes("fill")) {
-            map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
-            map.setPaintProperty(mapLayerId, 'fill-color', color);
-        } else if (mapLayerId.includes("line")) {
-            map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
-            map.setPaintProperty(mapLayerId, 'line-color', color);
-        } else if (mapLayerId.includes("circle")) {
-            map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
-            map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-            map.setPaintProperty(mapLayerId, 'circle-color', color);
-            map.setPaintProperty(mapLayerId, 'circle-stroke-color', color);
-        } else if (mapLayerId.includes("raster")) {
-            map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
-            let source = map.getSource(mapLayer.source) as RasterTileSource;
-            if (source?.tiles?.length) {
-                const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
-                const newQuery = new URLSearchParams(getRasterTilesQuery(style));
-                if(newQuery.toString() !== oldQuery.toString()) {
-                    source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
-                }
+    if (mapLayer === undefined) {
+        return;
+    }
+
+    if (mapLayerId.includes("fill")) {
+        map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
+        map.setPaintProperty(mapLayerId, 'fill-color', color);
+    } else if (mapLayerId.includes("line")) {
+        map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
+        map.setPaintProperty(mapLayerId, 'line-color', color);
+    } else if (mapLayerId.includes("circle")) {
+        map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
+        map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
+        map.setPaintProperty(mapLayerId, 'circle-color', color);
+        map.setPaintProperty(mapLayerId, 'circle-stroke-color', color);
+    } else if (mapLayerId.includes("raster")) {
+        map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
+        let source = map.getSource(mapLayer.source) as RasterTileSource;
+        if (source?.tiles?.length) {
+            const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
+            const newQuery = new URLSearchParams(getRasterTilesQuery(style));
+            if(newQuery.toString() !== oldQuery.toString()) {
+                source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
             }
         }
     }
