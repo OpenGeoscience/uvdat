@@ -78,7 +78,11 @@ def ingest_projects(use_case):
                 print('\t\t', f'Project {project_for_setting.name} created.')
 
             project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
-            project_for_setting.set_permissions(owner=User.objects.filter(is_superuser=True).first())
+
+            superuser = User.objects.filter(is_superuser=True).first()
+            if superuser is None:
+                raise Exception('Please create at least one superuser')
+            project_for_setting.set_permissions(owner=superuser)
 
 
 def ingest_charts(use_case):
