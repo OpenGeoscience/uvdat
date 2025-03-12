@@ -1,53 +1,57 @@
-import { reactive, ref } from "vue";
+import { ref } from "vue";
 import {
   User,
   Project,
   Chart,
   Dataset,
+  Layer,
   SourceRegion,
   SimulationType,
-  VectorDatasetLayer,
-  RasterDatasetLayer,
   ClickedFeatureData,
-  RasterTooltipData,
+  RasterDataValues,
+  FloatingPanelConfig,
+  Style,
+  Network
 } from "./types.js";
-// import { MapLayer } from "@/data";
-import { Map, Popup } from "maplibre-gl";
+import { Map, Popup, Source } from "maplibre-gl";
+
+// UI Config
+export const theme = ref<"dark" | "light">("light");
+export const openSidebars = ref<("left" | "right")[]>(["left", "right"]);
+export const panelArrangement = ref<FloatingPanelConfig[]>([]);
+export const draggingPanel = ref<string | undefined>();
+export const draggingFrom = ref<{ x: number; y: number } | undefined>();
+export const dragModes = ref<("position" | "height" | "width")[]>();
 
 // Project
+export const loadingProjects = ref<boolean>(true);
 export const availableProjects = ref<Project[]>([]);
 export const currentProject = ref<Project>();
 export const projectConfigMode = ref<"new" | "existing">();
 
 // Datasets
+export const loadingDatasets = ref<boolean>(false);
 export const availableDatasets = ref<Dataset[]>();
-export const selectedDatasets = ref<Dataset[]>([]);
-export const currentDataset = ref<Dataset>();
+
+// Layers
+export const selectedLayers = ref<Layer[]>([]);
+export const selectedLayerStyles = ref<Record<string, Style>>({});
+
+// Data Sources
+export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
 // Map
 export const map = ref<Map>();
-export const availableDatasetLayers = ref<
-  (VectorDatasetLayer | RasterDatasetLayer)[]
->([]);
-export const selectedDatasetLayers = ref<
-  (VectorDatasetLayer | RasterDatasetLayer)[]
->([]);
-export const clickedDatasetLayer = ref<
-  VectorDatasetLayer | RasterDatasetLayer
->();
+export const mapSources = ref<Record<string, Source>>({});
 export const showMapBaseLayer = ref(true);
-export const showMapTooltip = ref(false);
 export const tooltipOverlay = ref<Popup>();
-export const rasterTooltipEnabled = ref(false);
-
-// Features
-export const clickedFeatureCandidates = reactive<ClickedFeatureData[]>([]);
 export const clickedFeature = ref<ClickedFeatureData>();
-export const rasterTooltipValue = ref<RasterTooltipData | undefined>();
 
 // Charts & Simulations
+export const loadingCharts = ref<boolean>(false);
 export const availableCharts = ref<Chart[]>();
 export const currentChart = ref<Chart>();
+export const loadingSimulationTypes = ref<boolean>(false);
 export const availableSimulationTypes = ref<SimulationType[]>();
 export const currentSimulationType = ref<SimulationType>();
 
@@ -55,10 +59,7 @@ export const currentSimulationType = ref<SimulationType>();
 export const selectedSourceRegions = ref<SourceRegion[]>([]);
 
 // Network
-export const currentNetworkDataset = ref<Dataset>();
-export const currentNetworkDatasetLayer = ref<VectorDatasetLayer>();
-export const deactivatedNodes = ref<number[]>([]);
-export const currentNetworkGCC = ref();
+export const availableNetworks = ref<Network[]>([]);
 
 // ETC
 export const currentUser = ref<User>();

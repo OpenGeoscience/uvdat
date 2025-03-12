@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { onMounted, ref, Ref, defineProps, defineEmits } from "vue";
+import { onMounted, ref, Ref } from "vue";
 import { Project, ProjectPermissions, User } from "@/types";
 import { getUsers, updateProjectPermissions } from "@/api/rest";
 
@@ -75,9 +75,10 @@ onMounted(() => {
     <v-list>
       <v-list-subheader>
         Owner
-        <v-tooltip activator="parent" location="end">
-          Permissions: Read, Write, Delete, Access Control
-        </v-tooltip>
+        <v-icon
+          icon="mdi-information-outline"
+          v-tooltip="'Permissions: Read, Write, Delete, Access Control'"
+        />
       </v-list-subheader>
       <v-list-item
         v-if="project.owner"
@@ -97,12 +98,15 @@ onMounted(() => {
             class="mx-3 user-circle"
             :ripple="false"
           >
-            {{ project.owner.first_name[0] }}
-            {{ project.owner.last_name[0] }}
-            <v-tooltip activator="parent" location="end">
-              {{ project.owner.first_name }}
-              {{ project.owner.last_name }}
-            </v-tooltip>
+            <span v-if="project.owner.first_name || project.owner.last_name">
+              {{ project.owner.first_name[0] }}
+              {{ project.owner.last_name[0] }}
+              <v-tooltip activator="parent" location="end">
+                {{ project.owner.first_name }}
+                {{ project.owner.last_name }}
+              </v-tooltip>
+            </span>
+            <v-icon v-else icon="mdi-account"></v-icon>
           </v-btn>
         </template>
         <template v-slot:append>
@@ -118,9 +122,10 @@ onMounted(() => {
       </v-list-item>
       <v-list-subheader>
         Collaborators
-        <v-tooltip activator="parent" location="end">
-          Permissions: Read, Write
-        </v-tooltip>
+        <v-icon
+          icon="mdi-information-outline"
+          v-tooltip="'Permissions: Read & Write'"
+        />
       </v-list-subheader>
       <v-list-item
         v-for="collaborator in project.collaborators"
@@ -164,9 +169,10 @@ onMounted(() => {
       />
       <v-list-subheader>
         Followers
-        <v-tooltip activator="parent" location="end">
-          Permissions: Read, Write
-        </v-tooltip>
+        <v-icon
+          icon="mdi-information-outline"
+          v-tooltip="'Permissions: Read Only'"
+        />
       </v-list-subheader>
       <v-list-item
         v-for="follower in project.followers"
@@ -220,8 +226,8 @@ onMounted(() => {
       Add Users
     </v-btn>
     <v-dialog v-model="showUserSelectDialog" width="500">
-      <v-card>
-        <v-card-title class="pa-3 bg-grey-lighten-2 text-grey-darken-2">
+      <v-card color="background">
+        <v-card-title class="pa-3">
           {{
             userSelectDialogMode === "add" ? "Add Users" : "Select New Owner"
           }}
@@ -298,7 +304,7 @@ onMounted(() => {
     </v-dialog>
     <v-dialog :model-value="!!userToRemove" width="500">
       <v-card>
-        <v-card-title class="pa-3 bg-grey-lighten-2 text-grey-darken-2">
+        <v-card-title class="pa-3">
           Remove User
           <v-btn
             class="close-button transparent"
@@ -332,5 +338,6 @@ onMounted(() => {
 .user-circle {
   letter-spacing: -2px;
   font-weight: bold;
+  font-size: 14px;
 }
 </style>

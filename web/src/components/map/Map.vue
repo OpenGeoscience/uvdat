@@ -1,186 +1,186 @@
 <!-- eslint-disable vue/multi-word-component-names -->
-<script lang="ts">
-import { Map, IControl, Popup, ControlPosition } from "maplibre-gl";
-import { onMounted, ref } from "vue";
+<script setup lang="ts">
+import { Map, Popup, AttributionControl } from "maplibre-gl";
+import { onMounted, ref, watch } from "vue";
 import {
+  theme,
   map,
-  showMapTooltip,
   tooltipOverlay,
-  clickedFeature,
+  openSidebars,
   showMapBaseLayer,
+  clickedFeature,
 } from "@/store";
 import { setMapCenter } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import ActiveLayers from "./ActiveLayers.vue";
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
 
-class VueMapControl implements IControl {
-  _vueElement: HTMLElement;
+const ATTRIBUTION = [
+  "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
+  "<span> | </span>",
+  "<a target='_blank' href='https://www.maptiler.com/copyright'>© MapTiler</a>",
+  "<span> | </span>",
+  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>",
+];
 
-  _map: Map | undefined;
-  _container: HTMLElement | undefined;
+const BASE_MAPS = {
+  light: [
+    `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${process.env.VUE_APP_MAPTILER_API_KEY}`,
+  ],
+  dark: [
+    `https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${process.env.VUE_APP_MAPTILER_API_KEY}`,
+  ],
+};
 
-  constructor(vueElement: HTMLElement) {
-    this._vueElement = vueElement;
-    this._container = undefined;
-    this._map = undefined;
-  }
+// MapLibre refs
+const tooltip = ref<HTMLElement>();
+const attributionControl = new AttributionControl({
+  compact: true,
+  customAttribution: ATTRIBUTION,
+});
+attributionControl.onAdd = (map: Map): HTMLElement => {
+  attributionControl._map = map;
+  const container = document.createElement("div");
+  container.innerHTML = ATTRIBUTION.join("");
+  attributionControl._container = container;
+  setAttributionControlStyle();
+  return container;
+};
 
-  onAdd(map: Map) {
-    this._map = map;
-    this._container = this._vueElement;
-    return this._container;
-  }
-
-  onRemove() {
-    if (this._container === undefined) {
-      return;
-    }
-
-    this._container.parentNode?.removeChild(this._container);
-    this._map = undefined;
-  }
-
-  getDefaultPosition(): ControlPosition {
-    return "top-left";
-  }
+function setAttributionControlStyle() {
+  const container = attributionControl._container;
+  container.style.padding = "3px 8px";
+  container.style.marginRight = "5px";
+  container.style.borderRadius = "15px";
+  container.style.position = "relative";
+  container.style.right = openSidebars.value.includes("right")
+    ? "360px"
+    : "0px";
+  container.style.background = theme.value === "light" ? "white" : "black";
+  container.childNodes.forEach((child) => {
+    const childElement = child as HTMLElement;
+    childElement.style.color = theme.value === "light" ? "black" : "white";
+  });
 }
 
-export default {
-  components: {
-    ActiveLayers,
-    MapTooltip,
-  },
-  setup() {
-    // OpenLayers refs
-    const tooltip = ref<HTMLElement>();
-    const activelayers = ref<HTMLElement>();
-
-    function createMap() {
-      const newMap = new Map({
-        container: "mapContainer",
-        // transformRequest adds auth headers to tile requests (excluding OSM requests)
-        transformRequest: (url) => {
-          let headers = {};
-          if (!url.includes("openstreetmap")) {
-            headers = oauthClient?.authHeaders;
-          }
-          return {
-            url,
-            headers,
-          };
-        },
-        style: {
-          version: 8,
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: [
-                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              attribution: "© OpenStreetMap contributors",
-            },
-          },
-          layers: [
-            {
-              id: "osm-tiles",
-              type: "raster",
-              source: "osm",
-              minzoom: 0,
-              // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
-              maxzoom: 22 + 1,
-            },
-          ],
-        },
-        center: [-75.5, 43.0], // Coordinates for the center of New York State
-        zoom: 7, // Initial zoom level
-      });
-
-      // Add spinner while loading
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const mapContainer = document.getElementById("mapContainer")!;
-      mapContainer.classList.add("spinner");
-      newMap.on("load", () => {
-        mapContainer.classList.remove("spinner");
-      });
-
-      /**
-       * This is called on every click, and technically hides the tooltip on every click.
-       * However, if a feature layer is clicked, that event is fired after this one, and the
-       * tooltip is re-enabled and rendered with the desired contents. The net result is that
-       * this only has a real effect when the base map is clicked, as that means that no other
-       * feature layer can "catch" the event, and the tooltip stays hidden.
-       */
-      newMap.on("click", () => {
-        clickedFeature.value = undefined;
-        showMapTooltip.value = false;
-      });
-
-      // Order is important as the following function relies on the ref being set
-      map.value = newMap;
-      createMapControls();
-    }
-
-    function createMapControls() {
-      if (!map.value || !tooltip.value || !activelayers.value) {
-        throw new Error("Map or refs not initialized!");
+function createMap() {
+  const newMap = new Map({
+    container: "mapContainer",
+    attributionControl: false,
+    preserveDrawingBuffer: true, // allows screenshots
+    // transformRequest adds auth headers to tile requests (excluding MapTiler requests)
+    transformRequest: (url) => {
+      let headers = {};
+      if (!url.includes("maptiler")) {
+        headers = oauthClient?.authHeaders;
       }
+      return {
+        url,
+        headers,
+      };
+    },
+    style: {
+      version: 8,
+      sources: {
+        light: {
+          type: "raster",
+          tiles: BASE_MAPS.light,
+          tileSize: 512,
+        },
+        dark: {
+          type: "raster",
+          tiles: BASE_MAPS.dark,
+          tileSize: 512,
+        },
+      },
+      layers: [
+        {
+          id: "base-tiles",
+          type: "raster",
+          source: theme.value,
+          minzoom: 0,
+          // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
+          maxzoom: 22 + 1,
+        },
+      ],
+    },
+    center: [-75.5, 43.0], // Coordinates for the center of New York State
+    zoom: 7, // Initial zoom level
+  });
 
-      // Add overlay to display active layers
-      map.value.addControl(new VueMapControl(activelayers.value));
+  newMap.addControl(attributionControl);
 
-      // Add tooltip overlay
-      tooltipOverlay.value = new Popup({
-        anchor: "bottom-left",
-        closeOnClick: false,
-        maxWidth: "none",
-        closeButton: true,
-      });
+  // Add spinner while loading
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const mapContainer = document.getElementById("mapContainer")!;
+  mapContainer.classList.add("spinner");
+  newMap.on("load", () => {
+    mapContainer.classList.remove("spinner");
+  });
 
-      // Link overlay ref to dom, allowing for modification elsewhere
-      tooltipOverlay.value.setDOMContent(tooltip.value);
-    }
+  /**
+   * This is called on every click, and technically hides the tooltip on every click.
+   * However, if a feature layer is clicked, that event is fired after this one, and the
+   * tooltip is re-enabled and rendered with the desired contents. The net result is that
+   * this only has a real effect when the base map is clicked, as that means that no other
+   * feature layer can "catch" the event, and the tooltip stays hidden.
+   */
+  newMap.on("click", () => {clickedFeature.value = undefined});
 
-    onMounted(() => {
-      createMap();
-      setMapCenter(undefined, true);
-    });
+  // Order is important as the following function relies on the ref being set
+  map.value = newMap;
+  createMapControls();
+}
 
-    return {
-      activelayers,
-      tooltip,
-      showMapTooltip,
-      showMapBaseLayer,
-    };
-  },
-};
+function createMapControls() {
+  if (!map.value || !tooltip.value) {
+    throw new Error("Map or refs not initialized!");
+  }
+
+  // Add tooltip overlay
+  tooltipOverlay.value = new Popup({
+    anchor: "bottom-left",
+    closeOnClick: false,
+    maxWidth: "none",
+    closeButton: true,
+  });
+
+  // Link overlay ref to dom, allowing for modification elsewhere
+  tooltipOverlay.value.setDOMContent(tooltip.value);
+}
+
+onMounted(() => {
+  createMap();
+  setMapCenter(undefined, true);
+});
+
+watch(theme, () => {
+  map.value?.removeLayer("base-tiles");
+  map.value?.addLayer({
+    id: "base-tiles",
+    type: "raster",
+    source: theme.value,
+    minzoom: 0,
+    maxzoom: 22 + 1,
+    layout: {
+      visibility: showMapBaseLayer.value ? "visible" : "none",
+    },
+  });
+  setAttributionControlStyle();
+});
+
+watch(openSidebars, () => {
+  setAttributionControlStyle();
+});
 </script>
 
 <template>
   <div id="mapContainer" class="map">
-    <div class="base-layer-control">
-      <v-btn icon>
-        <v-checkbox
-          v-model="showMapBaseLayer"
-          true-icon="mdi-map-check"
-          false-icon="mdi-map-outline"
-          style="margin-top: -4px"
-        />
-      </v-btn>
-    </div>
-    <div ref="activelayers" class="maplibregl-ctrl active-layers-control">
-      <ActiveLayers />
-    </div>
     <div
       id="map-tooltip"
       ref="tooltip"
       class="tooltip pa-0"
-      v-show="showMapTooltip"
     >
       <MapTooltip />
     </div>
@@ -217,11 +217,13 @@ export default {
 }
 
 .tooltip {
-  background-color: white;
   border-radius: 5px;
   padding: 10px 20px;
   word-break: break-word;
   text-wrap: wrap;
+  width: fit-content;
+  min-width: 50px;
+  max-width: 350px;
 }
 
 .base-layer-control {

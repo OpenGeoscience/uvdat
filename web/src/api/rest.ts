@@ -5,13 +5,12 @@ import {
   ProjectPatch,
   ProjectPermissions,
   Dataset,
+  Layer,
   NetworkNode,
-  RasterData,
   Chart,
   SimulationType,
-  VectorDatasetLayer,
-  RasterDatasetLayer,
   Network,
+  RasterDataValues,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -79,55 +78,40 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}`)).data;
 }
 
-export async function getDatasetLayers(
-  datasetId: number
-): Promise<(VectorDatasetLayer | RasterDatasetLayer)[]> {
-  const layers: (VectorDatasetLayer | RasterDatasetLayer)[] = (
-    await apiClient.get(`datasets/${datasetId}/map_layers`)
-  ).data;
-
-  // Ensure they're returned in the correct order
-  return layers.toSorted((a, b) => a.index - b.index);
+export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
+  return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
 }
 
-export async function getDatasetNetwork(datasetId: number): Promise<Network[]> {
-  return (await apiClient.get(`datasets/${datasetId}/network`)).data;
+export async function getDatasetNetworks(datasetId: number): Promise<Network[]> {
+  return (await apiClient.get(`datasets/${datasetId}/networks`)).data;
+}
+
+export async function getNetwork(networkId: number): Promise<Network> {
+  return (await apiClient.get(`networks/${networkId}`)).data;
 }
 
 export async function getNetworkGCC(
-  datasetId: number,
-  projectId: number,
+  networkId: number,
   exclude_nodes: number[]
-): Promise<NetworkNode[]> {
+): Promise<number[]> {
   return (
     await apiClient.get(
-      `datasets/${datasetId}/gcc?project=${projectId}&exclude_nodes=${exclude_nodes.toString()}`
+      `networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
 }
 
-export async function getDatasetLayer(
-  datasetLayerId: number,
-  datasetLayerType: string
-): Promise<VectorDatasetLayer | RasterDatasetLayer> {
-  return (await apiClient.get(`${datasetLayerType}s/${datasetLayerId}`)).data;
-}
-
-export async function getRasterData(layerId: number): Promise<RasterData> {
+export async function getRasterDataValues(rasterId: number): Promise<RasterDataValues> {
   const resolution = 0.1;
   const data = (
-    await apiClient.get(`rasters/${layerId}/raster-data/${resolution}`)
+    await apiClient.get(`rasters/${rasterId}/raster-data/${resolution}`)
   ).data;
-  const { bounds } = (await apiClient.get(`rasters/${layerId}/info/metadata`))
+  const { bounds } = (await apiClient.get(`rasters/${rasterId}/info/metadata`))
     .data;
   return {
     data,
     sourceBounds: bounds,
   };
-}
-
-export async function clearChart(chartId: number) {
-  await apiClient.post(`charts/${chartId}/clear/`);
 }
 
 export async function runSimulation(

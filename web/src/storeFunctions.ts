@@ -4,58 +4,94 @@ import {
   availableProjects,
   currentProject,
   availableDatasets,
-  selectedDatasets,
-  currentDataset,
   map,
-  showMapTooltip,
-  selectedDatasetLayers,
-  clickedDatasetLayer,
+  selectedLayers,
   clickedFeature,
   showMapBaseLayer,
   selectedSourceRegions,
-  rasterTooltipEnabled,
   polls,
   availableCharts,
   currentChart,
+  availableNetworks,
   availableSimulationTypes,
   currentSimulationType,
-  currentNetworkDataset,
-  currentNetworkDatasetLayer,
-  currentNetworkGCC,
-  deactivatedNodes,
   currentError,
   tooltipOverlay,
-  clickedFeatureCandidates,
+  panelArrangement,
+  draggingPanel,
+  draggingFrom,
+  dragModes,
+  loadingDatasets,
+  loadingSimulationTypes,
+  loadingCharts,
+  selectedLayerStyles,
+  loadingProjects,
 } from "./store";
-import { getProjects, getDataset } from "@/api/rest";
 import {
-  clearMapLayers,
-  datasetLayerFromMapLayerID,
-  styleNetworkVectorTileLayer,
-  updateBaseLayer,
-} from "./layers";
-import { Project } from "./types";
+  getProjects,
+  getDataset,
+  getProjectCharts,
+  getProjectSimulationTypes,
+  getProjectDatasets,
+  getDatasetLayers,
+} from "@/api/rest";
+import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
+import { Dataset, Project } from "./types";
 
 export function clearState() {
-  availableDatasets.value = undefined;
-  selectedDatasets.value = [];
-  currentDataset.value = undefined;
-  selectedDatasetLayers.value = [];
-  clickedDatasetLayer.value = undefined;
+  clearProjectState();
   showMapBaseLayer.value = true;
+  currentError.value = undefined;
+  polls.value = {};
+  panelArrangement.value = [
+    { id: "datasets",
+      label: "Datasets",
+      visible: true,
+      closeable: false,
+      dock: 'left',
+      order: 1
+    },
+    {
+      id: "layers",
+      label: "Selected Layers",
+      visible: true,
+      closeable: false,
+      dock: 'left',
+      order: 2,
+    },
+    {
+      id: "charts",
+      label: "Charts",
+      visible: true,
+      closeable: true,
+      dock: 'right',
+      order: 1,
+    },
+    {
+      id: "analytics",
+      label: "Analytics",
+      visible: true,
+      closeable: true,
+      dock: 'right',
+      order: 2,
+    },
+  ];
+  draggingPanel.value = undefined;
+  draggingFrom.value = undefined;
+  dragModes.value = [];
+}
+
+export function clearProjectState() {
+  availableDatasets.value = undefined;
+  selectedLayers.value = [];
+  selectedLayerStyles.value = {};
   clickedFeature.value = undefined;
-  rasterTooltipEnabled.value = false;
   availableCharts.value = undefined;
   currentChart.value = undefined;
+  availableNetworks.value = [];
   availableSimulationTypes.value = undefined;
   currentSimulationType.value = undefined;
   selectedSourceRegions.value = [];
-  currentNetworkDataset.value = undefined;
-  currentNetworkDatasetLayer.value = undefined;
-  deactivatedNodes.value = [];
-  currentNetworkGCC.value = undefined;
-  currentError.value = undefined;
-  polls.value = {};
 }
 
 export function getMap() {
@@ -76,6 +112,7 @@ export function loadProjects() {
   clearState();
   getProjects().then((data) => {
     availableProjects.value = data;
+    loadingProjects.value = false;
   });
 }
 
@@ -128,79 +165,34 @@ export function pollForProcessingDataset(datasetId: number) {
   }, 10000);
 }
 
-/**
- * If a network analysis is going on, reset it to its starting state.
- */
-export function clearCurrentNetwork() {
-  const datasetLayer = currentNetworkDatasetLayer.value;
-
-  currentNetworkDataset.value = undefined;
-  currentNetworkDatasetLayer.value = undefined;
-  deactivatedNodes.value = [];
-  currentNetworkGCC.value = undefined;
-
-  if (datasetLayer !== undefined) {
-    styleNetworkVectorTileLayer(datasetLayer);
-  }
-}
-
 watch(currentProject, () => {
-  clearState();
+  clearProjectState();
   setMapCenter(currentProject.value);
   clearMapLayers();
-});
-watch(currentDataset, () => {
-  rasterTooltipEnabled.value = false;
-});
-
-export function clearClickedFeatureData() {
-  clickedFeature.value = undefined;
-  showMapTooltip.value = false;
-  clickedDatasetLayer.value = undefined;
-}
-
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-// See all of the clicked features, and display the one that's at the highest layer
-watch(clickedFeatureCandidates, (features) => {
-  if (!features.length) {
-    return;
+  if (currentProject.value) {
+    loadingDatasets.value = true;
+    loadingCharts.value = true;
+    loadingSimulationTypes.value = true;
+    getProjectDatasets(currentProject.value.id).then(async (datasets) => {
+      availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
+        dataset.layers = await getDatasetLayers(dataset.id);
+        return dataset;
+      }));
+      loadingDatasets.value = false;
+    });
+    getProjectCharts(currentProject.value.id).then((charts) => {
+      availableCharts.value = charts;
+      currentChart.value = undefined;
+      loadingCharts.value = false;
+    });
+    getProjectSimulationTypes(currentProject.value.id).then((types) => {
+      availableSimulationTypes.value = types;
+      currentSimulationType.value = undefined;
+      loadingSimulationTypes.value = false;
+    })
   }
-
-  const map = getMap();
-  const layerIds = map.getLayersOrder();
-
-  // TypeScript complains about this type being too complex for some reason.
-  // @ts-ignore
-  const featureLayerIDs = new Set(features.map((f) => f.feature.layer.id));
-
-  // Find the highest layer that was clicked
-  // TypeScript complains about this type being too complex for some reason.
-  // @ts-ignore
-  const selectedLayerID = layerIds.toReversed().find((id) => {
-    return featureLayerIDs.has(id);
-  });
-  const selectedFeature = features.find(
-    (f) => f.feature.layer.id === selectedLayerID
-  );
-
-  // If none found, just reset values
-  if (selectedLayerID === undefined || selectedFeature === undefined) {
-    clearClickedFeatureData();
-    return;
-  }
-
-  // Set new values
-  // TypeScript complains about this type being too complex for some reason.
-  // @ts-ignore
-  clickedFeature.value = selectedFeature;
-  showMapTooltip.value = true;
-  clickedDatasetLayer.value = datasetLayerFromMapLayerID(
-    selectedFeature.feature.layer.id
-  );
-
-  // We've selected the feature we want to show, so clear this array, as otherwise things will continue to be appended to it.
-  clickedFeatureCandidates.splice(0, clickedFeatureCandidates.length);
 });
+
+watch(selectedLayers, updateLayersShown)
 
 watch(showMapBaseLayer, updateBaseLayer);
-/* eslint-enable @typescript-eslint/ban-ts-comment */
