@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.gis.db import models as geo_models
 from django.db import models, transaction
 from guardian.models import UserObjectPermission
-from guardian.shortcuts import assign_perm, get_users_with_perms
+from guardian.shortcuts import assign_perm, get_users_with_perms, remove_perm
 
 from .dataset import Dataset
 
@@ -60,13 +60,17 @@ class Project(models.Model):
         assign_perm('owner', user, self)
 
     @transaction.atomic()
-    def add_collaborators(self, users: list[User]):
+    def set_collaborators(self, users: list[User]):
+        for user in get_users_with_perms(self, only_with_perms_in=['collaborator']):
+            remove_perm('collaborator', user, self)
         self.delete_users_perms(users)
         for user in users:
             assign_perm('collaborator', user, self)
 
     @transaction.atomic()
-    def add_followers(self, users: list[User]):
+    def set_followers(self, users: list[User]):
+        for user in get_users_with_perms(self, only_with_perms_in=['follower']):
+            remove_perm('follower', user, self)
         self.delete_users_perms(users)
         for user in users:
             assign_perm('follower', user, self)
@@ -79,8 +83,8 @@ class Project(models.Model):
         follower: list[User] | None = None,
     ):
         self.set_owner(owner)
-        self.add_collaborators(collaborator or [])
-        self.add_followers(follower or [])
+        self.set_collaborators(collaborator or [])
+        self.set_followers(follower or [])
 
     class Meta:
         permissions = [
