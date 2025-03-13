@@ -1,6 +1,343 @@
 # CHANGELOG
 
 
+## v0.9.0 (2025-03-13)
+
+### Bug Fixes
+
+- Accept default token auth with new `TokenAuth` class
+  ([`42e640e`](https://github.com/OpenGeoscience/uvdat/commit/42e640e109fc2ab6d684f0bd32988985f210723b))
+
+- Add combine option for zipped vector datasets
+  ([`161697a`](https://github.com/OpenGeoscience/uvdat/commit/161697abd64d2d035eb97ded9d24a353ffb2ded0))
+
+- Add numbering to network names to avoid name conflicts on the same dataset
+  ([`93f7e45`](https://github.com/OpenGeoscience/uvdat/commit/93f7e45e1f5705654db1336af76d4308209cb908))
+
+- Add requirements file
+  ([`ed8fb57`](https://github.com/OpenGeoscience/uvdat/commit/ed8fb57fc95d7faffabd8b7293a94951f56a88a5))
+
+- Add token auth to rest API for `UVDATExplorer` to work
+  ([`3a6b4e1`](https://github.com/OpenGeoscience/uvdat/commit/3a6b4e10e711b14565539b3cfbf7b767e3560305))
+
+- Additional dataset conversion adjustments
+  ([`a6a2a01`](https://github.com/OpenGeoscience/uvdat/commit/a6a2a01aa2a7d54ffb269d339edd5c6098f02fec))
+
+- Adjust floating panel behavior
+  ([`19f24b0`](https://github.com/OpenGeoscience/uvdat/commit/19f24b0ebe4b8d9475341f6d68f846607850baa4))
+
+- Adjust ingest process for New York Energy use case
+  ([`d225d4a`](https://github.com/OpenGeoscience/uvdat/commit/d225d4a182a68e8e277aa30ca045e997ea456593))
+
+- Allow adding multiple copies of the same layer
+  ([`96f2005`](https://github.com/OpenGeoscience/uvdat/commit/96f20051e54c3bbede8cdbd1960f1a5a2b98c9a7))
+
+- Apply opacity to visible frames only
+  ([`7d08318`](https://github.com/OpenGeoscience/uvdat/commit/7d08318862a1a068f36790790f836a56658de429))
+
+- Apply same default color to frames in the same layer
+  ([`861b65f`](https://github.com/OpenGeoscience/uvdat/commit/861b65f5b410274dfc6390490879a35224fa8797))
+
+- Create separate functions for clearing state upon different triggers
+  ([`c7338a9`](https://github.com/OpenGeoscience/uvdat/commit/c7338a92c051ecdb069773e8060f0fe0303f4816))
+
+- Handle no superuser exists in `ingest_use_case.py`
+  ([`6cced93`](https://github.com/OpenGeoscience/uvdat/commit/6cced93b22d3a63f2e90fe3849befda25c013f7e))
+
+- Implement search bar for charts and analytics
+  ([`0167835`](https://github.com/OpenGeoscience/uvdat/commit/016783514960a64dd25e8d3bcca5490b122a0208))
+
+- Include access control logic for RasterData and VectorData
+  ([`7299af9`](https://github.com/OpenGeoscience/uvdat/commit/7299af9afdd686646a141e6668d30f8f0e63fda5))
+
+- Miscellaneous appearance and behavior fixes
+  ([`9b72e52`](https://github.com/OpenGeoscience/uvdat/commit/9b72e5223827ab8939d841404e4438c0cd753813))
+
+- Only display "Session Authenticated" label if auth is successful
+  ([`5349f2e`](https://github.com/OpenGeoscience/uvdat/commit/5349f2e27a9049ef87b77b6fde2f92ff4585245e))
+
+- Protect admin page from null source files on data objects
+  ([`0c8673e`](https://github.com/OpenGeoscience/uvdat/commit/0c8673eafe055e5365b15070bf17abc569594e1d))
+
+- Protect against null metadata
+  ([`189a7d9`](https://github.com/OpenGeoscience/uvdat/commit/189a7d9e9ba6700dc83b0dd2089ec691a24b2d53))
+
+- Remove debugging statement
+  ([`ea2a57e`](https://github.com/OpenGeoscience/uvdat/commit/ea2a57ed9e71676beab0d4b4b26d33350614f773))
+
+- Remove z-index css rule from sidebar class
+  ([`1badf6f`](https://github.com/OpenGeoscience/uvdat/commit/1badf6f0651d5468b9030dad70a0a411ed53321c))
+
+- Update `admin.py`
+  ([`74e9eb5`](https://github.com/OpenGeoscience/uvdat/commit/74e9eb521470e983c318a8f4ae7313daaea501a6))
+
+- Update `data.py` for lint check
+  ([`22bc1f6`](https://github.com/OpenGeoscience/uvdat/commit/22bc1f686d4d748aa334893b3902b71dd84c2910))
+
+- Update `get_filter_string` function
+  ([`48c0a0e`](https://github.com/OpenGeoscience/uvdat/commit/48c0a0e554b3e4db79866789c5f8c6461dd1deb3))
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com>
+
+- Update `LayerSerializer`
+  ([`3afbfcd`](https://github.com/OpenGeoscience/uvdat/commit/3afbfcdfa690c8dbe541e073ac85cd349f84b251))
+
+- Update API with new Network-Dataset relationship
+  ([`9560940`](https://github.com/OpenGeoscience/uvdat/commit/9560940c284d7901567d1e72da9987de0db96434))
+
+- Update default layer name generation
+  ([`42aec47`](https://github.com/OpenGeoscience/uvdat/commit/42aec471c713aa994e68929191584b66bb204c5e))
+
+- Update list of ignored filetypes
+  ([`bcaf361`](https://github.com/OpenGeoscience/uvdat/commit/bcaf3615684d84bf0151f6ddea422354369bc8af))
+
+- Update map tooltip
+  ([`3b6d0ab`](https://github.com/OpenGeoscience/uvdat/commit/3b6d0abc5aa6e1f4beda2e9200abd374063b199b))
+
+- Update populate process and sample data
+  ([`114f9bf`](https://github.com/OpenGeoscience/uvdat/commit/114f9bf74201199aa69be4307be4b05fd9754a3d))
+
+- Update populate test
+  ([`03ba49b`](https://github.com/OpenGeoscience/uvdat/commit/03ba49b5c8e4c3bfcd2e680173d35fd393810053))
+
+- Update references to old `band_ref` field
+  ([`7af52d2`](https://github.com/OpenGeoscience/uvdat/commit/7af52d2b4b513a25d88835712fb40ae29c1d47f0))
+
+- Update source filter formatting with API changes
+  ([`52352cf`](https://github.com/OpenGeoscience/uvdat/commit/52352cf9c71a559d05d8d8e86830514a8247bd84))
+
+- Update tests with new Network-Dataset relationship
+  ([`afe2c7d`](https://github.com/OpenGeoscience/uvdat/commit/afe2c7d75cc2a5a803574450b3d646eee506300c))
+
+- Update vector feature filtering to allow nested properties
+  ([`81dffa1`](https://github.com/OpenGeoscience/uvdat/commit/81dffa181cfb94b9453c82423e89d7f87c15cd4e))
+
+- Use `band_ref` JSON field on `LayerFrame`
+  ([`0fe6753`](https://github.com/OpenGeoscience/uvdat/commit/0fe6753936d2f3d72a5e0e703b8f5c7d31bdd6b6))
+
+- Use a custom serializer to validate results of GCC endpoint
+  ([`98e1d2b`](https://github.com/OpenGeoscience/uvdat/commit/98e1d2b720467f3cbfcf359cdd202f1141320f5b))
+
+### Build System
+
+- Update dockerfile to support conversion of `.nc` files
+  ([`c2cd3e3`](https://github.com/OpenGeoscience/uvdat/commit/c2cd3e37ed22211ecaaa18edb14e0ba231aebbb9))
+
+### Chores
+
+- Add item to `.gitignore`
+  ([`d8804c1`](https://github.com/OpenGeoscience/uvdat/commit/d8804c1410a30d85f4ce36fca4d6592382b6b34f))
+
+- Merge remote-tracking branch 'origin/master' into redesign-staging
+  ([`a1a508f`](https://github.com/OpenGeoscience/uvdat/commit/a1a508fbf84350ca289458149c43c64e95b63c9e))
+
+- Remove outdated functions and leave placeholders for reimplementation
+  ([`69b3e1a`](https://github.com/OpenGeoscience/uvdat/commit/69b3e1af08ba94e780d92ddf20580477d5261610))
+
+- Remove print statement
+  ([`3c24d8c`](https://github.com/OpenGeoscience/uvdat/commit/3c24d8c48fc58be5a0410c29469a55a1d5f9c59c))
+
+- Remove unused component files
+  ([`dec5c2d`](https://github.com/OpenGeoscience/uvdat/commit/dec5c2d875ea362dda946954e803dcebe99e51c5))
+
+- Resolve compiler macros no longer need to be imported warnings
+  ([`8eae7b2`](https://github.com/OpenGeoscience/uvdat/commit/8eae7b2705ef72ef99b0ed7dfb33ca4685f16185))
+
+- Update docker compose config, allow storing MapTiler API key in ignored file
+  ([`0cb3ee4`](https://github.com/OpenGeoscience/uvdat/commit/0cb3ee4efc7e96b71b455b8b921ec6e12089313c))
+
+### Code Style
+
+- Appearance suggestions from Faiza
+  ([`e64a6fe`](https://github.com/OpenGeoscience/uvdat/commit/e64a6fe01561ae5eee2db352a124ce10500a77be))
+
+- Apply grab cursor to layer reordering symbol
+  ([`5651390`](https://github.com/OpenGeoscience/uvdat/commit/5651390ee7d98322983ba8069cda69f0133e85d3))
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com>
+
+- Change help text color
+  ([`2b1fabd`](https://github.com/OpenGeoscience/uvdat/commit/2b1fabda7e767c3137205e7d60da1d3e79d38466))
+
+- Ensure scrollbar does not appear in chrome
+  ([`df18b0b`](https://github.com/OpenGeoscience/uvdat/commit/df18b0bb99195340f17c5cd1b8c8aea9f8227263))
+
+- Ensure tutorial popup does not appear before projects list is loaded
+  ([`d08e46f`](https://github.com/OpenGeoscience/uvdat/commit/d08e46fb5358fa00690e0b3b9ff3c640ebdab0bd))
+
+- Fix spacing
+  ([`7df6bbc`](https://github.com/OpenGeoscience/uvdat/commit/7df6bbcdf9f9ed470cb74e42c2085bde2824e289))
+
+- Font and icon update
+  ([`4950c20`](https://github.com/OpenGeoscience/uvdat/commit/4950c2080e55ffbd5dc0683e28389896eeef73bb))
+
+- Hide Legends panel for now
+  ([`394dc27`](https://github.com/OpenGeoscience/uvdat/commit/394dc27e4f9dfd5c2c33edb3944768c380dd0374))
+
+- Secondary background color on layer select buttons
+  ([`2b07c6c`](https://github.com/OpenGeoscience/uvdat/commit/2b07c6c4fdcc31f9203f5af5ee72a7d249aa637a))
+
+- Update colors and appearance with new theme palettes
+  ([`1444030`](https://github.com/OpenGeoscience/uvdat/commit/1444030f7b5258465c87abd14da4c9624e0e016d))
+
+### Features
+
+- Add "Map Only" option to screenshot menu
+  ([`f346a2c`](https://github.com/OpenGeoscience/uvdat/commit/f346a2c428d983028222eaaf719d021df07fe4b6))
+
+- Add `UVDATExplorer` Jupyter widget and example usage notebook
+  ([`005d8fe`](https://github.com/OpenGeoscience/uvdat/commit/005d8fe6c74878a21fad383097d249cc4595cfb0))
+
+- Add controls bar with screenshot function
+  ([`d6e828b`](https://github.com/OpenGeoscience/uvdat/commit/d6e828b955fd70c32327ab64beab1e9484365240))
+
+- Add dark/light modes including map
+  ([`7365069`](https://github.com/OpenGeoscience/uvdat/commit/7365069563e4d57ae8d22488b28e49f6aabd03f8))
+
+- Add draggable and resizeable floating panels to sidebars
+  ([`2144f67`](https://github.com/OpenGeoscience/uvdat/commit/2144f67e682f6653035c50e830642e8971185ae8))
+
+- Add frame and style controls
+  ([`90ee9f9`](https://github.com/OpenGeoscience/uvdat/commit/90ee9f90bab2a7afff3feb758a94d2a281c26506))
+
+- Add full screen toggle to ipyleaflet map
+  ([`e71623d`](https://github.com/OpenGeoscience/uvdat/commit/e71623da9d18598e68ba01443b154c987c63411b))
+
+- Add migration file
+  ([`b7ca918`](https://github.com/OpenGeoscience/uvdat/commit/b7ca918edafcfd8731347ed831a3df4cdbb3e570))
+
+- Add query param filtering to vector tile endpoint
+  ([`347056a`](https://github.com/OpenGeoscience/uvdat/commit/347056a490a208e6754e615f1a23a90b310da470))
+
+- Add Selected Layers Panel
+  ([`252addd`](https://github.com/OpenGeoscience/uvdat/commit/252addd3f11d00840231639f5a43135790bc2921))
+
+- Add Sidebars component
+  ([`672442f`](https://github.com/OpenGeoscience/uvdat/commit/672442f19cdaa549553d606c183dd568a04154bf))
+
+- Add user options menu and allow theme toggle
+  ([`febe644`](https://github.com/OpenGeoscience/uvdat/commit/febe644343bd5484be142d230b900ba06ce63776))
+
+- Allow additional filters specification in layer options
+  ([`a15e8da`](https://github.com/OpenGeoscience/uvdat/commit/a15e8da6487b3f0e1ef7cfa2f096fdb875a0040a))
+
+- Allow docking floating panels in either sidebar in any order
+  ([`bb00946`](https://github.com/OpenGeoscience/uvdat/commit/bb009467826b3e73dafe47971975c96748b58bbb))
+
+- Allow user to specify center and zoom
+  ([`d791ef6`](https://github.com/OpenGeoscience/uvdat/commit/d791ef6a98623b35054f24e150e228ef48d44c61))
+
+- Basic map layers for raster and vector sources
+  ([`69874cf`](https://github.com/OpenGeoscience/uvdat/commit/69874cf05ab0fad5cd5a0d597699488e28010eee))
+
+- Dynamic styling for map attribution according to theme and sidebar state
+  ([`c5872ab`](https://github.com/OpenGeoscience/uvdat/commit/c5872ab83dab7a8fa32b28c1199ab7c971625c8f))
+
+- Layer removal and visibility toggle
+  ([`bdc17a8`](https://github.com/OpenGeoscience/uvdat/commit/bdc17a8fd37669f30da23b4eca69f92e54448c4d))
+
+- Update Map Tooltip
+  ([`5e85413`](https://github.com/OpenGeoscience/uvdat/commit/5e85413f671ffb761ad073a2257d0202611b9d3f))
+
+- Update raster tooltip logic
+  ([`f8b6d6e`](https://github.com/OpenGeoscience/uvdat/commit/f8b6d6e26fef67dd8fa17d99216c3ccc930463fb))
+
+### Refactoring
+
+- Additional API updates to complement UI changes
+  ([`25f6c7f`](https://github.com/OpenGeoscience/uvdat/commit/25f6c7feedcf3d9fc7c76b339763c41e6df81958))
+
+- Consolidate layer and frame creation logic to single function
+  ([`1df004d`](https://github.com/OpenGeoscience/uvdat/commit/1df004db43a716d5d1ab37584ff09043be208fc1))
+
+- Create `themes.ts` to define theme colors
+  ([`22ea8ad`](https://github.com/OpenGeoscience/uvdat/commit/22ea8ad4af8f0e75097985fc2c29338bf926b1e8))
+
+- Create subfolder structure in components folder
+  ([`00c9aca`](https://github.com/OpenGeoscience/uvdat/commit/00c9aca6444215a39b58943c3b6e1022b2a3ba09))
+
+- Isolate and fix panel drag logic
+  ([`f3e8bf0`](https://github.com/OpenGeoscience/uvdat/commit/f3e8bf0e199c4e7f6cd19d20bcc52828a8eb88d4))
+
+- Move `jupyter` folder to top level
+  ([`424d1bd`](https://github.com/OpenGeoscience/uvdat/commit/424d1bd80ab2c10c6af3a951ff601c7b6bff9d4d))
+
+- Remove `dataset` field from `Network` and make `vector_data` field mandatory
+  ([`11f7cde`](https://github.com/OpenGeoscience/uvdat/commit/11f7cde767d1b0564acf24e343b8850726ec4bff))
+
+- Rename `band_ref` field to `source_filters`
+  ([`7d899d7`](https://github.com/OpenGeoscience/uvdat/commit/7d899d71fe3267da3d8c787aaaf382259f07e3ce))
+
+- Rename `SourceRegion` -> `Region`
+  ([`750c135`](https://github.com/OpenGeoscience/uvdat/commit/750c135480b6b9d595047c21e23df82255f87968))
+
+- Rename explorer module
+  ([`d7ac091`](https://github.com/OpenGeoscience/uvdat/commit/d7ac091763c29286f81a0aab2b3566cc84747bcb))
+
+- Reorganize item titles to make whole row clickable for "add to selected layers" case
+  ([`52dc78d`](https://github.com/OpenGeoscience/uvdat/commit/52dc78da5aaf709d058d5442a02b0a707682db32))
+
+- Split DatasetPanel into multiple components, use expansion panels instead of treeviews
+  ([`d0714a5`](https://github.com/OpenGeoscience/uvdat/commit/d0714a5a191710389e25938b562c14338bf294f9))
+
+- Switch Floating Panel content back to slot
+  ([`1121b0c`](https://github.com/OpenGeoscience/uvdat/commit/1121b0c3f1ca05693ed3d2a05a57539b420c2802))
+
+- Update `getDefaultColor` to cycle between 4 basic colors
+  ([`032cc69`](https://github.com/OpenGeoscience/uvdat/commit/032cc69432cabef157865a4cfc94d6996f664fd6))
+
+- Update Analytics Panel
+  ([`2f9eb54`](https://github.com/OpenGeoscience/uvdat/commit/2f9eb541c501e03ba329879a530652bcbdebb08d))
+
+- Update Analytics panel
+  ([`7860909`](https://github.com/OpenGeoscience/uvdat/commit/78609092515e78f9a9cc47e53295f192add08eb5))
+
+- Update Charts panel
+  ([`3e77557`](https://github.com/OpenGeoscience/uvdat/commit/3e7755729505aac5b36d2ecfaeb159121c6c72b1))
+
+- Update Dataset panel and Project config
+  ([`494ece7`](https://github.com/OpenGeoscience/uvdat/commit/494ece777fa9728da97c9fb9057b9240c3071afc))
+
+- Update models
+  ([`a37d350`](https://github.com/OpenGeoscience/uvdat/commit/a37d3505745e870f6a49dd5e2daa5e85033ba974))
+
+- Update networks and GCC logic
+  ([`51f4eee`](https://github.com/OpenGeoscience/uvdat/commit/51f4eee3dfad581acfd52829ff7ba59ba7b92ba8))
+
+- Update ProjectConfig UI
+  ([`41c3952`](https://github.com/OpenGeoscience/uvdat/commit/41c3952f9591eca999059c9ecf42fd378806035b))
+
+- Update rest API
+  ([`05116b0`](https://github.com/OpenGeoscience/uvdat/commit/05116b09486e12c0dd24caa81b104ba5fd006229))
+
+- Update tasks
+  ([`a126080`](https://github.com/OpenGeoscience/uvdat/commit/a1260807688c295ba531881bc9f5f95ea80beeda))
+
+- Update tests with network API changes
+  ([`18693c4`](https://github.com/OpenGeoscience/uvdat/commit/18693c4cfda0acda2614820472f28c1cc8873491))
+
+- Update types and store
+  ([`d33f564`](https://github.com/OpenGeoscience/uvdat/commit/d33f564b9c5b3120ee6759a3706a56ebf34cb64f))
+
+- Update uvdat/core/rest/networks.py
+  ([`86aa278`](https://github.com/OpenGeoscience/uvdat/commit/86aa2789213f90d1c13dccb9a317ce942da09522))
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com>
+
+- Update web/src/layerStyles.ts
+  ([`7e5bb69`](https://github.com/OpenGeoscience/uvdat/commit/7e5bb6965a0e5b4f426a6668c1d995d1c8a92ba1))
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com>
+
+- Use `setup` syntax in `Map.vue`
+  ([`c23ecd7`](https://github.com/OpenGeoscience/uvdat/commit/c23ecd75c7734f53d00b928501931bb103383f8c))
+
+### Testing
+
+- Update test suite
+  ([`4c295fb`](https://github.com/OpenGeoscience/uvdat/commit/4c295fb7cd5dba8029da3ed15a65d5facdffb238))
+
+
 ## v0.8.1 (2025-01-10)
 
 ### Bug Fixes
