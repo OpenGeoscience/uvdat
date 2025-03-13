@@ -5,16 +5,20 @@ from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
+from rest_framework.authtoken.views import obtain_auth_token
 
 from uvdat.core.rest import (
     ChartViewSet,
     DatasetViewSet,
+    LayerFrameViewSet,
+    LayerViewSet,
+    NetworkViewSet,
     ProjectViewSet,
-    RasterMapLayerViewSet,
+    RasterDataViewSet,
+    RegionViewSet,
     SimulationViewSet,
-    SourceRegionViewSet,
     UserViewSet,
-    VectorMapLayerViewSet,
+    VectorDataViewSet,
 )
 
 router = routers.SimpleRouter()
@@ -29,10 +33,14 @@ router.register(r'users', UserViewSet, basename='users')
 router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'charts', ChartViewSet, basename='charts')
-router.register(r'rasters', RasterMapLayerViewSet, basename='rasters')
-router.register(r'vectors', VectorMapLayerViewSet, basename='vectors')
-router.register(r'source-regions', SourceRegionViewSet, basename='source-regions')
+router.register(r'layers', LayerViewSet, basename='layers')
+router.register(r'layer-frames', LayerFrameViewSet, basename='layer-frames')
+router.register(r'rasters', RasterDataViewSet, basename='rasters')
+router.register(r'vectors', VectorDataViewSet, basename='vectors')
+router.register(r'source-regions', RegionViewSet, basename='source-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
+router.register(r'networks', NetworkViewSet, basename='networks')
+
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
@@ -42,6 +50,7 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
+    path('api/v1/token/', obtain_auth_token),
     # Redirect all other server requests to Vue client
     path('', RedirectView.as_view(url=settings.HOMEPAGE_REDIRECT_URL)),  # type: ignore
 ]

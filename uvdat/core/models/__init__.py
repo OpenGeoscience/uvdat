@@ -1,10 +1,11 @@
 from .chart import Chart
+from .data import RasterData, VectorData, VectorFeature
 from .dataset import Dataset
 from .file_item import FileItem
-from .map_layers import RasterMapLayer, VectorFeature, VectorMapLayer
+from .layer import Layer, LayerFrame
 from .networks import Network, NetworkEdge, NetworkNode
 from .project import Project
-from .regions import SourceRegion
+from .regions import Region
 from .simulations import SimulationResult
 
 __all__ = [
@@ -12,10 +13,12 @@ __all__ = [
     Project,
     Dataset,
     FileItem,
-    RasterMapLayer,
-    VectorMapLayer,
+    RasterData,
+    VectorData,
     VectorFeature,
-    SourceRegion,
+    Layer,
+    LayerFrame,
+    Region,
     Network,
     NetworkEdge,
     NetworkNode,

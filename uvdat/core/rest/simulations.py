@@ -54,10 +54,13 @@ def get_available_simulations(project_id: int):
                             queryset=queryset, projects=Project.objects.filter(id=project_id)
                         )
                     ]
+            elif len(options):
+                options_type = options[0].__class__
             args.append(
                 {
                     'name': a['name'],
                     'options': options,
+                    'type': options_type.__name__,
                 }
             )
         details['args'] = args

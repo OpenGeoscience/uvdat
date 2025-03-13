@@ -4,14 +4,16 @@ from uvdat.core.models import Project
 
 from .factories import (
     DatasetFactory,
+    LayerFactory,
+    LayerFrameFactory,
     NetworkEdgeFactory,
     NetworkFactory,
     NetworkNodeFactory,
     ProjectFactory,
-    RasterMapLayerFactory,
+    RasterDataFactory,
     SuperUserFactory,
     UserFactory,
-    VectorMapLayerFactory,
+    VectorDataFactory,
 )
 
 
@@ -94,23 +96,45 @@ def network_edge(network_edge_factory):
     return network_edge_factory()
 
 
-# Raster Map Layer
+# Raster Data
 @pytest.fixture
-def raster_map_layer_factory():
-    return RasterMapLayerFactory
-
-
-@pytest.fixture
-def raster_map_layer(raster_map_layer_factory):
-    return raster_map_layer_factory()
-
-
-# Vector Map Layer
-@pytest.fixture
-def vector_map_layer_factory():
-    return VectorMapLayerFactory
+def raster_data_factory():
+    return RasterDataFactory
 
 
 @pytest.fixture
-def vector_map_layer(vector_map_layer_factory):
-    return vector_map_layer_factory()
+def raster_data(raster_data_factory):
+    return raster_data_factory()
+
+
+# Vector Data
+@pytest.fixture
+def vector_data_factory():
+    return VectorDataFactory
+
+
+@pytest.fixture
+def vector_data(vector_data_factory):
+    return vector_data_factory()
+
+
+# Layer
+@pytest.fixture
+def layer_factory():
+    return LayerFactory
+
+
+@pytest.fixture
+def layer(layer_factory):
+    return layer_factory()
+
+
+# Layer Frame
+@pytest.fixture
+def layer_frame_factory():
+    return LayerFrameFactory
+
+
+@pytest.fixture
+def layer_frame(layer_frame_factory):
+    return layer_frame_factory()

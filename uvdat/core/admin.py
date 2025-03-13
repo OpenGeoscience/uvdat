@@ -4,15 +4,17 @@ from uvdat.core.models import (
     Chart,
     Dataset,
     FileItem,
+    Layer,
+    LayerFrame,
     Network,
     NetworkEdge,
     NetworkNode,
     Project,
-    RasterMapLayer,
+    RasterData,
+    Region,
     SimulationResult,
-    SourceRegion,
+    VectorData,
     VectorFeature,
-    VectorMapLayer,
 )
 
 
@@ -21,7 +23,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class DatasetAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'dataset_type', 'category']
+    list_display = ['id', 'name', 'category']
 
 
 class FileItemAdmin(admin.ModelAdmin):
@@ -39,31 +41,46 @@ class ChartAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'editable']
 
 
-class RasterMapLayerAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name', 'index']
+class LayerAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'get_dataset_name']
 
     def get_dataset_name(self, obj):
         return obj.dataset.name
 
 
-class VectorMapLayerAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name', 'index']
+class LayerFrameAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'index', 'get_layer_name']
 
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    def get_layer_name(self, obj):
+        return obj.layer.name
+
+
+class RasterDataAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'get_source_file_name']
+
+    def get_source_file_name(self, obj):
+        if obj.source_file is not None:
+            return obj.source_file.name
+        return ''
+
+
+class VectorDataAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'get_source_file_name']
+
+    def get_source_file_name(self, obj):
+        if obj.source_file is not None:
+            return obj.source_file.name
+        return ''
 
 
 class VectorFeatureAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name', 'get_map_layer_index']
+    list_display = ['id', 'get_dataset_name']
 
     def get_dataset_name(self, obj):
-        return obj.map_layer.dataset.name
-
-    def get_map_layer_index(self, obj):
-        return obj.map_layer.index
+        return obj.vector_data.dataset.name
 
 
-class SourceRegionAdmin(admin.ModelAdmin):
+class RegionAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'get_dataset_name']
 
     def get_dataset_name(self, obj):
@@ -71,10 +88,7 @@ class SourceRegionAdmin(admin.ModelAdmin):
 
 
 class NetworkAdmin(admin.ModelAdmin):
-    list_display = ['id', 'category', 'get_dataset_name']
-
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    list_display = ['id', 'category']
 
 
 class NetworkEdgeAdmin(admin.ModelAdmin):
@@ -84,7 +98,7 @@ class NetworkEdgeAdmin(admin.ModelAdmin):
         return obj.network.id
 
     def get_dataset_name(self, obj):
-        return obj.network.dataset.name
+        return obj.network.vector_data.dataset.name
 
 
 class NetworkNodeAdmin(admin.ModelAdmin):
@@ -94,7 +108,7 @@ class NetworkNodeAdmin(admin.ModelAdmin):
         return obj.network.id
 
     def get_dataset_name(self, obj):
-        return obj.network.dataset.name
+        return obj.network.vector_data.dataset.name
 
     def get_adjacent_node_names(self, obj):
         return ', '.join(n.name for n in obj.get_adjacent_nodes())
@@ -108,10 +122,12 @@ admin.site.register(Project, ProjectAdmin)
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)
-admin.site.register(RasterMapLayer, RasterMapLayerAdmin)
-admin.site.register(VectorMapLayer, VectorMapLayerAdmin)
+admin.site.register(Layer, LayerAdmin)
+admin.site.register(LayerFrame, LayerFrameAdmin)
+admin.site.register(RasterData, RasterDataAdmin)
+admin.site.register(VectorData, VectorDataAdmin)
 admin.site.register(VectorFeature, VectorFeatureAdmin)
-admin.site.register(SourceRegion, SourceRegionAdmin)
+admin.site.register(Region, RegionAdmin)
 admin.site.register(Network, NetworkAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
 admin.site.register(NetworkEdge, NetworkEdgeAdmin)

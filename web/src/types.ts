@@ -1,4 +1,4 @@
-import { LngLatLike, Map, MapGeoJSONFeature } from "maplibre-gl";
+import { MapGeoJSONFeature } from "maplibre-gl";
 
 export interface Network {
   nodes: NetworkNode[];
@@ -20,11 +20,113 @@ export interface Dataset {
   description: string;
   category: string;
   processing: boolean;
+  layers: Layer[];
   metadata: Record<string, unknown>;
-  dataset_type: "VECTOR" | "RASTER";
-  map_layers?: (VectorDatasetLayer | RasterDatasetLayer)[];
-  current_layer_index?: number;
-  network?: Network;
+}
+
+export interface Layer {
+  id: number;
+  copy_id: number;
+  name: string;
+  dataset: Dataset;
+  frames: LayerFrame[];
+  metadata: Record<string, unknown>;
+  visible: boolean;
+  current_frame: number;
+}
+
+export interface LayerFrame {
+  id: number;
+  name: string;
+  index: number;
+  layer: Layer;
+  vector: VectorData | null;
+  raster: RasterData | null;
+}
+
+export interface Style {
+  visible?: boolean;
+  opacity?: number;
+  color?: string;
+  colormap?: string;
+  colormap_range?: number[];
+}
+
+export interface VectorData {
+  id: number;
+  name: string;
+  dataset: number;
+  geojson_data: string | null;
+  source_file: null | number;
+  metadata: Record<string, unknown>;
+}
+
+export interface RasterData {
+  id: number;
+  name: string;
+  cloud_optimized_geotiff: string | null;
+  dataset: number;
+  source_file: null | number;
+  metadata: RasterMetadata;
+}
+
+export interface RasterMetadata {
+  bandCount: number;
+  bands: Record<number, {
+    interpretation: string;
+    max: number;
+    min: number;
+    mean: number;
+    stdev: number;
+  }>;
+  bounds: {
+    srs: string;
+    ll: {x: number; y: number};
+    lr: {x: number; y: number};
+    ul: {x: number; y: number};
+    ur: {x: number; y: number};
+    xmin: number;
+    xmax: number;
+    ymin: number;
+    ymax: number;
+  };
+  sourceBounds: {
+    srs: string;
+    ll: {x: number; y: number};
+    lr: {x: number; y: number};
+    ul: {x: number; y: number};
+    ur: {x: number; y: number};
+    xmin: number;
+    xmax: number;
+    ymin: number;
+    ymax: number;
+  };
+  dtype: string;
+  geospatial: boolean;
+  levels: number;
+  sourceLevels: number;
+  magnification: number | null;
+  mm_x: number;
+  mm_y: number;
+  projection: string | null;
+  sizeX: number;
+  sizeY: number;
+  sourceSizeX: number;
+  sourceSizeY: number;
+  tileWidth: number;
+  tileHeight: number;
+  source_filenames: string[];
+  uploaded: string;
+}
+
+export interface RasterDataValues {
+  sourceBounds: {
+    xmax: number;
+    xmin: number;
+    ymax: number;
+    ymin: number;
+  };
+  data: number[][];
 }
 
 export interface SourceRegion {
@@ -78,13 +180,23 @@ export interface Feature {
 }
 
 export interface ClickedFeatureData {
-  pos: LngLatLike;
+  pos: { lng: number; lat: number; };
   feature: MapGeoJSONFeature;
 }
 
-export interface RasterTooltipData {
-  pos: LngLatLike;
-  text: string;
+export interface Network {
+  id: number;
+  name: string;
+  category: string;
+  nodes: NetworkNode[];
+  edges: NetworkEdge[];
+  metadata: Record<string, unknown>;
+  vector_data: number;
+  deactivated?: {
+    nodes: number[];
+    edges: number[];
+  };
+  gcc: number[];
 }
 
 export interface NetworkNode {
@@ -106,88 +218,6 @@ export interface NetworkEdge {
   directed: boolean;
   from_node: number;
   to_node: number;
-}
-
-export interface DefaultStyle {
-  // Both
-  palette?: string;
-
-  // Raster
-  data_range?: [number, number];
-  transparency_threshold?: number;
-  trim_distribution_percentage?: number;
-
-  // Vector
-  color_delimiter?: string;
-  color_property?: string;
-  outline?: string;
-}
-
-export interface DatasetLayerMetadata {
-  network?: boolean;
-  [key: string]: unknown;
-}
-
-export interface AbstractDatasetLayer {
-  id: number;
-  name: string;
-  file_item?: {
-    id: number;
-    name: string;
-  };
-  metadata: DatasetLayerMetadata;
-  // default_style: Record<string, unknown> | DefaultStyle;
-  default_style: DefaultStyle;
-  index: number;
-  dataset_id?: number;
-  dataset_category: string;
-}
-
-export function isNonNullObject(obj: unknown): obj is object {
-  return typeof obj === "object" && obj !== null;
-}
-
-export interface RasterDatasetLayer extends AbstractDatasetLayer {
-  cloud_optimized_geotiff: string;
-  type: "raster";
-}
-
-export function isRasterDatasetLayer(obj: unknown): obj is RasterDatasetLayer {
-  return isNonNullObject(obj) && "type" in obj && obj.type === "raster";
-}
-
-export interface RasterData {
-  sourceBounds: {
-    xmax: number;
-    xmin: number;
-    ymax: number;
-    ymin: number;
-  };
-  data: number[][];
-}
-
-export interface VectorDatasetLayer extends AbstractDatasetLayer {
-  type: "vector";
-}
-
-export function isVectorDatasetLayer(obj: unknown): obj is VectorDatasetLayer {
-  return isNonNullObject(obj) && "type" in obj && obj.type === "vector";
-}
-
-export type StyleLayer = NonNullable<ReturnType<Map["getLayer"]>>;
-export interface UserLayer extends StyleLayer {
-  metadata: {
-    id: number;
-    type: "vector" | "raster";
-  };
-}
-
-export function isUserLayer(layer: StyleLayer): layer is UserLayer {
-  return (
-    isNonNullObject(layer.metadata) &&
-    "id" in layer.metadata &&
-    layer.metadata.id !== undefined
-  );
 }
 
 export interface VectorTile {
@@ -252,6 +282,7 @@ export interface SimulationType {
   output_type: string;
   args: {
     name: string;
+    type: string;
     options: {
       id: number;
       name: string;
@@ -274,4 +305,18 @@ export interface SimulationResult {
   error_message: string;
   created: string;
   modified: string;
+}
+
+export interface FloatingPanelConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  closeable: boolean;
+  collapsed?: boolean;
+  dock: 'left' | 'right';
+  order: number;
+  position?: { x: number; y: number } | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  element?: HTMLElement;
 }

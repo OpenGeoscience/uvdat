@@ -8,13 +8,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from uvdat.core.models import RasterMapLayer, VectorMapLayer
+from uvdat.core.models import RasterData, VectorData
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import (
-    RasterMapLayerSerializer,
-    VectorMapLayerDetailSerializer,
-    VectorMapLayerSerializer,
-)
+from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
+from uvdat.core.rest.tokenauth import TokenAuth
 
 VECTOR_TILE_SQL = """
 WITH
@@ -60,21 +57,34 @@ mvtgeom as (
         core_vectorfeature t,
         bounds
     WHERE
-        t.map_layer_id = %(map_layer_id)s
+        t.vector_data_id = %(vector_data_id)s
         AND ST_Intersects(
             ST_Transform(t.geometry, %(srid)s),
             ST_Transform(bounds.geom, %(srid)s)
         )
+        REPLACE_WITH_FILTERS
 )
 SELECT ST_AsMVT(mvtgeom.*) FROM mvtgeom
 ;
 """
 
 
-class RasterMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
-    queryset = RasterMapLayer.objects.select_related('dataset').all()
-    serializer_class = RasterMapLayerSerializer
+def get_filter_string(filters: dict | None = None):
+    if filters is None:
+        return ''
+
+    return_str = ''
+    for key, value in filters.items():
+        key_path = key.replace('.', ',')
+        return_str += f" AND t.properties #>> '{{{key_path}}}' = '{value}'"
+    return return_str
+
+
+class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
+    queryset = RasterData.objects.select_related('dataset').all()
+    serializer_class = RasterDataSerializer
     permission_classes = [GuardianPermission]
+    authentication_classes = [TokenAuth]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
@@ -86,21 +96,22 @@ class RasterMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImag
         url_name='raster_data',
     )
     def get_raster_data(self, request, resolution: str = '1', **kwargs):
-        raster_map_layer = self.get_object()
-        data = raster_map_layer.get_image_data(float(resolution))
+        raster_data = self.get_object()
+        data = raster_data.get_image_data(float(resolution))
         return HttpResponse(json.dumps(data), status=200)
 
 
-class VectorMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin):
-    queryset = VectorMapLayer.objects.select_related('dataset').all()
-    serializer_class = VectorMapLayerSerializer
+class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
+    queryset = VectorData.objects.select_related('dataset').all()
+    serializer_class = VectorDataSerializer
     permission_classes = [GuardianPermission]
+    authentication_classes = [TokenAuth]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = VectorMapLayerDetailSerializer(instance)
+        serializer = VectorDataSerializer(instance)
         return Response(serializer.data)
 
     @action(
@@ -110,15 +121,18 @@ class VectorMapLayerViewSet(GenericViewSet, mixins.RetrieveModelMixin):
         url_name='tiles',
     )
     def get_vector_tile(self, request, id: str, x: str, y: str, z: str):
+        filters = request.query_params.copy()
+        filters.pop('token', None)
+        filters_string = get_filter_string(filters)
         with connection.cursor() as cursor:
             cursor.execute(
-                VECTOR_TILE_SQL,
+                VECTOR_TILE_SQL.replace('REPLACE_WITH_FILTERS', filters_string),
                 {
                     'z': z,
                     'x': x,
                     'y': y,
                     'srid': 3857,
-                    'map_layer_id': id,
+                    'vector_data_id': id,
                 },
             )
             row = cursor.fetchone()

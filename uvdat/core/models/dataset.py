@@ -2,23 +2,15 @@ from django.db import models
 
 
 class Dataset(models.Model):
-    class DatasetType(models.TextChoices):
-        VECTOR = 'VECTOR', 'Vector'
-        RASTER = 'RASTER', 'Raster'
-
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
     processing = models.BooleanField(default=False)
     metadata = models.JSONField(blank=True, null=True)
-    dataset_type = models.CharField(
-        max_length=max(len(choice[0]) for choice in DatasetType.choices),
-        choices=DatasetType.choices,
-    )
 
     def spawn_conversion_task(
         self,
-        style_options=None,
+        layer_options=None,
         network_options=None,
         region_options=None,
         asynchronous=True,
@@ -26,9 +18,9 @@ class Dataset(models.Model):
         from uvdat.core.tasks.dataset import convert_dataset
 
         if asynchronous:
-            convert_dataset.delay(self.id, style_options, network_options, region_options)
+            convert_dataset.delay(self.id, layer_options, network_options, region_options)
         else:
-            convert_dataset(self.id, style_options, network_options, region_options)
+            convert_dataset(self.id, layer_options, network_options, region_options)
 
     def get_size(self):
         from uvdat.core.models import FileItem
@@ -39,18 +31,12 @@ class Dataset(models.Model):
                 size += file_item.file_size
         return size
 
+    def get_networks(self):
+        from uvdat.core.models import Network
+
+        return Network.objects.filter(vector_data__dataset=self)
+
     def get_regions(self):
-        from uvdat.core.models import SourceRegion
+        from uvdat.core.models import Region
 
-        return SourceRegion.objects.filter(dataset=self)
-
-    def get_map_layers(self):
-        """Return a queryset of either RasterMapLayer, or VectorMapLayer."""
-        from uvdat.core.models import RasterMapLayer, VectorMapLayer
-
-        if self.dataset_type == self.DatasetType.RASTER:
-            return RasterMapLayer.objects.filter(dataset=self)
-        if self.dataset_type == self.DatasetType.VECTOR:
-            return VectorMapLayer.objects.filter(dataset=self)
-
-        raise NotImplementedError(f'Dataset Type {self.dataset_type}')
+        return Region.objects.filter(dataset=self)

@@ -5,6 +5,8 @@ rabbitmq/*
 .vscode/
 staticfiles/
 sample_data/downloads/*
+jupyter/.ipynb_checkpoints
+dev/.env.web.docker-compose
 
 # osmnx data cache folder
 cache

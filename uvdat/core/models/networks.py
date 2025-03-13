@@ -1,7 +1,7 @@
 from django.contrib.gis.db import models as geo_models
 from django.db import connection, models
 
-from .dataset import Dataset
+from .data import VectorData, VectorFeature
 
 GCC_QUERY = """
 WITH RECURSIVE n as (
@@ -43,7 +43,8 @@ SELECT id FROM n ORDER BY id
 
 
 class Network(models.Model):
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='networks')
+    name = models.CharField(max_length=255, default='Network')
+    vector_data = models.ForeignKey(VectorData, on_delete=models.CASCADE, related_name='networks')
     category = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
 
@@ -81,6 +82,9 @@ class Network(models.Model):
 
 class NetworkNode(models.Model):
     name = models.CharField(max_length=255)
+    vector_feature = models.ForeignKey(
+        VectorFeature, on_delete=models.CASCADE, related_name='nodes', null=True
+    )
     network = models.ForeignKey(Network, on_delete=models.CASCADE, related_name='nodes')
     metadata = models.JSONField(blank=True, null=True)
     capacity = models.IntegerField(null=True)
@@ -104,6 +108,9 @@ class NetworkNode(models.Model):
 
 class NetworkEdge(models.Model):
     name = models.CharField(max_length=255)
+    vector_feature = models.ForeignKey(
+        VectorFeature, on_delete=models.CASCADE, related_name='edges', null=True
+    )
     network = models.ForeignKey(Network, on_delete=models.CASCADE, related_name='edges')
     metadata = models.JSONField(blank=True, null=True)
     capacity = models.IntegerField(null=True)
