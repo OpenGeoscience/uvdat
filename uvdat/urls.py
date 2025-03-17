@@ -8,6 +8,7 @@ from rest_framework import permissions, routers
 from rest_framework.authtoken.views import obtain_auth_token
 
 from uvdat.core.rest import (
+    AnalyticsViewSet,
     ChartViewSet,
     DatasetViewSet,
     LayerFrameViewSet,
@@ -40,6 +41,7 @@ router.register(r'vectors', VectorDataViewSet, basename='vectors')
 router.register(r'source-regions', RegionViewSet, basename='source-regions')
 router.register(r'simulations', SimulationViewSet, basename='simulations')
 router.register(r'networks', NetworkViewSet, basename='networks')
+router.register(r'analytics', AnalyticsViewSet, basename='analytics')
 
 
 urlpatterns = [

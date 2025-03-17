@@ -4,6 +4,7 @@ from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
 from uvdat.core.models import (
+    AnalysisResult,
     Chart,
     Dataset,
     FileItem,
@@ -160,6 +161,25 @@ class NetworkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Network
+        fields = '__all__'
+
+
+class AnalysisTypeSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    description = serializers.CharField(max_length=255)
+    attribution = serializers.CharField(max_length=255)
+    input_options = serializers.JSONField()
+    output_types = serializers.JSONField()
+
+
+class AnalysisResultSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField('get_name')
+
+    def get_name(self, obj):
+        return obj.get_name()
+
+    class Meta:
+        model = AnalysisResult
         fields = '__all__'
 
 

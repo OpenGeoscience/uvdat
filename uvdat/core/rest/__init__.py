@@ -1,3 +1,4 @@
+from .analytics import AnalyticsViewSet
 from .chart import ChartViewSet
 from .data import RasterDataViewSet, VectorDataViewSet
 from .dataset import DatasetViewSet
@@ -9,7 +10,7 @@ from .simulations import SimulationViewSet
 from .user import UserViewSet
 
 __all__ = [
-    ProjectViewSet,
+    AnalyticsViewSet,
     ChartViewSet,
     LayerViewSet,
     LayerFrameViewSet,
@@ -17,6 +18,7 @@ __all__ = [
     VectorDataViewSet,
     DatasetViewSet,
     NetworkViewSet,
+    ProjectViewSet,
     RegionViewSet,
     SimulationViewSet,
     UserViewSet,
