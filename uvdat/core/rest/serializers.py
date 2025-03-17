@@ -16,7 +16,6 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
-    SimulationResult,
     VectorData,
 )
 
@@ -70,7 +69,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         return {
             'datasets': obj.datasets.count(),
             'charts': obj.charts.count(),
-            'simulations': obj.simulation_results.count(),
+            'analyses': obj.analysis_results.count(),
         }
 
     def to_internal_value(self, data):
@@ -180,15 +179,4 @@ class AnalysisResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AnalysisResult
-        fields = '__all__'
-
-
-class SimulationResultSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField('get_name')
-
-    def get_name(self, obj):
-        return obj.get_name()
-
-    class Meta:
-        model = SimulationResult
         fields = '__all__'

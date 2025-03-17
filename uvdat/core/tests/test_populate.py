@@ -14,7 +14,6 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
-    SimulationResult,
     VectorData,
     VectorFeature,
 )
@@ -50,7 +49,6 @@ def test_populate():
     assert NetworkEdge.objects.all().count() == 164
     assert NetworkNode.objects.all().count() == 158
     assert RasterData.objects.all().count() == 1
-    assert SimulationResult.objects.all().count() == 0
     assert Region.objects.all().count() == 24
     assert VectorData.objects.all().count() == 11
     assert VectorFeature.objects.count() == 357

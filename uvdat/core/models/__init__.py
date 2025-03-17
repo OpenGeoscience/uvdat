@@ -7,7 +7,6 @@ from .layer import Layer, LayerFrame
 from .networks import Network, NetworkEdge, NetworkNode
 from .project import Project
 from .regions import Region
-from .simulations import SimulationResult
 
 __all__ = [
     AnalysisResult,
@@ -24,5 +23,4 @@ __all__ = [
     Network,
     NetworkEdge,
     NetworkNode,
-    SimulationResult,
 ]

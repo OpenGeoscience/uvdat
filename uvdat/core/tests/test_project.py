@@ -88,7 +88,7 @@ def test_rest_project_retrieve(authenticated_api_client, user, project: Project)
     assert resp.json()['item_counts'] == {
         'datasets': 0,
         'charts': 0,
-        'simulations': 0,
+        'analyses': 0,
     }
 
 

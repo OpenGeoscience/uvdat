@@ -6,7 +6,6 @@ from .layer import LayerFrameViewSet, LayerViewSet
 from .networks import NetworkViewSet
 from .project import ProjectViewSet
 from .regions import RegionViewSet
-from .simulations import SimulationViewSet
 from .user import UserViewSet
 
 __all__ = [
@@ -20,6 +19,5 @@ __all__ = [
     NetworkViewSet,
     ProjectViewSet,
     RegionViewSet,
-    SimulationViewSet,
     UserViewSet,
 ]
