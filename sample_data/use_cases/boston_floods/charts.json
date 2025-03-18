@@ -54,5 +54,61 @@
                 "LL": "blue"
             }
         }
+    },
+    {
+        "name": "Parabolic Hyetograph",
+        "description": "Rainfall intensity over 24 hours following a parabolic model",
+        "project": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
+                "path": "boston/parabolic_hyetograph.csv"
+            }
+        ],
+        "metadata": {
+            "preciptiation_model": "Parabolic"
+        },
+        "chart_options": {
+            "chart_title": "Rainfall Intensity over 24 hours",
+            "x_title": "Hour",
+            "y_title": "Precipitation rate (mm/hr)"
+        },
+        "conversion_options": {
+            "labels": "hour",
+            "datasets": [
+                "precipitation"
+            ],
+            "palette": {
+                "precipitation": "blue"
+            }
+        }
+    },
+    {
+        "name": "NCRS Type II Hyetograph",
+        "description": "Rainfall intensity over 24 hours following the NCRS Type II model",
+        "project": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c2/download",
+                "path": "boston/ncrs_type_2_hyetograph.csv"
+            }
+        ],
+        "metadata": {
+            "preciptiation_model": "NCRS Type II"
+        },
+        "chart_options": {
+            "chart_title": "Rainfall Intensity over 24 hours",
+            "x_title": "Hour",
+            "y_title": "Precipitation rate (mm/hr)"
+        },
+        "conversion_options": {
+            "labels": "hour",
+            "datasets": [
+                "precipitation"
+            ],
+            "palette": {
+                "precipitation": "blue"
+            }
+        }
     }
 ]
