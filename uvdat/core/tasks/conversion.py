@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 import tempfile
 import zipfile
@@ -15,6 +16,11 @@ from uvdat.core.models import RasterData, VectorData
 
 RASTER_FILETYPES = ['tif', 'tiff', 'nc', 'jp2']
 IGNORE_FILETYPES = ['dbf', 'sbn', 'sbx', 'cpg', 'shp.xml', 'shx', 'vrt', 'hdf', 'lyr']
+
+
+logging.getLogger('pyvips').setLevel(logging.ERROR)
+logging.getLogger('rasterio').setLevel(logging.ERROR)
+logging.getLogger('large-image-converter').setLevel(logging.ERROR)
 
 
 def get_cog_path(file):
