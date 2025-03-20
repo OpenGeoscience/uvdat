@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
+import MetadataView from '@/components/MetadataView.vue'
 import { Dataset, Layer } from '@/types';
 import { mapSources, selectedLayers } from "@/store";
 
@@ -54,6 +55,7 @@ function toggleSelected(items: Layer[]) {
                   v-tooltip="dataset.description"
                   class="mx-1"
                 ></v-icon>
+                <MetadataView :metadata="dataset.metadata" />
               </div>
             </div>
           </v-expansion-panel-title>

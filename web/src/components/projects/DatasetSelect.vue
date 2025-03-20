@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
+import MetadataView from '@/components/MetadataView.vue'
 import { Dataset } from '@/types';
 
 const props = defineProps<{
@@ -48,6 +49,7 @@ function toggleSelected(items: Dataset[]) {
                   class="mx-1"
                 ></v-icon>
               </div>
+              <MetadataView :metadata="dataset.metadata" />
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
