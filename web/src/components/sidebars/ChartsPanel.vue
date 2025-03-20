@@ -12,7 +12,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import RecursiveTable from "./RecursiveTable.vue";
+import RecursiveTable from "../RecursiveTable.vue";
 import { Chart, ChartOptions } from "@/types";
 
 ChartJS.register(
