@@ -58,7 +58,7 @@ function toggleSelected(items: Layer[]) {
                   ></v-icon>
                 </div>
               </div>
-              <MetadataView :metadata="dataset.metadata" />
+              <MetadataView :metadata="dataset.metadata" :name="dataset.name" />
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
@@ -79,7 +79,7 @@ function toggleSelected(items: Layer[]) {
                 {{ layer.name }}
               </div>
               <div style="padding-right: 22.5px">
-                <MetadataView :metadata="layer.metadata"/>
+                <MetadataView :metadata="layer.metadata" :name="layer.name" />
               </div>
             </div>
           </v-expansion-panel-text>

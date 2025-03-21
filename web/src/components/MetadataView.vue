@@ -4,6 +4,7 @@
 
   const props = defineProps<{
     metadata: Object | undefined; // TODO: make less generic (Object)
+    name: string | undefined;
   }>();
 
   const showMetadata = ref(false);
@@ -16,6 +17,7 @@
     location="end top"
     activator="parent"
     :close-on-content-click="false"
+    v-if="hasMetadata"
   >
     <template #activator>
       <v-icon
@@ -26,9 +28,8 @@
       ></v-icon>
     </template>
     <div class="metadata-popup">
-      <pre>Metadata</pre>
-      <pre v-if="!hasMetadata">{{ props.metadata }}</pre>
-      <RecursiveTable v-else :data="props.metadata" />
+      <pre>{{ props.name ?? "Metadata" }}</pre>
+      <RecursiveTable :data="props.metadata" />
     </div>
   </v-menu>
 </template>
