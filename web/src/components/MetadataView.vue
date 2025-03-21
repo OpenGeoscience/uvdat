@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref } from 'vue';
+  import { ref, computed } from 'vue';
   import RecursiveTable from './RecursiveTable.vue';
 
   const props = defineProps<{
@@ -7,6 +7,7 @@
   }>();
 
   const showMetadata = ref(false);
+  const hasMetadata = computed(() => props.metadata && Object.keys(props.metadata).length > 0);
 </script>
 
 <template>
@@ -16,7 +17,7 @@
     activator="parent"
     :close-on-content-click="false"
   >
-    <template v-slot:activator="{ props }">
+    <template #activator>
       <v-icon
         icon="mdi-dots-vertical"
         size="small"
@@ -26,7 +27,8 @@
     </template>
     <div class="metadata-popup">
       <pre>Metadata</pre>
-      <RecursiveTable :data="props.metadata" />
+      <pre v-if="!hasMetadata">{{ props.metadata }}</pre>
+      <RecursiveTable v-else :data="props.metadata" />
     </div>
   </v-menu>
 </template>

@@ -24,7 +24,8 @@ function toggleSelected(items: Dataset[]) {
           :key="dataset.id"
         >
           <v-expansion-panel-title>
-            <div class="item-title">
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+              <div class="item-title">
                 <div>
                     <v-checkbox-btn
                       :model-value="props.selectedIds?.includes(dataset.id)"
@@ -34,20 +35,21 @@ function toggleSelected(items: Dataset[]) {
                     />
                     {{ dataset.name }}
                 </div>
-              <div>
-                <v-icon
-                  icon="mdi-layers"
-                  size="small"
-                  v-tooltip="dataset.layers.length + ' layers'"
-                  class="ml-2"
-                ></v-icon>
-                <span class="secondary-text">{{ dataset.layers.length }}</span>
-                <v-icon
-                  icon="mdi-information-outline"
-                  size="small"
-                  v-tooltip="dataset.description"
-                  class="mx-1"
-                ></v-icon>
+                <div style="min-width: 75px; text-align: right">
+                  <v-icon
+                    icon="mdi-layers"
+                    size="small"
+                    v-tooltip="dataset.layers.length + ' layers'"
+                    class="ml-2"
+                  ></v-icon>
+                  <span class="secondary-text">{{ dataset.layers.length }}</span>
+                  <v-icon
+                    icon="mdi-information-outline"
+                    size="small"
+                    v-tooltip="dataset.description"
+                    class="mx-1"
+                  ></v-icon>
+                </div>
               </div>
               <MetadataView :metadata="dataset.metadata" />
             </div>
@@ -59,6 +61,9 @@ function toggleSelected(items: Dataset[]) {
             >
               <div style="text-wrap: wrap; align-items: center; width: 100%">
                 {{ layer.name }}
+              </div>
+              <div style="padding-right: 22.5px">
+                <MetadataView :metadata="layer.metadata"/>
               </div>
             </div>
           </v-expansion-panel-text>

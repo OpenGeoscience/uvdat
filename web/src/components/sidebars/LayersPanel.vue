@@ -5,7 +5,6 @@ import { computed, ref } from "vue";
 
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
-import MetadataView from "../MetadataView.vue";
 
 
 const searchText = ref();
@@ -119,7 +118,6 @@ function getFrameInputWidth(layer: Layer) {
                                         format_line_spacing
                                     </span>
                                 </template>
-                                <MetadataView :metadata="element.metadata" />
                             </v-list-item>
                             <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">
                                 <v-slider
