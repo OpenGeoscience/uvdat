@@ -15,6 +15,7 @@
     "axios": "^1.4.0",
     "buffer": "^6.0.3",
     "core-js": "^3.8.3",
+    "dayjs": "^1.11.13",
     "git-describe": "^4.1.1",
     "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",
