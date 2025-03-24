@@ -12,7 +12,6 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import RecursiveTable from "../RecursiveTable.vue";
 import { Chart, ChartOptions } from "@/types";
 import MetadataView from "../MetadataView.vue";
 
@@ -153,6 +152,7 @@ const downloadReady = computed(() => {
 });
 </script>
 
+          <MetadataView :metadata="currentChart.metadata" :name="currentChart.name" />
 <template>
   <div class="panel-content-outer with-search">
     <v-text-field
@@ -166,8 +166,7 @@ const downloadReady = computed(() => {
     />
     <v-card class="panel-content-inner">
       <div v-if="currentChart" class="pa-2">
-        <div style="position: absolute; right: 0; display: flex; align-items: center;">
-          <MetadataView :metadata="currentChart.metadata" :name="currentChart.name" />
+        <div style="position: absolute; right: 0;">
           <a ref="downloadButton">
             <v-btn
               v-tooltip="'Download'"
@@ -215,6 +214,7 @@ const downloadReady = computed(() => {
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
             <v-icon icon="mdi-poll" size="small" class="ml-2"></v-icon>
+            <MetadataView :metadata="chart.metadata" :name="chart.name" />
           </template>
         </v-list-item>
       </v-list>
