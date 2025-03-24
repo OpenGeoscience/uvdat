@@ -12,26 +12,29 @@
 </script>
 
 <template>
-  <v-menu
-    v-model="showMetadata"
-    location="end top"
-    activator="parent"
-    :close-on-content-click="false"
-    v-if="hasMetadata"
-  >
-    <template #activator>
-      <v-icon
+  <div v-if="hasMetadata">
+    <v-icon
         icon="mdi-dots-vertical"
         size="small"
         v-tooltip="'View Metadata'"
         class="mx-1"
+        @click.stop="showMetadata = true"
       ></v-icon>
-    </template>
-    <div class="metadata-popup">
-      <pre>{{ props.name ?? "Metadata" }}</pre>
-      <RecursiveTable :data="props.metadata" />
-    </div>
-  </v-menu>
+
+      <v-dialog v-model="showMetadata" max-width="60%">
+        <v-card>
+          <v-card-title>{{ props.name ?? "Metadata" }}</v-card-title>
+
+          <v-card-text>
+            <RecursiveTable :data="props.metadata" />
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn @click="showMetadata = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+  </div>
 </template>
 
 <style scoped>
