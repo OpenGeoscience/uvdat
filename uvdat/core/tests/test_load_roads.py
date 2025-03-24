@@ -2,7 +2,7 @@ from django.contrib.gis.geos import Point
 from django.core.management import call_command
 import pytest
 
-from uvdat.core.models import Dataset, Project
+from uvdat.core.models import Dataset, Network, Project
 
 
 @pytest.mark.slow
@@ -20,8 +20,9 @@ def test_load_roads():
 
     dataset = Dataset.objects.get(name='Boston Road Network')
     assert dataset is not None
-    assert dataset.networks.count() == 1
+    networks = Network.objects.filter(vector_data__dataset=dataset)
+    assert networks.count() == 1
     # check if nodes and edges surpass a minimum amount
     # (exact amounts are expected to change over time)
-    assert dataset.networks.first().nodes.count() > 10000
-    assert dataset.networks.first().edges.count() > 20000
+    assert networks.first().nodes.count() > 10000
+    assert networks.first().edges.count() > 20000
