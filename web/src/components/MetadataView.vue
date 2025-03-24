@@ -4,10 +4,10 @@
 
   const props = defineProps<{
     metadata: Object | undefined; // TODO: make less generic (Object)
-    name: string | undefined;
+    name: string;
   }>();
 
-  const showMetadata = ref(false);
+  const showModal = ref(false);
   const hasMetadata = computed(() => props.metadata && Object.keys(props.metadata).length > 0);
 </script>
 
@@ -18,20 +18,25 @@
         size="small"
         v-tooltip="'View Metadata'"
         class="mx-1"
-        @click.stop="showMetadata = true"
+        @click.stop="showModal = true"
       ></v-icon>
 
-      <v-dialog v-model="showMetadata" max-width="60%" width="fit-content">
+      <v-dialog v-model="showModal" max-width="60%" width="fit-content">
         <v-card>
-          <v-card-title>{{ props.name ?? "Metadata" }}</v-card-title>
+          <v-card-title>Metadata for {{ props.name }}</v-card-title>
+
+          <v-btn
+            class="close-button transparent"
+            variant="flat"
+            icon
+            @click="showModal = false"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
 
           <v-card-text>
             <RecursiveTable :data="props.metadata" />
           </v-card-text>
-
-          <v-card-actions>
-            <v-btn @click="showMetadata = false">Close</v-btn>
-          </v-card-actions>
         </v-card>
       </v-dialog>
   </div>
