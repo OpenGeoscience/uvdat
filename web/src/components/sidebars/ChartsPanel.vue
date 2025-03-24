@@ -152,7 +152,6 @@ const downloadReady = computed(() => {
 });
 </script>
 
-          <MetadataView :metadata="currentChart.metadata" :name="currentChart.name" />
 <template>
   <div class="panel-content-outer with-search">
     <v-text-field
