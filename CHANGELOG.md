@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.9.1 (2025-03-24)
+
+### Bug Fixes
+
+- Make project perms api support removing users
+  ([`d137059`](https://github.com/OpenGeoscience/uvdat/commit/d1370599266f550d99488676c01c9650a0b6e180))
+
+- Update project permissions tests
+  ([`132ae37`](https://github.com/OpenGeoscience/uvdat/commit/132ae378fd1e537e3d62887e26c0154c8e8c2d3e))
+
+
 ## v0.9.0 (2025-03-13)
 
 ### Bug Fixes
