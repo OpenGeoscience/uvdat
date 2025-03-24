@@ -21,7 +21,7 @@
         @click.stop="showModal = true"
       ></v-icon>
 
-      <v-dialog v-model="showModal" max-width="60%" width="fit-content">
+      <v-dialog v-model="showModal" width="min-content">
         <v-card>
           <v-card-title>Metadata for {{ props.name }}</v-card-title>
 
