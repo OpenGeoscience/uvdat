@@ -36,13 +36,3 @@
       </v-dialog>
   </div>
 </template>
-
-<style scoped>
-.metadata-popup {
-  background-color: rgb(var(--v-theme-surface));
-  border-radius: 4px;
-  padding: 5px;
-  /* font-size: 12px; */
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-}
-</style>
