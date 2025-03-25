@@ -33,7 +33,7 @@ class NetworkRecovery(AnalysisType):
             'network_failure': 'AnalysisResult',
             'recovery_mode': 'string',
         }
-        self.output_types = {'recovery': 'network_animation'}
+        self.output_types = {'recoveries': 'network_animation'}
         self.attribution = 'Jack Watson, Northeastern University'
 
     def get_input_options(self):
@@ -170,7 +170,11 @@ def network_recovery(result_id):
                 nodes_sorted, edge_list = sort_graph_centrality(graph, mode)
                 node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
 
-            result.outputs = dict(recoveries=node_recoveries)
+            recovery_timesteps = {
+                i: [n for n in last_frame_failures if n not in node_recoveries[:i]]
+                for i in range(len(node_recoveries) + 1)
+            }
+            result.outputs = dict(recoveries=recovery_timesteps)
     except Exception as e:
         result.error = str(e)
     result.complete()

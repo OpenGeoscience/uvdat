@@ -16,8 +16,8 @@ import {
   getDataset,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { AnalysisResult, Layer, Network, Dataset, Chart } from "@/types";
-import { addLayer, updateLayersShown, updateLayerStyles } from "@/layers";
+import { AnalysisResult, Layer, Chart } from "@/types";
+import { addLayer, updateLayersShown } from "@/layers";
 
 
 const searchText = ref();
@@ -41,6 +41,19 @@ const fullInputs = ref<Record<string, any>>();
 const fullOutputs = ref<Record<string, any>>();
 const networkInput = computed(() => {
   if (!fullInputs.value) return undefined;
+  if (fullInputs.value['network_failure']) {
+    const analysis = fullInputs.value['network_failure']
+    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
+    const network = analysisType?.input_options.network.find(
+      (o: any) => o.id ===  analysis.inputs.network
+    )
+    network.type = 'Network'
+    const visible = isVisible(network)
+    return {
+      ...network,
+      visible
+    }
+  }
   return Object.values(fullInputs.value).find(
     (input) => input.type === 'Network'
   )
@@ -52,7 +65,7 @@ const inputSelectionRules = [
 const additionalAnimationLayers = ref();
 const inputForm = ref();
 
-function isVisible(value: any) {
+function isVisible(value: any): boolean {
   if (value.type == 'Chart') {
     return currentChart.value?.id == value.id
   } else if (value.type === 'Dataset') {
@@ -70,18 +83,33 @@ function isVisible(value: any) {
     })
   } else if (value.type === 'AnalysisResult') {
     const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
-    return Object.entries(value.outputs).some(
-      ([outputKey, outputValue]): boolean => {
-        const type = analysisType?.output_types[outputKey]
-        if (showableTypes.includes(type)) {
-          return isVisible({
-            id: outputValue,
-            type
-          })
+    if (analysisType) {
+      const showables: Record<string, any>[] = []
+       Object.entries(value.outputs).forEach(
+        ([outputKey, outputValue]) => {
+          const type = analysisType?.output_types[outputKey]
+          if (showableTypes.includes(type)) {
+            showables.push({
+              id: outputValue,
+              type
+            })
+          }
         }
-        return false;
-      }
-    )
+      );
+      Object.entries(value.inputs).forEach(
+        ([inputKey, inputValue])=> {
+          const type = analysisType?.input_types[inputKey]
+          const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
+          if (showableTypes.includes(type)) {
+            showables.push({
+              ...value,
+              type
+            })
+          }
+        }
+      );
+      return showables.every((o) => isVisible(o))
+    }
   }
   return false;
 }
@@ -116,15 +144,27 @@ function show(value: any) {
     })
   } else if (value.type === 'AnalysisResult') {
     const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
-    Object.entries(value.outputs).map(([outputKey, outputValue]) => {
-      const type = analysisType?.output_types[outputKey]
-      if (showableTypes.includes(type)) {
-        show({
-          id: outputValue,
-          type
-        })
-      }
-    })
+    if (analysisType) {
+      Object.entries(value.outputs).map(([outputKey, outputValue]) => {
+        const type = analysisType.output_types[outputKey]
+        if (showableTypes.includes(type)) {
+          show({
+            id: outputValue,
+            type
+          })
+        }
+      })
+      Object.entries(value.inputs).map(([inputKey, inputValue]) => {
+        const type = analysisType.input_types[inputKey]
+        const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
+        if (showableTypes.includes(type)) {
+          show({
+            ...value,
+            type
+          })
+        }
+      })
+    }
   }
 }
 

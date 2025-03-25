@@ -17,11 +17,6 @@ const currentTick = ref(0);
 const ticker = ref();
 const seconds = ref(1);
 
-const startState = computed(() => {
-  if (props.nodeRecoveries) return props.nodeFailures;
-  else return [];
-});
-
 const nodeChanges = computed(() => {
   if (props.nodeRecoveries) return props.nodeRecoveries;
   else return props.nodeFailures;
@@ -55,16 +50,18 @@ function rewind() {
 }
 
 watch(currentTick, async () => {
-  if (nodeChanges.value && startState.value) {
+  if (nodeChanges.value) {
     let deactivated = nodeChanges.value[currentTick.value];
-    if (props.network) setNetworkDeactivatedNodes(props.network, deactivated);
-    props.additionalAnimationLayers.forEach((layer) => {
-      selectedLayers.value = selectedLayers.value.map((l) => {
-        if (l.id === layer.id) l.current_frame = currentTick.value
-        return l;
+    if (props.network) setNetworkDeactivatedNodes(props.network, deactivated || []);
+    if (props.additionalAnimationLayers) {
+      props.additionalAnimationLayers.forEach((layer) => {
+        selectedLayers.value = selectedLayers.value.map((l) => {
+          if (l.id === layer.id) l.current_frame = currentTick.value
+          return l;
+        })
+        updateLayersShown();
       })
-      updateLayersShown();
-    })
+    }
   }
 });
 </script>
