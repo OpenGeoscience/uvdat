@@ -191,7 +191,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
     const tilesSourceId = sourceId + '.raster.' + raster.id;
     map.addSource(tilesSourceId, {
         type: "raster",
-        tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],
+        tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
     });
     const tileSource = map.getSource(tilesSourceId);
 

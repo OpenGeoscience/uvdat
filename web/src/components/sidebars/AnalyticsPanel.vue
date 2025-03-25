@@ -206,7 +206,7 @@ async function fillInputsAndOutputs() {
   else {
     fullInputs.value = Object.fromEntries(
       Object.entries(currentResult.value.inputs).map(([key, value]) => {
-        value = currentAnalysisType.value?.input_options[key].find(
+        value = currentAnalysisType.value?.input_options[key]?.find(
           (o: any) => o.id == value
         );
         value.type = currentAnalysisType.value?.input_types[key]
