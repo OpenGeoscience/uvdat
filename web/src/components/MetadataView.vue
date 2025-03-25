@@ -3,7 +3,7 @@
   import RecursiveTable from './RecursiveTable.vue';
 
   const props = defineProps<{
-    metadata: Object | undefined; // TODO: make less generic (Object)
+    metadata: Record<string, any>;
     name: string;
   }>();
 
@@ -12,32 +12,33 @@
 </script>
 
 <template>
-  <div v-if="hasMetadata">
-    <v-icon
-        icon="mdi-dots-vertical"
-        size="small"
-        v-tooltip="'View Metadata'"
-        class="mx-1"
-        @click.stop="showModal = true"
-      ></v-icon>
+  <v-icon
+    icon="mdi-dots-vertical"
+    size="small"
+    v-tooltip="'View Metadata'"
+    class="mx-1"
+    @click.stop="showModal = true"
+  ></v-icon>
 
-      <v-dialog v-model="showModal" width="min-content">
-        <v-card>
-          <v-card-title>Metadata for {{ props.name }}</v-card-title>
+  <v-dialog v-model="showModal" width="min-content">
+    <v-card>
+      <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
+        <span v-if="hasMetadata">Metadata for {{ props.name }}</span>
+        <span v-else>{{ props.name }} has no metadata</span>
+      </v-card-title>
 
-          <v-btn
-            class="close-button transparent"
-            variant="flat"
-            icon
-            @click="showModal = false"
-          >
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+      <v-btn
+        class="close-button transparent"
+        variant="flat"
+        icon
+        @click="showModal = false"
+      >
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
 
-          <v-card-text>
-            <RecursiveTable :data="props.metadata" />
-          </v-card-text>
-        </v-card>
-      </v-dialog>
-  </div>
+      <v-card-text>
+        <RecursiveTable :data="props.metadata" />
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 </template>

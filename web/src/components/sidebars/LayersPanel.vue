@@ -155,7 +155,9 @@ function getFrameInputWidth(layer: Layer) {
                                     </template>
                                 </v-slider>
                                 <div style="display: flex; justify-content: space-between;">
-                                    {{ element.frames[element.current_frame].name }}
+                                    <span>
+                                        <i>Frame:</i> {{ element.frames[element.current_frame].name }}
+                                    </span>
                                     <MetadataView
                                         :metadata="element.frames[element.current_frame].metadata"
                                         :name="element.frames[element.current_frame].name"
