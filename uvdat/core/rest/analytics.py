@@ -49,20 +49,39 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
                     if queryset_serializer is None:
                         v = None
                     else:
-                        v = [queryset_serializer(o) for o in filtered_queryset]
+                        v = [queryset_serializer(o).data for o in filtered_queryset]
+                else:
+                    v = [dict(id=o, name=o) for o in v]
                 filtered_input_options[k] = v
             serializer = uvdat_serializers.AnalysisTypeSerializer(
                 data=dict(
                     name=instance.name,
+                    db_value=instance.db_value,
                     description=instance.description,
                     attribution=instance.attribution,
                     input_options=filtered_input_options,
+                    input_types=instance.input_types,
                     output_types=instance.output_types,
                 )
             )
             serializer.is_valid(raise_exception=True)
             serialized.append(serializer.data)
         return Response(serialized, status=200)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path=r'project/(?P<project_id>[\d*]+)/types/(?P<analysis_type>.+)/results',
+    )
+    def list_results(self, request, project_id: int, analysis_type: str, **kwargs):
+        results = AnalysisResult.objects.filter(
+            project__id=project_id,
+            analysis_type=analysis_type,
+        )
+        return Response(
+            [uvdat_serializers.AnalysisResultSerializer(result).data for result in results],
+            status=200,
+        )
 
     @action(
         detail=False,

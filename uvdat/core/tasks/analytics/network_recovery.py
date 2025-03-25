@@ -29,6 +29,10 @@ class NetworkRecovery(AnalysisType):
             'recovery mode to view network recovery priority.'
         )
         self.db_value = 'network_recovery'
+        self.input_types = {
+            'network_failure': 'AnalysisResult',
+            'recovery_mode': 'string',
+        }
         self.output_types = {'recovery': 'network_animation'}
         self.attribution = 'Jack Watson, Northeastern University'
 
@@ -38,7 +42,7 @@ class NetworkRecovery(AnalysisType):
         node_failure_analysis_types = [
             at().db_value
             for at in analysis_types
-            if at().output_types.get('failure') == 'network_animation'
+            if at().output_types.get('failures') == 'network_animation'
         ]
         return {
             'network_failure': AnalysisResult.objects.filter(
@@ -49,6 +53,7 @@ class NetworkRecovery(AnalysisType):
 
     def run_task(self, project, **inputs):
         result = AnalysisResult.objects.create(
+            name='Network Recovery',
             analysis_type=self.db_value,
             inputs=inputs,
             project=project,
@@ -116,49 +121,56 @@ def sort_graph_centrality(g, measure):
 def network_recovery(result_id):
     result = AnalysisResult.objects.get(id=result_id)
 
-    # Verify inputs
-    failure = None
-    failure_id = result.inputs.get('network_failure')
-    if failure_id is None:
-        result.write_error('Network failure result not provided')
-    else:
-        try:
-            failure = AnalysisResult.objects.get(id=failure_id)
-        except AnalysisResult.DoesNotExist:
-            result.write_error('Network failure result not found')
-
-    mode = result.inputs.get('recovery_mode')
-    if mode is None:
-        result.write_error('Recovery mode not provided')
-    elif mode not in RECOVERY_MODES:
-        result.write_error('Recovery mode not a valid option')
-
-    if failure is not None:
-        network_id = failure.inputs.get('network')
-        if network_id is None:
-            result.write_error('Network not provided')
+    try:
+        # Verify inputs
+        failure = None
+        failure_id = result.inputs.get('network_failure')
+        if failure_id is None:
+            result.write_error('Network failure result not provided')
         else:
             try:
-                network = Network.objects.get(id=network_id)
-            except Network.DoesNotExist:
-                result.write_error('Network not found')
+                failure = AnalysisResult.objects.get(id=failure_id)
+            except AnalysisResult.DoesNotExist:
+                result.write_error('Network failure result not found')
 
-    # Run task
-    if result.error is None:
-        result.write_status('Reading network failure state...')
-        node_failures = failure.outputs.get('failures')
-        frames = sorted(int(key) for key in node_failures.keys())
-        last_frame_failures = node_failures[str(frames[-1])]
-        node_recoveries = last_frame_failures.copy()
+        mode = result.inputs.get('recovery_mode')
+        if mode is None:
+            result.write_error('Recovery mode not provided')
+        elif mode not in RECOVERY_MODES:
+            result.write_error('Recovery mode not a valid option')
 
-        result.write_status('Sorting failed nodes according to recovery mode...')
-        if mode == 'random':
-            random.shuffle(node_recoveries)
-        else:
-            graph = get_network_graph(network)
-            nodes_sorted, edge_list = sort_graph_centrality(graph, mode)
-            node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
+        if failure is not None:
+            network_id = failure.inputs.get('network')
+            if network_id is None:
+                result.write_error('Network not provided')
+            else:
+                try:
+                    network = Network.objects.get(id=network_id)
+                except Network.DoesNotExist:
+                    result.write_error('Network not found')
 
-        result.outputs = dict(recoveries=node_recoveries)
+        # Run task
+        if result.error is None:
 
+            # Update name
+            result.name = f'{mode.title()} Recovery from Failure Result {failure.id}'
+            result.save()
+
+            result.write_status('Reading network failure state...')
+            node_failures = failure.outputs.get('failures')
+            frames = sorted(int(key) for key in node_failures.keys())
+            last_frame_failures = node_failures[str(frames[-1])]
+            node_recoveries = last_frame_failures.copy()
+
+            result.write_status('Sorting failed nodes according to recovery mode...')
+            if mode == 'random':
+                random.shuffle(node_recoveries)
+            else:
+                graph = get_network_graph(network)
+                nodes_sorted, edge_list = sort_graph_centrality(graph, mode)
+                node_recoveries.sort(key=lambda n: nodes_sorted.index(n))
+
+            result.outputs = dict(recoveries=node_recoveries)
+    except Exception as e:
+        result.error = str(e)
     result.complete()

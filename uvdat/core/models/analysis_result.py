@@ -5,6 +5,7 @@ from .project import Project
 
 
 class AnalysisResult(models.Model):
+    name = models.CharField(max_length=255)
     analysis_type = models.CharField(max_length=25)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='analysis_results')
     inputs = models.JSONField(blank=True, null=True)
@@ -13,11 +14,6 @@ class AnalysisResult(models.Model):
     error = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True, editable=False)
     completed = models.DateTimeField(null=True)
-
-    def get_name(self):
-        type_name = self.analysis_type.replace('_', '_').title()
-        time_label = self.created.strftime('%m/%d/%Y %H:%M:%S')
-        return f'{type_name} run at {time_label}'
 
     def write_error(self, err):
         if self.error is None:
@@ -33,5 +29,6 @@ class AnalysisResult(models.Model):
 
     def complete(self):
         self.completed = timezone.now()
-        self.status = f'Completed in {(self.completed - self.created).total_seconds()} seconds.'
+        seconds = (self.completed - self.created).total_seconds()
+        self.status = 'Completed in %.2f seconds.' % seconds
         self.save()

@@ -155,8 +155,10 @@ class NetworkEdgeSerializer(serializers.ModelSerializer):
 
 
 class NetworkSerializer(serializers.ModelSerializer):
-    nodes = NetworkNodeSerializer(many=True, read_only=True)
-    edges = NetworkEdgeSerializer(many=True, read_only=True)
+    dataset = serializers.SerializerMethodField('get_dataset')
+
+    def get_dataset(self, obj):
+        return DatasetSerializer(obj.vector_data.dataset).data
 
     class Meta:
         model = Network
@@ -165,18 +167,15 @@ class NetworkSerializer(serializers.ModelSerializer):
 
 class AnalysisTypeSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=255)
+    db_value = serializers.CharField(max_length=25)
     description = serializers.CharField(max_length=255)
     attribution = serializers.CharField(max_length=255)
     input_options = serializers.JSONField()
+    input_types = serializers.JSONField()
     output_types = serializers.JSONField()
 
 
 class AnalysisResultSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField('get_name')
-
-    def get_name(self, obj):
-        return obj.get_name()
-
     class Meta:
         model = AnalysisResult
         fields = '__all__'
