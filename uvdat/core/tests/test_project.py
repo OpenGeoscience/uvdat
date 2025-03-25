@@ -14,7 +14,7 @@ def test_project_set_owner(project, user):
 
 
 @pytest.mark.django_db
-def test_project_add_followers_collaborators(project, user_factory):
+def test_project_set_followers_collaborators(project, user_factory):
     def sort_func(user):
         return user.id
 
@@ -22,15 +22,15 @@ def test_project_add_followers_collaborators(project, user_factory):
     assert not project.followers()
     assert not project.collaborators()
 
-    project.add_followers(users)
+    project.set_followers(users)
 
     # Check that users added as collaborators were automatically removed from followers
-    project.add_collaborators(users)
+    project.set_collaborators(users)
     assert not project.followers()
     assert sorted(project.collaborators(), key=sort_func) == users
 
     # Check that users added as followers were automatically removed from collaborators
-    project.add_followers(users)
+    project.set_followers(users)
     assert not project.collaborators()
     assert sorted(project.followers(), key=sort_func) == users
 
@@ -74,7 +74,7 @@ def test_rest_project_retrieve(authenticated_api_client, user, project: Project)
     resp = authenticated_api_client.get(f'/api/v1/projects/{project.id}/')
     assert resp.status_code == 404
 
-    project.add_followers([user])
+    project.set_followers([user])
     resp = authenticated_api_client.get(f'/api/v1/projects/{project.id}/')
 
     assert resp.json()['owner']['id']
@@ -105,7 +105,7 @@ def test_rest_project_set_permissions_not_allowed(authenticated_api_client, user
     # 404 because user is not added to the project at all
     assert resp.status_code == 404
 
-    project.add_followers([user])
+    project.set_followers([user])
     resp = authenticated_api_client.put(
         f'/api/v1/projects/{project.id}/permissions/',
         {
@@ -122,7 +122,7 @@ def test_rest_project_set_permissions_not_allowed(authenticated_api_client, user
 def test_rest_project_set_permissions_change_owner_collaborator(
     authenticated_api_client, user, project: Project
 ):
-    project.add_collaborators([user])
+    project.set_collaborators([user])
     resp = authenticated_api_client.put(
         f'/api/v1/projects/{project.id}/permissions/',
         {
@@ -156,11 +156,11 @@ def test_rest_project_delete(authenticated_api_client, user, project: Project):
     resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
     assert resp.status_code == 404
 
-    project.add_followers([user])
+    project.set_followers([user])
     resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
     assert resp.status_code == 403
 
-    project.add_collaborators([user])
+    project.set_collaborators([user])
     resp = authenticated_api_client.delete(f'/api/v1/projects/{project.id}/')
     assert resp.status_code == 403
 
