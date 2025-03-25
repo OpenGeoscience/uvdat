@@ -47,6 +47,37 @@ export function getDBObjectsForSourceID(sourceId: string) {
     return DBObjects
 }
 
+export function addLayer(layer: Layer) {
+    let name = layer.name;
+    let copy_id = 0;
+    const existing = Object.keys(mapSources.value).filter((sourceId) => {
+    const [layerId] = sourceId.split('.');
+    return parseInt(layerId) === layer.id
+    })
+    if (existing.length) {
+    copy_id = existing.length;
+    name = `${layer.name} (${copy_id})`;
+    }
+    selectedLayers.value = [
+    {...layer, name, copy_id, visible: true, current_frame: 0},
+    ...selectedLayers.value,
+    ];
+}
+
+export function addFrame(frame: LayerFrame, sourceId: string) {
+    if (!mapSources.value[sourceId]) {
+        if (frame.vector) {
+            const vector = createVectorTileSource(frame.vector, sourceId);
+            if (vector) mapSources.value[sourceId] = vector;
+
+        }
+        if (frame.raster) {
+            const raster = createRasterTileSource(frame.raster, sourceId);
+            if (raster) mapSources.value[sourceId] = raster;
+        }
+    }
+}
+
 export function updateLayersShown () {
     const map = getMap();
     // reverse selected layers list for first on top
@@ -62,16 +93,8 @@ export function updateLayersShown () {
                 }
             }
             const currentStyle = selectedLayerStyles.value[styleId];
-            if (!mapSources.value[sourceId]) {
-                if (frame.vector) {
-                    const vector = createVectorTileSource(frame.vector, sourceId);
-                    if (vector) mapSources.value[sourceId] = vector;
-
-                }
-                if (frame.raster) {
-                    const raster = createRasterTileSource(frame.raster, sourceId);
-                    if (raster) mapSources.value[sourceId] = raster;
-                }
+            if (layer.current_frame === frame.index) {
+                addFrame(frame, sourceId);
             }
             map.getLayersOrder().forEach((mapLayerId) => {
                 if (mapLayerId !== 'base-tiles') {

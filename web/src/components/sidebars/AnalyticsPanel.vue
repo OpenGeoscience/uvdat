@@ -1,235 +1,209 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import {
-  currentSimulationType,
   currentProject,
+  currentChart,
+  availableAnalysisTypes,
+  loadingAnalysisTypes,
+  currentAnalysisType,
+  mapSources,
   selectedLayers,
-  availableDatasets,
-  availableSimulationTypes,
-  loadingSimulationTypes,
 } from "@/store";
 import {
   getDatasetLayers,
-  getNetwork,
-  getProjectDatasets,
-  getSimulationResults,
-  runSimulation,
+  getAnalysisResults,
+  runAnalysis,
+  getDataset,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { SimulationResult, Layer, Dataset } from "@/types";
+import { AnalysisResult, Layer, Network, Dataset, Chart } from "@/types";
+import { addLayer, updateLayersShown, updateLayerStyles } from "@/layers";
 
-
-interface Input {
-  key: string;
-  type: string;
-  value: any;
-}
 
 const searchText = ref();
-const filteredSimulationTypes = computed(() => {
-  return availableSimulationTypes.value?.filter((sim_type) => {
+const filteredAnalysisTypes = computed(() => {
+  return availableAnalysisTypes.value?.filter((sim_type) => {
     return  !searchText.value ||
     sim_type.name.toLowerCase().includes(searchText.value.toLowerCase())
   })
 })
 const tab = ref();
-const activeResult = ref<SimulationResult>();
-const activeResultInputs = ref<Input[]>([]);
-const availableResults = ref<SimulationResult[]>([]);
-const inputForm = ref();
-const selectedInputs = ref<Record<string, object[]>>({});
-const outputPoll = ref();
-const networkArg = ref();
+const availableResults = ref<AnalysisResult[]>([]);
+const newestFirstResults = computed(() => {
+  return availableResults.value.toSorted((a, b)=> {
+    const aCreated = new Date(a.created);
+    const bCreated = new Date(b.created);
+    return bCreated.getTime() - aCreated.getTime();
+  })
+})
+const currentResult = ref<AnalysisResult>();
+const fullInputs = ref<Record<string, any>>();
+const fullOutputs = ref<Record<string, any>>();
+const networkInput = computed(() => {
+  if (!fullInputs.value) return undefined;
+  return Object.values(fullInputs.value).find(
+    (input) => input.type === 'Network'
+  )
+})
+const selectedInputs = ref<Record<string, any>>({});
 const inputSelectionRules = [
   (v: any) => (v ? true : "Selection required."),
 ];
+const additionalAnimationLayers = ref();
+const inputForm = ref();
 
-function getLayerForArg(arg: Input | undefined): Layer | undefined {
-  let retLayer;
-  if (arg) {
-    availableDatasets.value?.forEach((dataset) => {
-      dataset.layers.forEach((layer) => {
-        layer.frames.forEach((frame) => {
-          if (
-            (arg.value.cloud_optimized_geotiff && frame.raster?.id === arg.value.id ) ||
-            (arg.value.geojson_data && frame.vector?.id === arg.value.id) ||
-            (arg.value.nodes && frame.vector?.id === arg.value.vector_data )
-          ) {
-            retLayer = layer;
-          }
+function isVisible(value: any) {
+  if (value.type == 'Chart') {
+    return currentChart.value?.id == value.id
+  } else if (value.type === 'Dataset') {
+    return selectedLayers.value.some((layer) => {
+      return layer.dataset.id === value.id && layer.visible
+    })
+  } else if (value.type === 'Layer') {
+    return selectedLayers.value.some((layer) => {
+      return layer.id === value.id && layer.visible
+    });
+  } else if (value.type === 'Network') {
+    return isVisible({
+      ...value.dataset,
+      type: 'Dataset',
+    })
+  } else if (value.type === 'AnalysisResult') {
+    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
+    return Object.entries(value.outputs).some(
+      ([outputKey, outputValue]): boolean => {
+        const type = analysisType?.output_types[outputKey]
+        if (showableTypes.includes(type)) {
+          return isVisible({
+            id: outputValue,
+            type
+          })
+        }
+        return false;
+      }
+    )
+  }
+  return false;
+}
+
+function show(value: any) {
+  if (value.type === 'Chart') {
+    currentChart.value = value as Chart
+  } else if (value.type === 'Dataset') {
+    getDatasetLayers(value.id).then((layers) => {
+      layers.forEach((layer) => {
+        show({
+          ...layer,
+          type: 'Layer'
         })
       })
     })
-  }
-  return retLayer;
-}
-
-async function getNetworkArg() {
-  let networkArg = activeResultInputs.value.find((input) => input.key === 'network');
-  if (!networkArg) {
-    // For simulations that use other results as inputs, those results may point to a network
-    await Promise.all(activeResultInputs.value.map(async (input) => {
-      if (input.type === 'SimulationResult') {
-        const networkId = input.value.input_args.network;
-        if (networkId) networkArg = {
-          key: input.key,
-          type: input.type,
-          value: await getNetwork(networkId)
+  } else if (value.type === 'Layer') {
+    let add = true
+    selectedLayers.value = selectedLayers.value.map((layer) => {
+        if (add && layer.id === value.id) {
+          layer.visible = true;
+          add = false;
         }
-      }
-    }))
-  }
-  return networkArg;
-}
-
-function isArgVisible(arg: Input | undefined) {
-  if (!arg) return false;
-  const layer = getLayerForArg(arg);
-  return !!selectedLayers.value.find((l) => l.id === layer?.id)?.visible
-}
-
-function toggleVisibleArg(arg: Input) {
-  const layer = getLayerForArg(arg);
-  if (!layer) return;
-  toggleLayer(layer)
-}
-
-function toggleVisibleDataset(dataset: Dataset) {
-  if (dataset.layers.length) {
-    // select first layer by default
-    toggleLayer(dataset.layers[0])
-  }
-}
-
-function toggleLayer(layer: Layer) {
-  if (selectedLayers.value.some((l) => l.id === layer.id)) {
-    selectedLayers.value = selectedLayers.value.map((l) => {
-      if (l.id === layer.id) l.visible = true;
-      return l
+        return layer
     })
-  } else {
-    selectedLayers.value = [
-    {...layer, name: layer.name, copy_id: 0, visible: true, current_frame: 0},
-    ...selectedLayers.value,
-    ];
+    if (add) addLayer(value as Layer)
+    else updateLayersShown
+  } else if (value.type === 'Network') {
+    show({
+      ...value.dataset,
+      type: 'Dataset',
+    })
+  } else if (value.type === 'AnalysisResult') {
+    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
+    Object.entries(value.outputs).map(([outputKey, outputValue]) => {
+      const type = analysisType?.output_types[outputKey]
+      if (showableTypes.includes(type)) {
+        show({
+          id: outputValue,
+          type
+        })
+      }
+    })
   }
 }
+
+const showableTypes = ['Chart', 'Dataset', 'Network', 'Layer', 'AnalysisResult']
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
-    if (valid && currentProject.value && currentSimulationType.value) {
-      runSimulation(
-        currentSimulationType.value.id,
+    if (valid && currentProject.value && currentAnalysisType.value) {
+      runAnalysis(
+        currentAnalysisType.value.db_value,
         currentProject.value.id,
-        selectedInputs.value
+        selectedInputs.value,
       ).then((result) => {
-        tab.value = "old";
-        activeResult.value = result;
-      });
+        tab.value = 'old';
+        currentResult.value = result;
+        fetchResults();
+      })
     }
   });
 }
 
 function fetchResults() {
-  if (!currentProject.value || !currentSimulationType.value) return;
-  getSimulationResults(
-    currentSimulationType.value.id,
+  if (!currentProject.value || !currentAnalysisType.value) return;
+  getAnalysisResults(
+    currentAnalysisType.value.db_value,
     currentProject.value.id
   ).then((results) => {
     availableResults.value = results;
-    if (activeResult.value) {
-      activeResult.value = availableResults.value.find(
-        (r) => r.id === activeResult.value?.id
+    if (currentResult.value) {
+      currentResult.value = availableResults.value.find(
+        (r) => r.id === currentResult.value?.id
       );
     }
   });
 }
 
-function timestampToTitle(timestamp: string) {
-  const date = new Date(Date.parse(timestamp));
-  return date.toUTCString();
-}
-
-async function populateActiveResultInputs() {
-  if (!activeResult.value?.input_args) return;
-  activeResultInputs.value = [];
-  const args = Object.entries(activeResult.value.input_args);
-  const inputInfo = await Promise.all(
-    args.map(async ([argName, argValue]) => {
-      const argDef = currentSimulationType.value?.args.find(
-        (a: { name: string }) => a.name === argName
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const selectedOption: any = argDef?.options.find(
-        (o: { id: number }) => o === argValue || o.id === argValue
-      );
-      if (!selectedOption) {
-        return;
-      }
-
-      return {
-        key: argName.replaceAll("_", " "),
-        type: argDef?.type,
-        value: selectedOption,
-      };
-    })
-  );
-  activeResultInputs.value = inputInfo.filter((v) => v !== undefined) as {
-    key: string;
-    type: string;
-    datasetLayer: Layer | undefined;
-    value: { name: string };
-  }[];
-  networkArg.value = await getNetworkArg()
-}
-
-async function populateActiveResultOutputs() {
-  if (activeResult.value && currentProject.value) {
-    getProjectDatasets(currentProject.value.id).then(async (datasets) => {
-      availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
-        dataset.layers = await getDatasetLayers(dataset.id);
-        return dataset;
-      }));
-    });
-    const datasetIds = activeResult.value.output_data?.dataset_ids;
-    if (datasetIds && availableDatasets.value) {
-      activeResult.value.output_data.datasets = await Promise.all(
-        availableDatasets.value
-        .filter((d) => datasetIds.includes(d.id))
-        .map(async (d) => {
-          d.layers = await getDatasetLayers(d.id);
-          return d;
-        })
-      );
+async function fillInputsAndOutputs() {
+  if (!currentResult.value?.inputs) fullInputs.value = undefined;
+  else {
+    fullInputs.value = Object.fromEntries(
+      Object.entries(currentResult.value.inputs).map(([key, value]) => {
+        value = currentAnalysisType.value?.input_options[key].find(
+          (o: any) => o.id == value
+        );
+        value.type = currentAnalysisType.value?.input_types[key]
+        value.visible = isVisible(value)
+        value.showable = showableTypes.includes(value.type)
+        return [key, value];
+      })
+    );
+    if (fullInputs.value?.flood_simulation) {
+      const floodDataset = fullInputs.value?.flood_simulation.outputs.flood
+      getDatasetLayers(floodDataset).then((layers) => {
+        additionalAnimationLayers.value = layers;
+      })
     }
   }
-}
-
-function pollForActiveResultOutput() {
-  if (!availableResults.value) {
-    clearInterval(outputPoll.value);
-    outputPoll.value = undefined;
-  }
-  const targetResult: SimulationResult | undefined =
-    availableResults.value.find(
-      (r: { id: number }) => r.id === activeResult.value?.id
+  if (!currentResult.value?.outputs) fullOutputs.value = undefined;
+  else {
+    fullOutputs.value = Object.fromEntries(
+      await Promise.all(
+        Object.entries(currentResult.value.outputs).map(async ([key, value]) => {
+          const type = currentAnalysisType.value?.output_types[key];
+          if (type == 'Dataset') {
+            value = await getDataset(value)
+          }
+          value.type = type;
+          value.visible = isVisible(value)
+          value.showable = showableTypes.includes(value.type)
+          return [key, value];
+        })
+      )
     );
-  if (
-    targetResult &&
-    !targetResult.output_data &&
-    !targetResult.error_message
-  ) {
-    fetchResults();
-  } else {
-    clearInterval(outputPoll.value);
-    outputPoll.value = undefined;
   }
 }
 
-watch(currentSimulationType, () => {
-  availableResults.value = [];
-  fetchResults();
-});
+watch(currentAnalysisType, () => {
+  fetchResults()
+})
 
 watch(tab, () => {
   if (tab.value === "old") {
@@ -237,17 +211,11 @@ watch(tab, () => {
   }
 });
 
-watch(activeResult, () => {
-  if (activeResult.value) {
-    populateActiveResultInputs();
-    populateActiveResultOutputs();
-    if (!outputPoll.value && !activeResult.value.output_data) {
-      outputPoll.value = setInterval(pollForActiveResultOutput, 3000);
-    }
-  }
-});
-
-watch(selectedLayers, populateActiveResultInputs);
+watch(
+  [currentResult, mapSources, selectedLayers, currentChart],
+  fillInputsAndOutputs,
+  {deep: true}
+);
 </script>
 
 <template>
@@ -262,20 +230,20 @@ watch(selectedLayers, populateActiveResultInputs);
       hide-details
     />
     <v-card class="panel-content-inner">
-      <div v-if="currentSimulationType" style="height: 100%; overflow: auto">
-        <div style="position: absolute; right: 0">
-          <v-tooltip text="Close" location="bottom">
-            <template v-slot:activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon="mdi-close"
-                variant="plain"
-                @click="currentSimulationType = undefined"
-              />
-            </template>
-          </v-tooltip>
-        </div>
-        <v-card-title>{{ currentSimulationType.name }}</v-card-title>
+      <div v-if="currentAnalysisType" style="height: 100%; overflow: auto">
+        <v-card-title class="analysis-title">
+          {{ currentAnalysisType.name }}
+            <v-tooltip text="Close" location="bottom">
+              <template v-slot:activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-close"
+                  variant="plain"
+                  @click="currentAnalysisType = undefined"
+                />
+              </template>
+            </v-tooltip>
+        </v-card-title>
 
         <v-tabs v-model="tab" align-tabs="center" fixed-tabs>
           <v-tab value="new">Run New</v-tab>
@@ -287,13 +255,12 @@ watch(selectedLayers, populateActiveResultInputs);
             <v-form class="pa-3" @submit.prevent ref="inputForm">
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
               <v-select
-                v-for="arg in currentSimulationType.args"
-                v-model="selectedInputs[arg.name]"
-                v-bind="arg"
-                :key="arg.name"
-                :label="arg.name.replaceAll('_', ' ')"
+                v-for="[key, value] in Object.entries(currentAnalysisType.input_options)"
+                v-model="selectedInputs[key]"
+                :key="key"
+                :label="key.replaceAll('_', ' ')"
+                :items="value"
                 :rules="inputSelectionRules"
-                :items="arg.options"
                 item-value="id"
                 item-title="name"
                 density="compact"
@@ -301,7 +268,7 @@ watch(selectedLayers, populateActiveResultInputs);
                 class="my-1"
               />
               <v-btn @click="run" style="width: 100%" variant="tonal">
-                Run Simulation
+                Run Analysis
               </v-btn>
             </v-form>
           </v-window-item>
@@ -311,99 +278,98 @@ watch(selectedLayers, populateActiveResultInputs);
               style="width: 100%; text-align: center"
               class="pa-3"
             >
-              No previous runs of this simulation type exist.
+              No previous runs of this analysis type exist.
             </div>
-            <v-expansion-panels v-else v-model="activeResult" variant="accordion">
+            <v-expansion-panels v-else v-model="currentResult" variant="accordion">
               <v-expansion-panel
-                v-for="result in availableResults"
+                v-for="result in newestFirstResults"
                 :key="result.id"
                 :value="result"
-                :title="timestampToTitle(result.modified)"
+                :title="result.name"
                 bg-color="background"
               >
-                <v-expansion-panel-text>
-                  <v-table class="bg-transparent arg-table">
-                    <tbody>
+                <v-expansion-panel-text class="px-3 pb-5">
+                  <v-card-subtitle>Inputs</v-card-subtitle>
+                  <v-table class="bg-transparent">
+                    <tbody v-if="fullInputs" style="width: 100%;">
                       <tr
-                        v-for="arg in activeResultInputs"
-                        v-bind="arg"
-                        :key="arg.key"
+                        v-for="[key, value] in Object.entries(fullInputs)"
+                        :key="key"
                       >
-                        <td>{{ arg.key }}</td>
-                        <td>{{ arg.value.name || arg.value }}</td>
+                        <td>{{ key.replaceAll('_', ' ') }}</td>
                         <td>
+                          {{ value.name || value }}
                           <v-btn
-                            @click="toggleVisibleArg(arg)"
-                            v-if="!isArgVisible(arg) && !['SimulationResult', 'str'].includes(arg.type)"
-                            style="padding: 0px"
+                            v-if="value.showable && !value.visible"
                             density="compact"
                             color="primary"
+                            @click="() => show(value)"
                           >
                             Show
-                          </v-btn>
-                        </td>
+                        </v-btn>
+                      </td>
                       </tr>
                     </tbody>
                   </v-table>
+                  <div v-if="result.error" class="pa-2">
+                    <span style="color:rgb(var(--v-theme-error))">Error: </span>
+                    {{ result.error }}
+                  </div>
                   <div
-                    v-if="!result.output_data && !result.error_message && outputPoll"
+                    v-else
+                    class="pa-3"
                     style="width: 100%; text-align: center"
                   >
-                    <v-progress-circular indeterminate />
-                    Waiting for simulation to complete...
+                    <v-progress-linear
+                      v-if="!result.completed"
+                      class="my-3 py-1"
+                      indeterminate
+                    />
+                    {{ result.status }}
                   </div>
-                  <div v-else-if="result.error_message">
-                    Simulation failed with error:
-                    {{ result.error_message }}
-                  </div>
-                  <div v-else-if="result.output_data">
-                    <v-card-title>Results</v-card-title>
-                    <div
-                      v-if="currentSimulationType.output_type === 'node_animation'"
-                      class="pa-5"
-                    >
-                      <div v-if="result.output_data.node_failures?.length === 0">
-                        No nodes are affected in this scenario.
-                      </div>
-                      <node-animation
-                        v-else-if="isArgVisible(networkArg)"
-                        :nodeFailures="result.output_data.node_failures"
-                        :nodeRecoveries="result.output_data.node_recoveries"
-                        :layer="getLayerForArg(networkArg)"
-                      />
-                      <div v-else>
-                        Show network to begin.
-                      </div>
-                    </div>
-                    <div
-                      v-else-if="currentSimulationType.output_type === 'dataset'"
-                      class="pa-5"
-                    >
-                      <v-table class="bg-transparent">
-                        <tbody>
-                          <tr
-                            v-for="dataset in result.output_data.datasets"
-                            :key="dataset.id"
-                          >
-                            <td>{{ dataset.name }}</td>
-                            <td>
-                              <v-btn
-                                v-if="dataset.layers"
-                                color="primary"
-                                density="compact"
-                                @click="toggleVisibleDataset(dataset)"
-                              >
-                                Show
-                              </v-btn>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </v-table>
-                    </div>
-                    <div v-else>
-                      Unknown simulation output type
-                      {{ currentSimulationType.output_type }}
-                    </div>
+                  <div v-if="fullOutputs">
+                    <v-card-subtitle>Outputs</v-card-subtitle>
+                    <v-table class="bg-transparent">
+                      <tbody>
+                        <tr
+                          v-for="[key, value] in Object.entries(fullOutputs)"
+                          :key="key"
+                        >
+                        <template v-if="value.type == 'network_animation'">
+                          <td>
+                            <div v-if="value?.length === 0">
+                              No nodes are affected in this scenario.
+                            </div>
+                            <node-animation
+                              v-else-if="networkInput?.visible"
+                              :nodeFailures="key === 'failures' ? value : undefined"
+                              :nodeRecoveries="key === 'recoveries' ? value : undefined"
+                              :network="networkInput"
+                              :additionalAnimationLayers="additionalAnimationLayers"
+                            />
+                            <div v-else>
+                              Show network to view animation.
+                            </div>
+                          </td>
+                        </template>
+                        <template v-else>
+                          <td>{{ key.replaceAll('_', ' ') }}</td>
+                          <td>
+                            {{ value.name }}
+                            <v-btn
+                              v-if="value.showable && !value.visible"
+                              color="primary"
+                              density="compact"
+                              style="display: block"
+                              @click="() => show(value)"
+                            >
+                              Show
+                            </v-btn>
+                          </td>
+                        </template>
+                        </tr>
+                      </tbody>
+                    </v-table>
                   </div>
                 </v-expansion-panel-text>
               </v-expansion-panel>
@@ -412,13 +378,13 @@ watch(selectedLayers, populateActiveResultInputs);
         </v-window>
       </div>
       <v-list
-        v-else-if="filteredSimulationTypes?.length"
+        v-else-if="filteredAnalysisTypes?.length"
         density="compact"
       >
         <v-list-item
-          v-for="simType in filteredSimulationTypes"
+          v-for="simType in filteredAnalysisTypes"
           :key="simType.id"
-          @click="currentSimulationType=simType"
+          @click="currentAnalysisType=simType"
         >
           {{ simType.name }}
           <template v-slot:append>
@@ -427,24 +393,17 @@ watch(selectedLayers, populateActiveResultInputs);
           </template>
         </v-list-item>
       </v-list>
-      <v-progress-linear v-else-if="loadingSimulationTypes" indeterminate></v-progress-linear>
+      <v-progress-linear v-else-if="loadingAnalysisTypes" indeterminate></v-progress-linear>
       <v-card-text v-else class="help-text">No available Analytics.</v-card-text>
     </v-card>
   </div>
 </template>
 
 <style scoped>
-.simulations-card {
-  z-index: 99;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 600px;
-  max-width: calc(100% - 20px);
-  max-height: 45%;
-  overflow: auto;
-}
-.arg-table td {
-  padding: 0px 5px !important;
+.analysis-title {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>

@@ -6,7 +6,7 @@ import {
   Dataset,
   Layer,
   SourceRegion,
-  SimulationType,
+  AnalysisType,
   ClickedFeatureData,
   RasterDataValues,
   FloatingPanelConfig,
@@ -47,13 +47,13 @@ export const showMapBaseLayer = ref(true);
 export const tooltipOverlay = ref<Popup>();
 export const clickedFeature = ref<ClickedFeatureData>();
 
-// Charts & Simulations
+// Charts & Analyses
 export const loadingCharts = ref<boolean>(false);
 export const availableCharts = ref<Chart[]>();
 export const currentChart = ref<Chart>();
-export const loadingSimulationTypes = ref<boolean>(false);
-export const availableSimulationTypes = ref<SimulationType[]>();
-export const currentSimulationType = ref<SimulationType>();
+export const loadingAnalysisTypes = ref<boolean>(false);
+export const availableAnalysisTypes = ref<AnalysisType[]>();
+export const currentAnalysisType = ref<AnalysisType>();
 
 // Regions
 export const selectedSourceRegions = ref<SourceRegion[]>([]);

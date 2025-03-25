@@ -152,7 +152,7 @@ export interface Project {
     datasets: number;
     regions: number;
     charts: number;
-    simulations: number;
+    analyses: number;
   };
 }
 
@@ -275,36 +275,28 @@ export interface ChartOptions {
   };
 }
 
-export interface SimulationType {
+export interface AnalysisType {
   id: number;
   name: string;
+  db_value: string;
   description: string;
-  output_type: string;
-  args: {
-    name: string;
-    type: string;
-    options: {
-      id: number;
-      name: string;
-    }[];
-  }[];
+  attribution: string;
+  input_options: Record<string, any>;
+  input_types: Record<string, any>;
+  output_types: Record<string, any>;
 }
 
-export interface SimulationResult {
+export interface AnalysisResult {
   id: number;
   name: string;
-  simulation_type: string;
+  analysis_type: string;
   project: number;
-  input_args: object;
-  output_data: {
-    node_failures: [];
-    node_recoveries: [];
-    datasets: Dataset[];
-    dataset_ids: number[];
-  };
-  error_message: string;
+  inputs: Record<string, any>;
+  outputs: Record<string, any>;
+  status: string;
+  error: string;
   created: string;
-  modified: string;
+  completed: string;
 }
 
 export interface FloatingPanelConfig {
