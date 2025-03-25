@@ -26,6 +26,10 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -51,4 +55,4 @@ jobs:
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
           DJANGO_HOMEPAGE_REDIRECT_URL: http://localhost:8080/
-          REDIS_URL: redis://redis:6379
+          REDIS_URL: redis://localhost:6379
