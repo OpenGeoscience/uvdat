@@ -1,4 +1,10 @@
+import json
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 from .project import Project
@@ -32,3 +38,15 @@ class AnalysisResult(models.Model):
         seconds = (self.completed - self.created).total_seconds()
         self.status = 'Completed in %.2f seconds.' % seconds
         self.save()
+
+
+@receiver(post_save, sender=AnalysisResult)
+def result_post_save(sender, instance, **kwargs):
+    from uvdat.core.rest.serializers import AnalysisResultSerializer
+
+    payload = AnalysisResultSerializer(instance).data
+    group_name = f'analytics_{instance.project.id}'
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        group_name, {'type': 'send_notification', 'message': json.dumps(payload)}
+    )

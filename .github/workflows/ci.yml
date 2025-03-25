@@ -63,3 +63,4 @@ jobs:
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
           DJANGO_HOMEPAGE_REDIRECT_URL: http://localhost:8080/
+          REDIS_URL: redis://redis:6379

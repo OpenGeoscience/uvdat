@@ -14,6 +14,7 @@ import {
   getAnalysisResults,
   runAnalysis,
   getDataset,
+  getProjectAnalysisTypes,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult, Layer, Chart } from "@/types";
@@ -64,6 +65,7 @@ const inputSelectionRules = [
 ];
 const additionalAnimationLayers = ref();
 const inputForm = ref();
+const ws = ref();
 
 function isVisible(value: any): boolean {
   if (value.type == 'Chart') {
@@ -99,7 +101,7 @@ function isVisible(value: any): boolean {
       Object.entries(value.inputs).forEach(
         ([inputKey, inputValue])=> {
           const type = analysisType?.input_types[inputKey]
-          const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
+          const value: Record<string, any> = analysisType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
           if (showableTypes.includes(type)) {
             showables.push({
               ...value,
@@ -202,8 +204,10 @@ function fetchResults() {
 }
 
 async function fillInputsAndOutputs() {
-  if (!currentResult.value?.inputs) fullInputs.value = undefined;
-  else {
+  if (!currentResult.value?.inputs){
+    fullInputs.value = undefined;
+    additionalAnimationLayers.value = undefined;
+  } else {
     fullInputs.value = Object.fromEntries(
       Object.entries(currentResult.value.inputs).map(([key, value]) => {
         value = currentAnalysisType.value?.input_options[key]?.find(
@@ -215,7 +219,7 @@ async function fillInputsAndOutputs() {
         return [key, value];
       })
     );
-    if (fullInputs.value?.flood_simulation) {
+    if (fullInputs.value?.flood_simulation && !additionalAnimationLayers.value) {
       const floodDataset = fullInputs.value?.flood_simulation.outputs.flood
       getDatasetLayers(floodDataset).then((layers) => {
         additionalAnimationLayers.value = layers;
@@ -240,6 +244,40 @@ async function fillInputsAndOutputs() {
     );
   }
 }
+
+function createWebSocket() {
+  if (ws.value) ws.value.close()
+  if (currentProject.value) {
+    const urlBase = `${process.env.VUE_APP_API_ROOT}api/v1/`
+    const url = `${urlBase}analytics/project/${currentProject.value.id}/results/`
+    ws.value = new WebSocket(url);
+    ws.value.onmessage = (event: any) => {
+      const data = JSON.parse(JSON.parse(event.data))
+      if (currentResult.value && data.id === currentResult.value.id) {
+        // only overwrite attributes expecting updates
+        // overwriting the whole currentResult object will cause
+        // the expansion panel to collapse
+        currentResult.value.error = data.error
+        currentResult.value.outputs = data.outputs
+        currentResult.value.status = data.status
+        currentResult.value.completed = data.completed
+        currentResult.value.name = data.name
+        availableResults.value = availableResults.value.map(
+          (result) => result.id === data.id ? data : result
+        )
+      }
+      if (data.completed && currentProject.value) {
+        // completed result object may become an input option
+        // for another analysis type, refresh available types
+        getProjectAnalysisTypes(currentProject.value.id).then((types) => {
+          availableAnalysisTypes.value = types;
+        })
+      }
+    }
+  }
+}
+
+watch(currentProject, createWebSocket)
 
 watch(currentAnalysisType, () => {
   fetchResults()

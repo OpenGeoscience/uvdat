@@ -16,6 +16,7 @@ from configurations import values
 
 
 class UvdatMixin(ConfigMixin):
+    ASGI_APPLICATION = 'uvdat.asgi.application'
     WSGI_APPLICATION = 'uvdat.wsgi.application'
     ROOT_URLCONF = 'uvdat.urls'
 
@@ -32,10 +33,22 @@ class UvdatMixin(ConfigMixin):
     # django-guardian; raise PermissionDenied exception instead of redirecting to login page
     GUARDIAN_RAISE_403 = True
 
+    # django-channels with redis
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {
+                # Use /1 for channels backend, as /0 is used by celery
+                'hosts': [f'{os.environ["REDIS_URL"]}/1'],
+            },
+        }
+    }
+
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
+            'daphne',
             'django.contrib.gis',
             'django_large_image',
             'guardian',
