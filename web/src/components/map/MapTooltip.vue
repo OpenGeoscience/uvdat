@@ -146,7 +146,7 @@ function toggleNodeHandler() {
 </script>
 
 <template>
-  <div v-if="clickedFeature && clickedFeatureSourceType === 'vector'">
+  <div v-if="clickedFeature && clickedFeatureSourceType === 'vector'" style="max-height: 50vh; overflow: auto">
     <RecursiveTable :data="clickedFeatureProperties" />
 
     <!-- Render for Source Regions -->
