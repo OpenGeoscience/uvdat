@@ -12,6 +12,7 @@ const props = defineProps<{
   additionalAnimationLayers: Layer[],
 }>();
 
+const currentMode = ref();
 const currentTick = ref(0);
 const ticker = ref();
 const seconds = ref(1);
@@ -23,11 +24,13 @@ const nodeChanges = computed(() => {
 
 function pause() {
   clearInterval(ticker.value);
+  currentMode.value = undefined;
   ticker.value = undefined;
 }
 
 function play() {
   pause();
+  currentMode.value = 'play'
   ticker.value = setInterval(() => {
     if (nodeChanges.value && currentTick.value < Object.keys(nodeChanges.value).length) {
       currentTick.value += 1;
@@ -39,6 +42,7 @@ function play() {
 
 function rewind() {
   pause();
+  currentMode.value = 'rewind'
   ticker.value = setInterval(() => {
     if (currentTick.value > 0) {
       currentTick.value -= 1;
@@ -65,22 +69,38 @@ watch(currentTick, async () => {
 </script>
 
 <template>
-  <div class="d-flex pb-3" style="align-items: center" v-if="nodeChanges">
-    <v-icon @click="play" icon="mdi-play" variant="text" />
-    <v-icon @click="pause" icon="mdi-pause" variant="text" />
-    <v-icon @click="rewind" icon="mdi-rewind" variant="text" />
-    <v-slider
-      v-model="currentTick"
-      show-ticks="always"
-      color="primary"
-      class="ml-5"
-      tick-size="6"
-      thumb-size="15"
-      track-size="8"
-      min="0"
-      step="1"
-      :max="Object.keys(nodeChanges).length"
-      hide-details
-    />
+  <div v-if="nodeChanges">
+    <div class="animation-row">
+      <v-icon
+        :icon="currentMode === 'play' ? 'mdi-play' : currentMode === 'rewind' ? 'mdi-rewind' : 'mdi-pause'"
+      />
+      <v-slider
+        v-model="currentTick"
+        show-ticks="always"
+        color="primary"
+        class="ml-5"
+        tick-size="6"
+        thumb-size="15"
+        track-size="8"
+        min="0"
+        step="1"
+        :max="Object.keys(nodeChanges).length"
+        hide-details
+      />
+    </div>
+    <div class="animation-row" >
+      <v-btn @click="play" icon="mdi-play" variant="text"  density="compact"/>
+      <v-btn @click="pause" icon="mdi-pause" variant="text" density="compact"/>
+      <v-btn @click="rewind" icon="mdi-rewind" variant="text" density="compact" />
+    </div>
   </div>
 </template>
+
+<style>
+.animation-row {
+  display: flex;
+  align-items: center;
+  width: calc(100% - 10px);
+  justify-content: space-around;
+}
+</style>
