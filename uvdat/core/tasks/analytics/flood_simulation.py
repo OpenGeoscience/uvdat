@@ -28,6 +28,30 @@ TIME_PERIODS = [
 
 DATA_PRODUCTS = [
     dict(
+        url='https://data.kitware.com/api/v1/item/67e4061f3e5f3e5e96b9753d/download',
+        precipitation='parabolic',
+        likelihood=0.04,
+        time_period=[2030, 2050],
+    ),
+    dict(
+        url='https://data.kitware.com/api/v1/item/67e408513e5f3e5e96b97544/download',
+        precipitation='type2',
+        likelihood=0.04,
+        time_period=[2030, 2050],
+    ),
+    dict(
+        url='https://data.kitware.com/api/v1/item/67e40d693e5f3e5e96b97547/download',
+        precipitation='parabolic',
+        likelihood=0.01,
+        time_period=[2030, 2050],
+    ),
+    dict(
+        url='https://data.kitware.com/api/v1/item/67e40f4e3e5f3e5e96b9754a/download',
+        precipitation='type2',
+        likelihood=0.01,
+        time_period=[2030, 2050],
+    ),
+    dict(
         url='https://data.kitware.com/api/v1/item/67d875e5429cb34d95af01a4/download',
         precipitation='parabolic',
         likelihood=0.04,
