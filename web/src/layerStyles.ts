@@ -2,7 +2,7 @@ import { RasterTileSource } from "maplibre-gl";
 import { getMap } from "./storeFunctions";
 import { Network, Style } from "./types";
 import { THEMES } from "./themes";
-import { mapSources, theme } from "./store";
+import { mapSources, selectedLayerStyles, theme } from "./store";
 import { getDBObjectsForSourceID } from "./layers";
 
 // ------------------
@@ -36,7 +36,7 @@ export function getDefaultColor() {
     if (theme.value === 'dark') {
         colorList = THEMES.dark.colors;
     }
-    const colorNames = ['info', 'success', 'warning', 'error'];
+    const colorNames = ['info', 'success', 'error'];
     const colors = Object.values(Object.fromEntries(
         Object.entries(colorList)
         .filter(([name,]) => colorNames.includes(name))
@@ -90,105 +90,95 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
     if (network?.gcc && opacity) showGCC(network)
 }
 
+interface NetworkStyle {
+    inactive?: number | string,
+    deactivate?: number | string,
+    activate?: number | string,
+    gcc?: number | string,
+    default: number | string,
+
+}
+
 export function showGCC(network: Network) {
     const vectorId = network.vector_data;
     const map = getMap();
-    const gccColor = theme.value === 'dark' ? 'white' : 'yellow';
+    const gccColor = "#f7e059";
+    const deactivateColor = "#7b3294";
+    const activateColor = "#008837";
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId.includes(".vector." + vectorId)) {
-            if (mapLayerId.includes(".circle")) {
-                let defaultColor = map.getPaintProperty(mapLayerId, "circle-stroke-color");
-                if (Array.isArray(defaultColor)) {
-                    defaultColor = defaultColor[defaultColor.length - 1]
-                }
-                if (network.deactivated?.nodes.length) {
-                    ["circle-opacity", "circle-stroke-opacity"].forEach((key: string) => {
-                        map.setPaintProperty(
-                            mapLayerId,
-                            key,
-                            [
-                                "case",
-                                ["in", ["get", "node_id"], ["literal",
-                                    network.deactivated?.nodes.filter((n) => !network.changes?.deactivate_nodes.includes(n))
-                                ]],
-                                0.4,
-                                1,
-                            ]
-                        )
-                    });
+            const [layerId, layerCopyId] = mapLayerId.split('.');
+            const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+            let defaultColor = currentStyle.color || 'black'
+            const colorStyle: NetworkStyle = {
+                deactivate: deactivateColor,
+                activate: activateColor,
+                gcc: gccColor,
+                default: defaultColor
+            }
+            const opacityStyle = {
+                inactive: 0.4,
+                default: 1,
+            }
+            const featureStyles: Record<string, NetworkStyle> = {
+                'circle-opacity': opacityStyle,
+                'circle-stroke-opacity': opacityStyle,
+                'line-opacity': opacityStyle,
+                'circle-color': colorStyle,
+                'circle-stroke-color': colorStyle,
+                'line-color': colorStyle,
+            }
+            Object.entries(featureStyles).forEach(([styleName, style]) => {
+                const featureType = styleName.split('-')[0]
+                if (mapLayerId.includes("."+featureType)) {
+                    const defaultValue = style.default;
+                    const gccValue = style.gcc || style.default;
+                    const inactiveValue = style.inactive || style.default;
+                    const deactivateValue = style.deactivate || style.default;
+                    const activateValue = style.activate || style.default;
+                    const deactivate = network.changes?.deactivate_nodes;
+                    const activate = network.changes?.activate_nodes;
+                    const inactive = network.deactivated?.nodes.filter((n) => (
+                        !deactivate?.includes(n) && !activate?.includes(n)
+                    ))
                     map.setPaintProperty(
                         mapLayerId,
-                        "circle-color",
-                        [
-                            "case",
-                            // If node is part of GCC, set to gccColor
-                            ["in", ["get", "node_id"], ["literal", network.gcc]],
-                            gccColor,
-                            [
-                                "case",
-                                // If deactivating node, set to red
-                                ["in", ["get", "node_id"], ["literal", network.changes?.deactivate_nodes]],
-                                "red",
-                                [
-                                    "case",
-                                    // If activating node, set to green
-                                    ["in", ["get", "node_id"], ["literal", network.changes?.activate_nodes]],
-                                    "green",
-                                    // else, set to default color
-                                    defaultColor,
-                                ]
-                            ]
-                        ]
-                    )
-                } else {
-                    ["circle-opacity", "circle-stroke-opacity"].forEach((key) => {
-                        map.setPaintProperty(mapLayerId, key, 1)
-                    })
-                    map.setPaintProperty(
-                        mapLayerId, "circle-color", defaultColor,
-                    )
-                }
-            } else if (mapLayerId.includes(".line")) {
-                let defaultLineColor = map.getPaintProperty(mapLayerId, "line-color");
-                if (Array.isArray(defaultLineColor)) {
-                    defaultLineColor = defaultLineColor[defaultLineColor.length - 1]
-                }
-                if (network.deactivated?.nodes.length) {
-                    map.setPaintProperty(
-                        mapLayerId,
-                        'line-opacity',
+                        styleName,
                         [
                             "case",
                             [
-                                "all",
-                                // If nodes are deactivated, lower opacity
-                                ["in", ["get", "from_node_id"], ["literal", network.deactivated?.nodes]],
-                                ["in", ["get", "to_node_id"], ["literal", network.deactivated?.nodes]],
+                                "any",
+                                ["in", ["get", "node_id"], ["literal", deactivate]],
+                                ["in", ["get", "from_node_id"], ["literal", deactivate]],
+                                ["in", ["get", "to_node_id"], ["literal", deactivate]],
                             ],
-                            0.4,
-                            1,
-                        ]
-                    )
-                    map.setPaintProperty(
-                        mapLayerId,
-                        "line-color",
-                        [
-                            "case",
+                            deactivateValue,
                             [
-                                "all",
-                                // If node is part of GCC, set its stroke color to gccColor
+                                "any",
+                                ["in", ["get", "node_id"], ["literal", activate]],
+                                ["in", ["get", "from_node_id"], ["literal", activate]],
+                                ["in", ["get", "to_node_id"], ["literal", activate]],
+                            ],
+                            activateValue,
+                            [
+                                "any",
+                                ["in", ["get", "node_id"], ["literal", inactive]],
+                                ["in", ["get", "from_node_id"], ["literal", inactive]],
+                                ["in", ["get", "to_node_id"], ["literal", inactive]],
+                            ],
+                            inactiveValue,
+                            [
+                                "any",
+                                ["in", ["get", "node_id"], ["literal", network.gcc]],
                                 ["in", ["get", "from_node_id"], ["literal", network.gcc]],
                                 ["in", ["get", "to_node_id"], ["literal", network.gcc]],
                             ],
-                            gccColor,
-                            // else, set it to its normal color
-                            defaultLineColor,
-                        ]
+                            gccValue,
+                            defaultValue,
+                        ],
                     )
-                } else {
-                    map.setPaintProperty(mapLayerId, "line-color", defaultLineColor)
                 }
-            }
+            })
         }
     });
 }
