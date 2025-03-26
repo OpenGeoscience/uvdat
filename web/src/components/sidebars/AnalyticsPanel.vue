@@ -8,6 +8,7 @@ import {
   currentAnalysisType,
   selectedLayers,
   availableNetworks,
+  panelArrangement,
 } from "@/store";
 import {
   getDatasetLayers,
@@ -59,7 +60,7 @@ const networkInput = computed(() => {
   network = Object.values(fullInputs.value).find(
     (input) => input.type === 'Network'
   )
-  if (!availableNetworks.value.map((n) => n.id).includes(network.id)) {
+  if (network && !availableNetworks.value.map((n) => n.id).includes(network.id)) {
     availableNetworks.value = [
       ...availableNetworks.value,
       network
@@ -77,7 +78,9 @@ const ws = ref();
 
 function isVisible(value: any): boolean {
   if (value.type == 'Chart') {
-    return currentChart.value?.id == value.id
+    const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
+    if (!chartPanel) return false;
+    return currentChart.value?.id == value.id && chartPanel.visible
   } else if (value.type === 'Dataset') {
     return selectedLayers.value.some((layer) => {
       return layer.dataset.id === value.id && layer.visible
@@ -126,6 +129,8 @@ function isVisible(value: any): boolean {
 
 function show(value: any) {
   if (value.type === 'Chart') {
+    const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
+    if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
     currentChart.value = value as Chart
   } else if (value.type === 'Dataset') {
     getDatasetLayers(value.id).then((layers) => {
@@ -302,7 +307,7 @@ watch(tab, () => {
 });
 
 watch(
-  [currentResult, selectedLayers, currentChart],
+  [currentResult, selectedLayers, currentChart, panelArrangement],
   fillInputsAndOutputs,
   {deep: true}
 );
