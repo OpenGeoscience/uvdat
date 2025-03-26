@@ -4,7 +4,6 @@ import { Layer } from "@/types";
 import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
 import { selectedLayers } from "@/store";
-import { updateLayersShown } from "@/layers";
 
 const props = defineProps<{
   nodeFailures?: Record<number, number[]>,
@@ -59,7 +58,6 @@ watch(currentTick, async () => {
           if (l.id === layer.id) l.current_frame = currentTick.value
           return l;
         })
-        updateLayersShown();
       })
     }
   }

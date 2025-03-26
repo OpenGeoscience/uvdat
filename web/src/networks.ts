@@ -7,6 +7,12 @@ import { availableNetworks } from './store';
 import { showGCC } from "./layerStyles";
 
 
+interface GCCResult {
+    deactivatedNodes: number[],
+    gcc: number[],
+}
+const GCCcache: GCCResult[] = [];
+
 // ------------------
 // Exported functions
 // ------------------
@@ -34,7 +40,15 @@ export async function setNetworkDeactivatedNodes(network: Network, nodeIds: numb
     }
     network.deactivated.nodes = nodeIds;
     if (nodeIds.length) {
-        network.gcc = await getNetworkGCC(network.id, network.deactivated.nodes);
+        const cachedResult = GCCcache.find((result) => result.deactivatedNodes === nodeIds.sort())
+        if (cachedResult) network.gcc = cachedResult.gcc
+        else {
+            network.gcc = await getNetworkGCC(network.id, network.deactivated.nodes);
+            GCCcache.push({
+                deactivatedNodes: nodeIds.sort(),  // sort to disregard order in comparison
+                gcc: network.gcc,
+            })
+        }
     } else {
         network.gcc = network.nodes.map((n) => n.id)
     }

@@ -6,7 +6,6 @@ import {
   availableAnalysisTypes,
   loadingAnalysisTypes,
   currentAnalysisType,
-  mapSources,
   selectedLayers,
 } from "@/store";
 import {
@@ -18,7 +17,7 @@ import {
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult, Layer, Chart } from "@/types";
-import { addLayer, updateLayersShown } from "@/layers";
+import { addLayer } from "@/layers";
 
 
 const searchText = ref();
@@ -138,7 +137,6 @@ function show(value: any) {
         return layer
     })
     if (add) addLayer(value as Layer)
-    else updateLayersShown
   } else if (value.type === 'Network') {
     show({
       ...value.dataset,
@@ -220,10 +218,15 @@ async function fillInputsAndOutputs() {
       })
     );
     if (fullInputs.value?.flood_simulation && !additionalAnimationLayers.value) {
-      const floodDataset = fullInputs.value?.flood_simulation.outputs.flood
-      getDatasetLayers(floodDataset).then((layers) => {
-        additionalAnimationLayers.value = layers;
-      })
+      const floodDataset = {
+        id: fullInputs.value?.flood_simulation.outputs.flood,
+        type: 'Dataset',
+      }
+      if (isVisible(floodDataset)) {
+        getDatasetLayers(floodDataset.id).then((layers) => {
+          additionalAnimationLayers.value = layers;
+        })
+      }
     }
   }
   if (!currentResult.value?.outputs) fullOutputs.value = undefined;
@@ -290,7 +293,7 @@ watch(tab, () => {
 });
 
 watch(
-  [currentResult, mapSources, selectedLayers, currentChart],
+  [currentResult, selectedLayers, currentChart],
   fillInputsAndOutputs,
   {deep: true}
 );
