@@ -20,7 +20,7 @@ application = ProtocolTypeRouter(
             URLRouter(
                 [
                     path(
-                        'api/v1/analytics/project/<int:project_id>/results/',
+                        'ws/analytics/project/<int:project_id>/results/',
                         AnalyticsConsumer.as_asgi(),
                         name='analytics-ws',
                     )
