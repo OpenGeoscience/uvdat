@@ -7,6 +7,7 @@ import {
   loadingAnalysisTypes,
   currentAnalysisType,
   selectedLayers,
+  availableNetworks,
 } from "@/store";
 import {
   getDatasetLayers,
@@ -41,22 +42,30 @@ const fullInputs = ref<Record<string, any>>();
 const fullOutputs = ref<Record<string, any>>();
 const networkInput = computed(() => {
   if (!fullInputs.value) return undefined;
+  let network = undefined;
   if (fullInputs.value['network_failure']) {
     const analysis = fullInputs.value['network_failure']
     const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
-    const network = analysisType?.input_options.network.find(
+    network = analysisType?.input_options.network.find(
       (o: any) => o.id ===  analysis.inputs.network
     )
     network.type = 'Network'
     const visible = isVisible(network)
-    return {
+    network = {
       ...network,
       visible
     }
   }
-  return Object.values(fullInputs.value).find(
+  network = Object.values(fullInputs.value).find(
     (input) => input.type === 'Network'
   )
+  if (!availableNetworks.value.map((n) => n.id).includes(network.id)) {
+    availableNetworks.value = [
+      ...availableNetworks.value,
+      network
+    ]
+  }
+  return network;
 })
 const selectedInputs = ref<Record<string, any>>({});
 const inputSelectionRules = [

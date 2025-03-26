@@ -196,6 +196,10 @@ export interface Network {
     nodes: number[];
     edges: number[];
   };
+  changes?: {
+    deactivate_nodes: number[];
+    activate_nodes: number[];
+  }
   gcc: number[];
 }
 

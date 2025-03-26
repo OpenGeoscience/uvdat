@@ -38,14 +38,21 @@ export async function setNetworkDeactivatedNodes(network: Network, nodeIds: numb
         nodes: [],
         edges: []
     }
+    network.changes = {
+        deactivate_nodes: nodeIds.filter((n) => !network.deactivated?.nodes.includes(n)),
+        activate_nodes: network.deactivated.nodes.filter((n) => !nodeIds.includes(n))
+    }
     network.deactivated.nodes = nodeIds;
     if (nodeIds.length) {
-        const cachedResult = GCCcache.find((result) => result.deactivatedNodes === nodeIds.sort())
+        const cachedResult = GCCcache.find(
+            // sort and stringify to disregard order in comparison
+            (result) => JSON.stringify(result.deactivatedNodes.toSorted()) == JSON.stringify(nodeIds.toSorted())
+        )
         if (cachedResult) network.gcc = cachedResult.gcc
         else {
             network.gcc = await getNetworkGCC(network.id, network.deactivated.nodes);
             GCCcache.push({
-                deactivatedNodes: nodeIds.sort(),  // sort to disregard order in comparison
+                deactivatedNodes: nodeIds,
                 gcc: network.gcc,
             })
         }

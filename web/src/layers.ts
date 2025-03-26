@@ -1,4 +1,5 @@
 import {
+    availableNetworks,
     clickedFeature,
     mapSources,
     rasterTooltipDataCache,
@@ -7,7 +8,7 @@ import {
     showMapBaseLayer
 } from "./store";
 import { getMap } from "./storeFunctions";
-import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
+import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { getRasterDataValues } from "./api/rest";
@@ -24,6 +25,7 @@ export interface SourceDBObjects {
     frame?: LayerFrame,
     vector?: VectorData,
     raster?: RasterData,
+    network?: Network,
 }
 
 export function getDBObjectsForSourceID(sourceId: string) {
@@ -42,6 +44,7 @@ export function getDBObjectsForSourceID(sourceId: string) {
                     else if (frame.raster) DBObjects.raster = frame.raster;
                 }
             })
+            DBObjects.network = availableNetworks.value.find((n) => n.vector_data == DBObjects.vector?.id)
         }
     })
     return DBObjects

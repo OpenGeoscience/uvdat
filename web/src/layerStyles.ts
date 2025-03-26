@@ -3,6 +3,7 @@ import { getMap } from "./storeFunctions";
 import { Network, Style } from "./types";
 import { THEMES } from "./themes";
 import { mapSources, theme } from "./store";
+import { getDBObjectsForSourceID } from "./layers";
 
 // ------------------
 // Exported functions
@@ -47,6 +48,8 @@ export function getDefaultColor() {
 
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
     const map = getMap();
+    const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
+    const { network } = getDBObjectsForSourceID(sourceId)
     let opacity = style.opacity;
     let color = style.color;
     if (!style.visible) {
@@ -84,41 +87,57 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
             }
         }
     }
+    if (network?.gcc && opacity) showGCC(network)
 }
 
 export function showGCC(network: Network) {
     const vectorId = network.vector_data;
     const map = getMap();
+    const gccColor = theme.value === 'dark' ? 'white' : 'yellow';
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId.includes(".vector." + vectorId)) {
             if (mapLayerId.includes(".circle")) {
-                let defaultStrokeColor = map.getPaintProperty(mapLayerId, "circle-stroke-color");
-                if (Array.isArray(defaultStrokeColor)) {
-                    defaultStrokeColor = defaultStrokeColor[defaultStrokeColor.length - 1]
+                let defaultColor = map.getPaintProperty(mapLayerId, "circle-stroke-color");
+                if (Array.isArray(defaultColor)) {
+                    defaultColor = defaultColor[defaultColor.length - 1]
                 }
                 if (network.deactivated?.nodes.length) {
-                    ["circle-opacity", "circle-stroke-opacity"].forEach((key) => {
+                    ["circle-opacity", "circle-stroke-opacity"].forEach((key: string) => {
                         map.setPaintProperty(
                             mapLayerId,
                             key,
                             [
                                 "case",
-                                ["in", ["get", "node_id"], ["literal", network.deactivated?.nodes]],
+                                ["in", ["get", "node_id"], ["literal",
+                                    network.deactivated?.nodes.filter((n) => !network.changes?.deactivate_nodes.includes(n))
+                                ]],
                                 0.4,
                                 1,
                             ]
                         )
-                    })
+                    });
                     map.setPaintProperty(
                         mapLayerId,
-                        "circle-stroke-color",
+                        "circle-color",
                         [
                             "case",
-                            // If node is part of GCC, set its stroke color to yellow
+                            // If node is part of GCC, set to gccColor
                             ["in", ["get", "node_id"], ["literal", network.gcc]],
-                            "yellow",
-                            // else, set it to its normal color
-                            defaultStrokeColor,
+                            gccColor,
+                            [
+                                "case",
+                                // If deactivating node, set to red
+                                ["in", ["get", "node_id"], ["literal", network.changes?.deactivate_nodes]],
+                                "red",
+                                [
+                                    "case",
+                                    // If activating node, set to green
+                                    ["in", ["get", "node_id"], ["literal", network.changes?.activate_nodes]],
+                                    "green",
+                                    // else, set to default color
+                                    defaultColor,
+                                ]
+                            ]
                         ]
                     )
                 } else {
@@ -126,7 +145,7 @@ export function showGCC(network: Network) {
                         map.setPaintProperty(mapLayerId, key, 1)
                     })
                     map.setPaintProperty(
-                        mapLayerId, "circle-stroke-color", defaultStrokeColor,
+                        mapLayerId, "circle-color", defaultColor,
                     )
                 }
             } else if (mapLayerId.includes(".line")) {
@@ -137,16 +156,31 @@ export function showGCC(network: Network) {
                 if (network.deactivated?.nodes.length) {
                     map.setPaintProperty(
                         mapLayerId,
+                        'line-opacity',
+                        [
+                            "case",
+                            [
+                                "all",
+                                // If nodes are deactivated, lower opacity
+                                ["in", ["get", "from_node_id"], ["literal", network.deactivated?.nodes]],
+                                ["in", ["get", "to_node_id"], ["literal", network.deactivated?.nodes]],
+                            ],
+                            0.4,
+                            1,
+                        ]
+                    )
+                    map.setPaintProperty(
+                        mapLayerId,
                         "line-color",
                         [
                             "case",
                             [
                                 "all",
-                                // If node is part of GCC, set its stroke color to yellow
+                                // If node is part of GCC, set its stroke color to gccColor
                                 ["in", ["get", "from_node_id"], ["literal", network.gcc]],
                                 ["in", ["get", "to_node_id"], ["literal", network.gcc]],
                             ],
-                            "yellow",
+                            gccColor,
                             // else, set it to its normal color
                             defaultLineColor,
                         ]
