@@ -46,20 +46,25 @@ const networkInput = computed(() => {
   let network = undefined;
   if (fullInputs.value['network_failure']) {
     const analysis = fullInputs.value['network_failure']
-    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
-    network = analysisType?.input_options.network.find(
-      (o: any) => o.id ===  analysis.inputs.network
-    )
+    const networkId = analysis.inputs.network
+    network = availableNetworks.value.find((n) => n.id === networkId)
+    if (!network) {
+      const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
+      network = analysisType?.input_options.network.find(
+        (o: any) => o.id ===  networkId
+      )
+    }
     network.type = 'Network'
     const visible = isVisible(network)
     network = {
       ...network,
       visible
     }
+  } else {
+    network = Object.values(fullInputs.value).find(
+      (input) => input.type === 'Network'
+    )
   }
-  network = Object.values(fullInputs.value).find(
-    (input) => input.type === 'Network'
-  )
   if (network && !availableNetworks.value.map((n) => n.id).includes(network.id)) {
     availableNetworks.value = [
       ...availableNetworks.value,

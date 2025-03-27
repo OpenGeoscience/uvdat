@@ -9,7 +9,7 @@ const props = defineProps<{
   nodeFailures?: Record<number, number[]>,
   nodeRecoveries?:  Record<number, number[]>,
   network: Network,
-  additionalAnimationLayers: Layer[],
+  additionalAnimationLayers: Layer[] | undefined,
 }>();
 
 const currentMode = ref();

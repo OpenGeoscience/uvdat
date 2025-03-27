@@ -103,8 +103,10 @@ export function updateLayersShown () {
                 if (mapLayerId !== 'base-tiles') {
                     if (mapLayerId.includes(sourceId)) {
                         map.moveLayer(mapLayerId);  // handles reordering
-                        currentStyle.visible = layer.visible && layer.current_frame === frame.index
-                        setMapLayerStyle(mapLayerId, currentStyle)
+                        setMapLayerStyle(mapLayerId, {
+                            ...currentStyle,
+                            visible: layer.visible && layer.current_frame === frame.index
+                        })
                     }
                 }
             });
