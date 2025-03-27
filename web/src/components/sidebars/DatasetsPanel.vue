@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
+import MetadataView from '@/components/MetadataView.vue'
 import { Dataset, Layer } from '@/types';
 import { mapSources, selectedLayers } from "@/store";
 
@@ -38,23 +39,26 @@ function toggleSelected(items: Layer[]) {
           :key="dataset.id"
         >
           <v-expansion-panel-title>
-            <div class="item-title">
-              {{ dataset.name }}
-              <div style="min-width: 75px; text-align: right">
-                <v-icon
-                  icon="mdi-layers-outline"
-                  size="small"
-                  v-tooltip="dataset.layers.length + ' layers'"
-                  class="ml-2"
-                ></v-icon>
-                <span class="secondary-text">{{ dataset.layers.length }}</span>
-                <v-icon
-                  icon="mdi-information-outline"
-                  size="small"
-                  v-tooltip="dataset.description"
-                  class="mx-1"
-                ></v-icon>
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+              <div class="item-title" style="margin-left: 12px">
+                {{ dataset.name }}
+                <div style="min-width: 75px; text-align: right">
+                  <v-icon
+                    icon="mdi-layers-outline"
+                    size="small"
+                    v-tooltip="dataset.layers.length + ' layers'"
+                    class="ml-2"
+                  ></v-icon>
+                  <span class="secondary-text">{{ dataset.layers.length }}</span>
+                  <v-icon
+                    icon="mdi-information-outline"
+                    size="small"
+                    v-tooltip="dataset.description"
+                    class="mx-1"
+                  ></v-icon>
+                </div>
               </div>
+              <MetadataView :metadata="dataset.metadata" :name="dataset.name" />
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
@@ -73,6 +77,9 @@ function toggleSelected(items: Layer[]) {
                   class="layer-select-button"
                 ></v-icon>
                 {{ layer.name }}
+              </div>
+              <div style="padding-right: 22.5px">
+                <MetadataView :metadata="layer.metadata" :name="layer.name" />
               </div>
             </div>
           </v-expansion-panel-text>

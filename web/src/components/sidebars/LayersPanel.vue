@@ -5,6 +5,7 @@ import { computed, ref } from "vue";
 
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
+import MetadataView from "../MetadataView.vue";
 
 
 const searchText = ref();
@@ -153,6 +154,15 @@ function getFrameInputWidth(layer: Layer) {
                                     </v-text-field>
                                     </template>
                                 </v-slider>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>
+                                        <i>Frame:</i> {{ element.frames[element.current_frame].name }}
+                                    </span>
+                                    <MetadataView
+                                        :metadata="element.frames[element.current_frame].metadata"
+                                        :name="element.frames[element.current_frame].name"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </template>
