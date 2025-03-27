@@ -16,6 +16,7 @@ import {
   runAnalysis,
   getDataset,
   getProjectAnalysisTypes,
+  getChart,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult, Layer, Chart } from "@/types";
@@ -257,6 +258,9 @@ async function fillInputsAndOutputs() {
           if (type == 'Dataset') {
             value = await getDataset(value)
           }
+          if (type == 'Chart') {
+            value = await getChart(value)
+          }
           value.type = type;
           value.visible = isVisible(value)
           value.showable = showableTypes.includes(value.type)
@@ -436,7 +440,7 @@ watch(
                           :key="key"
                         >
                         <template v-if="value.type == 'network_animation'">
-                          <td>
+                          <td colspan="2">
                             <div v-if="value?.length === 0">
                               No nodes are affected in this scenario.
                             </div>

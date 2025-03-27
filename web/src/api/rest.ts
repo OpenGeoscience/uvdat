@@ -58,6 +58,10 @@ export async function getProjectDatasets(
   return (await apiClient.get(`datasets?project=${projectId}`)).data.results;
 }
 
+export async function getChart(chartId: number): Promise<Chart> {
+  return (await apiClient.get(`charts/${chartId}`)).data;
+}
+
 export async function getProjectCharts(projectId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?project=${projectId}`)).data.results;
 }
