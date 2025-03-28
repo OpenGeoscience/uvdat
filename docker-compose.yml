@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   postgres:
     image: postgis/postgis:14-3.3
@@ -29,7 +29,7 @@ services:
         "server",
         "/data",
         "--console-address",
-        ":${DOCKER_MINIO_CONSOLE_PORT-9001}"
+        ":${DOCKER_MINIO_CONSOLE_PORT-9001}",
       ]
     environment:
       MINIO_ROOT_USER: minioAccessKey
@@ -42,7 +42,15 @@ services:
     logging:
       driver: none
 
+  redis:
+    image: redis:latest
+    volumes:
+      - redis-data:/redis/data
+    ports:
+      - 6379:6379
+
 volumes:
   postgres:
   minio:
   rabbitmq:
+  redis-data:

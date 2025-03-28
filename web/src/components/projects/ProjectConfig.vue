@@ -348,7 +348,7 @@ watch(projectConfigMode, () => {
         <v-icon icon="mdi-poll" v-tooltip="'Charts'" class="ml-3"></v-icon>
         {{ currentProject.item_counts.charts || 0 }}
         <v-icon icon="mdi-earth" v-tooltip="'Analyses'" class="ml-3"></v-icon>
-        {{ currentProject.item_counts.simulations || 0 }}
+        {{ currentProject.item_counts.analyses || 0 }}
       </span>
       <v-menu
         location="end"

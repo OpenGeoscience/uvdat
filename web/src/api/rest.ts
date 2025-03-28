@@ -6,9 +6,8 @@ import {
   ProjectPermissions,
   Dataset,
   Layer,
-  NetworkNode,
   Chart,
-  SimulationType,
+  AnalysisType,
   Network,
   RasterDataValues,
 } from "@/types";
@@ -59,14 +58,18 @@ export async function getProjectDatasets(
   return (await apiClient.get(`datasets?project=${projectId}`)).data.results;
 }
 
+export async function getChart(chartId: number): Promise<Chart> {
+  return (await apiClient.get(`charts/${chartId}`)).data;
+}
+
 export async function getProjectCharts(projectId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?project=${projectId}`)).data.results;
 }
 
-export async function getProjectSimulationTypes(
+export async function getProjectAnalysisTypes(
   projectId: number
-): Promise<SimulationType[]> {
-  return (await apiClient.get(`simulations/available/project/${projectId}`))
+): Promise<AnalysisType[]> {
+  return (await apiClient.get(`analytics/project/${projectId}/types`))
     .data;
 }
 
@@ -114,26 +117,26 @@ export async function getRasterDataValues(rasterId: number): Promise<RasterDataV
   };
 }
 
-export async function runSimulation(
-  simulationId: number,
+export async function runAnalysis(
+  analysisType: string,
   projectId: number,
   args: object
 ) {
   return (
     await apiClient.post(
-      `simulations/run/${simulationId}/project/${projectId}/`,
+      `analytics/project/${projectId}/types/${analysisType}/run/`,
       args
     )
   ).data;
 }
 
-export async function getSimulationResults(
-  simulationId: number,
+export async function getAnalysisResults(
+  analysisType: string,
   projectId: number
 ) {
   return (
     await apiClient.get(
-      `simulations/${simulationId}/project/${projectId}/results/`
+      `analytics/project/${projectId}/types/${analysisType}/results/`
     )
   ).data;
 }
