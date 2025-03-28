@@ -1,14 +1,25 @@
-<script lang="ts">
-export default {
-  props: ["data"],
-};
+<script setup lang="ts">
+import dayjs from 'dayjs';
+
+const props = defineProps<{
+  data: any;
+}>();
+
+function formatIfDate(key: string, value: string) {
+  // Check if key contains a time-related field
+  if (/(date|time|create|publish|modified|completed)/i.test(key)) {
+    const date = dayjs(value);
+    return date.isValid() ? date.format("YYYY-MM-DD HH:mm:ss") : value;
+  }
+  return value;
+}
 </script>
 
 <template>
   <v-table>
     <tbody>
       <tr
-        v-for="[key, value] in Object.entries(data)"
+        v-for="[key, value] in Object.entries(props.data)"
         :key="key"
         style="vertical-align: top"
       >
@@ -26,6 +37,7 @@ export default {
             <RecursiveTable :data="value" />
           </v-card>
         </td>
+        <td v-else-if="typeof value === 'string'">{{ formatIfDate(key, value) }}</td>
         <td v-else>{{ value }}</td>
       </tr>
     </tbody>

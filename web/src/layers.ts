@@ -96,7 +96,10 @@ export function updateLayersShown () {
                 }
             }
             const currentStyle = selectedLayerStyles.value[styleId];
-            if (layer.current_frame === frame.index) {
+            currentStyle.visible = layer.visible
+            if (currentStyle.visible && !map.getLayersOrder().some(
+                (mapLayerId) => mapLayerId.includes(sourceId)
+            ) && layer.current_frame === frame.index) {
                 addFrame(frame, sourceId);
             }
             map.getLayersOrder().forEach((mapLayerId) => {

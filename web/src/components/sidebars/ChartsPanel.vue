@@ -12,8 +12,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import RecursiveTable from "./RecursiveTable.vue";
 import { Chart, ChartOptions } from "@/types";
+import MetadataView from "../MetadataView.vue";
 
 ChartJS.register(
   CategoryScale,
@@ -165,7 +165,7 @@ const downloadReady = computed(() => {
     />
     <v-card class="panel-content-inner">
       <div v-if="currentChart" class="pa-2">
-        <div style="position: absolute; right: 0">
+        <div style="position: absolute; right: 0;">
           <a ref="downloadButton">
             <v-btn
               v-tooltip="'Download'"
@@ -203,13 +203,6 @@ const downloadReady = computed(() => {
               />
             </div>
           </div>
-          <v-expansion-panels v-if="currentChart?.metadata">
-            <v-expansion-panel title="Metadata">
-              <v-expansion-panel-text>
-                <RecursiveTable :data="currentChart.metadata" />
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
       </div>
       <v-list
         v-else-if="filteredCharts?.length"
@@ -220,6 +213,7 @@ const downloadReady = computed(() => {
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
             <v-icon icon="mdi-poll" size="small" class="ml-2"></v-icon>
+            <MetadataView :metadata="chart.metadata" :name="chart.name" />
           </template>
         </v-list-item>
       </v-list>

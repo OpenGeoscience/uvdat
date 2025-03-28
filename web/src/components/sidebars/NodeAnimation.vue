@@ -90,7 +90,7 @@ watch(currentTick, async () => {
         :max="Object.keys(nodeChanges).length"
         hide-details
       />
-      {{ currentTick }}
+      {{ currentTick + 1 }}
     </div>
     <div class="animation-row">
       <v-btn @click="play" icon="mdi-play" variant="text"  density="compact"/>

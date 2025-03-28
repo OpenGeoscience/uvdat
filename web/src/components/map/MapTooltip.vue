@@ -11,7 +11,7 @@ import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
-import RecursiveTable from "../sidebars/RecursiveTable.vue";
+import RecursiveTable from "../RecursiveTable.vue";
 import { getDBObjectsForSourceID } from "@/layers";
 import { toggleNodeActive } from "@/networks";
 
