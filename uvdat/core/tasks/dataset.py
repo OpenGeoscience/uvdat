@@ -5,7 +5,7 @@ from uvdat.core.models import Dataset, FileItem, Layer, LayerFrame, RasterData, 
 from .conversion import convert_file_item
 from .data import create_vector_features
 from .networks import create_network
-from .regions import create_source_regions
+from .regions import create_regions_from_vector_data
 
 
 def create_layers_and_frames(dataset, layer_options=None):
@@ -117,10 +117,10 @@ def convert_dataset(
         if network_options:
             create_network(vector_data, network_options)
         elif region_options:
-            create_source_regions(vector_data, region_options)
+            create_regions_from_vector_data(vector_data, region_options)
 
         # Create vector features after geojson_data may have
-        # been altered by create_network or create_source_regions
+        # been altered by create_network or create_regions_from_vector_data
         create_vector_features(vector_data)
 
     create_layers_and_frames(dataset, layer_options)

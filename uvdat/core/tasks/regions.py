@@ -6,7 +6,7 @@ import geopandas
 from uvdat.core.models import Region
 
 
-def create_source_regions(vector_data, region_options):
+def create_regions_from_vector_data(vector_data, region_options):
     # Overwrite previous results
     dataset = vector_data.dataset
     Region.objects.filter(dataset=dataset).delete()
