@@ -1,12 +1,18 @@
 import secrets
+from typing import TypedDict
 
 from django.contrib.gis.geos import GEOSGeometry
 import geopandas
 
 from uvdat.core.models import Region
+from uvdat.core.models.data import VectorData
 
 
-def create_regions_from_vector_data(vector_data, region_options):
+class RegionOptions(TypedDict):
+    name_property: str
+
+
+def create_regions_from_vector_data(vector_data: VectorData, region_options: RegionOptions):
     # Overwrite previous results
     dataset = vector_data.dataset
     Region.objects.filter(dataset=dataset).delete()
