@@ -313,18 +313,26 @@ async function cacheRasterData(raster: RasterData) {
 }
 
 function handleLayerClick(e: MapLayerMouseEvent) {
-    if (!e.features?.length) {
-      return;
-    }
     const map = getMap();
-    const featQuery = map.queryRenderedFeatures(e.point).toSorted(
-        (feat) => map.style._order.indexOf(feat.layer.id)
-    ).toReversed();
+    const clickedFeatures = map.queryRenderedFeatures(e.point);
+    if (!clickedFeatures.length) {
+        return;
+    }
 
-    // While multiple features may be clicked in the same layer, just choose the first one.
-    // Our functions operate at the granularity of a single layer, so it would make no difference.
-    const feature = e.features[0];
-    if (featQuery.length && feature && feature.source === featQuery[0].source) {
+    // Sort features that were clicked on by their reverse layer ordering,
+    // since the last element in the list (the top one) should be the first one clicked.
+    const featQuery = clickedFeatures.toSorted(
+        (feat1, feat2) => {
+            const order = map.getLayersOrder();
+            return order.indexOf(feat2.layer.id) - order.indexOf(feat1.layer.id);
+        }
+    );
+
+    // Select the first feature in this ordering, since this is the one that should be clicked on
+    const feature = featQuery[0];
+
+    // Perform this check to prevent unnecessary repeated assignment
+    if (feature !== clickedFeature.value?.feature) {
         clickedFeature.value = {
             feature,
             pos: e.lngLat,
