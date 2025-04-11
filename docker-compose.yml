@@ -46,8 +46,6 @@ services:
     image: redis:latest
     volumes:
       - redis-data:/redis/data
-    ports:
-      - 6379:6379
 
 volumes:
   postgres:
