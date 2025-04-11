@@ -98,7 +98,7 @@ export async function getNetworkGCC(
     await apiClient.get(
       `networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
     )
-  ).data;
+  ).data.gcc;
 }
 
 export async function getRasterDataValues(rasterId: number): Promise<RasterDataValues> {
