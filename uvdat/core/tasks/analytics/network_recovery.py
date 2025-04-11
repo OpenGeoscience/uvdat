@@ -37,6 +37,7 @@ class NetworkRecovery(AnalysisType):
         self.output_types = {
             'recoveries': 'network_animation',
             'gcc_chart': 'Chart',
+            'resiliency_score': 'number',
         }
         self.attribution = 'Jack Watson, Northeastern University'
 
@@ -237,9 +238,14 @@ def network_recovery(result_id):
             )
             chart.save()
 
+            # resiliency score equals area under gcc curve with outages
+            # over area under gcc curve without outages
+            resiliency = sum(gcc_values) / (network.nodes.count() * len(gcc_values))
+
             result.outputs = dict(
                 recoveries=recovery_timesteps,
                 gcc_chart=chart.id,
+                resiliency_score=resiliency,
             )
     except Exception as e:
         result.error = str(e)

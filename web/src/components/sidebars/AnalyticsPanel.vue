@@ -273,10 +273,14 @@ async function fillInputsAndOutputs() {
           if (type == 'Chart') {
             value = await getChart(value)
           }
-          if (value) {
+          if (typeof value === 'object') {
             value.type = type;
             value.visible = isVisible(value)
             value.showable = showableTypes.includes(value.type)
+          } else {
+            value = {
+              name: value,
+            }
           }
           return [key, value];
         })
