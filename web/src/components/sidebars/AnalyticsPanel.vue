@@ -186,9 +186,19 @@ function show(value: any) {
       })
     }
   }
+   else if (['RasterData', 'VectorData'].includes(value.type)) {
+    if (value.dataset) {
+      getDataset(value.dataset).then((dataset) => {
+        show({
+          ...dataset,
+          type: 'Dataset'
+        })
+      })
+    }
+   }
 }
 
-const showableTypes = ['Chart', 'Dataset', 'Network', 'Layer', 'AnalysisResult']
+const showableTypes = ['Chart', 'Dataset', 'Network', 'Layer', 'AnalysisResult', 'RasterData', 'VectorData']
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
