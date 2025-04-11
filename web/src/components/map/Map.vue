@@ -15,6 +15,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
+import { updateLayersShown } from "@/layers";
 
 const ATTRIBUTION = [
   "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
@@ -168,6 +169,7 @@ watch(theme, () => {
     },
   });
   setAttributionControlStyle();
+  updateLayersShown()
 });
 
 watch(openSidebars, () => {

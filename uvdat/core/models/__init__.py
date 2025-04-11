@@ -1,3 +1,4 @@
+from .analysis_result import AnalysisResult
 from .chart import Chart
 from .data import RasterData, VectorData, VectorFeature
 from .dataset import Dataset
@@ -6,9 +7,9 @@ from .layer import Layer, LayerFrame
 from .networks import Network, NetworkEdge, NetworkNode
 from .project import Project
 from .regions import Region
-from .simulations import SimulationResult
 
 __all__ = [
+    AnalysisResult,
     Chart,
     Project,
     Dataset,
@@ -22,5 +23,4 @@ __all__ = [
     Network,
     NetworkEdge,
     NetworkNode,
-    SimulationResult,
 ]
