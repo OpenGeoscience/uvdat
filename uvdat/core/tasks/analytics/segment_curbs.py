@@ -103,6 +103,7 @@ def segment_curbs(result_id):
                 raster.inference()
 
                 result.write_status('Saving results as new datasets...')
+                outputs = {}
                 for result_set in ['polygons', 'network']:
                     result_folder = next(output_folder.glob(f'area/{result_set}'))
                     zip_path = output_folder / f'{result_set}.zip'
@@ -134,7 +135,8 @@ def segment_curbs(result_id):
                         with zip_path.open('rb') as f:
                             file_item.file.save(zip_path, ContentFile(f.read()))
                         dataset.spawn_conversion_task(asynchronous=False)
-                        result.outputs[result_set] = dataset.id
+                        outputs[result_set] = dataset.id
+                result.outputs = outputs
     except Exception as e:
         result.error = str(e)
     result.complete()
