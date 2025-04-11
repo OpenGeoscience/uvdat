@@ -228,13 +228,15 @@ async function fillInputsAndOutputs() {
   } else {
     fullInputs.value = Object.fromEntries(
       Object.entries(currentResult.value.inputs).map(([key, value]) => {
-        value = currentAnalysisType.value?.input_options[key]?.find(
+        const fullValue = currentAnalysisType.value?.input_options[key]?.find(
           (o: any) => o.id == value
         );
-        value.type = currentAnalysisType.value?.input_types[key]
-        value.visible = isVisible(value)
-        value.showable = showableTypes.includes(value.type)
-        return [key, value];
+        if (fullValue) {
+          fullValue.type = currentAnalysisType.value?.input_types[key]
+          fullValue.visible = isVisible(fullValue)
+          fullValue.showable = showableTypes.includes(fullValue.type)
+        }
+        return [key, fullValue || value];
       })
     );
     if (fullInputs.value?.flood_simulation && !additionalAnimationLayers.value) {
@@ -261,9 +263,11 @@ async function fillInputsAndOutputs() {
           if (type == 'Chart') {
             value = await getChart(value)
           }
-          value.type = type;
-          value.visible = isVisible(value)
-          value.showable = showableTypes.includes(value.type)
+          if (value) {
+            value.type = type;
+            value.visible = isVisible(value)
+            value.showable = showableTypes.includes(value.type)
+          }
           return [key, value];
         })
       )
@@ -401,7 +405,7 @@ watch(
                         :key="key"
                       >
                         <td>{{ key.replaceAll('_', ' ') }}</td>
-                        <td>
+                        <td v-if="value">
                           {{ value.name || value }}
                           <v-btn
                             v-if="value.showable && !value.visible"
@@ -439,7 +443,7 @@ watch(
                           v-for="[key, value] in Object.entries(fullOutputs)"
                           :key="key"
                         >
-                        <template v-if="value.type == 'network_animation'">
+                        <template v-if="value?.type == 'network_animation'">
                           <td colspan="2">
                             <div v-if="value?.length === 0">
                               No nodes are affected in this scenario.
@@ -459,9 +463,9 @@ watch(
                         <template v-else>
                           <td>{{ key.replaceAll('_', ' ') }}</td>
                           <td>
-                            {{ value.name }}
+                            {{ value?.name }}
                             <v-btn
-                              v-if="value.showable && !value.visible"
+                              v-if="value && value.showable && !value.visible"
                               color="primary"
                               density="compact"
                               style="display: block"
