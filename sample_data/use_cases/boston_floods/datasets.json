@@ -307,34 +307,6 @@
         ]
     },
     {
-        "name": "Boston Flood Timeseries",
-        "description": "46-hour flood simulation over the Boston Harbor Watershed",
-        "category": "flood",
-        "metadata": {
-            "source": "Simulated by Jack Watson at Northeastern University"
-        },
-        "files": [
-            {
-                "url": "https://data.kitware.com/api/v1/item/6564cc5ac5a2b36857ad16cf/download",
-                "path": "boston/flood_simulation.zip"
-            },
-            {
-                "url": "https://data.kitware.com/api/v1/item/6584bcfe8c54f378b99230b0/download",
-                "path": "boston/flood_simulation.nc"
-            }
-        ],
-        "layers": [
-            {
-                "name": "45-hour flood from many files",
-                "source_file": "flood_simulation.zip"
-            },
-            {
-                "name": "45-hour flood from one multiband file",
-                "data": "flood_simulation.nc"
-            }
-        ]
-    },
-    {
         "name": "DC Metro",
         "description": "DC Metro Lines and Stations",
         "category": "transportation",

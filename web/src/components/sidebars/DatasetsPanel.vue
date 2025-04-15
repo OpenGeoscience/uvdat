@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
+import { addLayer } from '@/layers';
 import MetadataView from '@/components/MetadataView.vue'
 import { Dataset, Layer } from '@/types';
-import { mapSources, selectedLayers } from "@/store";
 
 
 const props = defineProps<{
@@ -12,20 +12,7 @@ const props = defineProps<{
 function toggleSelected(items: Layer[]) {
   items.forEach((item) => {
     const layer = item as Layer;
-    let name = layer.name;
-    let copy_id = 0;
-    const existing = Object.keys(mapSources.value).filter((sourceId) => {
-      const [layerId] = sourceId.split('.');
-      return parseInt(layerId) === layer.id
-    })
-    if (existing.length) {
-      copy_id = existing.length;
-      name = `${layer.name} (${copy_id})`;
-    }
-    selectedLayers.value = [
-      {...layer, name, copy_id, visible: true, current_frame: 0},
-      ...selectedLayers.value,
-    ];
+    addLayer(layer);
   })
 }
 </script>

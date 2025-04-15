@@ -40,6 +40,8 @@ setup(
     install_requires=[
         # Pinned August 2024
         'celery==5.4.0',
+        'channels[daphne]==4.2.0',  # added March 2025 for analytics
+        'channels-redis==4.2.1',  # added March 2025 for analytics
         'django==5.0.7',
         'django-configurations[database,email]==2.5.1',
         'django-extensions==3.2.3',
