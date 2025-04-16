@@ -187,6 +187,10 @@ export interface Network {
   edges: number[];
   metadata: Record<string, unknown>;
   vector_data: number;
+  selected?: {
+    nodes: number[];
+    edges: number[];
+  },
   deactivated?: {
     nodes: number[];
     edges: number[];

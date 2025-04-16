@@ -4,7 +4,7 @@ import {
 } from "@/api/rest";
 import { Dataset, Network } from "./types";
 import { availableNetworks, currentNetwork, panelArrangement } from './store';
-import { showGCC } from "./layerStyles";
+import { styleNetwork } from "./layerStyles";
 
 
 interface GCCResult {
@@ -59,7 +59,7 @@ export async function setNetworkDeactivatedNodes(network: Network, nodeIds: numb
     } else {
         network.gcc = network.nodes
     }
-    showGCC(network)
+    styleNetwork(network)
     availableNetworks.value = availableNetworks.value.map((n) => {
         if (n.id === network.id) return network
         return n

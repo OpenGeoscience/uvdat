@@ -2,8 +2,9 @@
 import { ref, computed, watch } from "vue";
 import { loadingNetworks, availableNetworks, currentNetwork } from '@/store';
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
-import { NetworkNode, NetworkEdge } from '@/types';
+import { NetworkNode, NetworkEdge, Network } from '@/types';
 import { isVisible, show } from '@/storeFunctions';
+import { styleNetwork } from '@/layerStyles';
 
 import MetadataView from "../MetadataView.vue";
 
@@ -18,17 +19,26 @@ const filteredNetworks = computed(() => {
 
 const tab = ref();
 const currentNodes = ref<NetworkNode[]>([]);
-const selectedNodes = ref<NetworkNode[]>([]);
+const selectedNodes = ref<number[]>([]);
 const currentEdges = ref<NetworkEdge[]>([]);
 
 const headers = [
-    { title: 'Name', value: 'name', align: 'left', sortable: true },
-    { title: '', value: 'metadata', align: 'right', sortable: false, width: 20 },
+    { title: 'Name', value: 'name', sortable: true },
+    { title: '', value: 'metadata', sortable: false, width: 20 },
 ]
+
+function showNetwork(network: any) {
+    show(network)
+    styleNetwork(network)
+}
 
 watch(currentNetwork, () => {
     searchText.value = ''
     if (currentNetwork.value) {
+        currentNetwork.value.selected = {
+            nodes: [],
+            edges: [],
+        }
         getNetworkNodes(currentNetwork.value.id).then((nodes) => {
             currentNodes.value = nodes;
         })
@@ -40,6 +50,16 @@ watch(currentNetwork, () => {
         currentEdges.value = [];
     }
 })
+
+watch(selectedNodes, () => {
+    if (currentNetwork.value) {
+        if (!currentNetwork.value.selected) {
+            currentNetwork.value.selected = { nodes: [], edges: [] }
+        }
+        currentNetwork.value.selected.nodes = selectedNodes.value;
+        styleNetwork(currentNetwork.value)
+    }
+}, {deep: true})
 </script>
 
 <template>
@@ -61,7 +81,7 @@ watch(currentNetwork, () => {
                         {{ currentNetwork.name }}
                         <v-btn
                             v-if="!isVisible({...currentNetwork, type: 'Network'})"
-                            @click="show({...currentNetwork, type: 'Network'})"
+                            @click="showNetwork({...currentNetwork, type: 'Network'})"
                             density="compact"
                         >
                             Show
@@ -91,10 +111,10 @@ watch(currentNetwork, () => {
                     <v-window v-model="tab">
                         <v-window-item value="nodes">
                             <v-data-table
+                                v-model="selectedNodes"
                                 :items="currentNodes"
                                 :headers="headers"
                                 :search="searchText"
-                                v-model:selected="selectedNodes"
                                 items-per-page="100"
                                 class="transparent"
                                 show-select
@@ -128,7 +148,6 @@ watch(currentNetwork, () => {
                     >
                         {{ network.name }}
                         <template v-slot:append>
-                            <v-icon v-if="network.description" icon="mdi-information-outline" size="small" v-tooltip="network.description"></v-icon>
                             <v-icon icon="mdi-transit-connection-variant" size="small" class="ml-2"></v-icon>
                             <MetadataView :metadata="network.metadata" :name="network.name" />
                         </template>

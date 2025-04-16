@@ -87,7 +87,7 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
             }
         }
     }
-    if (network?.gcc && opacity) showGCC(network)
+    if (network?.gcc && opacity) styleNetwork(network)
 }
 
 interface NetworkStyle {
@@ -95,14 +95,15 @@ interface NetworkStyle {
     deactivate?: number | string,
     activate?: number | string,
     gcc?: number | string,
+    selected?: number | string,
     default: number | string,
-
 }
 
-export function showGCC(network: Network) {
+export function styleNetwork(network: Network) {
     const vectorId = network.vector_data;
     const map = getMap();
     const gccColor = "#f7e059";
+    const selectedColor = "#ffffff";
     const deactivateColor = "#7b3294";
     const activateColor = "#008837";
     map.getLayersOrder().forEach((mapLayerId) => {
@@ -114,7 +115,8 @@ export function showGCC(network: Network) {
                 deactivate: deactivateColor,
                 activate: activateColor,
                 gcc: gccColor,
-                default: defaultColor
+                selected: selectedColor,
+                default: defaultColor,
             }
             const opacityStyle = {
                 inactive: 0.4,
@@ -132,15 +134,16 @@ export function showGCC(network: Network) {
                 const featureType = styleName.split('-')[0]
                 if (mapLayerId.includes("."+featureType)) {
                     const defaultValue = style.default;
+                    const selectedValue = style.selected || style.default;
                     const gccValue = style.gcc || style.default;
                     const inactiveValue = style.inactive || style.default;
                     const deactivateValue = style.deactivate || style.default;
                     const activateValue = style.activate || style.default;
-                    const deactivate = network.changes?.deactivate_nodes;
-                    const activate = network.changes?.activate_nodes;
+                    const deactivate = network.changes?.deactivate_nodes || [];
+                    const activate = network.changes?.activate_nodes || [];
                     const inactive = network.deactivated?.nodes.filter((n) => (
                         !deactivate?.includes(n) && !activate?.includes(n)
-                    ))
+                    )) || [];
                     map.setPaintProperty(
                         mapLayerId,
                         styleName,
@@ -169,9 +172,14 @@ export function showGCC(network: Network) {
                             inactiveValue,
                             [
                                 "any",
-                                ["in", ["get", "node_id"], ["literal", network.gcc]],
-                                ["in", ["get", "from_node_id"], ["literal", network.gcc]],
-                                ["in", ["get", "to_node_id"], ["literal", network.gcc]],
+                                ["in", ["get", "node_id"], ["literal", network.selected?.nodes || []]],
+                            ],
+                            selectedValue,
+                            [
+                                "any",
+                                ["in", ["get", "node_id"], ["literal", network.gcc || []]],
+                                ["in", ["get", "from_node_id"], ["literal", network.gcc || []]],
+                                ["in", ["get", "to_node_id"], ["literal", network.gcc || []]],
                             ],
                             gccValue,
                             defaultValue,
