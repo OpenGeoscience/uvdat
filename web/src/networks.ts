@@ -3,7 +3,7 @@ import {
     getNetworkGCC,
 } from "@/api/rest";
 import { Dataset, Network } from "./types";
-import { availableNetworks } from './store';
+import { availableNetworks, currentNetwork, panelArrangement } from './store';
 import { showGCC } from "./layerStyles";
 
 
@@ -57,7 +57,7 @@ export async function setNetworkDeactivatedNodes(network: Network, nodeIds: numb
             })
         }
     } else {
-        network.gcc = network.nodes.map((n) => n.id)
+        network.gcc = network.nodes
     }
     showGCC(network)
     availableNetworks.value = availableNetworks.value.map((n) => {
@@ -72,20 +72,29 @@ export async function getNetwork(
 ): Promise<Network | undefined> {
     let network;
     availableNetworks.value.forEach((net) => {
-        if (net.nodes.map((n) => n.id).includes(nodeId)) {
+        if (net.nodes.includes(nodeId)) {
             network = net;
         }
     })
     if (!network) {
         availableNetworks.value = [
             ...availableNetworks.value,
-            ...await getDatasetNetworks(dataset.id),
+            ...(await getDatasetNetworks(dataset.id)).filter((net) => {
+                return !availableNetworks.value.map((n) => n.id).includes(net.id)
+            }),
         ]
     }
     availableNetworks.value.forEach((net) => {
-        if (net.nodes.map((n) => n.id).includes(nodeId)) {
+        if (net.nodes.includes(nodeId)) {
             network = net;
         }
     })
+    if (availableNetworks.value.length) {
+        panelArrangement.value = panelArrangement.value.map((panel) => {
+            if (panel.id === 'networks') panel.visible = true;
+            return panel
+        })
+    }
+    currentNetwork.value = network;
     return network;
 }

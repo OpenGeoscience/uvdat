@@ -60,6 +60,7 @@ export const selectedSourceRegions = ref<SourceRegion[]>([]);
 
 // Network
 export const availableNetworks = ref<Network[]>([]);
+export const currentNetwork = ref<Network>();
 
 // ETC
 export const currentUser = ref<User>();

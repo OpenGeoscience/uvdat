@@ -1,10 +1,5 @@
 import { MapGeoJSONFeature } from "maplibre-gl";
 
-export interface Network {
-  nodes: NetworkNode[];
-  edges: NetworkEdge[];
-}
-
 export interface User {
   id: number;
   username: string;
@@ -188,8 +183,8 @@ export interface Network {
   id: number;
   name: string;
   category: string;
-  nodes: NetworkNode[];
-  edges: NetworkEdge[];
+  nodes: number[];
+  edges: number[];
   metadata: Record<string, unknown>;
   vector_data: number;
   deactivated?: {
