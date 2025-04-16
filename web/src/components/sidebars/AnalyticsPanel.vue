@@ -341,8 +341,9 @@ watch(
 </script>
 
 <template>
-  <div class="panel-content-outer with-search">
+  <div :class="currentAnalysisType ? 'panel-content-outer' : 'panel-content-outer with-search'">
     <v-text-field
+      v-if="!currentAnalysisType"
       v-model="searchText"
       label="Search Analytics"
       variant="outlined"

@@ -68,12 +68,20 @@ export function clearState() {
       order: 1,
     },
     {
+      id: 'networks',
+      label: 'Networks',
+      visible: true,
+      closeable: true,
+      dock: 'right',
+      order: 2,
+    },
+    {
       id: "analytics",
       label: "Analytics",
       visible: true,
       closeable: true,
       dock: 'right',
-      order: 2,
+      order: 3,
     },
   ];
   draggingPanel.value = undefined;
