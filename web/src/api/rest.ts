@@ -10,6 +10,7 @@ import {
   AnalysisType,
   Network,
   RasterDataValues,
+  NetworkNode,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -95,6 +96,14 @@ export async function getProjectNetworks(projectId: number): Promise<Network[]> 
 
 export async function getNetwork(networkId: number): Promise<Network> {
   return (await apiClient.get(`networks/${networkId}`)).data;
+}
+
+export async function getNetworkNodes(networkId: number): Promise<NetworkNode[]> {
+  return (await apiClient.get(`networks/${networkId}/nodes`)).data;
+}
+
+export async function getNetworkEdges(networkId: number): Promise<NetworkNode[]> {
+  return (await apiClient.get(`networks/${networkId}/edges`)).data;
 }
 
 export async function getNetworkGCC(

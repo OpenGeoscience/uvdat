@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { loadingNetworks, availableNetworks, currentNetwork } from '@/store';
+import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
+import { NetworkNode, NetworkEdge } from '@/types';
 
 import MetadataView from "../MetadataView.vue";
 
@@ -11,6 +13,31 @@ const filteredNetworks = computed(() => {
         return !searchText.value ||
             network.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
+})
+
+const tab = ref();
+const currentNodes = ref<NetworkNode[]>([]);
+const selectedNodes = ref<NetworkNode[]>([]);
+const currentEdges = ref<NetworkEdge[]>([]);
+
+const headers = [
+    { title: 'Name', value: 'name', align: 'left', sortable: true },
+    { title: '', value: 'metadata', align: 'right', sortable: false, width: 20 },
+]
+
+watch(currentNetwork, () => {
+    searchText.value = ''
+    if (currentNetwork.value) {
+        getNetworkNodes(currentNetwork.value.id).then((nodes) => {
+            currentNodes.value = nodes;
+        })
+        getNetworkEdges(currentNetwork.value.id).then((edges) => {
+            currentEdges.value = edges;
+        })
+    } else {
+        currentNodes.value = [];
+        currentEdges.value = [];
+    }
 })
 </script>
 
@@ -27,14 +54,60 @@ const filteredNetworks = computed(() => {
             hide-details
         />
         <v-card class="panel-content-inner">
-            <div v-if="currentNetwork" class="network-title">
-                {{ currentNetwork.name }}
-                <v-btn
-                    v-tooltip="'Close'"
-                    icon="mdi-close"
-                    variant="plain"
-                    @click="currentNetwork = undefined"
+            <div v-if="currentNetwork">
+                <div class="network-title">
+                    {{ currentNetwork.name }}
+                    <v-btn
+                        v-tooltip="'Close'"
+                        icon="mdi-close"
+                        variant="plain"
+                        @click="currentNetwork = undefined"
+                    />
+                </div>
+                <v-text-field
+                    v-model="searchText"
+                    label="Search Nodes and Edges"
+                    variant="outlined"
+                    density="compact"
+                    class="mb-2"
+                    append-inner-icon="mdi-magnify"
+                    hide-details
                 />
+                <v-tabs v-model="tab" align-tabs="center" fixed-tabs>
+                    <v-tab value="nodes">Nodes</v-tab>
+                    <v-tab value="edges">Edges</v-tab>
+                    </v-tabs>
+
+                    <v-window v-model="tab">
+                        <v-window-item value="nodes">
+                            <v-data-table
+                                :items="currentNodes"
+                                :headers="headers"
+                                :search="searchText"
+                                v-model:selected="selectedNodes"
+                                items-per-page="100"
+                                class="transparent"
+                                show-select
+                            >
+                                <template v-slot:item.metadata="{ item }">
+                                    <MetadataView :metadata="item.metadata" :name="item.name" />
+                                </template>
+                            </v-data-table>
+                        </v-window-item>
+                        <v-window-item value="edges">
+                            <v-data-table
+                                :items="currentEdges"
+                                :headers="headers"
+                                :search="searchText"
+                                items-per-page="100"
+                                class="transparent"
+                            >
+                                <template v-slot:item.metadata="{ item }">
+                                    <MetadataView :metadata="item.metadata" :name="item.name" />
+                                </template>
+                            </v-data-table>
+                        </v-window-item>
+                    </v-window>
             </div>
             <div v-else-if="filteredNetworks?.length">
                 <v-list density="compact">
