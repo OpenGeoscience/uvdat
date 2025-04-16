@@ -38,8 +38,8 @@ import {
   getDatasetLayers,
   getProjectNetworks,
 } from "@/api/rest";
-import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
-import { Dataset, Project } from "./types";
+import { addLayer, clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
+import { Chart, Dataset, Layer, Project } from "./types";
 
 export function clearState() {
   clearProjectState();
@@ -209,6 +209,125 @@ watch(currentProject, () => {
     })
   }
 });
+
+export function isVisible(value: any): boolean {
+  if (value.type == 'Chart') {
+    const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
+    if (!chartPanel) return false;
+    return currentChart.value?.id == value.id && chartPanel.visible
+  } else if (value.type === 'Dataset') {
+    return selectedLayers.value.some((layer) => {
+      return layer.dataset.id === value.id && layer.visible
+    })
+  } else if (value.type === 'Layer') {
+    return selectedLayers.value.some((layer) => {
+      return layer.id === value.id && layer.visible
+    });
+  } else if (value.type === 'Network') {
+    return isVisible({
+      ...value.dataset,
+      type: 'Dataset',
+    })
+  } else if (value.type === 'AnalysisResult') {
+    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
+    if (analysisType) {
+      const showables: Record<string, any>[] = []
+       Object.entries(value.outputs).forEach(
+        ([outputKey, outputValue]) => {
+          const type = analysisType?.output_types[outputKey]
+          if (showableTypes.includes(type)) {
+            showables.push({
+              id: outputValue,
+              type
+            })
+          }
+        }
+      );
+      Object.entries(value.inputs).forEach(
+        ([inputKey, inputValue])=> {
+          const type = analysisType?.input_types[inputKey]
+          const value: Record<string, any> = analysisType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
+          if (showableTypes.includes(type)) {
+            showables.push({
+              ...value,
+              type
+            })
+          }
+        }
+      );
+      return showables.every((o) => isVisible(o))
+    }
+  }
+  return false;
+}
+
+export function show(value: any) {
+  if (value.type === 'Chart') {
+    const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
+    if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
+    currentChart.value = value as Chart
+  } else if (value.type === 'Dataset') {
+    getDatasetLayers(value.id).then((layers) => {
+      layers.forEach((layer) => {
+        show({
+          ...layer,
+          type: 'Layer'
+        })
+      })
+    })
+  } else if (value.type === 'Layer') {
+    let add = true
+    selectedLayers.value = selectedLayers.value.map((layer) => {
+        if (add && layer.id === value.id) {
+          layer.visible = true;
+          add = false;
+        }
+        return layer
+    })
+    if (add) addLayer(value as Layer)
+  } else if (value.type === 'Network') {
+    show({
+      ...value.dataset,
+      type: 'Dataset',
+    })
+  } else if (value.type === 'AnalysisResult') {
+    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
+    if (analysisType) {
+      Object.entries(value.outputs).map(([outputKey, outputValue]) => {
+        const type = analysisType.output_types[outputKey]
+        if (showableTypes.includes(type)) {
+          show({
+            id: outputValue,
+            type
+          })
+        }
+      })
+      Object.entries(value.inputs).map(([inputKey, inputValue]) => {
+        const type = analysisType.input_types[inputKey]
+        const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
+        if (showableTypes.includes(type)) {
+          show({
+            ...value,
+            type
+          })
+        }
+      })
+    }
+  }
+   else if (['RasterData', 'VectorData'].includes(value.type)) {
+    if (value.dataset) {
+      getDataset(value.dataset).then((dataset) => {
+        show({
+          ...dataset,
+          type: 'Dataset'
+        })
+      })
+    }
+   }
+}
+
+export const showableTypes = ['Chart', 'Dataset', 'Network', 'Layer', 'AnalysisResult', 'RasterData', 'VectorData']
+
 
 watch(selectedLayers, updateLayersShown)
 

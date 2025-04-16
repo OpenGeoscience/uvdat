@@ -3,6 +3,7 @@ import { ref, computed, watch } from "vue";
 import { loadingNetworks, availableNetworks, currentNetwork } from '@/store';
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
 import { NetworkNode, NetworkEdge } from '@/types';
+import { isVisible, show } from '@/storeFunctions';
 
 import MetadataView from "../MetadataView.vue";
 
@@ -56,7 +57,16 @@ watch(currentNetwork, () => {
         <v-card class="panel-content-inner">
             <div v-if="currentNetwork">
                 <div class="network-title">
-                    {{ currentNetwork.name }}
+                    <div>
+                        {{ currentNetwork.name }}
+                        <v-btn
+                            v-if="!isVisible({...currentNetwork, type: 'Network'})"
+                            @click="show({...currentNetwork, type: 'Network'})"
+                            density="compact"
+                        >
+                            Show
+                        </v-btn>
+                    </div>
                     <v-btn
                         v-tooltip="'Close'"
                         icon="mdi-close"
