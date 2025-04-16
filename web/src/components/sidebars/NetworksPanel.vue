@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { availableNetworks, currentNetwork } from '@/store';
+import { loadingNetworks, availableNetworks, currentNetwork } from '@/store';
 
 import MetadataView from "../MetadataView.vue";
 
@@ -52,6 +52,7 @@ const filteredNetworks = computed(() => {
                     </v-list-item>
                 </v-list>
             </div>
+            <v-progress-linear v-else-if="loadingNetworks" indeterminate></v-progress-linear>
             <v-card-text v-else class="help-text">No available Networks.</v-card-text>
         </v-card>
     </div>

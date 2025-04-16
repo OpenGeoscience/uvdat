@@ -26,6 +26,8 @@ import {
   loadingCharts,
   selectedLayerStyles,
   loadingProjects,
+  loadingNetworks,
+  currentNetwork,
 } from "./store";
 import {
   getProjects,
@@ -34,6 +36,7 @@ import {
   getProjectAnalysisTypes,
   getProjectDatasets,
   getDatasetLayers,
+  getProjectNetworks,
 } from "@/api/rest";
 import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
 import { Dataset, Project } from "./types";
@@ -181,6 +184,7 @@ watch(currentProject, () => {
     loadingDatasets.value = true;
     loadingCharts.value = true;
     loadingAnalysisTypes.value = true;
+    loadingNetworks.value = true;
     getProjectDatasets(currentProject.value.id).then(async (datasets) => {
       availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
         dataset.layers = await getDatasetLayers(dataset.id);
@@ -193,6 +197,11 @@ watch(currentProject, () => {
       currentChart.value = undefined;
       loadingCharts.value = false;
     });
+    getProjectNetworks(currentProject.value.id).then((networks) => {
+      availableNetworks.value = networks;
+      currentNetwork.value = undefined;
+      loadingNetworks.value = false;
+    })
     getProjectAnalysisTypes(currentProject.value.id).then((types) => {
       availableAnalysisTypes.value = types;
       currentAnalysisType.value = undefined;

@@ -59,6 +59,7 @@ export const currentAnalysisType = ref<AnalysisType>();
 export const selectedSourceRegions = ref<SourceRegion[]>([]);
 
 // Network
+export const loadingNetworks = ref<boolean>(false);
 export const availableNetworks = ref<Network[]>([]);
 export const currentNetwork = ref<Network>();
 
