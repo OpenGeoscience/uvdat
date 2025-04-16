@@ -209,6 +209,7 @@ export interface NetworkNode {
   metadata: object;
   capacity: number | null;
   location: number[];
+  active?: boolean;
 }
 
 export interface NetworkEdge {
@@ -221,6 +222,7 @@ export interface NetworkEdge {
   directed: boolean;
   from_node: number;
   to_node: number;
+  active: boolean;
 }
 
 export interface VectorTile {

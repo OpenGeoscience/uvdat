@@ -7,6 +7,7 @@ import { isVisible, show } from '@/storeFunctions';
 import { styleNetwork } from '@/layerStyles';
 
 import MetadataView from "../MetadataView.vue";
+import { setNetworkDeactivatedNodes } from "@/networks";
 
 
 const searchText = ref();
@@ -18,18 +19,52 @@ const filteredNetworks = computed(() => {
 })
 
 const tab = ref();
-const currentNodes = ref<NetworkNode[]>([]);
+const nodes = ref<NetworkNode[]>([]);
+const edges = ref<NetworkEdge[]>([]);
 const selectedNodes = ref<number[]>([]);
-const currentEdges = ref<NetworkEdge[]>([]);
+const currentNodes = computed(() => {
+    return nodes.value.map((n) => {
+        n.active = !currentNetwork.value?.deactivated?.nodes?.includes(n.id)
+        return n
+    })
+})
+const currentEdges = computed(() => {
+    return edges.value.map((e) => {
+        e.active = (
+            !currentNetwork.value?.deactivated?.nodes?.includes(e.from_node) &&
+            !currentNetwork.value?.deactivated?.nodes?.includes(e.to_node)
+        )
+        return e
+    })
+})
 
 const headers = [
+    { title: '', value: 'active', sortable: true, width: 10 },
     { title: 'Name', value: 'name', sortable: true },
-    { title: '', value: 'metadata', sortable: false, width: 20 },
+    { title: '', value: 'metadata', sortable: false, width: 10 },
 ]
 
 function showNetwork(network: any) {
     show(network)
     styleNetwork(network)
+}
+
+function toggleSelected() {
+    if (currentNetwork.value) {
+        let deactivated = currentNetwork.value?.deactivated?.nodes || []
+        if (selectedNodes.value.every((n) => deactivated.includes(n))) {
+            deactivated = deactivated.filter((n) => !selectedNodes.value.includes(n))
+        } else {
+            deactivated = [
+                ...deactivated,
+                ...selectedNodes.value,
+            ]
+        }
+        setNetworkDeactivatedNodes(
+            currentNetwork.value,
+            deactivated,
+        )
+    }
 }
 
 watch(currentNetwork, () => {
@@ -39,15 +74,15 @@ watch(currentNetwork, () => {
             nodes: [],
             edges: [],
         }
-        getNetworkNodes(currentNetwork.value.id).then((nodes) => {
-            currentNodes.value = nodes;
+        getNetworkNodes(currentNetwork.value.id).then((results) => {
+            nodes.value = results;
         })
-        getNetworkEdges(currentNetwork.value.id).then((edges) => {
-            currentEdges.value = edges;
+        getNetworkEdges(currentNetwork.value.id).then((results) => {
+            edges.value = results;
         })
     } else {
-        currentNodes.value = [];
-        currentEdges.value = [];
+        nodes.value = [];
+        edges.value = [];
     }
 })
 
@@ -119,6 +154,12 @@ watch(selectedNodes, () => {
                                 class="transparent"
                                 show-select
                             >
+                                <template v-slot:item.active="{ item }">
+                                    <v-icon
+                                        :icon="item.active ? 'mdi-circle-outline' : 'mdi-close'"
+                                        :color="item.active ? 'green' : 'red'"
+                                    />
+                                </template>
                                 <template v-slot:item.metadata="{ item }">
                                     <MetadataView :metadata="item.metadata" :name="item.name" />
                                 </template>
@@ -132,6 +173,12 @@ watch(selectedNodes, () => {
                                 items-per-page="100"
                                 class="transparent"
                             >
+                                <template v-slot:item.active="{ item }">
+                                    <v-icon
+                                        :icon="item.active ? 'mdi-circle-outline' : 'mdi-close'"
+                                        :color="item.active ? 'green' : 'red'"
+                                    />
+                                </template>
                                 <template v-slot:item.metadata="{ item }">
                                     <MetadataView :metadata="item.metadata" :name="item.name" />
                                 </template>
@@ -157,6 +204,13 @@ watch(selectedNodes, () => {
             <v-progress-linear v-else-if="loadingNetworks" indeterminate></v-progress-linear>
             <v-card-text v-else class="help-text">No available Networks.</v-card-text>
         </v-card>
+        <v-btn
+            class="toggle-btn"
+            v-if="currentNetwork && tab == 'nodes' && selectedNodes.length"
+            @click="toggleSelected"
+        >
+            Toggle Selected
+        </v-btn>
     </div>
 </template>
 
@@ -166,5 +220,14 @@ watch(selectedNodes, () => {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
+}
+.toggle-btn {
+    position: absolute !important;
+    bottom: 20px;
+    right: 15px;
+    z-index: 1;
+}
+.v-data-table__td {
+    padding: 0px 4px !important;
 }
 </style>
