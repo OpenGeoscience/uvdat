@@ -67,15 +67,20 @@ function toggleSelected(items: Layer[]) {
               class="item-title"
             >
               <div
-                style="text-wrap: wrap; align-items: center; width: 90%"
+                style="text-wrap: wrap; align-items: center; width: 90%; cursor: pointer"
                 @click.stop="() => toggleSelected([layer])"
               >
-                <v-icon
-                  icon="mdi-plus"
-                  color="primary"
-                  v-tooltip="'Add to Selected Layers'"
-                  class="layer-select-button"
-                ></v-icon>
+                <span>
+                  <v-icon
+                    icon="mdi-plus"
+                    color="primary"
+                    class="layer-select-button"
+                  >
+                  </v-icon>
+                  <v-tooltip activator="parent" location="bottom">
+                    Add to Selected Layers
+                  </v-tooltip>
+                </span>
                 {{ layer.name }}
               </div>
               <div style="padding-right: 22.5px">
