@@ -7,7 +7,7 @@ export const THEMES = {
             surface: "#EDEEF0", // sidebars, menus
             "surface-bright": "#FFFFFF", // floating panels
             "surface-light": "#F5F5F5", // toolbars
-            "surface-variant": "#FFFFFF", // tooltip background
+            "surface-variant": "#DDDDDD", // tooltip background
             "on-surface-variant": "#141516", // tooltip text
             "secondary-darken-1": "#018786", // overlay scrim
             "primary-text": "#141516",
@@ -30,7 +30,7 @@ export const THEMES = {
             surface: "#343536", // sidebars, menus
             "surface-bright": "#141516", // floating panels
             "surface-light": "#3C3C3C", // toolbars
-            "surface-variant": "#141516", // tooltip background
+            "surface-variant": "#454545", // tooltip background
             "on-surface-variant": "#FFFFFF", // tooltip text
             "secondary-darken-1": "#0A0A0B", // overlay scrim
             "primary-text": "#FFFFFF",
