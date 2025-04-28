@@ -138,6 +138,6 @@ def test_flood_analysis_chain(project):
     assert result_3.outputs is not None
 
     recoveries = result_3.outputs.get('recoveries')
-    assert len(recoveries) == 134
-    assert recoveries[0] == 9
-    assert recoveries[133] == 1
+    assert len(recoveries) == 135
+    assert len(recoveries['0']) == 134
+    assert len(recoveries['133']) == 1

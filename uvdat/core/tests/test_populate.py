@@ -39,10 +39,10 @@ def test_populate():
         dataset_indexes=dataset_indexes,
     )
 
-    assert Chart.objects.all().count() == 1
+    assert Chart.objects.all().count() == 3
     assert Project.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
-    assert FileItem.objects.all().count() == 13
+    assert FileItem.objects.all().count() == 15
     assert Layer.objects.all().count() == 6
     assert LayerFrame.objects.all().count() == 12
     assert Network.objects.all().count() == 1
