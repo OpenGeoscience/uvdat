@@ -1,5 +1,6 @@
 name: nightly-ci
 on:
+  workflow_dispatch:
   schedule:
     # Run at 1:14 am every night, to avoid high load at common schedule times.
     - cron: "14 1 * * *"
@@ -46,11 +47,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install gdal-bin libgdal-dev
           pip install GDAL==`gdal-config --version`
-          pip install large-image[gdal] --find-links https://girder.github.io/large_image_wheels
-          pip install large-image-converter --find-links https://girder.github.io/large_image_wheels
       - name: Run tests
         run: |
-          tox -e test -- -k "slow"
+          tox -e test-slow
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
