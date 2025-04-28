@@ -12,8 +12,8 @@ class AnalysisType(ABC):
 
     @abstractmethod
     def get_input_options(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def run_task(self, **inputs):
-        pass
+        raise NotImplementedError
