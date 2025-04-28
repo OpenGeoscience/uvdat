@@ -46,6 +46,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install gdal-bin libgdal-dev
           pip install GDAL==`gdal-config --version`
+          pip install large-image[gdal] --find-links https://girder.github.io/large_image_wheels
+          pip install large-image-converter --find-links https://girder.github.io/large_image_wheels
       - name: Run tests
         run: |
           tox -e test -- -k "slow"
