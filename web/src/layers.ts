@@ -54,16 +54,16 @@ export function addLayer(layer: Layer) {
     let name = layer.name;
     let copy_id = 0;
     const existing = Object.keys(mapSources.value).filter((sourceId) => {
-    const [layerId] = sourceId.split('.');
-    return parseInt(layerId) === layer.id
-    })
+        const [layerId] = sourceId.split('.');
+        return parseInt(layerId) === layer.id
+    });
     if (existing.length) {
-    copy_id = existing.length;
-    name = `${layer.name} (${copy_id})`;
+        copy_id = existing.length;
+        name = `${layer.name} (${copy_id})`;
     }
     selectedLayers.value = [
-    {...layer, name, copy_id, visible: true, current_frame: 0},
-    ...selectedLayers.value,
+        { ...layer, name, copy_id, visible: true, current_frame: 0 },
+        ...selectedLayers.value,
     ];
 }
 
