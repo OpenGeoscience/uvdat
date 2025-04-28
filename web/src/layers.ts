@@ -50,6 +50,7 @@ export function getDBObjectsForSourceID(sourceId: string) {
     return DBObjects
 }
 
+// Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
 export function addLayer(layer: Layer) {
     let name = layer.name;
     let copy_id = 0;
