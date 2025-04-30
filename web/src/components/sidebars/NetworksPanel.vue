@@ -47,13 +47,32 @@ const headers = [
     { title: '', value: 'metadata', sortable: false, width: 10 },
 ]
 
-function showNetwork(network: any) {
-    show(network)
-    styleNetwork(network)
+function showNetwork() {
+    if (currentNetwork.value) {
+        show({...currentNetwork.value, type: 'Network'})
+        styleNetwork(currentNetwork.value)
+    }
+}
+
+function isNetworkVisible() {
+    if (currentNetwork.value) {
+        return isVisible({...currentNetwork.value, type: 'Network'})
+    }
+    return true
+}
+
+function resetNetwork() {
+    if (currentNetwork.value) {
+        selectedNodes.value = []
+        // execute twice; first will show nodes coming back online, second will show reset state
+        setNetworkDeactivatedNodes(currentNetwork.value, [])
+        setNetworkDeactivatedNodes(currentNetwork.value, [])
+    }
 }
 
 function toggleSelected() {
     if (currentNetwork.value) {
+        if (!isNetworkVisible()) showNetwork()
         let deactivated = currentNetwork.value?.deactivated?.nodes || []
         if (selectedNodes.value.every((n) => deactivated.includes(n))) {
             deactivated = deactivated.filter((n) => !selectedNodes.value.includes(n))
@@ -118,11 +137,14 @@ watch(selectedNodes, () => {
                     <div>
                         <div>{{ currentNetwork.name }}</div>
                         <v-btn
-                            v-if="!isVisible({...currentNetwork, type: 'Network'})"
-                            @click="showNetwork({...currentNetwork, type: 'Network'})"
+                            v-if="!isNetworkVisible()"
+                            @click="showNetwork()"
                             density="compact"
                         >
                             Show
+                        </v-btn>
+                        <v-btn @click="resetNetwork()" density="compact">
+                            Reset
                         </v-btn>
                     </div>
                     <v-btn

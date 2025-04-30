@@ -144,6 +144,16 @@ export function styleNetwork(network: Network) {
                     const inactive = network.deactivated?.nodes.filter((n) => (
                         !deactivate?.includes(n) && !activate?.includes(n)
                     )) || [];
+                    let gcc = network.gcc || []
+                    if (
+                        !inactive.length &&
+                        !deactivate.length &&
+                        !activate.length &&
+                        gcc.length === network.nodes.length
+                    ) {
+                        // Network default state; don't show GCC
+                        gcc = []
+                    }
                     map.setPaintProperty(
                         mapLayerId,
                         styleName,
@@ -177,9 +187,9 @@ export function styleNetwork(network: Network) {
                             selectedValue,
                             [
                                 "any",
-                                ["in", ["get", "node_id"], ["literal", network.gcc || []]],
-                                ["in", ["get", "from_node_id"], ["literal", network.gcc || []]],
-                                ["in", ["get", "to_node_id"], ["literal", network.gcc || []]],
+                                ["in", ["get", "node_id"], ["literal", gcc]],
+                                ["in", ["get", "from_node_id"], ["literal", gcc]],
+                                ["in", ["get", "to_node_id"], ["literal", gcc]],
                             ],
                             gccValue,
                             defaultValue,
