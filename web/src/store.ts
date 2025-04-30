@@ -11,7 +11,9 @@ import {
   RasterDataValues,
   FloatingPanelConfig,
   Style,
-  Network
+  Network,
+  NetworkNode,
+  NetworkEdge
 } from "./types.js";
 import { Map, Popup, Source } from "maplibre-gl";
 
@@ -62,6 +64,8 @@ export const selectedSourceRegions = ref<SourceRegion[]>([]);
 export const loadingNetworks = ref<boolean>(false);
 export const availableNetworks = ref<Network[]>([]);
 export const currentNetwork = ref<Network>();
+export const currentNetworkNodes = ref<NetworkNode[]>([]);
+export const currentNetworkEdges = ref<NetworkEdge[]>([]);
 
 // ETC
 export const currentUser = ref<User>();

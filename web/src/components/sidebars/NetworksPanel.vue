@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import { loadingNetworks, availableNetworks, currentNetwork } from '@/store';
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
-import { NetworkNode, NetworkEdge, Network } from '@/types';
 import { isVisible, show } from '@/storeFunctions';
 import { styleNetwork } from '@/layerStyles';
+import { setNetworkDeactivatedNodes } from "@/networks";
+import {
+    loadingNetworks,
+    availableNetworks,
+    currentNetwork,
+    currentNetworkNodes,
+    currentNetworkEdges,
+} from '@/store';
 
 import MetadataView from "../MetadataView.vue";
-import { setNetworkDeactivatedNodes } from "@/networks";
 
 
 const searchText = ref();
@@ -19,17 +24,15 @@ const filteredNetworks = computed(() => {
 })
 
 const tab = ref();
-const nodes = ref<NetworkNode[]>([]);
-const edges = ref<NetworkEdge[]>([]);
 const selectedNodes = ref<number[]>([]);
 const currentNodes = computed(() => {
-    return nodes.value.map((n) => {
+    return currentNetworkNodes.value.map((n) => {
         n.active = !currentNetwork.value?.deactivated?.nodes?.includes(n.id)
         return n
     })
 })
 const currentEdges = computed(() => {
-    return edges.value.map((e) => {
+    return currentNetworkEdges.value.map((e) => {
         e.active = (
             !currentNetwork.value?.deactivated?.nodes?.includes(e.from_node) &&
             !currentNetwork.value?.deactivated?.nodes?.includes(e.to_node)
@@ -75,14 +78,14 @@ watch(currentNetwork, () => {
             edges: [],
         }
         getNetworkNodes(currentNetwork.value.id).then((results) => {
-            nodes.value = results;
+            currentNetworkNodes.value = results;
         })
         getNetworkEdges(currentNetwork.value.id).then((results) => {
-            edges.value = results;
+            currentNetworkEdges.value = results;
         })
     } else {
-        nodes.value = [];
-        edges.value = [];
+        currentNetworkNodes.value = [];
+        currentNetworkEdges.value = [];
     }
 })
 
@@ -113,7 +116,7 @@ watch(selectedNodes, () => {
             <div v-if="currentNetwork">
                 <div class="network-title">
                     <div>
-                        {{ currentNetwork.name }}
+                        <div>{{ currentNetwork.name }}</div>
                         <v-btn
                             v-if="!isVisible({...currentNetwork, type: 'Network'})"
                             @click="showNetwork({...currentNetwork, type: 'Network'})"
@@ -139,12 +142,12 @@ watch(selectedNodes, () => {
                     hide-details
                 />
                 <v-tabs v-model="tab" align-tabs="center" fixed-tabs>
-                    <v-tab value="nodes">Nodes</v-tab>
-                    <v-tab value="edges">Edges</v-tab>
+                    <v-tab value="nodes-tab">Nodes</v-tab>
+                    <v-tab value="edges-tab">Edges</v-tab>
                     </v-tabs>
 
                     <v-window v-model="tab">
-                        <v-window-item value="nodes">
+                        <v-window-item value="nodes-tab">
                             <v-data-table
                                 v-model="selectedNodes"
                                 :items="currentNodes"
@@ -165,7 +168,7 @@ watch(selectedNodes, () => {
                                 </template>
                             </v-data-table>
                         </v-window-item>
-                        <v-window-item value="edges">
+                        <v-window-item value="edges-tab">
                             <v-data-table
                                 :items="currentEdges"
                                 :headers="headers"
@@ -206,7 +209,7 @@ watch(selectedNodes, () => {
         </v-card>
         <v-btn
             class="toggle-btn"
-            v-if="currentNetwork && tab == 'nodes' && selectedNodes.length"
+            v-if="currentNetwork && tab == 'nodes-tab' && selectedNodes.length"
             @click="toggleSelected"
         >
             Toggle Selected
