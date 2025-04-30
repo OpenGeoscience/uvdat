@@ -2,22 +2,9 @@ import json
 
 from django.contrib.gis.geos import LineString, Point
 import geopandas
-import networkx as nx
-import numpy
 import shapely
 
 from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorFeature
-
-NODE_RECOVERY_MODES = [
-    'random',
-    'betweenness',
-    'degree',
-    'information',
-    'eigenvector',
-    'load',
-    'closeness',
-    'second order',
-]
 
 
 def create_network(vector_data, network_options):
@@ -243,58 +230,3 @@ def create_vector_features_from_network(network):
             for edge in network.edges.all()
         ]
     )
-
-
-def get_network_graph(network):
-    from uvdat.core.models import NetworkEdge, NetworkNode
-
-    network = {
-        'nodes': NetworkNode.objects.filter(network=network),
-        'edges': NetworkEdge.objects.filter(network=network),
-    }
-    if len(network.get('nodes')) == 0 and len(network.get('edges')) == 0:
-        return None
-
-    # Construct adj list
-    edge_list: dict[int, list[int]] = {}
-    for e in network.get('edges'):
-        if e.from_node.id not in edge_list:
-            edge_list[e.from_node.id] = []
-        edge_list[e.from_node.id].append(e.to_node.id)
-    for edge_id in edge_list.keys():
-        edge_list[edge_id].sort()
-    graph_representation = nx.from_dict_of_lists(edge_list)
-    return graph_representation
-
-
-# Authored by Jack Watson
-# Takes in a second argument, measure, which is a string specifying the centrality
-# measure to calculate.
-def sort_graph_centrality(g, measure):
-    if measure == 'betweenness':
-        cent = nx.betweenness_centrality(g)  # get betweenness centrality
-    elif measure == 'degree':
-        cent = nx.degree_centrality(g)
-    elif measure == 'information':
-        cent = nx.current_flow_closeness_centrality(g)
-    elif measure == 'eigenvector':
-        cent = nx.eigenvector_centrality(g, 10000)
-    elif measure == 'load':
-        cent = nx.load_centrality(g)
-    elif measure == 'closeness':
-        cent = nx.closeness_centrality(g)
-    elif measure == 'second order':
-        cent = nx.second_order_centrality(g)
-    cent_list = list(cent.items())  # convert to np array
-    cent_arr = numpy.array(cent_list)
-    cent_idx = numpy.argsort(cent_arr, 0)  # sort array of tuples by betweenness
-    # cent_sorted = cent_arr[cent_idx[:, 1]]
-
-    node_list = list(g.nodes())
-    nodes_sorted = [node_list[i] for i in cent_idx[:, 1]]
-    edge_list = list(g.edges())
-
-    # Currently sorted from lowest to highest betweenness; let's reverse that
-    nodes_sorted.reverse()
-
-    return nodes_sorted, edge_list

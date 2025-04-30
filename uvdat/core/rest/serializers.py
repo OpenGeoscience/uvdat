@@ -4,6 +4,7 @@ from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
 from uvdat.core.models import (
+    AnalysisResult,
     Chart,
     Dataset,
     FileItem,
@@ -15,7 +16,6 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
-    SimulationResult,
     VectorData,
 )
 
@@ -69,7 +69,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         return {
             'datasets': obj.datasets.count(),
             'charts': obj.charts.count(),
-            'simulations': obj.simulation_results.count(),
+            'analyses': obj.analysis_results.count(),
         }
 
     def to_internal_value(self, data):
@@ -155,20 +155,29 @@ class NetworkEdgeSerializer(serializers.ModelSerializer):
 
 
 class NetworkSerializer(serializers.ModelSerializer):
-    nodes = NetworkNodeSerializer(many=True, read_only=True)
-    edges = NetworkEdgeSerializer(many=True, read_only=True)
+    dataset = serializers.SerializerMethodField('get_dataset')
+    nodes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    edges = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    def get_dataset(self, obj):
+        return DatasetSerializer(obj.vector_data.dataset).data
 
     class Meta:
         model = Network
         fields = '__all__'
 
 
-class SimulationResultSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField('get_name')
+class AnalysisTypeSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    db_value = serializers.CharField(max_length=25)
+    description = serializers.CharField(max_length=255)
+    attribution = serializers.CharField(max_length=255)
+    input_options = serializers.JSONField()
+    input_types = serializers.JSONField()
+    output_types = serializers.JSONField()
 
-    def get_name(self, obj):
-        return obj.get_name()
 
+class AnalysisResultSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SimulationResult
+        model = AnalysisResult
         fields = '__all__'

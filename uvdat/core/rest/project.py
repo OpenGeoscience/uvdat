@@ -52,12 +52,6 @@ class ProjectViewSet(ModelViewSet):
 
         return Response(ProjectSerializer(project).data, status=200)
 
-    @action(detail=True, methods=['get'])
-    def simulation_results(self, request, **kwargs):
-        project = self.get_object()
-        simulation_results = project.simulation_results.all()
-        return HttpResponse(simulation_results, status=200)
-
     # TODO: This should be a POST
     @action(
         detail=True,

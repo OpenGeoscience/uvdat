@@ -1,4 +1,5 @@
 import {
+    availableNetworks,
     clickedFeature,
     mapSources,
     rasterTooltipDataCache,
@@ -7,7 +8,7 @@ import {
     showMapBaseLayer
 } from "./store";
 import { getMap } from "./storeFunctions";
-import { Dataset, Layer, LayerFrame, RasterData, VectorData } from './types';
+import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './types';
 import { MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { getRasterDataValues } from "./api/rest";
@@ -24,6 +25,7 @@ export interface SourceDBObjects {
     frame?: LayerFrame,
     vector?: VectorData,
     raster?: RasterData,
+    network?: Network,
 }
 
 export function getDBObjectsForSourceID(sourceId: string) {
@@ -42,9 +44,42 @@ export function getDBObjectsForSourceID(sourceId: string) {
                     else if (frame.raster) DBObjects.raster = frame.raster;
                 }
             })
+            DBObjects.network = availableNetworks.value.find((n) => n.vector_data == DBObjects.vector?.id)
         }
     })
     return DBObjects
+}
+
+// Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
+export function addLayer(layer: Layer) {
+    let name = layer.name;
+    let copy_id = 0;
+    const existing = Object.keys(mapSources.value).filter((sourceId) => {
+        const [layerId] = sourceId.split('.');
+        return parseInt(layerId) === layer.id
+    });
+    if (existing.length) {
+        copy_id = existing.length;
+        name = `${layer.name} (${copy_id})`;
+    }
+    selectedLayers.value = [
+        { ...layer, name, copy_id, visible: true, current_frame: 0 },
+        ...selectedLayers.value,
+    ];
+}
+
+export function addFrame(frame: LayerFrame, sourceId: string) {
+    if (!mapSources.value[sourceId]) {
+        if (frame.vector) {
+            const vector = createVectorTileSource(frame.vector, sourceId);
+            if (vector) mapSources.value[sourceId] = vector;
+
+        }
+        if (frame.raster) {
+            const raster = createRasterTileSource(frame.raster, sourceId);
+            if (raster) mapSources.value[sourceId] = raster;
+        }
+    }
 }
 
 export function updateLayersShown () {
@@ -62,23 +97,20 @@ export function updateLayersShown () {
                 }
             }
             const currentStyle = selectedLayerStyles.value[styleId];
-            if (!mapSources.value[sourceId]) {
-                if (frame.vector) {
-                    const vector = createVectorTileSource(frame.vector, sourceId);
-                    if (vector) mapSources.value[sourceId] = vector;
-
-                }
-                if (frame.raster) {
-                    const raster = createRasterTileSource(frame.raster, sourceId);
-                    if (raster) mapSources.value[sourceId] = raster;
-                }
+            currentStyle.visible = layer.visible
+            if (currentStyle.visible && !map.getLayersOrder().some(
+                (mapLayerId) => mapLayerId.includes(sourceId)
+            ) && layer.current_frame === frame.index) {
+                addFrame(frame, sourceId);
             }
             map.getLayersOrder().forEach((mapLayerId) => {
                 if (mapLayerId !== 'base-tiles') {
                     if (mapLayerId.includes(sourceId)) {
                         map.moveLayer(mapLayerId);  // handles reordering
-                        currentStyle.visible = layer.visible && layer.current_frame === frame.index
-                        setMapLayerStyle(mapLayerId, currentStyle)
+                        setMapLayerStyle(mapLayerId, {
+                            ...currentStyle,
+                            visible: layer.visible && layer.current_frame === frame.index
+                        })
                     }
                 }
             });
@@ -168,7 +200,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
     const tilesSourceId = sourceId + '.raster.' + raster.id;
     map.addSource(tilesSourceId, {
         type: "raster",
-        tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png?${tileParamString}`],
+        tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
     });
     const tileSource = map.getSource(tilesSourceId);
 

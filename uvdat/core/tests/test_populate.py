@@ -14,7 +14,6 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
-    SimulationResult,
     VectorData,
     VectorFeature,
 )
@@ -40,17 +39,16 @@ def test_populate():
         dataset_indexes=dataset_indexes,
     )
 
-    assert Chart.objects.all().count() == 1
+    assert Chart.objects.all().count() == 3
     assert Project.objects.all().count() == 2
     assert Dataset.objects.all().count() == 4
-    assert FileItem.objects.all().count() == 13
+    assert FileItem.objects.all().count() == 15
     assert Layer.objects.all().count() == 6
     assert LayerFrame.objects.all().count() == 12
     assert Network.objects.all().count() == 1
     assert NetworkEdge.objects.all().count() == 164
     assert NetworkNode.objects.all().count() == 158
     assert RasterData.objects.all().count() == 1
-    assert SimulationResult.objects.all().count() == 0
     assert Region.objects.all().count() == 24
     assert VectorData.objects.all().count() == 11
     assert VectorFeature.objects.count() == 357

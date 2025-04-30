@@ -13,8 +13,8 @@ import {
   availableCharts,
   currentChart,
   availableNetworks,
-  availableSimulationTypes,
-  currentSimulationType,
+  availableAnalysisTypes,
+  currentAnalysisType,
   currentError,
   tooltipOverlay,
   panelArrangement,
@@ -22,7 +22,7 @@ import {
   draggingFrom,
   dragModes,
   loadingDatasets,
-  loadingSimulationTypes,
+  loadingAnalysisTypes,
   loadingCharts,
   selectedLayerStyles,
   loadingProjects,
@@ -31,7 +31,7 @@ import {
   getProjects,
   getDataset,
   getProjectCharts,
-  getProjectSimulationTypes,
+  getProjectAnalysisTypes,
   getProjectDatasets,
   getDatasetLayers,
 } from "@/api/rest";
@@ -89,8 +89,8 @@ export function clearProjectState() {
   availableCharts.value = undefined;
   currentChart.value = undefined;
   availableNetworks.value = [];
-  availableSimulationTypes.value = undefined;
-  currentSimulationType.value = undefined;
+  availableAnalysisTypes.value = undefined;
+  currentAnalysisType.value = undefined;
   selectedSourceRegions.value = [];
 }
 
@@ -172,7 +172,7 @@ watch(currentProject, () => {
   if (currentProject.value) {
     loadingDatasets.value = true;
     loadingCharts.value = true;
-    loadingSimulationTypes.value = true;
+    loadingAnalysisTypes.value = true;
     getProjectDatasets(currentProject.value.id).then(async (datasets) => {
       availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
         dataset.layers = await getDatasetLayers(dataset.id);
@@ -185,10 +185,10 @@ watch(currentProject, () => {
       currentChart.value = undefined;
       loadingCharts.value = false;
     });
-    getProjectSimulationTypes(currentProject.value.id).then((types) => {
-      availableSimulationTypes.value = types;
-      currentSimulationType.value = undefined;
-      loadingSimulationTypes.value = false;
+    getProjectAnalysisTypes(currentProject.value.id).then((types) => {
+      availableAnalysisTypes.value = types;
+      currentAnalysisType.value = undefined;
+      loadingAnalysisTypes.value = false;
     })
   }
 });

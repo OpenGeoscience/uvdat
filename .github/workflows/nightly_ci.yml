@@ -1,5 +1,6 @@
 name: nightly-ci
 on:
+  workflow_dispatch:
   schedule:
     # Run at 1:14 am every night, to avoid high load at common schedule times.
     - cron: "14 1 * * *"
@@ -26,6 +27,10 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -44,10 +49,11 @@ jobs:
           pip install GDAL==`gdal-config --version`
       - name: Run tests
         run: |
-          tox -e test -- -k "slow"
+          tox -e test-slow
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
           DJANGO_HOMEPAGE_REDIRECT_URL: http://localhost:8080/
+          REDIS_URL: redis://localhost:6379

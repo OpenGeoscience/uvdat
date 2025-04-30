@@ -1,37 +1,38 @@
 <script setup lang="ts">
-import { getNetwork, setNetworkDeactivatedNodes } from "@/networks";
+import { setNetworkDeactivatedNodes } from "@/networks";
 import { Layer } from "@/types";
 import { ref, watch, computed } from "vue";
+import { Network } from '../../types';
+import { selectedLayers, selectedLayerStyles } from "@/store";
 
 const props = defineProps<{
-  nodeFailures: Array<number>,
-  nodeRecoveries?:  Array<number>,
-  layer: Layer | undefined,
+  nodeFailures?: Record<number, number[]>,
+  nodeRecoveries?:  Record<number, number[]>,
+  network: Network,
+  additionalAnimationLayers: Layer[] | undefined,
 }>();
 
+const currentMode = ref();
 const currentTick = ref(0);
 const ticker = ref();
 const seconds = ref(1);
 
-const startState = computed(() => {
-  if (props.nodeRecoveries?.length) return props.nodeFailures;
-  else return [];
-});
-
 const nodeChanges = computed(() => {
-  if (props.nodeRecoveries?.length) return props.nodeRecoveries;
+  if (props.nodeRecoveries) return props.nodeRecoveries;
   else return props.nodeFailures;
 });
 
 function pause() {
   clearInterval(ticker.value);
+  currentMode.value = undefined;
   ticker.value = undefined;
 }
 
 function play() {
   pause();
+  currentMode.value = 'play'
   ticker.value = setInterval(() => {
-    if (currentTick.value < nodeChanges.value.length) {
+    if (nodeChanges.value && currentTick.value < Object.keys(nodeChanges.value).length) {
       currentTick.value += 1;
     } else {
       pause();
@@ -41,6 +42,7 @@ function play() {
 
 function rewind() {
   pause();
+  currentMode.value = 'rewind'
   ticker.value = setInterval(() => {
     if (currentTick.value > 0) {
       currentTick.value -= 1;
@@ -50,44 +52,59 @@ function rewind() {
   }, seconds.value * 1000);
 }
 
-async function getCurrentNetwork() {
-  let nodeId;
-  if (props.nodeFailures.length) nodeId = props.nodeFailures[0]
-  else if (props.nodeRecoveries?.length) nodeId = props.nodeRecoveries[0]
-  if (nodeId && props.layer?.dataset) {
-    return await getNetwork(nodeId, props.layer.dataset)
-  }
-}
-
 watch(currentTick, async () => {
-  let deactivated = nodeChanges.value.slice(0, currentTick.value);
-  if (props.nodeRecoveries) {
-    deactivated = startState.value.filter(
-      (i: number) => !deactivated.includes(i)
-    )
+  if (nodeChanges.value) {
+    let deactivated = nodeChanges.value[currentTick.value];
+    if (props.network) setNetworkDeactivatedNodes(props.network, deactivated || []);
+    if (props.additionalAnimationLayers) {
+      props.additionalAnimationLayers.forEach((layer) => {
+        const currentStyle = selectedLayerStyles.value[`${layer.id}.${layer.copy_id || 0}`];
+        if (currentStyle.visible) {
+          selectedLayers.value = selectedLayers.value.map((l) => {
+            if (l.id === layer.id) l.current_frame = currentTick.value
+            return l;
+          })
+        }
+      })
+    }
   }
-  const network = await getCurrentNetwork()
-  if (network) setNetworkDeactivatedNodes(network, deactivated);
 });
 </script>
 
 <template>
-  <div class="d-flex pb-3" style="align-items: center">
-    <v-icon @click="play" icon="mdi-play" variant="text" />
-    <v-icon @click="pause" icon="mdi-pause" variant="text" />
-    <v-icon @click="rewind" icon="mdi-rewind" variant="text" />
-    <v-slider
-      v-model="currentTick"
-      show-ticks="always"
-      color="primary"
-      class="ml-5"
-      tick-size="6"
-      thumb-size="15"
-      track-size="8"
-      min="0"
-      step="1"
-      :max="nodeChanges.length"
-      hide-details
-    />
+  <div v-if="nodeChanges">
+    <div class="animation-row">
+      <v-icon
+        :icon="currentMode === 'play' ? 'mdi-play' : currentMode === 'rewind' ? 'mdi-rewind' : 'mdi-pause'"
+      />
+      <v-slider
+        v-model="currentTick"
+        show-ticks="always"
+        color="primary"
+        class="ml-5"
+        tick-size="6"
+        thumb-size="15"
+        track-size="8"
+        min="0"
+        step="1"
+        :max="Object.keys(nodeChanges).length"
+        hide-details
+      />
+      {{ currentTick + 1 }}
+    </div>
+    <div class="animation-row">
+      <v-btn @click="play" icon="mdi-play" variant="text"  density="compact"/>
+      <v-btn @click="pause" icon="mdi-pause" variant="text" density="compact"/>
+      <v-btn @click="rewind" icon="mdi-rewind" variant="text" density="compact" />
+    </div>
   </div>
 </template>
+
+<style>
+.animation-row {
+  display: flex;
+  align-items: center;
+  width: calc(100% - 10px);
+  justify-content: space-around;
+}
+</style>
