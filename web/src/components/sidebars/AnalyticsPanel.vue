@@ -19,14 +19,14 @@ import {
   getChart,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { AnalysisResult, Layer, Chart } from "@/types";
-import { isVisible, show, showableTypes } from "@/storeFunctions"
+import { AnalysisResult } from "@/types";
+import { isVisible, show, showableTypes } from "@/panelFunctions"
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
-  return availableAnalysisTypes.value?.filter((sim_type) => {
+  return availableAnalysisTypes.value?.filter((analysis_type) => {
     return  !searchText.value ||
-    sim_type.name.toLowerCase().includes(searchText.value.toLowerCase())
+    analysis_type.name.toLowerCase().includes(searchText.value.toLowerCase())
   })
 })
 const tab = ref();
@@ -54,15 +54,14 @@ const networkInput = computed(() => {
         (o: any) => o.id ===  networkId
       )
     }
-    network.type = 'Network'
-    const visible = isVisible(network)
+    const visible = isVisible({network})
     network = {
       ...network,
       visible
     }
   } else {
     network = Object.values(fullInputs.value).find(
-      (input) => input.type === 'Network'
+      (input) => input.type === 'network'
     )
   }
   if (network && !availableNetworks.value.map((n) => n.id).includes(network.id)) {
@@ -123,8 +122,8 @@ async function fillInputsAndOutputs() {
           (o: any) => o.id == value
         );
         if (fullValue) {
-          fullValue.type = currentAnalysisType.value?.input_types[key]
-          fullValue.visible = isVisible(fullValue)
+          fullValue.type = currentAnalysisType.value?.input_types[key].toLowerCase()
+          fullValue.visible = isVisible({[fullValue.type]: fullValue})
           fullValue.showable = showableTypes.includes(fullValue.type)
         }
         return [key, fullValue || value];
@@ -132,10 +131,9 @@ async function fillInputsAndOutputs() {
     );
     if (fullInputs.value?.flood_simulation && !additionalAnimationLayers.value) {
       const floodDataset = {
-        id: fullInputs.value?.flood_simulation.outputs.flood,
-        type: 'Dataset',
+        id: fullInputs.value?.flood_simulation.outputs.flood as number
       }
-      if (isVisible(floodDataset)) {
+      if (isVisible({dataset: floodDataset})) {
         getDatasetLayers(floodDataset.id).then((layers) => {
           additionalAnimationLayers.value = layers;
         })
@@ -147,16 +145,16 @@ async function fillInputsAndOutputs() {
     fullOutputs.value = Object.fromEntries(
       await Promise.all(
         Object.entries(currentResult.value.outputs).map(async ([key, value]) => {
-          const type = currentAnalysisType.value?.output_types[key];
-          if (type == 'Dataset') {
+          const type = currentAnalysisType.value?.output_types[key].toLowerCase();
+          if (type == 'dataset') {
             value = await getDataset(value)
           }
-          if (type == 'Chart') {
+          if (type == 'chart') {
             value = await getChart(value)
           }
           if (typeof value === 'object') {
-            value.type = type;
-            value.visible = isVisible(value)
+            value.type = type
+            value.visible = isVisible({[type]: value})
             value.showable = showableTypes.includes(value.type)
           } else {
             value = {
@@ -307,7 +305,7 @@ watch(
                             v-if="value.showable && !value.visible"
                             density="compact"
                             color="primary"
-                            @click="() => show(value)"
+                            @click="() => show({[value.type]: value})"
                           >
                             Show
                         </v-btn>
@@ -365,7 +363,7 @@ watch(
                               color="primary"
                               density="compact"
                               style="display: block"
-                              @click="() => show(value)"
+                              @click="() => show({[value.type]: value})"
                             >
                               Show
                             </v-btn>

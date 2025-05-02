@@ -11,12 +11,12 @@ export interface User {
 
 export interface Dataset {
   id: number;
-  name: string;
-  description: string;
-  category: string;
-  processing: boolean;
-  layers: Layer[];
-  metadata: Record<string, unknown>;
+  name?: string;
+  description?: string;
+  category?: string;
+  processing?: boolean;
+  layers?: Layer[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface Layer {
@@ -182,6 +182,7 @@ export interface ClickedFeatureData {
 export interface Network {
   id: number;
   name: string;
+  dataset: Dataset;
   category: string;
   nodes: number[];
   edges: number[];

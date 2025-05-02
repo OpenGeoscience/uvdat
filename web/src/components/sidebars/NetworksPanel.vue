@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
-import { isVisible, show } from '@/storeFunctions';
+import { isVisible, show } from '@/panelFunctions';
 import { styleNetwork } from '@/layerStyles';
 import { setNetworkDeactivatedNodes } from "@/networks";
 import {
@@ -49,14 +49,14 @@ const headers = [
 
 function showNetwork() {
     if (currentNetwork.value) {
-        show({...currentNetwork.value, type: 'Network'})
+        show({network: currentNetwork.value})
         styleNetwork(currentNetwork.value)
     }
 }
 
 function isNetworkVisible() {
     if (currentNetwork.value) {
-        return isVisible({...currentNetwork.value, type: 'Network'})
+        return isVisible({network: currentNetwork.value})
     }
     return true
 }
