@@ -65,8 +65,6 @@ function isNetworkVisible() {
 function resetNetwork() {
     if (currentNetwork.value) {
         selectedNodes.value = []
-        // execute twice; first will show nodes coming back online, second will show reset state
-        setNetworkDeactivatedNodes(currentNetwork.value, [])
         setNetworkDeactivatedNodes(currentNetwork.value, [])
     }
 }
