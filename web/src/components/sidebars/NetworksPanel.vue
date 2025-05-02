@@ -24,6 +24,7 @@ const filteredNetworks = computed(() => {
 })
 
 const tab = ref();
+const sort = ref([{key: 'active', order: true}]);
 const selectedNodes = ref<number[]>([]);
 const currentNodes = computed(() => {
     return currentNetworkNodes.value.map((n) => {
@@ -172,12 +173,14 @@ watch(selectedNodes, () => {
                         <v-window-item value="nodes-tab">
                             <v-data-table
                                 v-model="selectedNodes"
+                                v-model:sort-by="sort"
                                 :items="currentNodes"
                                 :headers="headers"
                                 :search="searchText"
-                                items-per-page="100"
+                                items-per-page="-1"
                                 class="transparent"
                                 show-select
+                                hide-default-footer
                             >
                                 <template v-slot:item.active="{ item }">
                                     <v-icon
@@ -192,11 +195,13 @@ watch(selectedNodes, () => {
                         </v-window-item>
                         <v-window-item value="edges-tab">
                             <v-data-table
+                                v-model:sort-by="sort"
                                 :items="currentEdges"
                                 :headers="headers"
                                 :search="searchText"
-                                items-per-page="100"
+                                items-per-page="-1"
                                 class="transparent"
+                                hide-default-footer
                             >
                                 <template v-slot:item.active="{ item }">
                                     <v-icon
