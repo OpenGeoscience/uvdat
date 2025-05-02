@@ -33,14 +33,16 @@ export async function toggleNodeActive(
     }
 }
 
-export async function setNetworkDeactivatedNodes(network: Network, nodeIds: number[]) {
+export async function setNetworkDeactivatedNodes(network: Network, nodeIds: number[], animation=false) {
     if (!network.deactivated) network.deactivated = {
         nodes: [],
         edges: []
     }
-    network.changes = {
-        deactivate_nodes: nodeIds.filter((n) => !network.deactivated?.nodes.includes(n)),
-        activate_nodes: network.deactivated.nodes.filter((n) => !nodeIds.includes(n))
+    if (animation) {
+        network.changes = {
+            deactivate_nodes: nodeIds.filter((n) => !network.deactivated?.nodes.includes(n)),
+            activate_nodes: network.deactivated.nodes.filter((n) => !nodeIds.includes(n))
+        }
     }
     network.deactivated.nodes = nodeIds;
     if (nodeIds.length) {
