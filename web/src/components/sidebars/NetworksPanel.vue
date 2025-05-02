@@ -13,6 +13,7 @@ import {
 } from '@/store';
 
 import MetadataView from "../MetadataView.vue";
+import { NetworkEdge, NetworkNode } from "@/types";
 
 
 const searchText = ref();
@@ -25,6 +26,8 @@ const filteredNetworks = computed(() => {
 
 const tab = ref();
 const sort = ref([{key: 'active', order: true}]);
+const hoverNode = ref<NetworkNode>();
+const hoverEdge = ref<NetworkEdge>();
 const selectedNodes = ref<number[]>([]);
 const currentNodes = computed(() => {
     return currentNetworkNodes.value.map((n) => {
@@ -107,12 +110,22 @@ watch(currentNetwork, () => {
     }
 })
 
-watch(selectedNodes, () => {
+watch([selectedNodes, hoverNode, hoverEdge], () => {
     if (currentNetwork.value) {
         if (!currentNetwork.value.selected) {
             currentNetwork.value.selected = { nodes: [], edges: [] }
         }
-        currentNetwork.value.selected.nodes = selectedNodes.value;
+        if (hoverNode.value) {
+            currentNetwork.value.selected.nodes = [
+                ...selectedNodes.value,
+                hoverNode.value.id,
+            ]
+        } else if (hoverEdge.value) {
+            currentNetwork.value.selected.edges = [hoverEdge.value.id]
+        } else {
+            currentNetwork.value.selected.nodes = selectedNodes.value;
+
+        }
         styleNetwork(currentNetwork.value)
     }
 }, {deep: true})
@@ -176,9 +189,12 @@ watch(selectedNodes, () => {
                                 :headers="headers"
                                 :search="searchText"
                                 items-per-page="-1"
+                                item-value="id"
                                 class="transparent"
                                 show-select
                                 hide-default-footer
+                                @mouseover:row="(e: Event, data: any) => hoverNode=data.item"
+                                @mouseleave:row="() => hoverNode=undefined"
                             >
                                 <template v-slot:item.active="{ item }">
                                     <v-icon
@@ -199,7 +215,10 @@ watch(selectedNodes, () => {
                                 :search="searchText"
                                 items-per-page="-1"
                                 class="transparent"
+                                item-value="id"
                                 hide-default-footer
+                                @mouseover:row="(e: Event, data: any) => hoverEdge=data.item"
+                                @mouseleave:row="() => hoverEdge=undefined"
                             >
                                 <template v-slot:item.active="{ item }">
                                     <v-icon

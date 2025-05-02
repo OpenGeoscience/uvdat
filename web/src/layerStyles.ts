@@ -183,6 +183,7 @@ export function styleNetwork(network: Network) {
                             [
                                 "any",
                                 ["in", ["get", "node_id"], ["literal", network.selected?.nodes || []]],
+                                ["in", ["get", "edge_id"], ["literal", network.selected?.edges || []]],
                             ],
                             selectedValue,
                             [
