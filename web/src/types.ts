@@ -219,7 +219,7 @@ export interface NetworkEdge {
   network: number;
   metadata: object;
   capacity: number | null;
-  line_geopmetry: object;
+  line_geometry: object;
   directed: boolean;
   from_node: number;
   to_node: number;
