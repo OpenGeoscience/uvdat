@@ -10,8 +10,8 @@ from rest_framework.viewsets import GenericViewSet
 
 from uvdat.core.models import RasterData, VectorData
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
+from uvdat.core.rest.explorer import IPyLeafletTokenAuth
 from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
-from uvdat.core.rest.tokenauth import IPyLeafletTokenAuth
 
 VECTOR_TILE_SQL = """
 WITH
