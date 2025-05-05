@@ -140,3 +140,7 @@ export async function getAnalysisResults(
     )
   ).data;
 }
+
+export async function getVectorDataBounds(vectorId: number): Promise<number[]> {
+  return (await apiClient.get(`vectors/${vectorId}/bounds`)).data;
+}

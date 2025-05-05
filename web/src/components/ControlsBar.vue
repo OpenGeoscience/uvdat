@@ -3,6 +3,8 @@ import { ref } from "vue";
 import html2canvas from "html2canvas";
 
 import { openSidebars, showMapBaseLayer } from "@/store";
+import { getBoundsOfVisibleLayers } from "@/layers";
+import { getMap } from "@/storeFunctions";
 
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);
@@ -10,6 +12,12 @@ const mapOnly = ref(false);
 
 function toggleBaseLayer() {
   showMapBaseLayer.value = !showMapBaseLayer.value;
+}
+
+async function fitMap() {
+  const map = getMap()
+  const bounds = await getBoundsOfVisibleLayers()
+  if (bounds) map.fitBounds(bounds)
 }
 
 function takeScreenshot(save: boolean) {
@@ -64,6 +72,9 @@ function takeScreenshot(save: boolean) {
   >
     <v-btn color="primary" class="control-btn" @click="toggleBaseLayer" variant="flat">
       <v-icon icon="mdi-layers" v-tooltip="'Toggle Base Layer'"></v-icon>
+    </v-btn>
+    <v-btn class="control-btn" @click="fitMap" variant="flat">
+      <v-icon icon="mdi-fit-to-page-outline" v-tooltip="'Fit Map to Visible Layers'"></v-icon>
     </v-btn>
     <v-btn class="control-btn" variant="flat">
       <v-icon icon="mdi-camera"></v-icon>
