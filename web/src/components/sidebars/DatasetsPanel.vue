@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
 import { addLayer } from '@/layers';
-import MetadataView from '@/components/MetadataView.vue'
+import DetailView from '@/components/DetailView.vue'
 import { Dataset, Layer } from '@/types';
 
 
@@ -45,7 +45,12 @@ function toggleSelected(items: Layer[]) {
                   ></v-icon>
                 </div>
               </div>
-              <MetadataView :metadata="dataset.metadata" :name="dataset.name" />
+              <DetailView
+                type="dataset"
+                :id="dataset.id"
+                :metadata="dataset.metadata"
+                :name="dataset.name"
+              />
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
@@ -70,8 +75,13 @@ function toggleSelected(items: Layer[]) {
                 </span>
                 {{ layer.name }}
               </div>
-              <div style="padding-right: 22.5px">
-                <MetadataView :metadata="layer.metadata" :name="layer.name" />
+              <div class="pr-5">
+                <DetailView
+                  type="layer"
+                  :id="layer.id"
+                  :name="layer.name"
+                  :metadata="layer.metadata"
+                />
               </div>
             </div>
           </v-expansion-panel-text>

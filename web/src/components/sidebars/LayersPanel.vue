@@ -5,7 +5,7 @@ import { computed, ref } from "vue";
 
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
-import MetadataView from "../MetadataView.vue";
+import DetailView from "../DetailView.vue";
 
 
 const searchText = ref();
@@ -158,9 +158,11 @@ function getFrameInputWidth(layer: Layer) {
                                     <span>
                                         <i>Frame:</i> {{ element.frames[element.current_frame].name }}
                                     </span>
-                                    <MetadataView
-                                        :metadata="element.frames[element.current_frame].metadata"
+                                    <DetailView
+                                        type="frame"
+                                        :id="element.frames[element.current_frame].id"
                                         :name="element.frames[element.current_frame].name"
+                                        :metadata="element.frames[element.current_frame].metadata"
                                     />
                                 </div>
                             </div>

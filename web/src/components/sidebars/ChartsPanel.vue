@@ -12,8 +12,8 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Chart, ChartOptions } from "@/types";
-import MetadataView from "../MetadataView.vue";
+import { ChartOptions } from "@/types";
+import DetailView from "../DetailView.vue";
 
 ChartJS.register(
   CategoryScale,
@@ -213,7 +213,12 @@ const downloadReady = computed(() => {
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
             <v-icon icon="mdi-poll" size="small" class="ml-2"></v-icon>
-            <MetadataView :metadata="chart.metadata" :name="chart.name" />
+            <DetailView
+              type="chart"
+              :id="chart.id"
+              :name="chart.name"
+              :metadata="chart.metadata"
+            />
           </template>
         </v-list-item>
       </v-list>
