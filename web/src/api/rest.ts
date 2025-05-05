@@ -10,6 +10,7 @@ import {
   AnalysisType,
   Network,
   RasterDataValues,
+  FileItem,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -83,6 +84,10 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
 
 export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
   return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
+}
+
+export async function getDatasetFiles(datasetId: number): Promise<FileItem[]> {
+  return (await apiClient.get(`datasets/${datasetId}/files`)).data;
 }
 
 export async function getDatasetNetworks(datasetId: number): Promise<Network[]> {

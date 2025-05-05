@@ -6,6 +6,7 @@ from uvdat.core.models import Dataset
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import (
     DatasetSerializer,
+    FileItemSerializer,
     LayerSerializer,
     NetworkSerializer,
     RasterDataSerializer,
@@ -51,5 +52,13 @@ class DatasetViewSet(ReadOnlyModelViewSet):
         dataset = self.get_object()
         return Response(
             [NetworkSerializer(network).data for network in dataset.get_networks().all()],
+            status=200,
+        )
+
+    @action(detail=True, methods=['get'])
+    def files(self, request, **kwargs):
+        dataset = self.get_object()
+        return Response(
+            [FileItemSerializer(file).data for file in dataset.source_files.all()],
             status=200,
         )

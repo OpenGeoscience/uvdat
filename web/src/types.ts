@@ -316,3 +316,17 @@ export interface FloatingPanelConfig {
   height?: number | undefined;
   element?: HTMLElement;
 }
+
+export interface FileItem {
+  id: number;
+  name: string;
+  chart?: Chart;
+  dataset?: Dataset;
+  created: string;
+  modified: string;
+  file: string;
+  file_size: number;
+  file_type: string;
+  index: number;
+  metadata: Record<string, any>;
+}
