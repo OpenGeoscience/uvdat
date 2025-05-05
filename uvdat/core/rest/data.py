@@ -80,13 +80,25 @@ def get_filter_string(filters: dict | None = None):
     return return_str
 
 
-class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
-    queryset = RasterData.objects.select_related('dataset').all()
-    serializer_class = RasterDataSerializer
+class GenericDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
     permission_classes = [GuardianPermission]
-    authentication_classes = [TokenAuth]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
+
+    @property
+    def authentication_classes(self):
+        auth_classes = [TokenAuth]
+
+        existing_auth_classes = super().authentication_classes
+        if existing_auth_classes is not None:
+            auth_classes = existing_auth_classes + auth_classes
+
+        return auth_classes
+
+
+class RasterDataViewSet(GenericDataViewSet, LargeImageFileDetailMixin):
+    queryset = RasterData.objects.select_related('dataset').all()
+    serializer_class = RasterDataSerializer
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
     @action(
@@ -101,13 +113,9 @@ class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFil
         return HttpResponse(json.dumps(data), status=200)
 
 
-class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
+class VectorDataViewSet(GenericDataViewSet):
     queryset = VectorData.objects.select_related('dataset').all()
     serializer_class = VectorDataSerializer
-    permission_classes = [GuardianPermission]
-    authentication_classes = [TokenAuth]
-    filter_backends = [GuardianFilter]
-    lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
