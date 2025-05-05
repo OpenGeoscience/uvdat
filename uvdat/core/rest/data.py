@@ -11,7 +11,7 @@ from rest_framework.viewsets import GenericViewSet
 from uvdat.core.models import RasterData, VectorData
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
-from uvdat.core.rest.tokenauth import TokenAuth
+from uvdat.core.rest.tokenauth import IPyLeafletTokenAuth
 
 VECTOR_TILE_SQL = """
 WITH
@@ -87,7 +87,7 @@ class GenericDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
 
     @property
     def authentication_classes(self):
-        auth_classes = [TokenAuth]
+        auth_classes = [IPyLeafletTokenAuth]
 
         existing_auth_classes = super().authentication_classes
         if existing_auth_classes is not None:

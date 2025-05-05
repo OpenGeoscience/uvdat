@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from rest_framework.authentication import BaseAuthentication
 
 
-class TokenAuth(BaseAuthentication):
+class IPyLeafletTokenAuth(BaseAuthentication):
     def authenticate(self, request):
         token = request.query_params.get('token')
         if token is None:
