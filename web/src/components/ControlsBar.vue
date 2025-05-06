@@ -9,15 +9,18 @@ import { getMap } from "@/storeFunctions";
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);
 const mapOnly = ref(false);
+const loadingBounds = ref(false);
 
 function toggleBaseLayer() {
   showMapBaseLayer.value = !showMapBaseLayer.value;
 }
 
 async function fitMap() {
+  loadingBounds.value = true;
   const map = getMap()
   const bounds = await getBoundsOfVisibleLayers()
   if (bounds) map.fitBounds(bounds)
+  loadingBounds.value = false;
 }
 
 function takeScreenshot(save: boolean) {
@@ -74,7 +77,8 @@ function takeScreenshot(save: boolean) {
       <v-icon icon="mdi-layers" v-tooltip="'Toggle Base Layer'"></v-icon>
     </v-btn>
     <v-btn class="control-btn" @click="fitMap" variant="flat">
-      <v-icon icon="mdi-fit-to-page-outline" v-tooltip="'Fit Map to Visible Layers'"></v-icon>
+      <v-progress-circular v-if="loadingBounds" indeterminate />
+      <v-icon v-else icon="mdi-fit-to-page-outline" v-tooltip="'Fit Map to Visible Layers'"></v-icon>
     </v-btn>
     <v-btn class="control-btn" variant="flat">
       <v-icon icon="mdi-camera"></v-icon>
