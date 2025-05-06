@@ -51,12 +51,7 @@ function toggleSelected(items: Dataset[]) {
                   ></v-icon>
                 </div>
               </div>
-              <DetailView
-                type="dataset"
-                :id="dataset.id"
-                :name="dataset.name"
-                :metadata="dataset.metadata"
-              />
+              <DetailView :details="{...dataset, type: 'dataset'}"/>
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
@@ -68,12 +63,7 @@ function toggleSelected(items: Dataset[]) {
                 {{ layer.name }}
               </div>
               <div  class="pr-5">
-                <DetailView
-                  type="layer"
-                  :id="layer.id"
-                  :name="layer.name"
-                  :metadata="layer.metadata"
-                />
+                <DetailView :details="{...layer, type: 'layer'}"/>
               </div>
             </div>
           </v-expansion-panel-text>

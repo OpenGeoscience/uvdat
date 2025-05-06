@@ -158,12 +158,7 @@ function getFrameInputWidth(layer: Layer) {
                                     <span>
                                         <i>Frame:</i> {{ element.frames[element.current_frame].name }}
                                     </span>
-                                    <DetailView
-                                        type="frame"
-                                        :id="element.frames[element.current_frame].id"
-                                        :name="element.frames[element.current_frame].name"
-                                        :metadata="element.frames[element.current_frame].metadata"
-                                    />
+                                    <DetailView :details="{...element.frames[element.current_frame], type: 'frame'}"/>
                                 </div>
                             </div>
                         </div>

@@ -7,7 +7,7 @@ const props = defineProps<{
 
 function formatIfDate(key: string, value: string) {
   // Check if key contains a time-related field
-  if (/(date|time|create|publish|modified|completed)/i.test(key)) {
+  if (/(date|time|create|publish|modified|completed|uploaded)/i.test(key)) {
     const date = dayjs(value);
     return date.isValid() ? date.format("YYYY-MM-DD HH:mm:ss") : value;
   }

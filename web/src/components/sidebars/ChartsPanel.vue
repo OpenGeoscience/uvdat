@@ -213,12 +213,7 @@ const downloadReady = computed(() => {
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
             <v-icon icon="mdi-poll" size="small" class="ml-2"></v-icon>
-            <DetailView
-              type="chart"
-              :id="chart.id"
-              :name="chart.name"
-              :metadata="chart.metadata"
-            />
+            <DetailView :details="{...chart, type: 'chart'}"/>
           </template>
         </v-list-item>
       </v-list>
