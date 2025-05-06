@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import RecursiveTable from './RecursiveTable.vue';
-import { getChartFiles, getDatasetFiles } from '@/api/rest';
+import { getChartFiles, getDatasetFiles, getFileDataObjects } from '@/api/rest';
+import { RasterData, VectorData } from '../types';
 
 
 interface Details {
@@ -20,7 +21,7 @@ const props = defineProps<Details>();
 
 const showModal = ref(false);
 const hasMetadata = computed(() => props.metadata && Object.keys(props.metadata).length > 0);
-const related = ref<Details[]>();
+const related = ref<(Details | undefined)[]>();
 const relatedLabel = ref('Objects');
 
 async function getRelated() {
@@ -54,6 +55,40 @@ async function getRelated() {
         prependIcon: 'mdi-file',
       },
     }))
+  } else if (props.type === 'file') {
+    relatedLabel.value = 'Converted Data'
+    const dataObjects = await getFileDataObjects(props.id)
+    related.value = dataObjects.map((data) => {
+      const raster = data as RasterData
+      const vector = data as VectorData
+      if (raster.cloud_optimized_geotiff){
+        return {
+          ...data,
+          type: 'rasterdata',
+          download: {
+            url: raster.cloud_optimized_geotiff,
+            size: raster.file_size,
+            type: 'cog',
+          },
+          props: {
+            prependIcon: 'mdi-checkerboard',
+          },
+        }
+      } else if (vector.geojson_data) {
+        return {
+          ...data,
+          type: 'vectordata',
+          download: {
+            url: vector.geojson_data,
+            size: vector.file_size,
+            type: 'geojson',
+          },
+          props: {
+            prependIcon: 'mdi-vector-square',
+          },
+        }
+      }
+    })
   }
 }
 
@@ -70,7 +105,7 @@ watch(showModal, getRelated)
   <v-icon
     icon="mdi-dots-vertical"
     size="small"
-    v-tooltip="'View Metadata'"
+    v-tooltip="'View Details'"
     class="mx-1"
     @click.stop="showModal = true"
   ></v-icon>
@@ -91,12 +126,12 @@ watch(showModal, getRelated)
         <v-card-subtitle>Related {{ relatedLabel }} </v-card-subtitle>
         <v-list :items="related" item-value="id">
           <template v-slot:title="{ item }">
-            <div v-tooltip="item.name">{{ item.name }}</div>
+            <div v-if="item" v-tooltip="item.name">{{ item.name }}</div>
           </template>
           <template v-slot:append="{ item }">
-            <DetailView :id="item.id", :type="item.type" :name="item.name" :metadata="item.metadata"/>
+            <DetailView v-if="item" :id="item.id", :type="item.type" :name="item.name" :metadata="item.metadata"/>
             <a
-              v-if="item.download"
+              v-if="item?.download"
               :href="item.download.url"
               download
               >
