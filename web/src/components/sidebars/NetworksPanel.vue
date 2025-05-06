@@ -88,6 +88,8 @@ function toggleSelected() {
             currentNetwork.value,
             deactivated,
         )
+        
+        selectedNodes.value = [];
     }
 }
 
