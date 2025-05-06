@@ -19,4 +19,4 @@ class IPyLeafletTokenAuth(BaseAuthentication):
         if not user.is_active:
             return None
 
-        return (user, None)
+        return (user, token)
