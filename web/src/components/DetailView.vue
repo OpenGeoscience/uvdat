@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import RecursiveTable from './RecursiveTable.vue';
-import { getDatasetFiles } from '@/api/rest';
+import { getChartFiles, getDatasetFiles } from '@/api/rest';
 
 
 interface Details {
@@ -27,6 +27,21 @@ async function getRelated() {
   if (props.type === 'dataset') {
     relatedLabel.value = 'Files'
     const files = await getDatasetFiles(props.id)
+    related.value = files.map((file) => ({
+      ...file,
+      type: 'file',
+      download: {
+        url: file.file,
+        size: file.file_size,
+        type: file.file_type
+      },
+      props: {
+        prependIcon: 'mdi-file',
+      },
+    }))
+  } else if (props.type === 'chart') {
+    relatedLabel.value = 'Files'
+    const files = await getChartFiles(props.id)
     related.value = files.map((file) => ({
       ...file,
       type: 'file',
@@ -67,14 +82,17 @@ watch(showModal, getRelated)
       </v-card-title>
 
       <v-card-subtitle>Metadata</v-card-subtitle>
-      <v-card-text v-if="!hasMetadata">{{ props.name }} has no metadata.</v-card-text>
+      <v-card-text v-if="!hasMetadata">This {{ props.type }} has no metadata.</v-card-text>
       <v-card-text v-else>
         <RecursiveTable :data="props.metadata" />
       </v-card-text>
 
-      <div v-if="related">
+      <div v-if="related" style="min-width: 500px;">
         <v-card-subtitle>Related {{ relatedLabel }} </v-card-subtitle>
-        <v-list :items="related" item-title="name" item-value="id">
+        <v-list :items="related" item-value="id">
+          <template v-slot:title="{ item }">
+            <div v-tooltip="item.name">{{ item.name }}</div>
+          </template>
           <template v-slot:append="{ item }">
             <DetailView :id="item.id", :type="item.type" :name="item.name" :metadata="item.metadata"/>
             <a
