@@ -1,0 +1,199 @@
+{
+    "type": "object",
+    "properties": {
+        "default_frame": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "opacity": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+        },
+        "widgets": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "opacity_widget": {
+                        "type": "boolean"
+                    },
+                    "visibility_widget": {
+                        "type": "boolean"
+                    },
+                    "color_widget": {
+                        "type": "boolean"
+                    },
+                    "size_widget": {
+                        "type": "boolean"
+                    },
+                    "filter_widget": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "name",
+                    "opacity_widget",
+                    "visibility_widget",
+                    "color_widget",
+                    "size_widget",
+                    "filter_widget"
+                ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "colors": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "single_color": {
+                        "type": "string"
+                    },
+                    "colormap": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "discrete": {
+                                "type": "boolean"
+                            },
+                            "color_by": {
+                                "type": "string"
+                            },
+                            "markers": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "color": {
+                                            "type": "string"
+                                        },
+                                        "value": {
+                                            "type": "number",
+                                            "minimum": 0,
+                                            "maximum": 1
+                                        }
+                                    },
+                                    "required": [
+                                        "color",
+                                        "value"
+                                    ]
+                                },
+                                "minItems": 2,
+                                "uniqueItems": true
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "discrete",
+                            "color_by",
+                            "markers"
+                        ]
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "sizes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "zoom_scaling": {
+                        "type": "boolean"
+                    },
+                    "single_size": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "size_range": {
+                        "type": "object",
+                        "properties": {
+                            "size_by": {
+                                "type": "string"
+                            },
+                            "minimum": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "maximum": {
+                                "type": "integer",
+                                "minimum": 0
+                            }
+                        },
+                        "required": [
+                            "size_by",
+                            "minimum",
+                            "maximum"
+                        ]
+                    }
+                },
+                "required": [
+                    "name",
+                    "zoom_scaling"
+                ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "filters": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "filter_by": {
+                        "type": "string"
+                    },
+                    "include": {
+                        "type": "boolean"
+                    },
+                    "transparency": {
+                        "type": "boolean"
+                    },
+                    "range": {
+                        "type": "array",
+                        "items": {
+                            "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                    },
+                    "list": {
+                        "type": "array",
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "filter_by",
+                    "include",
+                    "transparency"
+                ]
+            },
+            "uniqueItems": true
+        }
+    },
+    "required": [
+        "default_frame",
+        "opacity",
+        "widgets",
+        "colors",
+        "sizes",
+        "filters"
+    ]
+}
