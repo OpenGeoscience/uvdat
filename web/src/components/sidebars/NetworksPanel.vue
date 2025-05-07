@@ -29,25 +29,47 @@ const sort = ref([{key: 'active', order: true}]);
 const hoverNode = ref<NetworkNode>();
 const hoverEdge = ref<NetworkEdge>();
 const selectedNodes = ref<number[]>([]);
-const currentNodes = computed(() => {
-    return currentNetworkNodes.value.map((n) => {
-        n.active = !currentNetwork.value?.deactivated?.nodes?.includes(n.id)
-        return n
-    })
-})
-const currentEdges = computed(() => {
-    return currentNetworkEdges.value.map((e) => {
-        e.active = (
-            !currentNetwork.value?.deactivated?.nodes?.includes(e.from_node) &&
-            !currentNetwork.value?.deactivated?.nodes?.includes(e.to_node)
-        )
-        return e
-    })
-})
+
+function sortEdgeOrNode(a: NetworkNode | NetworkEdge, b: NetworkNode | NetworkEdge) {
+    if (typeof a !== typeof b) {
+        throw new Error('Cannot compare network nodes against edges');
+    }
+
+    const activeComp = Number(a.active) - Number(b.active);
+    if (activeComp !== 0) {
+        return activeComp;
+    }
+
+    // Sort by name if their active status is equal
+    if (a.name < b.name) {
+        return -1;
+    }
+    return 1;
+}
+
+const currentNodes = computed(() =>
+  currentNetworkNodes.value
+    .map((n) => ({
+      ...n,
+      active: !currentNetwork.value?.deactivated?.nodes?.includes(n.id),
+    }))
+    .toSorted(sortEdgeOrNode)
+);
+
+const currentEdges = computed(() =>
+  currentNetworkEdges.value
+    .map((e) => ({
+      ...e,
+      active:
+        !currentNetwork.value?.deactivated?.nodes?.includes(e.from_node) &&
+        !currentNetwork.value?.deactivated?.nodes?.includes(e.to_node),
+    }))
+    .toSorted(sortEdgeOrNode)
+);
 
 const headers = [
-    { title: '', value: 'active', sortable: true, width: 10 },
-    { title: 'Name', value: 'name', sortable: true },
+    { title: '', value: 'active', sortable: false, width: 10 },
+    { title: 'Name', value: 'name', sortable: false },
     { title: '', value: 'metadata', sortable: false, width: 10 },
 ]
 
