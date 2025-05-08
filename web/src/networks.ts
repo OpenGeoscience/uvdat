@@ -9,7 +9,7 @@ import { styleNetwork } from "./layerStyles";
 
 interface GCCResult {
     deactivatedNodes: number[],
-    gcc: number[],
+    gcc: Set<number>,
 }
 const GCCcache: GCCResult[] = [];
 
@@ -62,7 +62,7 @@ export async function setNetworkDeactivatedNodes(network: Network, nodeIds: Set<
             })
         }
     } else {
-        network.gcc = network.nodes
+        network.gcc = new Set(network.nodes);
     }
     styleNetwork(network)
     availableNetworks.value = availableNetworks.value.map((n) => {

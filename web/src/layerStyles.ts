@@ -145,7 +145,7 @@ export function styleNetwork(network: Network) {
                     const inactive = Array.from(network.deactivated?.nodes || []).filter((n) => (
                         !deactivate?.includes(n) && !activate?.includes(n)
                     )) || [];
-                    let gcc = network.gcc || []
+                    let gcc = Array.from(network.gcc || []);
                     if (
                         !inactive.length &&
                         !deactivate.length &&

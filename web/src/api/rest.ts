@@ -110,12 +110,14 @@ export async function getNetworkEdges(networkId: number): Promise<NetworkEdge[]>
 export async function getNetworkGCC(
   networkId: number,
   exclude_nodes: number[]
-): Promise<number[]> {
-  return (
+): Promise<Set<number>> {
+  const nodes = (
     await apiClient.get(
       `networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
     )
   ).data;
+
+  return new Set(nodes);
 }
 
 export async function getRasterDataValues(rasterId: number): Promise<RasterDataValues> {

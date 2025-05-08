@@ -200,7 +200,7 @@ export interface Network {
     deactivate_nodes: Set<number>;
     activate_nodes: Set<number>;
   }
-  gcc: number[];
+  gcc?: Set<number>;
 }
 
 export interface NetworkNode {
