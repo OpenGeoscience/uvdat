@@ -58,6 +58,7 @@ export interface VectorData {
   dataset: number;
   geojson_data: string | null;
   source_file: null | number;
+  file_size: number;
   metadata: Record<string, unknown>;
 }
 
@@ -67,6 +68,7 @@ export interface RasterData {
   cloud_optimized_geotiff: string | null;
   dataset: number;
   source_file: null | number;
+  file_size: number;
   metadata: RasterMetadata;
 }
 
@@ -315,4 +317,18 @@ export interface FloatingPanelConfig {
   width?: number | undefined;
   height?: number | undefined;
   element?: HTMLElement;
+}
+
+export interface FileItem {
+  id: number;
+  name: string;
+  chart?: Chart;
+  dataset?: Dataset;
+  created: string;
+  modified: string;
+  file: string;
+  file_size: number;
+  file_type: string;
+  index: number;
+  metadata: Record<string, any>;
 }

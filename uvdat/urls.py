@@ -11,6 +11,7 @@ from uvdat.core.rest import (
     AnalyticsViewSet,
     ChartViewSet,
     DatasetViewSet,
+    FileItemViewSet,
     LayerFrameViewSet,
     LayerViewSet,
     NetworkViewSet,
@@ -32,6 +33,7 @@ schema_view = get_schema_view(
 router.register(r'users', UserViewSet, basename='users')
 router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
+router.register(r'files', FileItemViewSet, basename='files')
 router.register(r'charts', ChartViewSet, basename='charts')
 router.register(r'layers', LayerViewSet, basename='layers')
 router.register(r'layer-frames', LayerFrameViewSet, basename='layer-frames')
