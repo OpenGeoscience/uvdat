@@ -1,6 +1,27 @@
 # CHANGELOG
 
 
+## v0.10.0 (2025-05-08)
+
+### Chores
+
+- Update screenshot in README ([#137](https://github.com/OpenGeoscience/uvdat/pull/137),
+  [`7417fc2`](https://github.com/OpenGeoscience/uvdat/commit/7417fc21d3d4f4652dbd52bf97717f730193bfca))
+
+### Documentation
+
+- Remove deprecated docker-compose commands from setup docs
+  ([`ee30094`](https://github.com/OpenGeoscience/uvdat/commit/ee30094f2aa6e3a5c5c38122b4b5eba4a4d391fc))
+
+### Features
+
+- Add button to fit map to visible layers
+  ([`8d8d04a`](https://github.com/OpenGeoscience/uvdat/commit/8d8d04ae7032036eb9152b53a88f207be2ffb5b9))
+
+- Show spinner while loading bounds of visible layers
+  ([`1c357aa`](https://github.com/OpenGeoscience/uvdat/commit/1c357aab4a9975362caa129ff4b1bf30d5b2b859))
+
+
 ## v0.9.1 (2025-03-24)
 
 ### Bug Fixes
