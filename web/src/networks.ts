@@ -77,7 +77,7 @@ export async function getNetwork(
 ): Promise<Network | undefined> {
     let network;
     availableNetworks.value.forEach((net) => {
-        if (net.nodes.includes(nodeId)) {
+        if (net.nodes.has(nodeId)) {
             network = net;
         }
     })
@@ -90,7 +90,7 @@ export async function getNetwork(
         ]
     }
     availableNetworks.value.forEach((net) => {
-        if (net.nodes.includes(nodeId)) {
+        if (net.nodes.has(nodeId)) {
             network = net;
         }
     })

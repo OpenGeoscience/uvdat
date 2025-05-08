@@ -87,16 +87,28 @@ export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
   return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
 }
 
+
+function processNetwork(data: Record<string, any>): Network {
+  return {
+    ...data,
+    nodes: new Set(data.nodes),
+    edges: new Set(data.edges),
+  } as Network
+}
+
 export async function getDatasetNetworks(datasetId: number): Promise<Network[]> {
-  return (await apiClient.get(`datasets/${datasetId}/networks`)).data;
+  const { data } = (await apiClient.get(`datasets/${datasetId}/networks`)).data;
+  return data.map((network: any) => processNetwork(network));
 }
 
 export async function getProjectNetworks(projectId: number): Promise<Network[]> {
-  return (await apiClient.get(`networks/?project=${projectId}`)).data.results;
+  const { data: { results } } = (await apiClient.get(`networks/?project=${projectId}`));
+  return results.map((network: any) => processNetwork(network));
 }
 
 export async function getNetwork(networkId: number): Promise<Network> {
-  return (await apiClient.get(`networks/${networkId}`)).data;
+  const { data } = (await apiClient.get(`networks/${networkId}`));
+  return processNetwork(data);
 }
 
 export async function getNetworkNodes(networkId: number): Promise<NetworkNode[]> {

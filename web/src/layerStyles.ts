@@ -150,7 +150,7 @@ export function styleNetwork(network: Network) {
                         !inactive.length &&
                         !deactivate.length &&
                         !activate.length &&
-                        gcc.length === network.nodes.length
+                        gcc.length === network.nodes.size
                     ) {
                         // Network default state; don't show GCC
                         gcc = []

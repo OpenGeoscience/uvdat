@@ -184,8 +184,8 @@ export interface Network {
   name: string;
   dataset: Dataset;
   category: string;
-  nodes: number[];
-  edges: number[];
+  nodes: Set<number>;
+  edges: Set<number>;
   metadata: Record<string, unknown>;
   vector_data: number;
   selected?: {
