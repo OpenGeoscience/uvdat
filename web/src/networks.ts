@@ -22,39 +22,42 @@ export async function toggleNodeActive(
     dataset: Dataset,
 ) {
     const network = await getNetwork(nodeId, dataset);
-    if (network) {
-        let deactivated = network?.deactivated?.nodes || []
-        if (!deactivated.includes(nodeId)) {
-            deactivated.push(nodeId)
-        } else {
-            deactivated = deactivated.filter((id) => id !== nodeId)
-        }
-        await setNetworkDeactivatedNodes(network, deactivated)
+    if (!network) {
+        return;
     }
+
+    const deactivated = new Set(network.deactivated?.nodes || undefined);
+    if (deactivated.has(nodeId)) {
+        deactivated.delete(nodeId);
+    } else {
+        deactivated.add(nodeId);
+    }
+
+    await setNetworkDeactivatedNodes(network, deactivated)
 }
 
-export async function setNetworkDeactivatedNodes(network: Network, nodeIds: number[], animation=false) {
+export async function setNetworkDeactivatedNodes(network: Network, nodeIds: Set<number> = new Set(), animation=false) {
     if (!network.deactivated) network.deactivated = {
-        nodes: [],
-        edges: []
+        nodes: new Set(),
+        edges: new Set()
     }
     if (animation) {
         network.changes = {
-            deactivate_nodes: nodeIds.filter((n) => !network.deactivated?.nodes.includes(n)),
-            activate_nodes: network.deactivated.nodes.filter((n) => !nodeIds.includes(n))
+            deactivate_nodes: nodeIds.difference(network.deactivated.nodes),  // nodes about to be deactivated
+            activate_nodes: network.deactivated.nodes.difference(nodeIds),    // nodes about to be reactivated
         }
     }
     network.deactivated.nodes = nodeIds;
-    if (nodeIds.length) {
+    if (nodeIds.size) {
         const cachedResult = GCCcache.find(
-            // sort and stringify to disregard order in comparison
-            (result) => JSON.stringify(result.deactivatedNodes.toSorted()) == JSON.stringify(nodeIds.toSorted())
+            // The symmetric difference between two sets is only empty if they are equal
+            (result) => nodeIds.symmetricDifference(new Set(result.deactivatedNodes)).size === 0
         )
         if (cachedResult) network.gcc = cachedResult.gcc
         else {
-            network.gcc = await getNetworkGCC(network.id, network.deactivated.nodes);
+            network.gcc = await getNetworkGCC(network.id, Array.from(network.deactivated.nodes));
             GCCcache.push({
-                deactivatedNodes: nodeIds,
+                deactivatedNodes: Array.from(nodeIds),
                 gcc: network.gcc,
             })
         }

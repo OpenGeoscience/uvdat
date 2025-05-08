@@ -51,7 +51,7 @@ const currentNodes = computed(() =>
   currentNetworkNodes.value
     .map((n) => ({
       ...n,
-      active: !currentNetwork.value?.deactivated?.nodes?.includes(n.id),
+      active: !currentNetwork.value?.deactivated?.nodes?.has(n.id),
     }))
     .toSorted(sortEdgeOrNode)
 );
@@ -61,8 +61,8 @@ const currentEdges = computed(() =>
     .map((e) => ({
       ...e,
       active:
-        !currentNetwork.value?.deactivated?.nodes?.includes(e.from_node) &&
-        !currentNetwork.value?.deactivated?.nodes?.includes(e.to_node),
+        !currentNetwork.value?.deactivated?.nodes?.has(e.from_node) &&
+        !currentNetwork.value?.deactivated?.nodes?.has(e.to_node),
     }))
     .toSorted(sortEdgeOrNode)
 );
@@ -90,7 +90,7 @@ function isNetworkVisible() {
 function resetNetwork() {
     if (currentNetwork.value) {
         selectedNodes.value = []
-        setNetworkDeactivatedNodes(currentNetwork.value, [])
+        setNetworkDeactivatedNodes(currentNetwork.value);
     }
 }
 
@@ -107,12 +107,12 @@ function toggleSelected() {
         deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
         selectedNodeSet = selectedNodeSet.difference(nodesToRemove);
 
-        const deactivated = Array.from(deactiveNodeSet.union(selectedNodeSet));
+        const deactivated = deactiveNodeSet.union(selectedNodeSet);
         setNetworkDeactivatedNodes(
             currentNetwork.value,
             deactivated,
         )
-        
+
         selectedNodes.value = [];
     }
 }
@@ -121,8 +121,8 @@ watch(currentNetwork, () => {
     searchText.value = ''
     if (currentNetwork.value) {
         currentNetwork.value.selected = {
-            nodes: [],
-            edges: [],
+            nodes: new Set(),
+            edges: new Set(),
         }
         getNetworkNodes(currentNetwork.value.id).then((results) => {
             currentNetworkNodes.value = results;
@@ -139,19 +139,24 @@ watch(currentNetwork, () => {
 watch([selectedNodes, hoverNode, hoverEdge], () => {
     if (currentNetwork.value) {
         if (!currentNetwork.value.selected) {
-            currentNetwork.value.selected = { nodes: [], edges: [] }
+            currentNetwork.value.selected = {
+                nodes: new Set(),
+                edges: new Set(),
+            };
         }
-        if (hoverNode.value) {
-            currentNetwork.value.selected.nodes = [
-                ...selectedNodes.value,
-                hoverNode.value.id,
-            ]
-        } else if (hoverEdge.value) {
-            currentNetwork.value.selected.edges = [hoverEdge.value.id]
-        } else {
-            currentNetwork.value.selected.nodes = selectedNodes.value;
+        
+        // Handle edge hover
+        if (hoverEdge.value) {
+            currentNetwork.value.selected.edges = new Set([hoverEdge.value.id]);
+        }
 
+        // Handle node selection/hover
+        const newSelectedNodes = new Set(selectedNodes.value);
+        if (hoverNode.value) {
+            newSelectedNodes.add(hoverNode.value.id);
         }
+        currentNetwork.value.selected.nodes = newSelectedNodes;
+
         styleNetwork(currentNetwork.value)
     }
 }, {deep: true})

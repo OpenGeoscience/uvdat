@@ -139,9 +139,10 @@ export function styleNetwork(network: Network) {
                     const inactiveValue = style.inactive || style.default;
                     const deactivateValue = style.deactivate || style.default;
                     const activateValue = style.activate || style.default;
-                    const deactivate = network.changes?.deactivate_nodes || [];
-                    const activate = network.changes?.activate_nodes || [];
-                    const inactive = network.deactivated?.nodes.filter((n) => (
+
+                    const deactivate = Array.from(network.changes?.deactivate_nodes || []);
+                    const activate = Array.from(network.changes?.activate_nodes || []);
+                    const inactive = Array.from(network.deactivated?.nodes || []).filter((n) => (
                         !deactivate?.includes(n) && !activate?.includes(n)
                     )) || [];
                     let gcc = network.gcc || []
@@ -182,8 +183,8 @@ export function styleNetwork(network: Network) {
                             inactiveValue,
                             [
                                 "any",
-                                ["in", ["get", "node_id"], ["literal", network.selected?.nodes || []]],
-                                ["in", ["get", "edge_id"], ["literal", network.selected?.edges || []]],
+                                ["in", ["get", "node_id"], ["literal", Array.from(network.selected?.nodes || [])]],
+                                ["in", ["get", "edge_id"], ["literal", Array.from(network.selected?.edges || [])]],
                             ],
                             selectedValue,
                             [

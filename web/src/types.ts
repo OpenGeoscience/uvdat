@@ -189,16 +189,16 @@ export interface Network {
   metadata: Record<string, unknown>;
   vector_data: number;
   selected?: {
-    nodes: number[];
-    edges: number[];
+    nodes: Set<number>;
+    edges: Set<number>;
   },
   deactivated?: {
-    nodes: number[];
-    edges: number[];
+    nodes: Set<number>;
+    edges: Set<number>;
   };
   changes?: {
-    deactivate_nodes: number[];
-    activate_nodes: number[];
+    deactivate_nodes: Set<number>;
+    activate_nodes: Set<number>;
   }
   gcc: number[];
 }

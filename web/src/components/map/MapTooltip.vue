@@ -125,7 +125,7 @@ const clickedFeatureIsDeactivatedNode = computed(
   () =>
     clickedFeature.value &&
     availableNetworks.value.find((network) => {
-      return network.deactivated?.nodes.includes(
+      return network.deactivated?.nodes.has(
         clickedFeature.value?.feature.properties.node_id
       )
     })
