@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.gis.db.models import Extent
 from django.db import connection
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
@@ -8,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from uvdat.core.models import RasterData, VectorData
+from uvdat.core.models import RasterData, VectorData, VectorFeature
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.explorer import IPyLeafletTokenAuth
 from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
@@ -121,6 +122,13 @@ class VectorDataViewSet(GenericDataViewSet):
         instance = self.get_object()
         serializer = VectorDataSerializer(instance)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def bounds(self, request, **kwargs):
+        instance = self.get_object()
+        features = VectorFeature.objects.filter(vector_data=instance)
+        extent = features.aggregate(Extent('geometry')).get('geometry__extent')
+        return Response(extent, status=200)
 
     @action(
         detail=True,

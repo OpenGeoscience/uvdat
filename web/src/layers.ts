@@ -9,9 +9,9 @@ import {
 } from "./store";
 import { getMap } from "./storeFunctions";
 import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './types';
-import { MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
+import { LngLatBoundsLike, MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
-import { getRasterDataValues } from "./api/rest";
+import { getRasterDataValues, getVectorDataBounds } from "./api/rest";
 import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
@@ -171,6 +171,33 @@ export function clearMapLayers () {
 
 export function handleMapClick(e: MapMouseEvent) {
     clickedFeature.value = undefined;
+}
+
+export async function getBoundsOfVisibleLayers(): Promise<LngLatBoundsLike | undefined> {
+    let xMinGlobal, xMaxGlobal, yMinGlobal, yMaxGlobal = undefined;
+    for (let index = 0; index < selectedLayers.value.length; index++) {
+        const layer = selectedLayers.value[index];
+        if (layer.visible) {
+            const currentFrame = layer.frames[layer.current_frame]
+            let xmin, xmax, ymin, ymax, srs = undefined;
+            if (currentFrame.raster) {
+                const bounds = currentFrame.raster.metadata.bounds;
+                ({xmin, xmax, ymin, ymax, srs} = bounds);
+                [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
+                [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+            } else if (currentFrame.vector) {
+                const bounds = await getVectorDataBounds(currentFrame.vector.id);
+                [xmin, ymin, xmax, ymax] = bounds;
+            }
+            if (!xMinGlobal || xMinGlobal > xmin) xMinGlobal = xmin;
+            if (!yMinGlobal || yMinGlobal > ymin) yMinGlobal = ymin;
+            if (!xMaxGlobal || xMaxGlobal < xmax) xMaxGlobal = xmax;
+            if (!yMaxGlobal || yMaxGlobal < ymax) yMaxGlobal = ymax;
+        }
+    }
+    if (xMinGlobal && xMaxGlobal && yMinGlobal && yMaxGlobal) {
+        return [[xMinGlobal, yMinGlobal], [xMaxGlobal, yMaxGlobal]]
+    }
 }
 
 // ------------------
