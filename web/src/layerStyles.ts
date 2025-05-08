@@ -143,8 +143,9 @@ export function styleNetwork(network: Network) {
                     const deactivate = Array.from(network.changes?.deactivate_nodes || []);
                     const activate = Array.from(network.changes?.activate_nodes || []);
                     const inactive = Array.from(network.deactivated?.nodes || []).filter((n) => (
-                        !deactivate?.includes(n) && !activate?.includes(n)
-                    )) || [];
+                        !network.changes?.deactivate_nodes?.has(n) &&
+                        !network.changes?.activate_nodes?.has(n)
+                    ));
                     let gcc = Array.from(network.gcc || []);
                     if (
                         !inactive.length &&
