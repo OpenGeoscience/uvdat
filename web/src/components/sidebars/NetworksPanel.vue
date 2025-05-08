@@ -97,15 +97,17 @@ function resetNetwork() {
 function toggleSelected() {
     if (currentNetwork.value) {
         if (!isNetworkVisible()) showNetwork()
-        let deactivated = currentNetwork.value?.deactivated?.nodes || []
-        if (selectedNodes.value.every((n) => deactivated.includes(n))) {
-            deactivated = deactivated.filter((n) => !selectedNodes.value.includes(n))
-        } else {
-            deactivated = [
-                ...deactivated,
-                ...selectedNodes.value,
-            ]
-        }
+
+        // Any selected nodes that are already deactivated should be removed
+        // from both sets, since they now need to be activated, and both sets
+        // are used to set the new deactivated value.
+        let deactiveNodeSet = new Set(currentNetwork.value?.deactivated?.nodes);
+        let selectedNodeSet = new Set(selectedNodes.value);
+        const nodesToRemove = deactiveNodeSet.intersection(selectedNodeSet);
+        deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
+        selectedNodeSet = selectedNodeSet.difference(nodesToRemove);
+
+        const deactivated = Array.from(deactiveNodeSet.union(selectedNodeSet));
         setNetworkDeactivatedNodes(
             currentNetwork.value,
             deactivated,
