@@ -161,6 +161,12 @@ export function styleNetwork(network: Network) {
                             "case",
                             [
                                 "any",
+                                ["in", ["get", "node_id"], ["literal", network.selected?.nodes || []]],
+                                ["in", ["get", "edge_id"], ["literal", network.selected?.edges || []]],
+                            ],
+                            selectedValue,
+                            [
+                                "any",
                                 ["in", ["get", "node_id"], ["literal", deactivate]],
                                 ["in", ["get", "from_node_id"], ["literal", deactivate]],
                                 ["in", ["get", "to_node_id"], ["literal", deactivate]],
@@ -180,12 +186,6 @@ export function styleNetwork(network: Network) {
                                 ["in", ["get", "to_node_id"], ["literal", inactive]],
                             ],
                             inactiveValue,
-                            [
-                                "any",
-                                ["in", ["get", "node_id"], ["literal", network.selected?.nodes || []]],
-                                ["in", ["get", "edge_id"], ["literal", network.selected?.edges || []]],
-                            ],
-                            selectedValue,
                             [
                                 "any",
                                 ["in", ["get", "node_id"], ["literal", gcc]],
