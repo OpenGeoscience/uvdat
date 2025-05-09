@@ -14,6 +14,7 @@ import {
 
 import MetadataView from "../MetadataView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
+import { getNetworkState, resetNetworkState } from "@/storeFunctions";
 
 
 const searchText = ref();
@@ -47,25 +48,36 @@ function sortEdgeOrNode(a: NetworkNode | NetworkEdge, b: NetworkNode | NetworkEd
     return 1;
 }
 
-const currentNodes = computed(() =>
-  currentNetworkNodes.value
-    .map((n) => ({
-      ...n,
-      active: !currentNetwork.value?.deactivated?.nodes?.has(n.id),
-    }))
-    .toSorted(sortEdgeOrNode)
-);
+const currentNodes = computed(() => {
+    if (!currentNetwork.value) {
+        return [];
+    }
 
-const currentEdges = computed(() =>
-  currentNetworkEdges.value
-    .map((e) => ({
-      ...e,
-      active:
-        !currentNetwork.value?.deactivated?.nodes?.has(e.from_node) &&
-        !currentNetwork.value?.deactivated?.nodes?.has(e.to_node),
-    }))
-    .toSorted(sortEdgeOrNode)
-);
+    const state = getNetworkState(currentNetwork.value);
+    return currentNetworkNodes.value
+      .map((n) => ({
+        ...n,
+        active: !state.deactivated.nodes.has(n.id),
+      }))
+      .toSorted(sortEdgeOrNode);
+});
+
+const currentEdges = computed(() => {
+    if (!currentNetwork.value) {
+        return [];
+    }
+
+    const state = getNetworkState(currentNetwork.value);
+    return currentNetworkEdges.value
+      .map((e) => ({
+        ...e,
+        active:
+          !state.deactivated.nodes.has(e.from_node) &&
+          !state.deactivated.nodes.has(e.to_node),
+      }))
+      .toSorted(sortEdgeOrNode);
+});
+
 
 const headers = [
     { title: '', value: 'active', sortable: false, width: 10 },
@@ -95,35 +107,35 @@ function resetNetwork() {
 }
 
 function toggleSelected() {
-    if (currentNetwork.value) {
-        if (!isNetworkVisible()) showNetwork()
-
-        // Any selected nodes that are already deactivated should be removed
-        // from both sets, since they now need to be activated, and both sets
-        // are used to set the new deactivated value.
-        let deactiveNodeSet = new Set(currentNetwork.value?.deactivated?.nodes);
-        let selectedNodeSet = new Set(selectedNodes.value);
-        const nodesToRemove = deactiveNodeSet.intersection(selectedNodeSet);
-        deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
-        selectedNodeSet = selectedNodeSet.difference(nodesToRemove);
-
-        const deactivated = deactiveNodeSet.union(selectedNodeSet);
-        setNetworkDeactivatedNodes(
-            currentNetwork.value,
-            deactivated,
-        )
-
-        selectedNodes.value = [];
+    if (!currentNetwork.value) {
+        return;
     }
+
+    if (!isNetworkVisible()) { showNetwork(); }
+
+    // Any selected nodes that are already deactivated should be removed
+    // from both sets, since they now need to be activated, and both sets
+    // are used to set the new deactivated value.
+    const state = getNetworkState(currentNetwork.value);
+    let deactiveNodeSet = new Set(state.deactivated.nodes);
+    let selectedNodeSet = new Set(selectedNodes.value);
+    const nodesToRemove = deactiveNodeSet.intersection(selectedNodeSet);
+    deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
+    selectedNodeSet = selectedNodeSet.difference(nodesToRemove);
+
+    const deactivated = deactiveNodeSet.union(selectedNodeSet);
+    setNetworkDeactivatedNodes(
+        currentNetwork.value,
+        deactivated,
+    );
+
+    selectedNodes.value = [];
 }
 
 watch(currentNetwork, () => {
     searchText.value = ''
     if (currentNetwork.value) {
-        currentNetwork.value.selected = {
-            nodes: new Set(),
-            edges: new Set(),
-        }
+        resetNetworkState(currentNetwork.value);
         getNetworkNodes(currentNetwork.value.id).then((results) => {
             currentNetworkNodes.value = results;
         })
@@ -137,28 +149,30 @@ watch(currentNetwork, () => {
 })
 
 watch([selectedNodes, hoverNode, hoverEdge], () => {
-    if (currentNetwork.value) {
-        if (!currentNetwork.value.selected) {
-            currentNetwork.value.selected = {
-                nodes: new Set(),
-                edges: new Set(),
-            };
-        }
-        
-        // Handle edge hover
-        if (hoverEdge.value) {
-            currentNetwork.value.selected.edges = new Set([hoverEdge.value.id]);
-        }
-
-        // Handle node selection/hover
-        const newSelectedNodes = new Set(selectedNodes.value);
-        if (hoverNode.value) {
-            newSelectedNodes.add(hoverNode.value.id);
-        }
-        currentNetwork.value.selected.nodes = newSelectedNodes;
-
-        styleNetwork(currentNetwork.value)
+    if (!currentNetwork.value) {
+        return;
     }
+    const state = getNetworkState(currentNetwork.value);
+    if (!state.selected) {
+        state.selected = {
+            nodes: new Set(),
+            edges: new Set(),
+        };
+    }
+
+    // Handle edge hover
+    if (hoverEdge.value) {
+        state.selected.edges = new Set([hoverEdge.value.id]);
+    }
+
+    // Handle node selection/hover
+    const newSelectedNodes = new Set(selectedNodes.value);
+    if (hoverNode.value) {
+        newSelectedNodes.add(hoverNode.value.id);
+    }
+    state.selected.nodes = newSelectedNodes;
+
+    styleNetwork(currentNetwork.value)
 }, {deep: true})
 </script>
 

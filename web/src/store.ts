@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import {
   User,
   Project,
@@ -13,9 +13,10 @@ import {
   Style,
   Network,
   NetworkNode,
-  NetworkEdge
+  NetworkEdge,
+  NetworkState,
 } from "./types.js";
-import { Map, Popup, Source } from "maplibre-gl";
+import { Map as MapLibreMap, Popup, Source } from "maplibre-gl";
 
 // UI Config
 export const theme = ref<"dark" | "light">("light");
@@ -43,7 +44,7 @@ export const selectedLayerStyles = ref<Record<string, Style>>({});
 export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
 // Map
-export const map = ref<Map>();
+export const map = ref<MapLibreMap>();
 export const mapSources = ref<Record<string, Source>>({});
 export const showMapBaseLayer = ref(true);
 export const tooltipOverlay = ref<Popup>();
@@ -66,6 +67,9 @@ export const availableNetworks = ref<Network[]>([]);
 export const currentNetwork = ref<Network>();
 export const currentNetworkNodes = ref<NetworkNode[]>([]);
 export const currentNetworkEdges = ref<NetworkEdge[]>([]);
+
+// This is not reactive, to not affect set (or other complex object) behavior.
+export const networkStates: Map<number, NetworkState> = new Map();
 
 // ETC
 export const currentUser = ref<User>();

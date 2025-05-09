@@ -6,7 +6,7 @@ import {
   rasterTooltipDataCache,
   availableNetworks,
 } from "@/store";
-import { getMap, getTooltip } from "@/storeFunctions";
+import { getMap, getNetworkState, getTooltip } from "@/storeFunctions";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
@@ -125,7 +125,7 @@ const clickedFeatureIsDeactivatedNode = computed(
   () =>
     clickedFeature.value &&
     availableNetworks.value.find((network) => {
-      return network.deactivated?.nodes.has(
+      return getNetworkState(network).deactivated.nodes.has(
         clickedFeature.value?.feature.properties.node_id
       )
     })

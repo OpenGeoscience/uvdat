@@ -27,6 +27,7 @@ import {
   loadingProjects,
   loadingNetworks,
   currentNetwork,
+  networkStates,
 } from "./store";
 import {
   getProjects,
@@ -38,7 +39,7 @@ import {
   getProjectNetworks,
 } from "@/api/rest";
 import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
-import { Dataset, Project } from "./types";
+import { Dataset, Network, NetworkState, Project } from "./types";
 import { resetPanels } from "./panelFunctions";
 
 export function clearState() {
@@ -85,6 +86,42 @@ export function loadProjects() {
     availableProjects.value = data;
     loadingProjects.value = false;
   });
+}
+
+
+export function defaultNetworkState(): NetworkState {
+  return {
+    selected: {
+      nodes: new Set(),
+      edges: new Set(),
+    },
+    deactivated: {
+      nodes: new Set(),
+      edges: new Set(),
+    },
+    changes: {
+      activate_nodes: new Set(),
+      deactivate_nodes: new Set(),
+    },
+    gcc: new Set(),
+  }
+}
+
+export function resetNetworkState(network: Network) {
+  networkStates.set(network.id, defaultNetworkState());
+}
+
+export function getNetworkState(network: Network): NetworkState {
+  if (!networkStates.has(network.id)) {
+    resetNetworkState(network);
+  }
+
+  const state = networkStates.get(network.id);
+  if (state === undefined) {
+    throw new Error('Network state empty immediately after set');
+  }
+
+  return state;
 }
 
 export function setMapCenter(

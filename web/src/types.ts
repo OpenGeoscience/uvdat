@@ -184,23 +184,26 @@ export interface Network {
   name: string;
   dataset: Dataset;
   category: string;
-  nodes: Set<number>;
-  edges: Set<number>;
+  nodes: number[];
+  edges: number[];
   metadata: Record<string, unknown>;
   vector_data: number;
-  selected?: {
+}
+
+export interface NetworkState {
+  selected: {
     nodes: Set<number>;
     edges: Set<number>;
   },
-  deactivated?: {
+  deactivated: {
     nodes: Set<number>;
     edges: Set<number>;
   };
-  changes?: {
+  changes: {
     deactivate_nodes: Set<number>;
     activate_nodes: Set<number>;
   }
-  gcc?: Set<number>;
+  gcc: Set<number>;
 }
 
 export interface NetworkNode {

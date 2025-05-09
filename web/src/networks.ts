@@ -5,6 +5,7 @@ import {
 import { Dataset, Network } from "./types";
 import { availableNetworks, currentNetwork, panelArrangement } from './store';
 import { styleNetwork } from "./layerStyles";
+import { getNetworkState } from "./storeFunctions";
 
 
 interface GCCResult {
@@ -25,8 +26,8 @@ export async function toggleNodeActive(
     if (!network) {
         return;
     }
-
-    const deactivated = new Set(network.deactivated?.nodes || undefined);
+    const state = getNetworkState(network);
+    const deactivated = new Set(state.deactivated.nodes);
     if (deactivated.has(nodeId)) {
         deactivated.delete(nodeId);
     } else {
@@ -37,32 +38,29 @@ export async function toggleNodeActive(
 }
 
 export async function setNetworkDeactivatedNodes(network: Network, nodeIds: Set<number> = new Set(), animation=false) {
-    if (!network.deactivated) network.deactivated = {
-        nodes: new Set(),
-        edges: new Set()
-    }
+    const state = getNetworkState(network);
     if (animation) {
-        network.changes = {
-            deactivate_nodes: nodeIds.difference(network.deactivated.nodes),  // nodes about to be deactivated
-            activate_nodes: network.deactivated.nodes.difference(nodeIds),    // nodes about to be reactivated
+        state.changes = {
+            deactivate_nodes: nodeIds.difference(state.deactivated.nodes),  // nodes about to be deactivated
+            activate_nodes: state.deactivated.nodes.difference(nodeIds),    // nodes about to be reactivated
         }
     }
-    network.deactivated.nodes = nodeIds;
+    state.deactivated.nodes = nodeIds;
     if (nodeIds.size) {
         const cachedResult = GCCcache.find(
             // The symmetric difference between two sets is only empty if they are equal
             (result) => nodeIds.symmetricDifference(new Set(result.deactivatedNodes)).size === 0
         )
-        if (cachedResult) network.gcc = cachedResult.gcc
+        if (cachedResult) state.gcc = cachedResult.gcc
         else {
-            network.gcc = await getNetworkGCC(network.id, Array.from(network.deactivated.nodes));
+            state.gcc = await getNetworkGCC(network.id, Array.from(state.deactivated.nodes));
             GCCcache.push({
                 deactivatedNodes: Array.from(nodeIds),
-                gcc: network.gcc,
+                gcc: state.gcc,
             })
         }
     } else {
-        network.gcc = new Set(network.nodes);
+        state.gcc = new Set(network.nodes);
     }
     styleNetwork(network)
     availableNetworks.value = availableNetworks.value.map((n) => {
@@ -77,7 +75,7 @@ export async function getNetwork(
 ): Promise<Network | undefined> {
     let network;
     availableNetworks.value.forEach((net) => {
-        if (net.nodes.has(nodeId)) {
+        if (net.nodes.includes(nodeId)) {
             network = net;
         }
     })
@@ -90,7 +88,7 @@ export async function getNetwork(
         ]
     }
     availableNetworks.value.forEach((net) => {
-        if (net.nodes.has(nodeId)) {
+        if (net.nodes.includes(nodeId)) {
             network = net;
         }
     })

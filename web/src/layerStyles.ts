@@ -1,5 +1,5 @@
 import { RasterTileSource } from "maplibre-gl";
-import { getMap } from "./storeFunctions";
+import { getMap, getNetworkState } from "./storeFunctions";
 import { Network, Style } from "./types";
 import { THEMES } from "./themes";
 import { mapSources, selectedLayerStyles, theme } from "./store";
@@ -87,7 +87,15 @@ export function setMapLayerStyle(mapLayerId: string, style: Style) {
             }
         }
     }
-    if (network?.gcc && opacity) styleNetwork(network)
+
+    // Style network if GCC is active and visible
+    if (network) {
+        const state = getNetworkState(network);
+        if (state.gcc.size && opacity) {
+            styleNetwork(network);
+        }
+
+    }
 }
 
 interface NetworkStyle {
@@ -106,6 +114,19 @@ export function styleNetwork(network: Network) {
     const selectedColor = "#ffffff";
     const deactivateColor = "#7b3294";
     const activateColor = "#008837";
+
+    // Determine arrays outside of loop (since network doesn't change)
+    const state = getNetworkState(network);
+    const inactive = Array.from(state.deactivated.nodes.difference(state.changes.deactivate_nodes).difference(state.changes.activate_nodes));
+    const activate = Array.from(state.changes.activate_nodes);
+    const deactivate = Array.from(state.changes.deactivate_nodes);
+    const selectedNodes = Array.from(state.selected.nodes);
+    const selectedEdges = Array.from(state.selected.edges);
+
+    // Don't show GCC if network is in default state
+    const defaultNetwork = !inactive.length && !deactivate.length && !activate.length && state.gcc.size === network.nodes.length;
+    const gcc = defaultNetwork ? [] : Array.from(state.gcc);
+
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId.includes(".vector." + vectorId)) {
             const [layerId, layerCopyId] = mapLayerId.split('.');
@@ -140,22 +161,6 @@ export function styleNetwork(network: Network) {
                     const deactivateValue = style.deactivate || style.default;
                     const activateValue = style.activate || style.default;
 
-                    const deactivate = Array.from(network.changes?.deactivate_nodes || []);
-                    const activate = Array.from(network.changes?.activate_nodes || []);
-                    const inactive = Array.from(network.deactivated?.nodes || []).filter((n) => (
-                        !network.changes?.deactivate_nodes?.has(n) &&
-                        !network.changes?.activate_nodes?.has(n)
-                    ));
-                    let gcc = Array.from(network.gcc || []);
-                    if (
-                        !inactive.length &&
-                        !deactivate.length &&
-                        !activate.length &&
-                        gcc.length === network.nodes.size
-                    ) {
-                        // Network default state; don't show GCC
-                        gcc = []
-                    }
                     map.setPaintProperty(
                         mapLayerId,
                         styleName,
@@ -184,8 +189,8 @@ export function styleNetwork(network: Network) {
                             inactiveValue,
                             [
                                 "any",
-                                ["in", ["get", "node_id"], ["literal", Array.from(network.selected?.nodes || [])]],
-                                ["in", ["get", "edge_id"], ["literal", Array.from(network.selected?.edges || [])]],
+                                ["in", ["get", "node_id"], ["literal", selectedNodes]],
+                                ["in", ["get", "edge_id"], ["literal", selectedEdges]],
                             ],
                             selectedValue,
                             [
