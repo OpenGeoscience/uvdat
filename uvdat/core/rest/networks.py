@@ -6,7 +6,11 @@ from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Network
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import NetworkSerializer
+from uvdat.core.rest.serializers import (
+    NetworkEdgeSerializer,
+    NetworkNodeSerializer,
+    NetworkSerializer,
+)
 
 
 class GCCQueryParamSerializer(serializers.Serializer):
@@ -23,6 +27,22 @@ class NetworkViewSet(ModelViewSet):
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
+
+    @action(detail=True, methods=['get'])
+    def nodes(self, request, **kwargs):
+        network: Network = self.get_object()
+        return Response(
+            NetworkNodeSerializer(network.nodes.all(), many=True).data,
+            status=200,
+        )
+
+    @action(detail=True, methods=['get'])
+    def edges(self, request, **kwargs):
+        network: Network = self.get_object()
+        return Response(
+            NetworkEdgeSerializer(network.edges.all(), many=True).data,
+            status=200,
+        )
 
     @swagger_auto_schema(query_serializer=GCCQueryParamSerializer)
     @action(detail=True, methods=['get'])

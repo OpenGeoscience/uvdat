@@ -1,10 +1,5 @@
 import { MapGeoJSONFeature } from "maplibre-gl";
 
-export interface Network {
-  nodes: NetworkNode[];
-  edges: NetworkEdge[];
-}
-
 export interface User {
   id: number;
   username: string;
@@ -16,12 +11,12 @@ export interface User {
 
 export interface Dataset {
   id: number;
-  name: string;
-  description: string;
-  category: string;
-  processing: boolean;
-  layers: Layer[];
-  metadata: Record<string, unknown>;
+  name?: string;
+  description?: string;
+  category?: string;
+  processing?: boolean;
+  layers?: Layer[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface Layer {
@@ -187,11 +182,16 @@ export interface ClickedFeatureData {
 export interface Network {
   id: number;
   name: string;
+  dataset: Dataset;
   category: string;
-  nodes: NetworkNode[];
-  edges: NetworkEdge[];
+  nodes: number[];
+  edges: number[];
   metadata: Record<string, unknown>;
   vector_data: number;
+  selected?: {
+    nodes: number[];
+    edges: number[];
+  },
   deactivated?: {
     nodes: number[];
     edges: number[];
@@ -210,6 +210,7 @@ export interface NetworkNode {
   metadata: object;
   capacity: number | null;
   location: number[];
+  active?: boolean;
 }
 
 export interface NetworkEdge {
@@ -218,10 +219,11 @@ export interface NetworkEdge {
   network: number;
   metadata: object;
   capacity: number | null;
-  line_geopmetry: object;
+  line_geometry: object;
   directed: boolean;
   from_node: number;
   to_node: number;
+  active: boolean;
 }
 
 export interface VectorTile {

@@ -11,6 +11,7 @@ import ChartsPanel from "@/components/sidebars/ChartsPanel.vue";
 import AnalyticsPanel from "@/components/sidebars/AnalyticsPanel.vue";
 import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
+import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
@@ -113,6 +114,7 @@ watch(darkMode, () => {
           <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
           <ChartsPanel v-else-if="panel.id === 'charts'"/>
+          <NetworksPanel v-else-if="panel.id === 'networks'" />
           <AnalyticsPanel v-else-if="panel.id === 'analytics'"/>
         </FloatingPanel>
       </div>
@@ -223,6 +225,7 @@ watch(darkMode, () => {
           <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
           <ChartsPanel v-else-if="panel.id === 'charts'"/>
+          <NetworksPanel v-else-if="panel.id === 'networks'" />
           <AnalyticsPanel v-else-if="panel.id === 'analytics'"/>
         </FloatingPanel>
       </div>
