@@ -12,7 +12,7 @@ import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './t
 import { LngLatBoundsLike, MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { getRasterDataValues, getVectorDataBounds } from "./api/rest";
-import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
+import { defaultStyleSpec, setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
 // ------------------
@@ -90,15 +90,11 @@ export function updateLayersShown () {
             const styleId = `${layer.id}.${layer.copy_id}`
             const sourceId = `${styleId}.${frame.id}`
             if (!selectedLayerStyles.value[styleId]) {
-                selectedLayerStyles.value[styleId] = {
-                    color: getDefaultColor(),
-                    opacity: 1,
-                    visible: true,
-                }
+                selectedLayerStyles.value[styleId] = layer.default_style?.style_spec || defaultStyleSpec
             }
             const currentStyle = selectedLayerStyles.value[styleId];
             currentStyle.visible = layer.visible
-            if (currentStyle.visible && !map.getLayersOrder().some(
+            if (currentStyle.visible  && !map.getLayersOrder().some(
                 (mapLayerId) => mapLayerId.includes(sourceId)
             ) && layer.current_frame === frame.index) {
                 addFrame(frame, sourceId);

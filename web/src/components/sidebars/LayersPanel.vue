@@ -67,7 +67,7 @@ function getFrameInputWidth(layer: Layer) {
                     color="primary"
                     icon="mdi-close"
                     @click="() => removeLayers(selectedLayers)"
-                    class="layer-select-button"
+                    class="secondary-button"
                 />
                 <v-checkbox-btn
                     :model-value="selectedLayers.every((l) => l.visible)"
@@ -91,7 +91,7 @@ function getFrameInputWidth(layer: Layer) {
                                         color="primary"
                                         icon="mdi-close"
                                         @click="() => removeLayers([element])"
-                                        class="layer-select-button"
+                                        class="secondary-button"
                                     />
                                     <v-checkbox-btn
                                         :model-value="element.visible"
@@ -108,13 +108,7 @@ function getFrameInputWidth(layer: Layer) {
                                         <v-icon icon="mdi-dots-horizontal"/>
                                         <v-icon :icon="element.hideFrameMenu ? 'mdi-menu-down' :'mdi-menu-up'" />
                                     </span>
-                                    <v-btn class="layer-menu-toggle bg-transparent" flat>
-                                        <v-icon icon="mdi-cog">
-                                        </v-icon>
-                                        <v-menu activator="parent" :close-on-content-click="false">
-                                            <LayerStyle :layer="element" />
-                                        </v-menu>
-                                    </v-btn>
+                                    <LayerStyle :layer="element" />
                                     <span class="material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>
@@ -194,12 +188,6 @@ function getFrameInputWidth(layer: Layer) {
 }
 .layer .v-list-item__content {
   align-self: normal !important;
-}
-.layer-menu-toggle {
-    height: 20px !important;
-    min-width: 0;
-    padding: 0px;
-    margin: 0px;
 }
 .frame-menu {
     padding: 0px 20px;

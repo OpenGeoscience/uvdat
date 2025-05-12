@@ -10,10 +10,10 @@ import {
   ClickedFeatureData,
   RasterDataValues,
   FloatingPanelConfig,
-  Style,
   Network,
   NetworkNode,
-  NetworkEdge
+  NetworkEdge,
+  StyleSpec
 } from "./types.js";
 import { Map, Popup, Source } from "maplibre-gl";
 
@@ -37,7 +37,7 @@ export const availableDatasets = ref<Dataset[]>();
 
 // Layers
 export const selectedLayers = ref<Layer[]>([]);
-export const selectedLayerStyles = ref<Record<string, Style>>({});
+export const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
 
 // Data Sources
 export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
