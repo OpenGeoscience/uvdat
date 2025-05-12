@@ -12,6 +12,7 @@ import {
   RasterDataValues,
   NetworkNode,
   NetworkEdge,
+  LayerStyle,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -157,4 +158,8 @@ export async function getAnalysisResults(
 
 export async function getVectorDataBounds(vectorId: number): Promise<number[]> {
   return (await apiClient.get(`vectors/${vectorId}/bounds`)).data;
+}
+
+export async function getLayerStyles(layerId: number): Promise<LayerStyle[]> {
+  return (await apiClient.get(`layers/${layerId}/styles`)).data;
 }

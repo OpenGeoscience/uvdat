@@ -1,49 +1,67 @@
 import { RasterTileSource } from "maplibre-gl";
 import { getMap } from "./storeFunctions";
-import { Network, Style } from "./types";
+import { Network, Style, StyleSpec } from "./types";
 import { THEMES } from "./themes";
-import { mapSources, selectedLayerStyles, theme } from "./store";
+import { selectedLayerStyles } from "./store";
 import { getDBObjectsForSourceID } from "./layers";
+import colormap from 'colormap'
+
+// ------------------
+// Constants
+// ------------------
+
+export const colormaps = [
+    'terrain', 'viridis', 'plasma', 'inferno', 'magma',
+    'Greys', 'Greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
+    'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
+].map((name) => {
+    const colors = colormap({
+        colormap: name === 'terrain' ? 'earth' : name.toLowerCase(),
+        nshades: 30,
+        format: 'hex',
+        alpha: 1
+    })
+    return {
+        name,
+        markers: colors.map((color: string, index: number) => ({
+            color,
+            value: index / (colors.length - 1)
+        }))
+    }
+})
+
+export const defaultStyleSpec: StyleSpec = {
+    visible: true,
+    opacity: 1,
+    default_frame: 0,
+    widgets: [
+        {
+            name: 'all',
+            visibility_widget: false,
+            opacity_widget: false,
+            color_widget: false,
+            size_widget: false,
+            filter_widget: false,
+        }
+    ],
+    colors: [
+        {
+            name: 'all',
+            single_color: getDefaultColor(),
+        }
+    ],
+    sizes: [
+        {name: 'all', zoom_scaling: true, single_size: 5}
+    ],
+    filters: [],
+}
 
 // ------------------
 // Exported functions
 // ------------------
 
-export const rasterColormaps = [
-    "terrain",
-    "plasma",
-    "viridis",
-    "magma",
-    "cividis",
-    "rainbow",
-    "jet",
-    "spring",
-    "summer",
-    "autumn",
-    "winter",
-    "coolwarm",
-    "cool",
-    "hot",
-    "seismic",
-    "twilight",
-    "tab20",
-    "hsv",
-    "gray",
-];
-
 export function getDefaultColor() {
-    let colorList = THEMES.light.colors;
-    if (theme.value === 'dark') {
-        colorList = THEMES.dark.colors;
-    }
-    const colorNames = ['info', 'success', 'error'];
-    const colors = Object.values(Object.fromEntries(
-        Object.entries(colorList)
-        .filter(([name,]) => colorNames.includes(name))
-        .toSorted(([name,]) => colorNames.indexOf(name))
-    ))
-    const i = Object.keys(mapSources.value).length % colors.length;
-    return colors[i];
+    return THEMES.light.colors.primary;
 }
 
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
@@ -110,7 +128,8 @@ export function styleNetwork(network: Network) {
         if (mapLayerId.includes(".vector." + vectorId)) {
             const [layerId, layerCopyId] = mapLayerId.split('.');
             const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
-            let defaultColor = currentStyle.color || 'black'
+            // let defaultColor = currentStyle.color || 'black'
+            let defaultColor = 'black'
             const colorStyle: NetworkStyle = {
                 deactivate: deactivateColor,
                 activate: activateColor,

@@ -61,7 +61,7 @@ function toggleSelected(items: Layer[]) {
                   <v-icon
                     icon="mdi-plus"
                     color="primary"
-                    class="layer-select-button"
+                    class="secondary-button"
                   >
                   </v-icon>
                   <v-tooltip activator="parent" location="bottom">
