@@ -2,15 +2,8 @@
 <script setup lang="ts">
 import { Map, Popup, AttributionControl } from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
-import {
-  theme,
-  map,
-  tooltipOverlay,
-  openSidebars,
-  showMapBaseLayer,
-  clickedFeature,
-} from "@/store";
-import { setMapCenter } from "@/storeFunctions";
+import { theme, openSidebars } from "@/store";
+import { useMapStore } from "@/store/map";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
@@ -127,20 +120,20 @@ function createMap() {
    * this only has a real effect when the base map is clicked, as that means that no other
    * feature layer can "catch" the event, and the tooltip stays hidden.
    */
-  newMap.on("click", () => {clickedFeature.value = undefined});
+  newMap.on("click", () => {useMapStore().clickedFeature = undefined});
 
   // Order is important as the following function relies on the ref being set
-  map.value = newMap;
+  useMapStore().map = newMap;
   createMapControls();
 }
 
 function createMapControls() {
-  if (!map.value || !tooltip.value) {
+  if (!useMapStore().map || !tooltip.value) {
     throw new Error("Map or refs not initialized!");
   }
 
   // Add tooltip overlay
-  tooltipOverlay.value = new Popup({
+  const popup = new Popup({
     anchor: "bottom-left",
     closeOnClick: false,
     maxWidth: "none",
@@ -148,28 +141,33 @@ function createMapControls() {
   });
 
   // Link overlay ref to dom, allowing for modification elsewhere
-  tooltipOverlay.value.setDOMContent(tooltip.value);
+  popup.setDOMContent(tooltip.value);
+
+  // Set store value
+  useMapStore().tooltipOverlay = popup;
 }
 
 onMounted(() => {
   createMap();
-  setMapCenter(undefined, true);
+  useMapStore().setMapCenter(undefined, true);
 });
 
 watch(theme, () => {
-  map.value?.removeLayer("base-tiles");
-  map.value?.addLayer({
+  const mapStore = useMapStore();
+  const map = mapStore.getMap();
+  map.removeLayer("base-tiles");
+  map.addLayer({
     id: "base-tiles",
     type: "raster",
     source: theme.value,
     minzoom: 0,
     maxzoom: 22 + 1,
     layout: {
-      visibility: showMapBaseLayer.value ? "visible" : "none",
+      visibility: mapStore.showMapBaseLayer ? "visible" : "none",
     },
   });
   setAttributionControlStyle();
-  updateLayersShown()
+  updateLayersShown();
 });
 
 watch(openSidebars, () => {
@@ -179,11 +177,7 @@ watch(openSidebars, () => {
 
 <template>
   <div id="mapContainer" class="map">
-    <div
-      id="map-tooltip"
-      ref="tooltip"
-      class="tooltip pa-0"
-    >
+    <div id="map-tooltip" ref="tooltip" class="tooltip pa-0">
       <MapTooltip />
     </div>
   </div>

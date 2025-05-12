@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import {
-  clickedFeature,
   selectedLayers,
   rasterTooltipDataCache,
   availableNetworks,
 } from "@/store";
-import { getMap, getTooltip } from "@/storeFunctions";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
@@ -14,7 +12,10 @@ import proj4 from "proj4";
 import RecursiveTable from "../RecursiveTable.vue";
 import { getDBObjectsForSourceID } from "@/layers";
 import { toggleNodeActive } from "@/networks";
+import { useMapStore } from "@/store/map";
 
+
+const clickedFeature = computed(() => useMapStore().clickedFeature);
 const clickedFeatureProperties = computed(() => {
   if (clickedFeature.value === undefined) {
     return {};
@@ -84,7 +85,7 @@ function zoomToRegion() {
   }
 
   // Set map zoom to match bounding box of region
-  const map = getMap();
+  const map = useMapStore().getMap();
   const bbox = turf.bbox(clickedFeature.value.feature.geometry);
   if (bbox.length !== 4) {
     throw new Error("Returned bbox should have 4 elements!");
@@ -101,7 +102,9 @@ watch(selectedLayers, () => {
   const feature = clickedFeature.value.feature;
   const sourceId = feature.source;
   const { layer } = getDBObjectsForSourceID(sourceId);
-  if (!layer?.visible) clickedFeature.value = undefined;
+  if (!layer?.visible) {
+    useMapStore().clickedFeature = undefined;
+  }
 });
 
 // Handle clicked features and raster tooltip behavior.
@@ -109,7 +112,7 @@ watch(selectedLayers, () => {
 watch(
   clickedFeature,
   () => {
-    const tooltip = getTooltip();
+    const tooltip = useMapStore().getTooltip();
     if (clickedFeature.value === undefined) {
       tooltip.remove();
       return;
@@ -117,7 +120,7 @@ watch(
     // Set tooltip position. Give feature clicks priority
     tooltip.setLngLat(clickedFeature.value.pos);
     // This makes the tooltip visible
-    tooltip.addTo(getMap());
+    tooltip.addTo(useMapStore().getMap());
   }
 );
 

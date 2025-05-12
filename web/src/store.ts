@@ -7,7 +7,6 @@ import {
   Layer,
   SourceRegion,
   AnalysisType,
-  ClickedFeatureData,
   RasterDataValues,
   FloatingPanelConfig,
   Style,
@@ -15,7 +14,6 @@ import {
   NetworkNode,
   NetworkEdge
 } from "./types.js";
-import { Map, Popup, Source } from "maplibre-gl";
 
 // UI Config
 export const theme = ref<"dark" | "light">("light");
@@ -41,13 +39,6 @@ export const selectedLayerStyles = ref<Record<string, Style>>({});
 
 // Data Sources
 export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
-
-// Map
-export const map = ref<Map>();
-export const mapSources = ref<Record<string, Source>>({});
-export const showMapBaseLayer = ref(true);
-export const tooltipOverlay = ref<Popup>();
-export const clickedFeature = ref<ClickedFeatureData>();
 
 // Charts & Analyses
 export const loadingCharts = ref<boolean>(false);

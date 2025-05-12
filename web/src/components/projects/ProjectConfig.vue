@@ -20,10 +20,9 @@ import {
 } from "@/api/rest";
 import { Project, Dataset } from "@/types";
 import {
-  getCurrentMapPosition,
   loadProjects,
-  setMapCenter,
 } from "@/storeFunctions";
+import { useMapStore } from "@/store/map";
 
 const currentTab = ref();
 const searchText = ref();
@@ -79,7 +78,7 @@ function openProjectConfig(create = false) {
 }
 
 function create() {
-  const { center, zoom } = getCurrentMapPosition();
+  const { center, zoom } = useMapStore().getCurrentMapPosition();
   createProject(newProjectName.value, center, zoom).then((project) => {
     newProjectName.value = undefined;
     projectConfigMode.value = "existing";
@@ -124,7 +123,7 @@ function saveProjectName() {
 function saveProjectMapLocation(project: Project | undefined) {
   if (project) {
     saving.value = "waiting";
-    const { center, zoom } = getCurrentMapPosition();
+    const { center, zoom } = useMapStore().getCurrentMapPosition();
     patchProject(project.id, {
       default_map_center: center,
       default_map_zoom: zoom,
@@ -140,7 +139,7 @@ function saveProjectMapLocation(project: Project | undefined) {
         currentProject.value.default_map_center = project.default_map_center
         currentProject.value.default_map_zoom = project.default_map_zoom
       }
-      setMapCenter(project);
+      useMapStore().setMapCenter(project);
       saving.value = "done";
       setTimeout(() => {
         saving.value = undefined;
@@ -367,7 +366,7 @@ watch(projectConfigMode, () => {
         </template>
         <v-card width="250">
           <v-list selectable>
-            <v-list-item @click="() => setMapCenter(currentProject)">
+            <v-list-item @click="() => useMapStore().setMapCenter(currentProject)">
               Go to project default map position
             </v-list-item>
             <v-list-item @click="() => saveProjectMapLocation(currentProject)">

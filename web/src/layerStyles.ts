@@ -1,9 +1,10 @@
 import { RasterTileSource } from "maplibre-gl";
-import { getMap } from "./storeFunctions";
 import { Network, Style } from "./types";
 import { THEMES } from "./themes";
-import { mapSources, selectedLayerStyles, theme } from "./store";
+import { selectedLayerStyles, theme } from "./store";
+import { useMapStore } from "./store/map";
 import { getDBObjectsForSourceID } from "./layers";
+
 
 // ------------------
 // Exported functions
@@ -42,12 +43,12 @@ export function getDefaultColor() {
         .filter(([name,]) => colorNames.includes(name))
         .toSorted(([name,]) => colorNames.indexOf(name))
     ))
-    const i = Object.keys(mapSources.value).length % colors.length;
+    const i = Object.keys(useMapStore().mapSources).length % colors.length;
     return colors[i];
 }
 
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
-    const map = getMap();
+    const map = useMapStore().getMap();
     const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
     const { network } = getDBObjectsForSourceID(sourceId)
     let opacity = style.opacity;
@@ -101,7 +102,7 @@ interface NetworkStyle {
 
 export function styleNetwork(network: Network) {
     const vectorId = network.vector_data;
-    const map = getMap();
+    const map = useMapStore().getMap();
     const gccColor = "#f7e059";
     const selectedColor = "#ffffff";
     const deactivateColor = "#7b3294";
