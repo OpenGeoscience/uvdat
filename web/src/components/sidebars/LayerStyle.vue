@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { updateLayerStyles } from '@/layers';
 import { draggingPanel, selectedLayerStyles } from '@/store';
 import { Layer, LayerStyle } from '@/types';
 import { computed, ref, watch } from 'vue';
 import _ from 'lodash';
-import { getLayerStyles } from '@/api/rest';
-import { defaultStyleSpec, colormaps, getDefaultColor } from '@/layerStyles';
+import { getLayerStyles, getVectorDataSummary } from '@/api/rest';
+import { defaultStyleSpec, colormaps, getDefaultColor, getColormap } from '@/layerStyles';
 import ColormapPreview from '../ColormapPreview.vue';
+
 
 const props = defineProps<{
   layer: Layer;
@@ -16,6 +16,7 @@ const showMenu = ref(false);
 const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
 const currentLayerStyle = ref<LayerStyle>({name: 'Default', is_default: true});
+const vectorProperties = ref<Record<string, Record<string, any>[]>>();
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
@@ -52,11 +53,50 @@ function selectStyle(style: LayerStyle) {
     console.log('select', style)
 }
 
+async function fetchVectorProperties() {
+    if (showVectorOptions.value) {
+        if (props.layer.frames.length) {
+            const currentFrame = props.layer.frames[currentStyleSpec.value.default_frame]
+            if (currentFrame.vector) {
+                const summary: Record<string, Record<string, any>> = await getVectorDataSummary(currentFrame.vector.id)
+                vectorProperties.value = Object.fromEntries(
+                    Object.entries(summary).map(([rowName, properties]) => {
+                        return [rowName, Object.entries(properties).map(([name, values]) => {
+                            values = values.filter((v: any) => v)
+                            let sample;
+                            let range;
+                            if (values.every((v: any) => typeof v === 'number')) {
+                                range = `[${Math.min(...values).toFixed(1)} - ${Math.max(...values).toFixed(1)}]`
+                            } else {
+                                sample = values.slice(0, 3).map((v: any) => {
+                                    let str = v.toString()
+                                    if (str.length > 10) return str.slice(0,5) + '...'
+                                    return str
+                                })
+                                if (values.length > sample.length) {
+                                    sample.push('...')
+                                }
+                                sample = `[${sample.join(', ')}]`
+                            }
+                            return {
+                                name,
+                                sample,
+                                range,
+                                values,
+                            }
+                        })]
+                    })
+                )
+            }
+        }
+    }
+}
+
 function setRowColorMode(rowName: string, colorMode: string) {
-    if (colorMode === 'colormap') {
-        currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
-            (c) => {
-                if (c.name === rowName) {
+    currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
+        (c) => {
+            if (c.name === rowName) {
+                if (colorMode === 'colormap') {
                     const terrain = colormaps.find((colormap) => colormap.name === 'terrain')
                     if (terrain) return {
                         ...c,
@@ -66,19 +106,47 @@ function setRowColorMode(rowName: string, colorMode: string) {
                         },
                         single_color: undefined
                     }
-                }
-                return c
-            }
-        )
-    } else {
-        currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
-            (c) => {
-                if (c.name === rowName) {
+                } else {
                     return {...c, colormap: undefined, single_color: getDefaultColor()}
-                } else return c
+                }
             }
-        )
-    }
+            return c
+        }
+    )
+}
+
+function updateRowColorBy(rowName: string) {
+    currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
+        (c) => {
+            if (c.name === rowName && c.colormap?.color_by) {
+                if (vectorProperties.value) {
+                    const property = vectorProperties.value[c.name].find((p: Record<string, string>) => p.name === c.colormap?.color_by);
+                    if (property?.values) {
+                        const minColors = 6
+                        const colors = getColormap(c.colormap.name, Math.max(property.values?.length, minColors))
+                        return {
+                            ...c,
+                            colormap: {
+                                ...c.colormap,
+                                markers: colors.map((color: string, index: number) => ({
+                                    color,
+                                    value: index / (colors.length - 1)
+                                }))
+                            }
+                        }
+                    }
+                }
+            }
+            return c
+        }
+    )
+}
+
+function getInputWidth(value: number) {
+    // With a minimum of 40 pixels, add 10 pixels for each digit shown in the input
+    let width = 40;
+    width += Math.round(value).toString().length * 10;
+    return width + 'px';
 }
 
 function cancel() {
@@ -103,12 +171,27 @@ watch(draggingPanel, () => {
 })
 
 watch(currentStyleSpec, _.debounce(() => {
-    updateLayerStyles(props.layer)
+    // console.log(currentStyleSpec.value)
+    // updateLayerStyles(props.layer)
 }, 100), {deep: true})
 
-watch(props.layer, async () => {
+watch([props.layer, showMenu], async () => {
     availableStyles.value = await getLayerStyles(props.layer.id)
     if (props.layer.default_style) currentLayerStyle.value = props.layer.default_style
+    fetchVectorProperties()
+})
+
+watch(dataRange, () => {
+    currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
+        (c) => {
+            if (c.colormap && !c.colormap.range) {
+                return {...c, colormap: {
+                    ...c.colormap,
+                    range: dataRange.value as [number, number],
+                }}
+            } else return c
+        }
+    )
 })
 
 </script>
@@ -236,12 +319,94 @@ watch(props.layer, async () => {
                         <div v-if="showRasterOptions">
                             <v-card-subtitle>Raster Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <div v-for="row in currentStyleSpec.colors">
+                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
+                                <div
+                                    class="px-4 d-flex"
+                                    :style="row.single_color ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
+                                >
+                                    <v-btn-toggle
+                                        v-if="row.colormap"
+                                        :model-value="row.colormap.discrete ? 'discrete' : 'continuous'"
+                                        density="compact"
+                                        color="primary"
+                                        variant="outlined"
+                                        divided
+                                        mandatory
+                                        @update:model-value="(value: string) => {if (row.colormap) row.colormap.discrete = value === 'discrete'}"
+                                    >
+                                        <v-btn :value="'discrete'">Discrete</v-btn>
+                                        <v-btn :value="'continuous'">Continuous</v-btn>
+                                    </v-btn-toggle>
+                                    <v-select
+                                        v-if="row.colormap"
+                                        v-model="row.colormap"
+                                        :items="colormaps"
+                                        item-title="name"
+                                        label="Colormap"
+                                        return-object
+                                    >
+                                        <template v-slot:item="{ props, item }">
+                                            <v-list-item v-bind="props">
+                                                <template v-slot:append>
+                                                    <colormap-preview :colormap="item.raw" :discrete="row.colormap.discrete || false" />
+                                                </template>
+                                            </v-list-item>
+                                        </template>
+                                        <template v-slot:selection="{ item }">
+                                            <span class="pr-15">{{ item.raw.name }}</span>
+                                            <colormap-preview :colormap="item.raw" :discrete="row.colormap.discrete || false" />
+                                        </template>
+                                    </v-select>
+                                    <v-range-slider
+                                        v-if="row.colormap && dataRange"
+                                        v-model="row.colormap.range"
+                                        color="primary"
+                                        :min="dataRange[0]"
+                                        :max="dataRange[1]"
+                                        step="1"
+                                    >
+                                        <template v-slot:prepend>
+                                            <v-text-field
+                                                v-if="row.colormap.range"
+                                                v-model="row.colormap.range[0]"
+                                                :min="dataRange[0]"
+                                                :max="row.colormap.range[1]"
+                                                :step="1"
+                                                density="compact"
+                                                class="frame-input"
+                                                :style="{'width': getInputWidth(row.colormap.range[0])}"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                            >
+                                            </v-text-field>
+                                        </template>
+                                        <template v-slot:append>
+                                            <v-text-field
+                                                v-if="row.colormap.range"
+                                                v-model="row.colormap.range[1]"
+                                                :min="row.colormap.range[0]"
+                                                :max="dataRange[1]"
+                                                :step="1"
+                                                density="compact"
+                                                class="frame-input"
+                                                :style="{'width': getInputWidth(row.colormap.range[1])}"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                            >
+                                            </v-text-field>
+                                        </template>
+                                    </v-range-slider>
+                                </div>
+                            </div>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
                             <div v-for="row in currentStyleSpec.colors">
-                                <v-card-subtitle>{{ row.name.toUpperCase() }}</v-card-subtitle>
+                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
                                 <div
                                     class="px-4 d-flex"
                                     :style="row.single_color ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
@@ -307,8 +472,26 @@ watch(props.layer, async () => {
                                             </v-list-item>
                                         </template>
                                         <template v-slot:selection="{ item }">
-                                            <span class="pr-15">{{ item.raw.name }}</span>
+                                            <span class="pr-15">{{ item.title}}</span>
                                             <colormap-preview :colormap="item.raw" :discrete="row.colormap.discrete || false" />
+                                        </template>
+                                    </v-select>
+                                    <v-select
+                                        v-if="row.colormap && vectorProperties && vectorProperties[row.name]"
+                                        v-model="row.colormap.color_by"
+                                        :items="vectorProperties[row.name]"
+                                        item-title="name"
+                                        item-value="name"
+                                        label="Color by Property"
+                                        @update:modelValue="updateRowColorBy(row.name)"
+                                    >
+                                        <template v-slot:item="{ props, item }">
+                                            <v-list-item v-bind="props">
+                                                <template v-slot:append>
+                                                    <v-chip size="small" v-if="item.raw.sample">{{ item.raw.sample }}</v-chip>
+                                                    <v-chip size="small" v-if="item.raw.range">{{ item.raw.range }}</v-chip>
+                                                </template>
+                                            </v-list-item>
                                         </template>
                                     </v-select>
                                 </div>
@@ -319,10 +502,16 @@ watch(props.layer, async () => {
                         <div v-if="showRasterOptions">
                             <v-card-subtitle>Raster Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <div v-for="row in currentStyleSpec.sizes">
+                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
+                            </div>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <div v-for="row in currentStyleSpec.sizes">
+                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
+                            </div>
                         </div>
                     </v-window-item>
                     <v-window-item value="filters" class="pa-2">
