@@ -119,6 +119,10 @@ export async function getNetworkGCC(
   ).data;
 }
 
+export async function getVectorDataSummary(vectorId: number): Promise<any> {
+  return (await apiClient.get(`vectors/${vectorId}/summary`)).data;
+}
+
 export async function getRasterDataValues(rasterId: number): Promise<RasterDataValues> {
   const resolution = 0.1;
   const data = (

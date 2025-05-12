@@ -10,17 +10,19 @@ import colormap from 'colormap'
 // Constants
 // ------------------
 
+export const getColormap = (name: string, nshades: number) => colormap({
+    nshades,
+    colormap: name === 'terrain' ? 'earth' : name.toLowerCase(),
+    format: 'hex',
+    alpha: 1
+})
+
 export const colormaps = [
     'terrain', 'viridis', 'plasma', 'inferno', 'magma',
     'Greys', 'Greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
     'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
 ].map((name) => {
-    const colors = colormap({
-        colormap: name === 'terrain' ? 'earth' : name.toLowerCase(),
-        nshades: 30,
-        format: 'hex',
-        alpha: 1
-    })
+    const colors = getColormap(name, 30)
     return {
         name,
         markers: colors.map((color: string, index: number) => ({
