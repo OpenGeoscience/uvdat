@@ -23,7 +23,7 @@ export async function toggleNodeActive(
 ) {
     const network = await getNetwork(nodeId, dataset);
     if (network) {
-        let deactivated = network?.deactivated?.nodes || []
+        let deactivated = Array.from(network?.deactivated?.nodes || []);
         if (!deactivated.includes(nodeId)) {
             deactivated.push(nodeId)
         } else {
@@ -44,7 +44,7 @@ export async function setNetworkDeactivatedNodes(network: Network, nodeIds: numb
             activate_nodes: network.deactivated.nodes.filter((n) => !nodeIds.includes(n))
         }
     }
-    network.deactivated.nodes = nodeIds;
+    network.deactivated.nodes = Array.from(nodeIds);
     if (nodeIds.length) {
         const cachedResult = GCCcache.find(
             // sort and stringify to disregard order in comparison
