@@ -4,10 +4,7 @@ import {
   availableProjects,
   currentProject,
   availableDatasets,
-  map,
   selectedLayers,
-  clickedFeature,
-  showMapBaseLayer,
   selectedSourceRegions,
   polls,
   availableCharts,
@@ -16,7 +13,6 @@ import {
   availableAnalysisTypes,
   currentAnalysisType,
   currentError,
-  tooltipOverlay,
   draggingPanel,
   draggingFrom,
   dragModes,
@@ -28,6 +24,9 @@ import {
   loadingNetworks,
   currentNetwork,
 } from "./store";
+
+import { useMapStore } from '@/store/map';
+
 import {
   getProjects,
   getDataset,
@@ -37,14 +36,14 @@ import {
   getDatasetLayers,
   getProjectNetworks,
 } from "@/api/rest";
-import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
-import { Dataset, Project } from "./types";
+import { updateLayersShown } from "./layers";
+import { Dataset } from "./types";
 import { resetPanels } from "./panelFunctions";
 
 export function clearState() {
   clearProjectState();
   resetPanels();
-  showMapBaseLayer.value = true;
+  useMapStore().showMapBaseLayer = true;
   currentError.value = undefined;
   polls.value = {};
   draggingPanel.value = undefined;
@@ -56,7 +55,7 @@ export function clearProjectState() {
   availableDatasets.value = undefined;
   selectedLayers.value = [];
   selectedLayerStyles.value = {};
-  clickedFeature.value = undefined;
+  useMapStore().clickedFeature = undefined;
   availableCharts.value = undefined;
   currentChart.value = undefined;
   availableNetworks.value = [];
@@ -65,54 +64,12 @@ export function clearProjectState() {
   selectedSourceRegions.value = [];
 }
 
-export function getMap() {
-  if (map.value === undefined) {
-    throw new Error("Map not yet initialized!");
-  }
-  return map.value;
-}
-
-export function getTooltip() {
-  if (tooltipOverlay.value === undefined) {
-    throw new Error("Tooltip not yet initialized!");
-  }
-  return tooltipOverlay.value;
-}
-
 export function loadProjects() {
   clearState();
   getProjects().then((data) => {
     availableProjects.value = data;
     loadingProjects.value = false;
   });
-}
-
-export function setMapCenter(
-  project: Project | undefined = undefined,
-  jump = false
-) {
-  let center: [number, number] = [0, 30];
-  let zoom = 1;
-  if (project) {
-    center = project.default_map_center;
-    zoom = project.default_map_zoom;
-  }
-
-  const map = getMap();
-  if (jump) {
-    map.jumpTo({ center, zoom });
-  } else {
-    map.flyTo({ center, zoom, duration: 2000 });
-  }
-}
-
-export function getCurrentMapPosition() {
-  const map = getMap();
-  const { lat, lng } = map.getCenter();
-  return {
-    center: [lng, lat],
-    zoom: map.getZoom(),
-  };
 }
 
 export function pollForProcessingDataset(datasetId: number) {
@@ -138,8 +95,8 @@ export function pollForProcessingDataset(datasetId: number) {
 
 watch(currentProject, () => {
   clearProjectState();
-  setMapCenter(currentProject.value);
-  clearMapLayers();
+  useMapStore().setMapCenter(currentProject.value);
+  useMapStore().clearMapLayers();
   if (currentProject.value) {
     loadingDatasets.value = true;
     loadingCharts.value = true;
@@ -171,5 +128,3 @@ watch(currentProject, () => {
 });
 
 watch(selectedLayers, updateLayersShown)
-
-watch(showMapBaseLayer, updateBaseLayer);

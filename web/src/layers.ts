@@ -1,19 +1,18 @@
 import {
     availableNetworks,
-    clickedFeature,
-    mapSources,
     rasterTooltipDataCache,
     selectedLayers,
     selectedLayerStyles,
-    showMapBaseLayer
 } from "./store";
-import { getMap } from "./storeFunctions";
+
+import { useMapStore } from "@/store/map";
 import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './types';
 import { LngLatBoundsLike, MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { getRasterDataValues, getVectorDataBounds } from "./api/rest";
 import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
+
 
 // ------------------
 // Exported functions
@@ -54,7 +53,7 @@ export function getDBObjectsForSourceID(sourceId: string) {
 export function addLayer(layer: Layer) {
     let name = layer.name;
     let copy_id = 0;
-    const existing = Object.keys(mapSources.value).filter((sourceId) => {
+    const existing = Object.keys(useMapStore().mapSources).filter((sourceId) => {
         const [layerId] = sourceId.split('.');
         return parseInt(layerId) === layer.id
     });
@@ -69,21 +68,21 @@ export function addLayer(layer: Layer) {
 }
 
 export function addFrame(frame: LayerFrame, sourceId: string) {
-    if (!mapSources.value[sourceId]) {
+    if (!useMapStore().mapSources[sourceId]) {
         if (frame.vector) {
             const vector = createVectorTileSource(frame.vector, sourceId);
-            if (vector) mapSources.value[sourceId] = vector;
+            if (vector) useMapStore().mapSources[sourceId] = vector;
 
         }
         if (frame.raster) {
             const raster = createRasterTileSource(frame.raster, sourceId);
-            if (raster) mapSources.value[sourceId] = raster;
+            if (raster) useMapStore().mapSources[sourceId] = raster;
         }
     }
 }
 
 export function updateLayersShown () {
-    const map = getMap();
+    const map = useMapStore().getMap();
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
         layer.frames.forEach((frame) => {
@@ -130,7 +129,7 @@ export function updateLayersShown () {
 }
 
 export function updateLayerStyles(layer: Layer) {
-    const map = getMap();
+    const map = useMapStore().getMap();
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId !== 'base-tiles') {
             const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
@@ -145,32 +144,6 @@ export function updateLayerStyles(layer: Layer) {
             }
         }
     });
-}
-
-export function updateBaseLayer () {
-    const map = getMap();
-    map.getLayersOrder().forEach((id) => {
-        if (id === 'base-tiles') {
-            map.setLayoutProperty(
-                id,
-                "visibility",
-                showMapBaseLayer.value ? "visible" : "none"
-            );
-        }
-    });
-}
-
-export function clearMapLayers () {
-    const map = getMap();
-    map.getLayersOrder().forEach((id) => {
-        if (id !== 'base-tiles') {
-            map.setLayoutProperty(id, "visibility", "none");
-        }
-    });
-}
-
-export function handleMapClick(e: MapMouseEvent) {
-    clickedFeature.value = undefined;
 }
 
 export async function getBoundsOfVisibleLayers(): Promise<LngLatBoundsLike | undefined> {
@@ -205,7 +178,7 @@ export async function getBoundsOfVisibleLayers(): Promise<LngLatBoundsLike | und
 // ------------------
 
 function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
-    const map = getMap();
+    const map = useMapStore().getMap();
     const vectorSourceId = sourceId + '.vector.' + vector.id
     map.addSource(vectorSourceId, {
         type: "vector",
@@ -219,7 +192,7 @@ function createVectorTileSource(vector: VectorData, sourceId: string): Source | 
 }
 
 function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
-    const map = getMap();
+    const map = useMapStore().getMap();
     const params = {
         projection: 'EPSG:3857'
     }
@@ -255,7 +228,7 @@ function createRasterTileSource(raster: RasterData, sourceId: string): Source | 
 }
 
 function createVectorFeatureMapLayers(source: Source) {
-    const map = getMap();
+    const map = useMapStore().getMap();
     const sourceIdentifiers = source.id.split('.');
     const metadata = {
         layer_id: sourceIdentifiers[0],
@@ -335,7 +308,7 @@ function createVectorFeatureMapLayers(source: Source) {
 }
 
 function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) {
-    const map = getMap();
+    const map = useMapStore().getMap();
     const sourceIdentifiers = tileSource.id.split('.');
     const metadata = {
         layer_id: sourceIdentifiers[0],
@@ -372,7 +345,7 @@ async function cacheRasterData(raster: RasterData) {
 }
 
 function handleLayerClick(e: MapLayerMouseEvent) {
-    const map = getMap();
+    const map = useMapStore().getMap();
     const clickedFeatures = map.queryRenderedFeatures(e.point);
     if (!clickedFeatures.length) {
         return;
@@ -391,8 +364,8 @@ function handleLayerClick(e: MapLayerMouseEvent) {
     const feature = featQuery[0];
 
     // Perform this check to prevent unnecessary repeated assignment
-    if (feature !== clickedFeature.value?.feature) {
-        clickedFeature.value = {
+    if (feature !== useMapStore().clickedFeature?.feature) {
+        useMapStore().clickedFeature = {
             feature,
             pos: e.lngLat,
         };

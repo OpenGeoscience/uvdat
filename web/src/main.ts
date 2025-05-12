@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
+import { createPinia } from 'pinia';
 // Vuetify
 import "vuetify/styles";
 import { createVuetify } from "vuetify";
@@ -29,4 +30,10 @@ const vuetify = createVuetify({
   },
 });
 
-restoreLogin().then(createApp(App).use(vuetify).mount("#app"));
+const app = createApp(App);
+app.use(vuetify);
+app.use(createPinia());
+
+restoreLogin().then(() => {
+  app.mount("#app");
+});
