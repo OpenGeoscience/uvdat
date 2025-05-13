@@ -44,10 +44,22 @@ export interface ColorMap {
   name: string;
   discrete?: boolean;
   color_by?: string;
+  // TODO: add this to server-side schema
+  range?: [number, number],
+  // TODO: add this to server-side schema
+  null_color?: string;
   markers: {
     color: string;
     value: number;
   }[]
+}
+
+export interface StyleFilter {
+  filter_by?: string;
+  include: boolean;
+  transparency: boolean;
+  list?: any[];
+  range?: number[];
 }
 
 // TODO: Remove Plain Style
@@ -63,14 +75,6 @@ export interface StyleSpec {
   visible?: boolean;
   default_frame: number;
   opacity: number;
-  widgets: {
-    name: string;
-    opacity_widget: boolean;
-    visibility_widget: boolean;
-    color_widget: boolean;
-    size_widget: boolean;
-    filter_widget: boolean;
-  }[],
   colors: {
     name: string;
     single_color?: string;
@@ -81,18 +85,14 @@ export interface StyleSpec {
     zoom_scaling: boolean;
     single_size?: number;
     size_range?: {
-      size_by: string;
+      size_by?: string;
+      // TODO: add this to server-side schema
+      null_size?: number | string;
       minimum: number;
       maximum: number;
     }
   }[],
-  filters: {
-    filter_by: string;
-    include: boolean;
-    transparency: boolean;
-    list: any[];
-    range: number[];
-  }[]
+  filters: StyleFilter[]
 }
 
 export interface LayerStyle {

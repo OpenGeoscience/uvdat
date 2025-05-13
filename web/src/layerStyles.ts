@@ -36,16 +36,6 @@ export const defaultStyleSpec: StyleSpec = {
     visible: true,
     opacity: 1,
     default_frame: 0,
-    widgets: [
-        {
-            name: 'all',
-            visibility_widget: false,
-            opacity_widget: false,
-            color_widget: false,
-            size_widget: false,
-            filter_widget: false,
-        }
-    ],
     colors: [
         {
             name: 'all',

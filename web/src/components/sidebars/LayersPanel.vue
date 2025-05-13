@@ -135,7 +135,7 @@ function getFrameInputWidth(layer: Layer) {
                                         :max="getLayerMaxFrames(element)"
                                         min="1"
                                         density="compact"
-                                        class="frame-input"
+                                        class="number-input"
                                         :style="{'width': getFrameInputWidth(element)}"
                                         type="number"
                                         hide-details
@@ -196,11 +196,11 @@ function getFrameInputWidth(layer: Layer) {
 .frame-menu .v-input__append {
     margin-left: 15px !important;
 }
-.frame-input .v-field__input {
+.number-input .v-field__input {
     padding: 0px 5px;
     min-height: 0;
 }
-.frame-input .v-field__input input {
+.number-input .v-field__input input {
     /* make default input number transparent */
     color: rgba(0, 0, 0, 0);
 }
