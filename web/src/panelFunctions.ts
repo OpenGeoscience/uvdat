@@ -1,5 +1,4 @@
 import { getDataset, getDatasetLayers } from "./api/rest";
-import { addLayer } from "./layers";
 import { availableAnalysisTypes, currentChart, panelArrangement } from "./store";
 import { useMapStore } from "./store/map";
 import { AnalysisResult, Chart, Dataset, Layer, Network, RasterData, VectorData } from "./types";
@@ -138,7 +137,7 @@ export function show(showable: Showable) {
             return layer
         })
         if (add) {
-            addLayer(showable.layer)
+            mapStore.addLayer(showable.layer)
         }
     } else if (showable.network) {
         show({dataset: showable.network.dataset})

@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { Map, Popup, Source } from "maplibre-gl";
-import { ClickedFeatureData, Layer, Project, Style } from '@/types';
+import { ClickedFeatureData, Layer, LayerFrame, Project, Style } from '@/types';
 import { getDefaultColor, setMapLayerStyle } from '@/layerStyles';
-import { addFrame } from '@/layers';
+import { createRasterTileSource, createVectorTileSource } from '@/layers';
 
 export const useMapStore = defineStore('map', () => {
   const map = ref<Map>();
@@ -14,6 +14,40 @@ export const useMapStore = defineStore('map', () => {
   const selectedLayers = ref<Layer[]>([]);
   const selectedLayerStyles = ref<Record<string, Style>>({});
 
+
+  function addFrame(frame: LayerFrame, sourceId: string) {
+    if (!mapSources.value[sourceId]) {
+      if (frame.vector) {
+        const vector = createVectorTileSource(frame.vector, sourceId);
+        if (vector) mapSources.value[sourceId] = vector;
+
+      }
+      if (frame.raster) {
+        const raster = createRasterTileSource(frame.raster, sourceId);
+        if (raster) mapSources.value[sourceId] = raster;
+      }
+    }
+  }
+
+  // Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
+  function addLayer(layer: Layer) {
+    let name = layer.name;
+    let copy_id = 0;
+    const existing = Object.keys(mapSources.value).filter((sourceId) => {
+      const [layerId] = sourceId.split('.');
+      return parseInt(layerId) === layer.id
+    });
+    if (existing.length) {
+      copy_id = existing.length;
+      name = `${layer.name} (${copy_id})`;
+    }
+    selectedLayers.value = [
+      { ...layer, name, copy_id, visible: true, current_frame: 0 },
+      ...selectedLayers.value,
+    ];
+  }
+
+  watch(selectedLayers, updateLayersShown);
   function updateLayersShown() {
     const map = getMap();
 
@@ -61,9 +95,6 @@ export const useMapStore = defineStore('map', () => {
       }
     });
   }
-
-  watch(selectedLayers, updateLayersShown);
-
 
   // Update the base layer visibility
   watch(showMapBaseLayer, () => {
@@ -142,6 +173,7 @@ export const useMapStore = defineStore('map', () => {
     clickedFeature,
     selectedLayers,
     selectedLayerStyles,
+    addLayer,
     updateLayersShown,
     toggleBaseLayer,
     getMap,
