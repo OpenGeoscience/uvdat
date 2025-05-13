@@ -7,7 +7,7 @@ import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
 import { useMapStore } from './map';
-import { availableNetworks } from '@/store';
+import { useNetworkStore } from '@/store/network';
 
 interface SourceDBObjects {
   dataset?: Dataset,
@@ -26,7 +26,7 @@ export const useLayerStore = defineStore('layer', () => {
 
   // Sibling store imports
   const mapStore = useMapStore();
-
+  const networkStore = useNetworkStore();
 
   function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects: SourceDBObjects = {}
@@ -44,7 +44,7 @@ export const useLayerStore = defineStore('layer', () => {
             else if (frame.raster) DBObjects.raster = frame.raster;
           }
         })
-        DBObjects.network = availableNetworks.value.find((n) => n.vector_data == DBObjects.vector?.id)
+        DBObjects.network = networkStore.availableNetworks.find((n) => n.vector_data == DBObjects.vector?.id)
       }
     })
     return DBObjects

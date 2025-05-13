@@ -6,7 +6,6 @@ import {
   availableAnalysisTypes,
   loadingAnalysisTypes,
   currentAnalysisType,
-  availableNetworks,
   panelArrangement,
 } from "@/store";
 import {
@@ -21,6 +20,7 @@ import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
 import { isVisible, show, showableTypes } from "@/panelFunctions"
 import { useLayerStore } from "@/store/layer";
+import { useNetworkStore } from "@/store/network";
 
 
 const searchText = ref();
@@ -48,7 +48,7 @@ const networkInput = computed(() => {
   if (fullInputs.value['network_failure']) {
     const analysis = fullInputs.value['network_failure']
     const networkId = analysis.inputs.network
-    network = availableNetworks.value.find((n) => n.id === networkId)
+    network = useNetworkStore().availableNetworks.find((n) => n.id === networkId)
     if (!network) {
       const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
       network = analysisType?.input_options.network.find(
@@ -65,9 +65,9 @@ const networkInput = computed(() => {
       (input) => input.type === 'network'
     )
   }
-  if (network && !availableNetworks.value.map((n) => n.id).includes(network.id)) {
-    availableNetworks.value = [
-      ...availableNetworks.value,
+  if (network && !useNetworkStore().availableNetworks.map((n) => n.id).includes(network.id)) {
+    useNetworkStore().availableNetworks = [
+      ...useNetworkStore().availableNetworks,
       network
     ]
   }

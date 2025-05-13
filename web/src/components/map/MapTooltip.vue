@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import { availableNetworks } from "@/store";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
-import { toggleNodeActive } from "@/networks";
 import { useMapStore } from "@/store/map";
 import { useLayerStore } from "@/store/layer";
+import { useNetworkStore } from "@/store/network";
 
 
 const rasterTooltipDataCache = computed(() => useLayerStore().rasterTooltipDataCache);
@@ -125,7 +124,7 @@ watch(
 const clickedFeatureIsDeactivatedNode = computed(
   () =>
     clickedFeature.value &&
-    availableNetworks.value.find((network) => {
+    useNetworkStore().availableNetworks.find((network) => {
       return network.deactivated?.nodes.includes(
         clickedFeature.value?.feature.properties.node_id
       )
@@ -141,7 +140,7 @@ function toggleNodeHandler() {
   const nodeId = clickedFeature.value.feature.properties.node_id;
   const { dataset, layer } = useLayerStore().getDBObjectsForSourceID(sourceId);
   if (nodeId && dataset && layer) {
-    toggleNodeActive(nodeId, dataset)
+    useNetworkStore().toggleNodeActive(nodeId, dataset)
   }
 };
 </script>

@@ -7,9 +7,6 @@ import {
   SourceRegion,
   AnalysisType,
   FloatingPanelConfig,
-  Network,
-  NetworkNode,
-  NetworkEdge
 } from "./types.js";
 
 // UI Config
@@ -40,13 +37,6 @@ export const currentAnalysisType = ref<AnalysisType>();
 
 // Regions
 export const selectedSourceRegions = ref<SourceRegion[]>([]);
-
-// Network
-export const loadingNetworks = ref<boolean>(false);
-export const availableNetworks = ref<Network[]>([]);
-export const currentNetwork = ref<Network>();
-export const currentNetworkNodes = ref<NetworkNode[]>([]);
-export const currentNetworkEdges = ref<NetworkEdge[]>([]);
 
 // ETC
 export const currentUser = ref<User>();

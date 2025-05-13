@@ -8,7 +8,6 @@ import {
   polls,
   availableCharts,
   currentChart,
-  availableNetworks,
   availableAnalysisTypes,
   currentAnalysisType,
   currentError,
@@ -19,12 +18,11 @@ import {
   loadingAnalysisTypes,
   loadingCharts,
   loadingProjects,
-  loadingNetworks,
-  currentNetwork,
 } from "./store";
 
 import { useMapStore } from '@/store/map';
 import { useLayerStore } from "./store/layer";
+import { useNetworkStore } from "@/store/network";
 
 import {
   getProjects,
@@ -55,7 +53,7 @@ export function clearProjectState() {
   useMapStore().clickedFeature = undefined;
   availableCharts.value = undefined;
   currentChart.value = undefined;
-  availableNetworks.value = [];
+  useNetworkStore().availableNetworks = [];
   availableAnalysisTypes.value = undefined;
   currentAnalysisType.value = undefined;
   selectedSourceRegions.value = [];
@@ -91,6 +89,7 @@ export function pollForProcessingDataset(datasetId: number) {
 }
 
 watch(currentProject, () => {
+  const networkStore = useNetworkStore();
   clearProjectState();
   useMapStore().setMapCenter(currentProject.value);
   useMapStore().clearMapLayers();
@@ -98,7 +97,7 @@ watch(currentProject, () => {
     loadingDatasets.value = true;
     loadingCharts.value = true;
     loadingAnalysisTypes.value = true;
-    loadingNetworks.value = true;
+    networkStore.loadingNetworks = true;
     getProjectDatasets(currentProject.value.id).then(async (datasets) => {
       availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
         dataset.layers = await getDatasetLayers(dataset.id);
@@ -112,9 +111,9 @@ watch(currentProject, () => {
       loadingCharts.value = false;
     });
     getProjectNetworks(currentProject.value.id).then((networks) => {
-      availableNetworks.value = networks;
-      currentNetwork.value = undefined;
-      loadingNetworks.value = false;
+      networkStore.availableNetworks = networks;
+      networkStore.currentNetwork = undefined;
+      networkStore.loadingNetworks = false;
     })
     getProjectAnalysisTypes(currentProject.value.id).then((types) => {
       availableAnalysisTypes.value = types;
