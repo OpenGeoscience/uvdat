@@ -6,7 +6,6 @@ import {
   availableAnalysisTypes,
   loadingAnalysisTypes,
   currentAnalysisType,
-  selectedLayers,
   availableNetworks,
   panelArrangement,
 } from "@/store";
@@ -21,7 +20,10 @@ import {
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
 import { isVisible, show, showableTypes } from "@/panelFunctions"
+import { useMapStore } from "@/store/map";
 
+
+const selectedLayers = computed(() => useMapStore().selectedLayers);
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
   return availableAnalysisTypes.value?.filter((analysis_type) => {

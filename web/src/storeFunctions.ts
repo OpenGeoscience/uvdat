@@ -4,7 +4,6 @@ import {
   availableProjects,
   currentProject,
   availableDatasets,
-  selectedLayers,
   selectedSourceRegions,
   polls,
   availableCharts,
@@ -19,7 +18,6 @@ import {
   loadingDatasets,
   loadingAnalysisTypes,
   loadingCharts,
-  selectedLayerStyles,
   loadingProjects,
   loadingNetworks,
   currentNetwork,
@@ -36,7 +34,6 @@ import {
   getDatasetLayers,
   getProjectNetworks,
 } from "@/api/rest";
-import { updateLayersShown } from "./layers";
 import { Dataset } from "./types";
 import { resetPanels } from "./panelFunctions";
 
@@ -53,8 +50,8 @@ export function clearState() {
 
 export function clearProjectState() {
   availableDatasets.value = undefined;
-  selectedLayers.value = [];
-  selectedLayerStyles.value = {};
+  useMapStore().selectedLayers = [];
+  useMapStore().selectedLayerStyles = {};
   useMapStore().clickedFeature = undefined;
   availableCharts.value = undefined;
   currentChart.value = undefined;
@@ -126,5 +123,3 @@ watch(currentProject, () => {
     })
   }
 });
-
-watch(selectedLayers, updateLayersShown)
