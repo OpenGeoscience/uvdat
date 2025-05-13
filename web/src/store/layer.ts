@@ -50,24 +50,6 @@ export const useLayerStore = defineStore('layer', () => {
     return DBObjects
   }
 
-  function updateLayerStyles(layer: Layer) {
-    const map = mapStore.getMap();
-    map.getLayersOrder().forEach((mapLayerId) => {
-      if (mapLayerId !== 'base-tiles') {
-        const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
-        if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
-          const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
-          const frame = layer.frames.find((f) => f.id === parseInt(frameId))
-          currentStyle.visible = false;
-          if (frame) {
-            currentStyle.visible = layer.visible && layer.current_frame === frame.index
-          }
-          setMapLayerStyle(mapLayerId, currentStyle);
-        }
-      }
-    });
-  }
-
   async function getBoundsOfVisibleLayers(): Promise<LngLatBoundsLike | undefined> {
     let xMinGlobal, xMaxGlobal, yMinGlobal, yMaxGlobal = undefined;
     for (let index = 0; index < selectedLayers.value.length; index++) {
@@ -353,7 +335,6 @@ export const useLayerStore = defineStore('layer', () => {
     updateLayersShown,
     addLayer,
     getDBObjectsForSourceID,
-    updateLayerStyles,
     getBoundsOfVisibleLayers,
   }
 });
