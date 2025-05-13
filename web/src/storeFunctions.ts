@@ -24,6 +24,7 @@ import {
 } from "./store";
 
 import { useMapStore } from '@/store/map';
+import { useLayerStore } from "./store/layer";
 
 import {
   getProjects,
@@ -36,7 +37,6 @@ import {
 } from "@/api/rest";
 import { Dataset } from "./types";
 import { resetPanels } from "./panelFunctions";
-
 export function clearState() {
   clearProjectState();
   resetPanels();
@@ -50,8 +50,8 @@ export function clearState() {
 
 export function clearProjectState() {
   availableDatasets.value = undefined;
-  useMapStore().selectedLayers = [];
-  useMapStore().selectedLayerStyles = {};
+  useLayerStore().selectedLayers = [];
+  useLayerStore().selectedLayerStyles = {};
   useMapStore().clickedFeature = undefined;
   availableCharts.value = undefined;
   currentChart.value = undefined;

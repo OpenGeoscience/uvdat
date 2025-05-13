@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
-import { useMapStore } from '@/store/map';
+import { useLayerStore } from '@/store/layer';
 import MetadataView from '@/components/MetadataView.vue'
 import { Dataset, Layer } from '@/types';
 
@@ -12,7 +12,7 @@ const props = defineProps<{
 function toggleSelected(items: Layer[]) {
   items.forEach((item) => {
     const layer = item as Layer;
-    useMapStore().addLayer(layer);
+    useLayerStore().addLayer(layer);
   })
 }
 </script>

@@ -3,8 +3,8 @@ import { ref } from "vue";
 import html2canvas from "html2canvas";
 
 import { openSidebars } from "@/store";
-import { getBoundsOfVisibleLayers } from "@/layers";
 import { useMapStore } from "@/store/map";
+import { useLayerStore } from "@/store/layer";
 
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);
@@ -14,7 +14,7 @@ const loadingBounds = ref(false);
 async function fitMap() {
   loadingBounds.value = true;
   const map = useMapStore().getMap();
-  const bounds = await getBoundsOfVisibleLayers()
+  const bounds = await useLayerStore().getBoundsOfVisibleLayers()
   if (bounds) map.fitBounds(bounds)
   loadingBounds.value = false;
 }

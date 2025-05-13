@@ -6,12 +6,12 @@ import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
-import { getDBObjectsForSourceID } from "@/layers";
 import { toggleNodeActive } from "@/networks";
 import { useMapStore } from "@/store/map";
+import { useLayerStore } from "@/store/layer";
 
 
-const rasterTooltipDataCache = computed(() => useMapStore().rasterTooltipDataCache);
+const rasterTooltipDataCache = computed(() => useLayerStore().rasterTooltipDataCache);
 const clickedFeature = computed(() => useMapStore().clickedFeature);
 const clickedFeatureProperties = computed(() => {
   if (clickedFeature.value === undefined) {
@@ -43,7 +43,7 @@ const clickedFeatureSourceType = computed(() => {
 const rasterValue = computed(() => {
   if (clickedFeature.value && clickedFeatureSourceType.value === 'raster') {
     const feature = clickedFeature.value.feature;
-    const { raster } = getDBObjectsForSourceID(feature.source);
+    const { raster } = useLayerStore().getDBObjectsForSourceID(feature.source);
     if (raster?.id) {
       const data = rasterTooltipDataCache.value[raster.id]?.data;
       if (data) {
@@ -92,14 +92,14 @@ function zoomToRegion() {
 }
 
 // Check if the layer associated with the clicked feature is still selected and visible
-const selectedLayers = computed(() => useMapStore().selectedLayers);
+const selectedLayers = computed(() => useLayerStore().selectedLayers);
 watch(selectedLayers, () => {
   if (clickedFeature.value === undefined) {
     return;
   }
   const feature = clickedFeature.value.feature;
   const sourceId = feature.source;
-  const { layer } = getDBObjectsForSourceID(sourceId);
+  const { layer } = useLayerStore().getDBObjectsForSourceID(sourceId);
   if (!layer?.visible) {
     useMapStore().clickedFeature = undefined;
   }
@@ -139,7 +139,7 @@ function toggleNodeHandler() {
   const feature = clickedFeature.value.feature;
   const sourceId = feature.source;
   const nodeId = clickedFeature.value.feature.properties.node_id;
-  const { dataset, layer } = getDBObjectsForSourceID(sourceId);
+  const { dataset, layer } = useLayerStore().getDBObjectsForSourceID(sourceId);
   if (nodeId && dataset && layer) {
     toggleNodeActive(nodeId, dataset)
   }

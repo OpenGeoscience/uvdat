@@ -4,11 +4,11 @@ import { Map, Popup, AttributionControl } from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
 import { theme, openSidebars } from "@/store";
 import { useMapStore } from "@/store/map";
+import { useLayerStore } from "@/store/layer";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
-import { updateLayersShown } from "@/layers";
 
 const ATTRIBUTION = [
   "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
@@ -167,7 +167,7 @@ watch(theme, () => {
     },
   });
   setAttributionControlStyle();
-  updateLayersShown();
+  useLayerStore().updateLayersShown();
 });
 
 watch(openSidebars, () => {
