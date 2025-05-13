@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { draggingPanel, selectedLayerStyles } from '@/store';
-import { Layer, LayerStyle } from '@/types';
+import { Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
 import { computed, ref, watch } from 'vue';
 import _ from 'lodash';
 import { getLayerStyles, getVectorDataSummary } from '@/api/rest';
@@ -16,15 +16,15 @@ const showMenu = ref(false);
 const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
 const currentLayerStyle = ref<LayerStyle>({name: 'Default', is_default: true});
+const currentStyleSpec = ref<StyleSpec>();
 const vectorProperties = ref<Record<string, Record<string, any>[]>>();
+const rasterBands = ref<Record<number, Record<string, number | string>>>();
+const currentVectorFilter = ref<StyleFilter>({include: true, transparency: true});
+const currentVectorFilterProperty = ref<Record<string, any>>();
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
 })
-
-const currentStyleSpec = computed(() => {
-    return selectedLayerStyles.value[styleKey.value];
-});
 
 const showRasterOptions = computed(() => {
     return props.layer.frames.some((frame) => frame.raster)
@@ -33,6 +33,8 @@ const showRasterOptions = computed(() => {
 const showVectorOptions = computed(() => {
     return props.layer.frames.some((frame) => frame.vector)
 })
+
+const currentVectorFilterBy = computed(() => currentVectorFilter.value.filter_by)
 
 const dataRange = computed(() => {
     let absMin: number | undefined, absMax: number | undefined;
@@ -45,7 +47,7 @@ const dataRange = computed(() => {
         }
     })
     if(absMin && absMax){
-        return [Math.floor(absMin), Math.ceil(absMax)];
+        return [Math.floor(absMin), Math.ceil(absMax)] as [number, number];
     }
 })
 
@@ -54,6 +56,7 @@ function selectStyle(style: LayerStyle) {
 }
 
 async function fetchVectorProperties() {
+    if (!currentStyleSpec.value) return
     if (showVectorOptions.value) {
         if (props.layer.frames.length) {
             const currentFrame = props.layer.frames[currentStyleSpec.value.default_frame]
@@ -63,12 +66,13 @@ async function fetchVectorProperties() {
                     Object.entries(summary).map(([rowName, properties]) => {
                         return [rowName, Object.entries(properties).map(([name, values]) => {
                             values = values.filter((v: any) => v)
-                            let sample;
+                            let sampleLabel;
                             let range;
                             if (values.every((v: any) => typeof v === 'number')) {
-                                range = `[${Math.min(...values).toFixed(1)} - ${Math.max(...values).toFixed(1)}]`
+                                range = [Math.min(...values), Math.max(...values)]
+                                sampleLabel = `[${range[0].toFixed(1)} - ${range[1].toFixed(1)}]`
                             } else {
-                                sample = values.slice(0, 3).map((v: any) => {
+                                let sample = values.slice(0, 3).map((v: any) => {
                                     let str = v.toString()
                                     if (str.length > 10) return str.slice(0,5) + '...'
                                     return str
@@ -76,11 +80,11 @@ async function fetchVectorProperties() {
                                 if (values.length > sample.length) {
                                     sample.push('...')
                                 }
-                                sample = `[${sample.join(', ')}]`
+                                sampleLabel = `[${sample.join(', ')}]`
                             }
                             return {
                                 name,
-                                sample,
+                                sampleLabel,
                                 range,
                                 values,
                             }
@@ -92,7 +96,42 @@ async function fetchVectorProperties() {
     }
 }
 
+function fetchRasterBands() {
+    if (!currentStyleSpec.value) return
+    if (showRasterOptions.value) {
+        if (props.layer.frames.length) {
+            const currentFrame = props.layer.frames[currentStyleSpec.value.default_frame]
+            if (currentFrame.raster) {
+                rasterBands.value = currentFrame.raster.metadata.bands;
+            }
+        }
+    }
+}
+
+function setColorRows(different: boolean | null) {
+    if (!currentStyleSpec.value) return
+    if (different) {
+        if (showRasterOptions.value && rasterBands.value) {
+            const all = currentStyleSpec.value.colors.find((row) => row.name === 'all')
+            const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
+            currentStyleSpec.value.colors = bandNames.map((name) => {
+                return { ...all, name }
+            })
+            bandNames.forEach((name) => setRowColorMode(name, 'colormap'))
+        } else if (showVectorOptions.value) {
+            const all = currentStyleSpec.value.colors.find((row) => row.name === 'all')
+            currentStyleSpec.value.colors = ['polygons', 'lines', 'points'].map((name) => {
+                return {  ...all, name }
+            })
+        }
+    } else {
+        currentStyleSpec.value.colors = [...defaultStyleSpec.colors]
+        if (showRasterOptions) setRowColorMode('all', 'colormap')
+    }
+}
+
 function setRowColorMode(rowName: string, colorMode: string) {
+    if (!currentStyleSpec.value) return
     currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
         (c) => {
             if (c.name === rowName) {
@@ -103,8 +142,10 @@ function setRowColorMode(rowName: string, colorMode: string) {
                         colormap: {
                             ...terrain,
                             discrete: true,
+                            range: dataRange.value,
+                            null_color: 'transparent',
                         },
-                        single_color: undefined
+                        single_color: undefined,
                     }
                 } else {
                     return {...c, colormap: undefined, single_color: getDefaultColor()}
@@ -116,6 +157,7 @@ function setRowColorMode(rowName: string, colorMode: string) {
 }
 
 function updateRowColorBy(rowName: string) {
+    if (!currentStyleSpec.value) return
     currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
         (c) => {
             if (c.name === rowName && c.colormap?.color_by) {
@@ -142,6 +184,78 @@ function updateRowColorBy(rowName: string) {
     )
 }
 
+function setSizeRows(different: boolean | null) {
+    if (!currentStyleSpec.value) return
+    if (different) {
+        if (showVectorOptions.value) {
+            const all = currentStyleSpec.value.sizes.find((row) => row.name === 'all')
+            if (all) {
+                currentStyleSpec.value.sizes = ['polygons', 'lines', 'points'].map((name) => {
+                    return {  ...all, name }
+                })
+            }
+        }
+    } else {
+        currentStyleSpec.value.sizes = [...defaultStyleSpec.sizes]
+    }
+}
+
+function setRowSizeMode(rowName: string, sizeMode: string) {
+    if (!currentStyleSpec.value) return
+    currentStyleSpec.value.sizes = currentStyleSpec.value.sizes.map(
+        (s) => {
+            if (s.name === rowName) {
+                if (sizeMode === 'single_size') {
+                    return {...s, single_size: 2, size_range: undefined}
+                } else if (sizeMode === 'range') {
+                    return { ...s, size_range: {
+                        minimum: 1,
+                        maximum: 10,
+                        null_size: 'transparent'
+                    }, single_size: undefined}
+                }
+            }
+            return s
+        }
+    )
+}
+
+function updateCurrentFilterProperty() {
+    if (
+        vectorProperties.value &&
+        vectorProperties.value['all'] &&
+        currentVectorFilter.value.filter_by
+    ) {
+        const property = vectorProperties.value['all'].find(
+            (p) => p.name === currentVectorFilter.value.filter_by
+        )
+        currentVectorFilter.value.list = undefined
+        currentVectorFilter.value.range = undefined
+        if (property?.range) currentVectorFilter.value.range = property.range
+        currentVectorFilterProperty.value = property
+    }
+}
+
+function applyCurrentFilter() {
+    if (!currentStyleSpec.value) return
+    currentStyleSpec.value.filters = [
+        ...currentStyleSpec.value.filters,
+        {...currentVectorFilter.value}
+    ]
+}
+
+function removeFilter(filter: StyleFilter) {
+    if (!currentStyleSpec.value) return
+    currentStyleSpec.value.filters = currentStyleSpec.value.filters.filter(
+        (f) => (
+            !(f.filter_by === filter.filter_by &&
+            f.include === filter.include &&
+            f.list === filter.list &&
+            f.range === filter.range)
+        )
+    )
+}
+
 function getInputWidth(value: number) {
     // With a minimum of 40 pixels, add 10 pixels for each digit shown in the input
     let width = 40;
@@ -153,7 +267,7 @@ function cancel() {
     if (currentLayerStyle.value.style_spec) {
         selectedLayerStyles.value[styleKey.value] = currentLayerStyle.value.style_spec
     } else {
-        selectedLayerStyles.value[styleKey.value] = defaultStyleSpec
+        selectedLayerStyles.value[styleKey.value] = {...defaultStyleSpec}
     }
     showMenu.value = false;
 }
@@ -171,33 +285,39 @@ watch(draggingPanel, () => {
 })
 
 watch(currentStyleSpec, _.debounce(() => {
-    // console.log(currentStyleSpec.value)
+    console.log(currentStyleSpec.value)
     // updateLayerStyles(props.layer)
 }, 100), {deep: true})
 
 watch([props.layer, showMenu], async () => {
     availableStyles.value = await getLayerStyles(props.layer.id)
-    if (props.layer.default_style) currentLayerStyle.value = props.layer.default_style
+    if (props.layer.default_style) {
+        currentLayerStyle.value = props.layer.default_style;
+        currentStyleSpec.value = props.layer.default_style.style_spec
+    } else currentStyleSpec.value = selectedLayerStyles.value[styleKey.value];
     fetchVectorProperties()
+    fetchRasterBands()
 })
 
 watch(dataRange, () => {
+    if (!currentStyleSpec.value) return
     currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
         (c) => {
             if (c.colormap && !c.colormap.range) {
                 return {...c, colormap: {
                     ...c.colormap,
-                    range: dataRange.value as [number, number],
+                    range: dataRange.value,
                 }}
             } else return c
         }
     )
 })
 
+watch(currentVectorFilterBy, updateCurrentFilterProperty)
 </script>
 
 <template>
-    <v-menu v-model="showMenu" location="end top" :close-on-content-click="false">
+    <v-menu v-model="showMenu" location="end center" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
             <v-icon
                 v-bind="props"
@@ -224,6 +344,7 @@ watch(dataRange, () => {
                     item-value="id"
                     label="Layer Style"
                     density="compact"
+                    no-data-text="No saved styles exist yet."
                     @update:model-value="selectStyle"
                 ></v-select>
 
@@ -244,7 +365,7 @@ watch(dataRange, () => {
                     track-size="8"
                     hide-details
                     type="number"
-                    @update:model-value="(value: number) => currentStyleSpec.default_frame = value - 1 "
+                    @update:model-value="(value: number) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = value - 1}"
                 >
                     <template v-slot:append>
                         <v-text-field
@@ -253,12 +374,12 @@ watch(dataRange, () => {
                             min="1"
                             step="1"
                             density="compact"
-                            class="frame-input"
+                            class="number-input"
                             style="width: 60px"
                             type="number"
                             hide-details
                             single-line
-                            @update:model-value="(value: string) => currentStyleSpec.default_frame = parseInt(value) - 1 "
+                            @update:model-value="(value: string) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = parseInt(value) - 1}"
                         >
                         </v-text-field>
                     </template>
@@ -283,7 +404,7 @@ watch(dataRange, () => {
                             min="0"
                             step="0.1"
                             density="compact"
-                            class="frame-input"
+                            class="number-input"
                             style="width: 60px"
                             type="number"
                             hide-details
@@ -319,8 +440,16 @@ watch(dataRange, () => {
                         <div v-if="showRasterOptions">
                             <v-card-subtitle>Raster Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <v-checkbox
+                                label="Different colors for each band"
+                                :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
+                                density="compact"
+                                class="px-5 py-0"
+                                hide-details
+                                @update:model-value="setColorRows"
+                            />
                             <div v-for="row in currentStyleSpec.colors">
-                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
+                                <v-card-subtitle class="mt-3">{{ (row.name + (row.name === 'all' ? ' bands' : '')).toUpperCase() }}</v-card-subtitle>
                                 <div
                                     class="px-4 d-flex"
                                     :style="row.single_color ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
@@ -344,6 +473,8 @@ watch(dataRange, () => {
                                         :items="colormaps"
                                         item-title="name"
                                         label="Colormap"
+                                        density="compact"
+                                        hide-details
                                         return-object
                                     >
                                         <template v-slot:item="{ props, item }">
@@ -365,6 +496,7 @@ watch(dataRange, () => {
                                         :min="dataRange[0]"
                                         :max="dataRange[1]"
                                         step="1"
+                                        strict
                                     >
                                         <template v-slot:prepend>
                                             <v-text-field
@@ -374,7 +506,7 @@ watch(dataRange, () => {
                                                 :max="row.colormap.range[1]"
                                                 :step="1"
                                                 density="compact"
-                                                class="frame-input"
+                                                class="number-input"
                                                 :style="{'width': getInputWidth(row.colormap.range[0])}"
                                                 type="number"
                                                 hide-details
@@ -390,7 +522,7 @@ watch(dataRange, () => {
                                                 :max="dataRange[1]"
                                                 :step="1"
                                                 density="compact"
-                                                class="frame-input"
+                                                class="number-input"
                                                 :style="{'width': getInputWidth(row.colormap.range[1])}"
                                                 type="number"
                                                 hide-details
@@ -405,8 +537,16 @@ watch(dataRange, () => {
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <v-checkbox
+                                label="Different colors for each feature type"
+                                :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
+                                density="compact"
+                                class="px-5 py-0"
+                                hide-details
+                                @update:model-value="setColorRows"
+                            />
                             <div v-for="row in currentStyleSpec.colors">
-                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
+                                <v-card-subtitle class="mt-3">{{ (row.name + (row.name === 'all' ? ' feature types' : '')).toUpperCase() }}</v-card-subtitle>
                                 <div
                                     class="px-4 d-flex"
                                     :style="row.single_color ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
@@ -462,6 +602,8 @@ watch(dataRange, () => {
                                         :items="colormaps"
                                         item-title="name"
                                         label="Colormap"
+                                        density="compact"
+                                        hide-details
                                         return-object
                                     >
                                         <template v-slot:item="{ props, item }">
@@ -483,17 +625,56 @@ watch(dataRange, () => {
                                         item-title="name"
                                         item-value="name"
                                         label="Color by Property"
+                                        density="compact"
+                                        hide-details
                                         @update:modelValue="updateRowColorBy(row.name)"
                                     >
                                         <template v-slot:item="{ props, item }">
                                             <v-list-item v-bind="props">
                                                 <template v-slot:append>
-                                                    <v-chip size="small" v-if="item.raw.sample">{{ item.raw.sample }}</v-chip>
-                                                    <v-chip size="small" v-if="item.raw.range">{{ item.raw.range }}</v-chip>
+                                                    <v-chip size="small" v-if="item.raw.sampleLabel">{{ item.raw.sampleLabel }}</v-chip>
                                                 </template>
                                             </v-list-item>
                                         </template>
                                     </v-select>
+                                    <div
+                                        v-if="row.colormap && row.colormap.color_by"
+                                        class="px-4 d-flex"
+                                        style="align-items: center;"
+                                    >
+                                        <v-btn-toggle
+                                            :model-value="row.colormap.null_color === 'transparent' ? 'transparent' : '#000000'"
+                                            density="compact"
+                                            color="primary"
+                                            variant="outlined"
+                                            divided
+                                            mandatory
+                                            @update:model-value="(value: string) => {if (row.colormap) row.colormap.null_color = value}"
+                                        >
+                                            <v-btn :value="'transparent'">Transparent</v-btn>
+                                            <v-btn :value="'#000000'">Single Color</v-btn>
+                                        </v-btn-toggle>
+                                        <v-menu
+                                            v-if="row.colormap.null_color !== 'transparent'"
+                                            :close-on-content-click="false"
+                                            open-on-hover
+                                            location="end"
+                                        >
+                                            <template v-slot:activator="{ props }">
+                                                <div
+                                                    v-bind="props"
+                                                    class="color-square"
+                                                    :style="{backgroundColor: row.colormap.null_color}"
+                                                ></div>
+                                            </template>
+                                            <v-card>
+                                                <v-color-picker
+                                                    v-model:model-value="row.colormap.null_color"
+                                                    mode="rgb"
+                                                />
+                                            </v-card>
+                                        </v-menu>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -502,15 +683,150 @@ watch(dataRange, () => {
                         <div v-if="showRasterOptions">
                             <v-card-subtitle>Raster Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
-                            <div v-for="row in currentStyleSpec.sizes">
-                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
-                            </div>
+                            <v-card-subtitle>Size options do not apply to raster data.</v-card-subtitle>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <v-checkbox
+                                label="Different sizes for each feature type"
+                                :model-value="Array.from(currentStyleSpec.sizes.keys()).length > 1"
+                                density="compact"
+                                class="px-5 py-0"
+                                hide-details
+                                @update:model-value="setSizeRows"
+                            />
                             <div v-for="row in currentStyleSpec.sizes">
-                                <v-card-subtitle v-if="row.name !== 'all'">{{ row.name.toUpperCase() }}</v-card-subtitle>
+                                <div class="d-flex" style="align-items: baseline;">
+                                    <v-card-subtitle class="mt-3">{{ (row.name + (row.name === 'all' ? ' feature types' : '')).toUpperCase() }}</v-card-subtitle>
+                                    <v-icon
+                                        v-if="row.name !== 'all'"
+                                        icon="mdi-information-outline"
+                                        color="primary"
+                                        size="small"
+                                        v-tooltip="row.name === 'polygons' ? 'Border thickness' : row.name === 'lines' ? 'Line thickness' : 'Point radius'"
+                                    />
+                                </div>
+                                <div
+                                    class="px-4 d-flex"
+                                    :style="row.single_size ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
+                                >
+                                    <v-btn-toggle
+                                        :model-value="row.single_size ? 'single_size' : 'range'"
+                                        density="compact"
+                                        color="primary"
+                                        variant="outlined"
+                                        divided
+                                        mandatory
+                                        @update:model-value="(value: string) => setRowSizeMode(row.name, value)"
+                                    >
+                                        <v-btn :value="'single_size'">Single Size</v-btn>
+                                        <v-btn :value="'range'">Range of Sizes</v-btn>
+                                    </v-btn-toggle>
+                                    <v-text-field
+                                        v-if="row.single_size"
+                                        v-model="row.single_size"
+                                        :min="1"
+                                        :max="10"
+                                        :step="1"
+                                        density="compact"
+                                        :style="{'width': getInputWidth(row.single_size)}"
+                                        type="number"
+                                        hide-details
+                                        single-line
+                                    />
+                                    <v-range-slider
+                                        v-if="row.size_range"
+                                        :model-value="[row.size_range.minimum, row.size_range.maximum]"
+                                        color="primary"
+                                        :min="1"
+                                        :max="10"
+                                        step="1"
+                                        strict
+                                        @update:model-value="([min, max]) => {if (!row.size_range) return; row.size_range.minimum = min; row.size_range.maximum = max;}"
+                                    >
+                                        <template v-slot:prepend>
+                                            <v-text-field
+                                                v-if="row.size_range"
+                                                v-model="row.size_range.minimum"
+                                                :min="1"
+                                                :max="row.size_range.maximum"
+                                                :step="1"
+                                                density="compact"
+                                                class="number-input"
+                                                :style="{'width': getInputWidth(row.size_range.minimum)}"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                            >
+                                            </v-text-field>
+                                        </template>
+                                        <template v-slot:append>
+                                            <v-text-field
+                                                v-if="row.size_range"
+                                                v-model="row.size_range.maximum"
+                                                :min="row.size_range.minimum"
+                                                :max="10"
+                                                :step="1"
+                                                density="compact"
+                                                class="number-input"
+                                                :style="{'width': getInputWidth(row.size_range.maximum)}"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                            >
+                                            </v-text-field>
+                                        </template>
+                                    </v-range-slider>
+                                    <v-select
+                                        v-if="row.size_range && vectorProperties && vectorProperties[row.name]"
+                                        v-model="row.size_range.size_by"
+                                        :items="vectorProperties[row.name]"
+                                        item-title="name"
+                                        item-value="name"
+                                        label="Size by Property"
+                                        density="compact"
+                                        hide-details
+                                    >
+                                        <template v-slot:item="{ props, item }">
+                                            <v-list-item v-bind="props" :disabled="!item.raw.range">
+                                                <template v-slot:append>
+                                                    <v-chip size="small" v-if="item.raw.sampleLabel">{{ item.raw.sampleLabel }}</v-chip>
+                                                </template>
+                                            </v-list-item>
+                                        </template>
+                                    </v-select>
+                                    <div
+                                        v-if="row.size_range && row.size_range.size_by"
+                                        class="px-4 d-flex"
+                                        style="align-items: center;"
+                                    >
+                                        <v-btn-toggle
+                                            :model-value="row.size_range.null_size === 'transparent' ? 'transparent' : 2"
+                                            density="compact"
+                                            color="primary"
+                                            variant="outlined"
+                                            divided
+                                            mandatory
+                                            @update:model-value="(value: string | number) => {if (row.size_range) row.size_range.null_size = value}"
+                                        >
+                                            <v-btn :value="'transparent'">Transparent</v-btn>
+                                            <v-btn :value="2">Single Size</v-btn>
+                                        </v-btn-toggle>
+                                        <v-text-field
+                                            v-if="typeof row.size_range.null_size === 'number'"
+                                            v-model="row.size_range.null_size"
+                                            :min="1"
+                                            :max="10"
+                                            :step="1"
+                                            density="compact"
+                                            :style="{'width': getInputWidth(row.size_range.null_size)}"
+                                            type="number"
+                                            hide-details
+                                            single-line
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </v-window-item>
@@ -518,10 +834,180 @@ watch(dataRange, () => {
                         <div v-if="showRasterOptions">
                             <v-card-subtitle>Raster Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <v-checkbox
+                                :model-value="currentStyleSpec.filters.length === 1"
+                                label="Enable Clamping"
+                                density="compact"
+                                hide-details
+                                @update:model-value="(value: boolean | null) => {if (!currentStyleSpec) return; currentStyleSpec.filters = value ? [{filter_by: 'value', include: true, transparency: true, range: dataRange}] : []}"
+                            />
+                            <v-range-slider
+                                v-if="currentStyleSpec.filters.length === 1 && dataRange"
+                                v-model="currentStyleSpec.filters[0].range"
+                                color="primary"
+                                :min="dataRange[0]"
+                                :max="dataRange[1]"
+                                step="1"
+                                strict
+                            >
+                                <template v-slot:prepend>
+                                    <v-text-field
+                                        v-if="currentStyleSpec.filters[0].range"
+                                        v-model="currentStyleSpec.filters[0].range[0]"
+                                        :min="dataRange[0]"
+                                        :max="currentStyleSpec.filters[0].range[1]"
+                                        :step="1"
+                                        density="compact"
+                                        class="number-input"
+                                        :style="{'width': getInputWidth(currentStyleSpec.filters[0].range[0])}"
+                                        type="number"
+                                        hide-details
+                                        single-line
+                                    >
+                                    </v-text-field>
+                                </template>
+                                <template v-slot:append>
+                                    <v-text-field
+                                        v-if="currentStyleSpec.filters[0].range"
+                                        v-model="currentStyleSpec.filters[0].range[1]"
+                                        :min="currentStyleSpec.filters[0].range[0]"
+                                        :max="dataRange[1]"
+                                        :step="1"
+                                        density="compact"
+                                        class="number-input"
+                                        :style="{'width': getInputWidth(currentStyleSpec.filters[0].range[1])}"
+                                        type="number"
+                                        hide-details
+                                        single-line
+                                    >
+                                    </v-text-field>
+                                </template>
+                            </v-range-slider>
+                            <v-btn-toggle
+                                v-if="currentStyleSpec.filters.length === 1 && currentStyleSpec.filters[0].range"
+                                :model-value="currentStyleSpec.filters[0].transparency ? 'transparent' : '#000000'"
+                                density="compact"
+                                color="primary"
+                                variant="outlined"
+                                divided
+                                mandatory
+                                @update:model-value="(value: string) => {if (currentStyleSpec?.filters[0]) currentStyleSpec.filters[0].transparency = value === 'transparent'}"
+                            >
+                                <v-btn :value="'transparent'">Transparent</v-btn>
+                                <v-btn :value="'#000000'">Black</v-btn>
+                            </v-btn-toggle>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
+                            <div v-if="currentStyleSpec && currentStyleSpec.filters.length" class="mb-3">
+                                Filters ({{ currentStyleSpec.filters.length }})
+                                <div>
+                                    <v-chip
+                                        v-for="filter, index in currentStyleSpec.filters"
+                                        :key="index"
+                                        color="primary"
+                                        density="compact"
+                                        class="mb-1"
+                                    >
+                                        <template v-slot>
+                                            <div class="d-flex" style="column-gap: 5px; align-items: center;">
+                                                {{ filter.filter_by }}
+                                                <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
+                                                {{ filter.list }}
+                                                {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
+                                                <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
+                                            </div>
+                                        </template>
+                                    </v-chip>
+                                </div>
+                            </div>
+                            <v-select
+                                v-if="currentVectorFilter && vectorProperties"
+                                v-model="currentVectorFilter.filter_by"
+                                :items="vectorProperties['all']"
+                                item-title="name"
+                                item-value="name"
+                                label="Filter by Property"
+                                density="compact"
+                                hide-details
+                            >
+                                <template v-slot:item="{ props, item }">
+                                    <v-list-item v-bind="props">
+                                        <template v-slot:append>
+                                            <v-chip size="small" v-if="item.raw.sampleLabel">{{ item.raw.sampleLabel }}</v-chip>
+                                        </template>
+                                    </v-list-item>
+                                </template>
+                            </v-select>
+                            <v-range-slider
+                                v-if="currentVectorFilterProperty && currentVectorFilterProperty.range"
+                                v-model="currentVectorFilter.range"
+                                color="primary"
+                                :min="currentVectorFilterProperty.range[0]"
+                                :max="currentVectorFilterProperty.range[1]"
+                                step="1"
+                                strict
+                            >
+                                <template v-slot:prepend>
+                                    <v-text-field
+                                        v-if="currentVectorFilter.range"
+                                        v-model="currentVectorFilter.range[0]"
+                                        :min="currentVectorFilterProperty.range[0]"
+                                        :max="currentVectorFilter.range[1]"
+                                        :step="1"
+                                        density="compact"
+                                        class="number-input"
+                                        :style="{'width': getInputWidth(currentVectorFilter.range[0])}"
+                                        type="number"
+                                        hide-details
+                                        single-line
+                                    >
+                                    </v-text-field>
+                                </template>
+                                <template v-slot:append>
+                                    <v-text-field
+                                        v-if="currentVectorFilter.range"
+                                        v-model="currentVectorFilter.range[1]"
+                                        :min="currentVectorFilter.range[0]"
+                                        :max="currentVectorFilterProperty.range[1]"
+                                        :step="1"
+                                        density="compact"
+                                        class="number-input"
+                                        :style="{'width': getInputWidth(currentVectorFilter.range[1])}"
+                                        type="number"
+                                        hide-details
+                                        single-line
+                                    >
+                                    </v-text-field>
+                                </template>
+                            </v-range-slider>
+                            <v-select
+                                v-else-if="currentVectorFilterProperty"
+                                label="Select values"
+                                v-model="currentVectorFilter.list"
+                                :items="currentVectorFilterProperty.values"
+                                density="compact"
+                                multiple
+                                chips
+                                closable-chips
+                            />
+                            <v-btn-toggle
+                                :model-value="currentVectorFilter.include ? 'include' : 'exclude'"
+                                density="compact"
+                                color="primary"
+                                variant="outlined"
+                                divided
+                                mandatory
+                                @update:model-value="(value: string) => {currentVectorFilter.include = value === 'include'}"
+                            >
+                                <v-btn :value="'include'">Include</v-btn>
+                                <v-btn :value="'exclude'">Exclude</v-btn>
+                            </v-btn-toggle>
+                            <v-btn color="primary" style="float: right" @click="applyCurrentFilter">
+                                <v-icon icon="mdi-filter"/>
+                                Filter
+                            </v-btn>
                         </div>
                     </v-window-item>
                     <v-window-item value="widgets" class="pa-2">
@@ -568,5 +1054,6 @@ watch(dataRange, () => {
     width: 25px;
     display: inline-block;
     margin: 5px 15px;
+    border: 1px solid rgb(var(--v-theme-on-surface-variant));
 }
 </style>
