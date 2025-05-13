@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { rasterColormaps } from '@/layerStyles';
+import { rasterColormaps, updateLayerStyles } from '@/layerStyles';
 import { useLayerStore } from '@/store/layer';
 import { Layer } from '@/types';
 import { computed, watch } from 'vue';
@@ -55,7 +55,7 @@ function getFrameInputWidth(value: number) {
 }
 
 watch(currentStyle, _.debounce(() => {
-    layerStore.updateLayerStyles(props.layer)
+    updateLayerStyles(props.layer)
 }, 100), {deep: true})
 </script>
 

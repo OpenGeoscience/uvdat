@@ -1,5 +1,5 @@
 import { RasterTileSource } from "maplibre-gl";
-import { Network, Style } from "./types";
+import { Layer, Network, Style } from "./types";
 import { THEMES } from "./themes";
 import { theme } from "./store";
 import { useMapStore } from "./store/map";
@@ -45,6 +45,24 @@ export function getDefaultColor() {
     ))
     const i = Object.keys(useMapStore().mapSources).length % colors.length;
     return colors[i];
+}
+
+export function updateLayerStyles(layer: Layer) {
+    const map = useMapStore().getMap();
+    map.getLayersOrder().forEach((mapLayerId) => {
+        if (mapLayerId !== 'base-tiles') {
+            const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
+            if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
+                const currentStyle = useLayerStore().selectedLayerStyles[`${layerId}.${layerCopyId}`];
+                const frame = layer.frames.find((f) => f.id === parseInt(frameId))
+                currentStyle.visible = false;
+                if (frame) {
+                    currentStyle.visible = layer.visible && layer.current_frame === frame.index
+                }
+                setMapLayerStyle(mapLayerId, currentStyle);
+            }
+        }
+    });
 }
 
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
