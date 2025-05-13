@@ -47,39 +47,6 @@ export function getDBObjectsForSourceID(sourceId: string) {
     return DBObjects
 }
 
-// Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
-export function addLayer(layer: Layer) {
-    const store = useMapStore();
-    let name = layer.name;
-    let copy_id = 0;
-    const existing = Object.keys(useMapStore().mapSources).filter((sourceId) => {
-        const [layerId] = sourceId.split('.');
-        return parseInt(layerId) === layer.id
-    });
-    if (existing.length) {
-        copy_id = existing.length;
-        name = `${layer.name} (${copy_id})`;
-    }
-    store.selectedLayers = [
-        { ...layer, name, copy_id, visible: true, current_frame: 0 },
-        ...store.selectedLayers,
-    ];
-}
-
-export function addFrame(frame: LayerFrame, sourceId: string) {
-    if (!useMapStore().mapSources[sourceId]) {
-        if (frame.vector) {
-            const vector = createVectorTileSource(frame.vector, sourceId);
-            if (vector) useMapStore().mapSources[sourceId] = vector;
-
-        }
-        if (frame.raster) {
-            const raster = createRasterTileSource(frame.raster, sourceId);
-            if (raster) useMapStore().mapSources[sourceId] = raster;
-        }
-    }
-}
-
 export function updateLayerStyles(layer: Layer) {
     const map = useMapStore().getMap();
     map.getLayersOrder().forEach((mapLayerId) => {
@@ -131,7 +98,7 @@ export async function getBoundsOfVisibleLayers(): Promise<LngLatBoundsLike | und
 // Internal functions
 // ------------------
 
-function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
+export function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
     const map = useMapStore().getMap();
     const vectorSourceId = sourceId + '.vector.' + vector.id
     map.addSource(vectorSourceId, {
@@ -145,7 +112,7 @@ function createVectorTileSource(vector: VectorData, sourceId: string): Source | 
     }
 }
 
-function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
+export function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
     const map = useMapStore().getMap();
     const params = {
         projection: 'EPSG:3857'
