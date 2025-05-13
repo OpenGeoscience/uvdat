@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { Map, Popup, Source } from "maplibre-gl";
-import { ClickedFeatureData, Layer, LayerFrame, Project, RasterData, RasterDataValues, Style } from '@/types';
+import { ClickedFeatureData, Layer, LayerFrame, Project, RasterData, RasterDataValues, Style, VectorData } from '@/types';
 import { getDefaultColor, setMapLayerStyle } from '@/layerStyles';
-import { createRasterTileSource, createVectorTileSource } from '@/layers';
 import { getRasterDataValues } from '@/api/rest';
+import { baseURL } from '@/api/auth';
+import proj4 from 'proj4';
+import { handleLayerClick } from '@/layers';
+
 
 export const useMapStore = defineStore('map', () => {
   const map = ref<Map>();
@@ -16,6 +19,166 @@ export const useMapStore = defineStore('map', () => {
   const selectedLayerStyles = ref<Record<string, Style>>({});
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
+  function createVectorFeatureMapLayers(source: Source) {
+    const map = getMap();
+    const sourceIdentifiers = source.id.split('.');
+    const metadata = {
+        layer_id: sourceIdentifiers[0],
+        layer_copy_id: sourceIdentifiers[1],
+        frame_id: sourceIdentifiers[2],
+    }
+
+    // Fill Layer
+    map.addLayer({
+        id: source.id + '.fill',
+        type: "fill",
+        source: source.id,
+        metadata,
+        "source-layer": "default",
+        filter: [
+            "match",
+            ["geometry-type"],
+            ["Polygon", "MultiPolygon"],
+            true,
+            false,
+        ],
+        layout: {
+            visibility: "visible",
+        },
+        paint: {
+            "fill-color": "black",
+            "fill-opacity": 0.5,
+        },
+    });
+
+    // Line Layer
+    map.addLayer({
+        id: source.id + '.line',
+        type: "line",
+        source: source.id,
+        metadata,
+        "source-layer": "default",
+        layout: {
+            "line-join": "round",
+            "line-cap": "round",
+            visibility: "visible",
+        },
+        paint: {
+            "line-color": "black",
+            "line-width": 2,
+            "line-opacity": 1,
+        },
+    });
+
+    // Circle Layer
+    // Filtered to point geometries. If not filtered,
+    // this will add a circle at the vertices of all lines.
+    // This should be added LAST, as it has click priority over the other layer types.
+    map.addLayer({
+        id: source.id + '.circle',
+        type: "circle",
+        source: source.id,
+        metadata,
+        "source-layer": "default",
+        filter: ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
+        paint: {
+            "circle-color": "black",
+            "circle-opacity": 1,
+            "circle-stroke-color": "black",
+            "circle-stroke-opacity": 1,
+            "circle-stroke-width": 2,
+            "circle-radius": 5,
+        },
+        layout: {
+        visibility: "visible",
+        },
+    });
+
+    map.on("click", source.id + '.fill', handleLayerClick);
+    map.on("click", source.id + '.line', handleLayerClick);
+    map.on("click", source.id + '.circle', handleLayerClick);
+}
+
+function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) {
+    const map = getMap();
+    const sourceIdentifiers = tileSource.id.split('.');
+    const metadata = {
+        layer_id: sourceIdentifiers[0],
+        layer_copy_id: sourceIdentifiers[1],
+        frame_id: sourceIdentifiers[2],
+    }
+
+    // Tile Layer
+    map.addLayer({
+        id: tileSource.id + '.tile',
+        type: "raster",
+        source: tileSource.id,
+        metadata,
+    });
+
+    map.addLayer({
+        id: boundsSource.id + '.mask',
+        type: "fill",
+        source: boundsSource.id,
+        paint: {
+            "fill-opacity": 0,
+        },
+    });
+
+    map.on("click", boundsSource.id + '.mask', handleLayerClick);
+}
+
+
+  function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
+    const map = getMap();
+    const vectorSourceId = sourceId + '.vector.' + vector.id
+    map.addSource(vectorSourceId, {
+        type: "vector",
+        tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
+    });
+    const source = map.getSource(vectorSourceId);
+    if (source) {
+        createVectorFeatureMapLayers(source);
+        return source;
+    }
+  }
+
+  function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
+    const map = getMap();
+
+    const params = {
+        projection: 'EPSG:3857'
+    }
+    const tileParamString = new URLSearchParams(params).toString();
+    const tilesSourceId = sourceId + '.raster.' + raster.id;
+    map.addSource(tilesSourceId, {
+        type: "raster",
+        tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
+    });
+    const tileSource = map.getSource(tilesSourceId);
+
+    const bounds = raster.metadata.bounds;
+    const boundsSourceId = sourceId + '.bounds.' + raster.id;
+    let {xmin, xmax, ymin, ymax, srs} = bounds;
+    [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
+    [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+    map.addSource(boundsSourceId, {
+        type: "geojson",
+        data: {
+            type: "Polygon",
+            coordinates: [[
+                [xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin],
+            ]]
+        }
+    });
+    const boundsSource = map.getSource(boundsSourceId);
+
+    if (tileSource && boundsSource) {
+        createRasterFeatureMapLayers(tileSource, boundsSource);
+        cacheRasterData(raster);
+        return tileSource;
+    }
+  }
 
   function addFrame(frame: LayerFrame, sourceId: string) {
     if (!mapSources.value[sourceId]) {
