@@ -4,12 +4,10 @@ import {
   Project,
   Chart,
   Dataset,
-  Layer,
   SourceRegion,
   AnalysisType,
   RasterDataValues,
   FloatingPanelConfig,
-  Style,
   Network,
   NetworkNode,
   NetworkEdge
@@ -32,10 +30,6 @@ export const projectConfigMode = ref<"new" | "existing">();
 // Datasets
 export const loadingDatasets = ref<boolean>(false);
 export const availableDatasets = ref<Dataset[]>();
-
-// Layers
-export const selectedLayers = ref<Layer[]>([]);
-export const selectedLayerStyles = ref<Record<string, Style>>({});
 
 // Data Sources
 export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});

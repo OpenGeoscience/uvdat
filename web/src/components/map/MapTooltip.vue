@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import {
-  selectedLayers,
   rasterTooltipDataCache,
   availableNetworks,
 } from "@/store";
@@ -95,6 +94,7 @@ function zoomToRegion() {
 }
 
 // Check if the layer associated with the clicked feature is still selected and visible
+const selectedLayers = computed(() => useMapStore().selectedLayers);
 watch(selectedLayers, () => {
   if (clickedFeature.value === undefined) {
     return;

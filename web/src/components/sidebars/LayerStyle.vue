@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { updateLayerStyles } from '@/layers';
 import { rasterColormaps } from '@/layerStyles';
-import { selectedLayerStyles } from '@/store';
+import { useMapStore } from '@/store/map';
 import { Layer } from '@/types';
 import { computed, watch } from 'vue';
 import _ from 'lodash';
@@ -10,21 +10,23 @@ const props = defineProps<{
   layer: Layer;
 }>();
 
+const mapStore = useMapStore();
+
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
 })
 
 const currentStyle = computed(() => {
-    if (!selectedLayerStyles.value[styleKey.value]) {
-        selectedLayerStyles.value[styleKey.value] = {
+    if (!mapStore.selectedLayerStyles[styleKey.value]) {
+        mapStore.selectedLayerStyles[styleKey.value] = {
             visible: true,
             opacity: 1,
         }
     }
-    if (!selectedLayerStyles.value[styleKey.value].colormap_range) {
-        selectedLayerStyles.value[styleKey.value].colormap_range = dataRange.value
+    if (!mapStore.selectedLayerStyles[styleKey.value].colormap_range) {
+        mapStore.selectedLayerStyles[styleKey.value].colormap_range = dataRange.value
     }
-    return selectedLayerStyles.value[styleKey.value];
+    return mapStore.selectedLayerStyles[styleKey.value];
 });
 
 const showRasterOptions = computed(() => {

@@ -3,7 +3,7 @@ import { setNetworkDeactivatedNodes } from "@/networks";
 import { Layer } from "@/types";
 import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
-import { selectedLayers, selectedLayerStyles } from "@/store";
+import { useMapStore } from "@/store/map";
 
 const props = defineProps<{
   nodeFailures?: Record<number, number[]>,
@@ -58,9 +58,9 @@ watch(currentTick, async () => {
     if (props.network) setNetworkDeactivatedNodes(props.network, deactivated || [], true);
     if (props.additionalAnimationLayers) {
       props.additionalAnimationLayers.forEach((layer) => {
-        const currentStyle = selectedLayerStyles.value[`${layer.id}.${layer.copy_id || 0}`];
+        const currentStyle = useMapStore().selectedLayerStyles[`${layer.id}.${layer.copy_id || 0}`];
         if (currentStyle.visible) {
-          selectedLayers.value = selectedLayers.value.map((l) => {
+          useMapStore().selectedLayers = useMapStore().selectedLayers.map((l) => {
             if (l.id === layer.id) l.current_frame = currentTick.value
             return l;
           })

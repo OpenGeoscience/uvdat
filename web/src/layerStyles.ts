@@ -1,7 +1,7 @@
 import { RasterTileSource } from "maplibre-gl";
 import { Network, Style } from "./types";
 import { THEMES } from "./themes";
-import { selectedLayerStyles, theme } from "./store";
+import { theme } from "./store";
 import { useMapStore } from "./store/map";
 import { getDBObjectsForSourceID } from "./layers";
 
@@ -110,7 +110,7 @@ export function styleNetwork(network: Network) {
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId.includes(".vector." + vectorId)) {
             const [layerId, layerCopyId] = mapLayerId.split('.');
-            const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+            const currentStyle = useMapStore().selectedLayerStyles[`${layerId}.${layerCopyId}`];
             let defaultColor = currentStyle.color || 'black'
             const colorStyle: NetworkStyle = {
                 deactivate: deactivateColor,

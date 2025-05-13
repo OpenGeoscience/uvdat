@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { selectedLayers } from "@/store";
+import { useMapStore } from "@/store/map";
 import { Layer } from "@/types";
 import { computed, ref } from "vue";
 
@@ -9,6 +9,8 @@ import DetailView from "../DetailView.vue";
 
 
 const searchText = ref();
+const selectedLayers = computed(() => useMapStore().selectedLayers);
+const mapStore = useMapStore();
 const filteredLayers = computed(() => {
     return selectedLayers.value?.filter((layer) => {
         return  !searchText.value ||
@@ -17,11 +19,11 @@ const filteredLayers = computed(() => {
 })
 
 function removeLayers(layers: Layer[]) {
-    selectedLayers.value = selectedLayers.value.filter((layer) => !layers.includes(layer))
+    mapStore.selectedLayers = selectedLayers.value.filter((layer) => !layers.includes(layer))
 }
 
 function setVisibility(layers: Layer[], visible=true) {
-    selectedLayers.value = selectedLayers.value.map((layer) => {
+    mapStore.selectedLayers = selectedLayers.value.map((layer) => {
         if (layers.includes(layer)) layer.visible = visible;
         return layer
     })
@@ -29,7 +31,7 @@ function setVisibility(layers: Layer[], visible=true) {
 
 function updateFrame(layer: Layer, value: number) {
     value = value - 1;  // slider values are 1-indexed
-    selectedLayers.value = selectedLayers.value.map((l) => {
+    mapStore.selectedLayers = selectedLayers.value.map((l) => {
         if (l.id === layer.id && l.copy_id === layer.copy_id) {
             l.current_frame = value;
         }

@@ -1,8 +1,6 @@
 import {
     availableNetworks,
     rasterTooltipDataCache,
-    selectedLayers,
-    selectedLayerStyles,
 } from "./store";
 
 import { useMapStore } from "@/store/map";
@@ -10,7 +8,7 @@ import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './t
 import { LngLatBoundsLike, MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { getRasterDataValues, getVectorDataBounds } from "./api/rest";
-import { getDefaultColor, setMapLayerStyle } from "./layerStyles";
+import { setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
 
@@ -32,7 +30,7 @@ export function getDBObjectsForSourceID(sourceId: string) {
     const [
         layerId, layerCopyId, frameId
     ] = sourceId.split('.');
-    selectedLayers.value.forEach((layer) => {
+    useMapStore().selectedLayers.forEach((layer) => {
         if (layer.id === parseInt(layerId) && layer.copy_id === parseInt(layerCopyId)) {
             DBObjects.dataset = layer.dataset;
             DBObjects.layer = layer;
@@ -51,6 +49,7 @@ export function getDBObjectsForSourceID(sourceId: string) {
 
 // Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
 export function addLayer(layer: Layer) {
+    const store = useMapStore();
     let name = layer.name;
     let copy_id = 0;
     const existing = Object.keys(useMapStore().mapSources).filter((sourceId) => {
@@ -61,9 +60,9 @@ export function addLayer(layer: Layer) {
         copy_id = existing.length;
         name = `${layer.name} (${copy_id})`;
     }
-    selectedLayers.value = [
+    store.selectedLayers = [
         { ...layer, name, copy_id, visible: true, current_frame: 0 },
-        ...selectedLayers.value,
+        ...store.selectedLayers,
     ];
 }
 
@@ -81,60 +80,13 @@ export function addFrame(frame: LayerFrame, sourceId: string) {
     }
 }
 
-export function updateLayersShown () {
-    const map = useMapStore().getMap();
-    // reverse selected layers list for first on top
-    selectedLayers.value.toReversed().forEach((layer) => {
-        layer.frames.forEach((frame) => {
-            const styleId = `${layer.id}.${layer.copy_id}`
-            const sourceId = `${styleId}.${frame.id}`
-            if (!selectedLayerStyles.value[styleId]) {
-                selectedLayerStyles.value[styleId] = {
-                    color: getDefaultColor(),
-                    opacity: 1,
-                    visible: true,
-                }
-            }
-            const currentStyle = selectedLayerStyles.value[styleId];
-            currentStyle.visible = layer.visible
-            if (currentStyle.visible && !map.getLayersOrder().some(
-                (mapLayerId) => mapLayerId.includes(sourceId)
-            ) && layer.current_frame === frame.index) {
-                addFrame(frame, sourceId);
-            }
-            map.getLayersOrder().forEach((mapLayerId) => {
-                if (mapLayerId !== 'base-tiles') {
-                    if (mapLayerId.includes(sourceId)) {
-                        map.moveLayer(mapLayerId);  // handles reordering
-                        setMapLayerStyle(mapLayerId, {
-                            ...currentStyle,
-                            visible: layer.visible && layer.current_frame === frame.index
-                        })
-                    }
-                }
-            });
-        })
-    })
-    // hide any removed layers
-    map.getLayersOrder().forEach((mapLayerId) => {
-        if (mapLayerId !== 'base-tiles') {
-            const [layerId, layerCopyId] = mapLayerId.split('.');
-            if (!selectedLayers.value.some((l) => {
-               return l.id == parseInt(layerId) && l.copy_id == parseInt(layerCopyId)
-            })) {
-                map.setLayoutProperty(mapLayerId, "visibility", "none");
-            }
-        }
-    });
-}
-
 export function updateLayerStyles(layer: Layer) {
     const map = useMapStore().getMap();
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId !== 'base-tiles') {
             const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
             if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
-                const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+                const currentStyle = useMapStore().selectedLayerStyles[`${layerId}.${layerCopyId}`];
                 const frame = layer.frames.find((f) => f.id === parseInt(frameId))
                 currentStyle.visible = false;
                 if (frame) {
@@ -147,9 +99,11 @@ export function updateLayerStyles(layer: Layer) {
 }
 
 export async function getBoundsOfVisibleLayers(): Promise<LngLatBoundsLike | undefined> {
+    const mapStore = useMapStore();
+
     let xMinGlobal, xMaxGlobal, yMinGlobal, yMaxGlobal = undefined;
-    for (let index = 0; index < selectedLayers.value.length; index++) {
-        const layer = selectedLayers.value[index];
+    for (let index = 0; index < mapStore.selectedLayers.length; index++) {
+        const layer = mapStore.selectedLayers[index];
         if (layer.visible) {
             const currentFrame = layer.frames[layer.current_frame]
             let xmin, xmax, ymin, ymax, srs = undefined;
