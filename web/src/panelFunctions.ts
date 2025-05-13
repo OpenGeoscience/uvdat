@@ -1,6 +1,6 @@
 import { getDataset, getDatasetLayers } from "./api/rest";
 import { availableAnalysisTypes, currentChart, panelArrangement } from "./store";
-import { useMapStore } from "./store/map";
+import { useLayerStore } from "./store/layer";
 import { AnalysisResult, Chart, Dataset, Layer, Network, RasterData, VectorData } from "./types";
 
 
@@ -64,17 +64,17 @@ export function resetPanels() {
 
 
 export function isVisible(showable: Showable): boolean {
-    const mapStore = useMapStore();
+    const layerStore = useLayerStore();
     if (showable.chart) {
         const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
         if (!chartPanel) return false;
         return currentChart.value?.id == showable.chart.id && chartPanel.visible
     } else if (showable.dataset) {
-        return mapStore.selectedLayers.some((layer) => {
+        return layerStore.selectedLayers.some((layer) => {
             return layer.dataset.id === showable.dataset?.id && layer.visible
         })
     } else if (showable.layer) {
-        return mapStore.selectedLayers.some((layer) => {
+        return layerStore.selectedLayers.some((layer) => {
             return layer.id === showable.layer?.id && layer.visible
         });
     } else if (showable.network) {
@@ -118,7 +118,7 @@ export function isVisible(showable: Showable): boolean {
 
 
 export function show(showable: Showable) {
-    const mapStore = useMapStore();
+    const layerStore = useLayerStore();
     if (showable.chart) {
         const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
         if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
@@ -129,7 +129,7 @@ export function show(showable: Showable) {
         })
     } else if (showable.layer) {
         let add = true
-        mapStore.selectedLayers = mapStore.selectedLayers.map((layer) => {
+        layerStore.selectedLayers = layerStore.selectedLayers.map((layer) => {
             if (add && layer.id === showable.layer?.id) {
                 layer.visible = true;
                 add = false;
@@ -137,7 +137,7 @@ export function show(showable: Showable) {
             return layer
         })
         if (add) {
-            mapStore.addLayer(showable.layer)
+            layerStore.addLayer(showable.layer)
         }
     } else if (showable.network) {
         show({dataset: showable.network.dataset})

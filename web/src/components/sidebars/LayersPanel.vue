@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { useMapStore } from "@/store/map";
 import { Layer } from "@/types";
 import { computed, ref } from "vue";
-
+import { useLayerStore } from "@/store/layer";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
 
 
 const searchText = ref();
-const selectedLayers = computed(() => useMapStore().selectedLayers);
-const mapStore = useMapStore();
+const selectedLayers = computed(() => useLayerStore().selectedLayers);
+const layerStore = useLayerStore();
 const filteredLayers = computed(() => {
     return selectedLayers.value?.filter((layer) => {
         return  !searchText.value ||
@@ -19,11 +18,11 @@ const filteredLayers = computed(() => {
 })
 
 function removeLayers(layers: Layer[]) {
-    mapStore.selectedLayers = selectedLayers.value.filter((layer) => !layers.includes(layer))
+    layerStore.selectedLayers = selectedLayers.value.filter((layer) => !layers.includes(layer))
 }
 
 function setVisibility(layers: Layer[], visible=true) {
-    mapStore.selectedLayers = selectedLayers.value.map((layer) => {
+    layerStore.selectedLayers = selectedLayers.value.map((layer) => {
         if (layers.includes(layer)) layer.visible = visible;
         return layer
     })
@@ -31,7 +30,7 @@ function setVisibility(layers: Layer[], visible=true) {
 
 function updateFrame(layer: Layer, value: number) {
     value = value - 1;  // slider values are 1-indexed
-    mapStore.selectedLayers = selectedLayers.value.map((l) => {
+    layerStore.selectedLayers = selectedLayers.value.map((l) => {
         if (l.id === layer.id && l.copy_id === layer.copy_id) {
             l.current_frame = value;
         }

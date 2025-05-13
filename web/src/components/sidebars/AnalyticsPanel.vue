@@ -20,10 +20,10 @@ import {
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
 import { isVisible, show, showableTypes } from "@/panelFunctions"
-import { useMapStore } from "@/store/map";
+import { useLayerStore } from "@/store/layer";
 
 
-const selectedLayers = computed(() => useMapStore().selectedLayers);
+const selectedLayers = computed(() => useLayerStore().selectedLayers);
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
   return availableAnalysisTypes.value?.filter((analysis_type) => {

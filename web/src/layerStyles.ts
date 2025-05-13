@@ -3,7 +3,7 @@ import { Network, Style } from "./types";
 import { THEMES } from "./themes";
 import { theme } from "./store";
 import { useMapStore } from "./store/map";
-import { getDBObjectsForSourceID } from "./layers";
+import { useLayerStore } from "./store/layer";
 
 
 // ------------------
@@ -50,7 +50,7 @@ export function getDefaultColor() {
 export function setMapLayerStyle(mapLayerId: string, style: Style) {
     const map = useMapStore().getMap();
     const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
-    const { network } = getDBObjectsForSourceID(sourceId)
+    const { network } = useLayerStore().getDBObjectsForSourceID(sourceId)
     let opacity = style.opacity;
     let color = style.color;
     if (!style.visible) {
@@ -110,7 +110,7 @@ export function styleNetwork(network: Network) {
     map.getLayersOrder().forEach((mapLayerId) => {
         if (mapLayerId.includes(".vector." + vectorId)) {
             const [layerId, layerCopyId] = mapLayerId.split('.');
-            const currentStyle = useMapStore().selectedLayerStyles[`${layerId}.${layerCopyId}`];
+            const currentStyle = useLayerStore().selectedLayerStyles[`${layerId}.${layerCopyId}`];
             let defaultColor = currentStyle.color || 'black'
             const colorStyle: NetworkStyle = {
                 deactivate: deactivateColor,
