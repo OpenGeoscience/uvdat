@@ -3,22 +3,16 @@ import { ref, computed, watch } from "vue";
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
 import { isVisible, show } from '@/panelFunctions';
 import { styleNetwork } from '@/layerStyles';
-import { setNetworkDeactivatedNodes } from "@/networks";
-import {
-    loadingNetworks,
-    availableNetworks,
-    currentNetwork,
-    currentNetworkNodes,
-    currentNetworkEdges,
-} from '@/store';
+import { useNetworkStore } from "@/store/network";
 
 import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
+const networkStore = useNetworkStore();
 
 const searchText = ref();
 const filteredNetworks = computed(() => {
-    return availableNetworks.value?.filter((network) => {
+    return networkStore.availableNetworks?.filter((network) => {
         return !searchText.value ||
             network.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
@@ -48,21 +42,21 @@ function sortEdgeOrNode(a: NetworkNode | NetworkEdge, b: NetworkNode | NetworkEd
 }
 
 const currentNodes = computed(() =>
-  currentNetworkNodes.value
+  networkStore.currentNetworkNodes
     .map((n) => ({
       ...n,
-      active: !currentNetwork.value?.deactivated?.nodes?.includes(n.id),
+      active: !networkStore.currentNetwork?.deactivated?.nodes?.includes(n.id),
     }))
     .toSorted(sortEdgeOrNode)
 );
 
 const currentEdges = computed(() =>
-  currentNetworkEdges.value
+  networkStore.currentNetworkEdges
     .map((e) => ({
       ...e,
       active:
-        !currentNetwork.value?.deactivated?.nodes?.includes(e.from_node) &&
-        !currentNetwork.value?.deactivated?.nodes?.includes(e.to_node),
+        !networkStore.currentNetwork?.deactivated?.nodes?.includes(e.from_node) &&
+        !networkStore.currentNetwork?.deactivated?.nodes?.includes(e.to_node),
     }))
     .toSorted(sortEdgeOrNode)
 );
@@ -74,42 +68,46 @@ const headers = [
 ]
 
 function showNetwork() {
-    if (currentNetwork.value) {
-        show({network: currentNetwork.value})
-        styleNetwork(currentNetwork.value)
+    if (networkStore.currentNetwork) {
+        show({network: networkStore.currentNetwork})
+        styleNetwork(networkStore.currentNetwork)
     }
 }
 
 function isNetworkVisible() {
-    if (currentNetwork.value) {
-        return isVisible({network: currentNetwork.value})
+    if (networkStore.currentNetwork) {
+        return isVisible({network: networkStore.currentNetwork})
     }
     return true
 }
 
 function resetNetwork() {
-    if (currentNetwork.value) {
+    // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
+    // TODO: Fix in the store function itself
+    if (networkStore.currentNetwork) {
         selectedNodes.value = []
-        setNetworkDeactivatedNodes(currentNetwork.value, [])
+        networkStore.setNetworkDeactivatedNodes(networkStore.currentNetwork, [])
     }
 }
 
 function toggleSelected() {
-    if (currentNetwork.value) {
+    // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
+    // TODO: Fix in the store function itself
+    if (networkStore.currentNetwork) {
         if (!isNetworkVisible()) showNetwork()
 
         // Any selected nodes that are already deactivated should be removed
         // from both sets, since they now need to be activated, and both sets
         // are used to set the new deactivated value.
-        let deactiveNodeSet = new Set(currentNetwork.value?.deactivated?.nodes);
+        let deactiveNodeSet = new Set(networkStore.currentNetwork.deactivated?.nodes);
         let selectedNodeSet = new Set(selectedNodes.value);
         const nodesToRemove = deactiveNodeSet.intersection(selectedNodeSet);
         deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
         selectedNodeSet = selectedNodeSet.difference(nodesToRemove);
 
         const deactivated = Array.from(deactiveNodeSet.union(selectedNodeSet));
-        setNetworkDeactivatedNodes(
-            currentNetwork.value,
+        networkStore.setNetworkDeactivatedNodes(
+            networkStore.currentNetwork,
             deactivated,
         )
 
@@ -117,50 +115,49 @@ function toggleSelected() {
     }
 }
 
-watch(currentNetwork, () => {
+watch(() => networkStore.currentNetwork, () => {
     searchText.value = ''
-    if (currentNetwork.value) {
-        currentNetwork.value.selected = {
+    if (networkStore.currentNetwork) {
+        networkStore.currentNetwork.selected = {
             nodes: [],
             edges: [],
         }
-        getNetworkNodes(currentNetwork.value.id).then((results) => {
-            currentNetworkNodes.value = results;
+        getNetworkNodes(networkStore.currentNetwork.id).then((results) => {
+            networkStore.currentNetworkNodes = results;
         })
-        getNetworkEdges(currentNetwork.value.id).then((results) => {
-            currentNetworkEdges.value = results;
+        getNetworkEdges(networkStore.currentNetwork.id).then((results) => {
+            networkStore.currentNetworkEdges = results;
         })
     } else {
-        currentNetworkNodes.value = [];
-        currentNetworkEdges.value = [];
+        networkStore.currentNetworkNodes = [];
+        networkStore.currentNetworkEdges = [];
     }
 })
 
 watch([selectedNodes, hoverNode, hoverEdge], () => {
-    if (currentNetwork.value) {
-        if (!currentNetwork.value.selected) {
-            currentNetwork.value.selected = { nodes: [], edges: [] }
+    if (networkStore.currentNetwork) {
+        if (!networkStore.currentNetwork.selected) {
+            networkStore.currentNetwork.selected = { nodes: [], edges: [] }
         }
         if (hoverNode.value) {
-            currentNetwork.value.selected.nodes = [
+            networkStore.currentNetwork.selected.nodes = [
                 ...selectedNodes.value,
                 hoverNode.value.id,
             ]
         } else if (hoverEdge.value) {
-            currentNetwork.value.selected.edges = [hoverEdge.value.id]
+            networkStore.currentNetwork.selected.edges = [hoverEdge.value.id]
         } else {
-            currentNetwork.value.selected.nodes = selectedNodes.value;
-
+            networkStore.currentNetwork.selected.nodes = selectedNodes.value;
         }
-        styleNetwork(currentNetwork.value)
+        styleNetwork(networkStore.currentNetwork)
     }
 }, {deep: true})
 </script>
 
 <template>
-    <div :class="currentNetwork ? 'panel-content-outer' : 'panel-content-outer with-search'">
+    <div :class="networkStore.currentNetwork ? 'panel-content-outer' : 'panel-content-outer with-search'">
         <v-text-field
-            v-if="!currentNetwork"
+            v-if="!networkStore.currentNetwork"
             v-model="searchText"
             label="Search Networks"
             variant="outlined"
@@ -170,10 +167,10 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
             hide-details
         />
         <v-card class="panel-content-inner">
-            <div v-if="currentNetwork">
+            <div v-if="networkStore.currentNetwork">
                 <div class="network-title">
                     <div>
-                        <div>{{ currentNetwork.name }}</div>
+                        <div>{{ networkStore.currentNetwork.name }}</div>
                         <v-btn
                             v-if="!isNetworkVisible()"
                             @click="showNetwork()"
@@ -189,7 +186,7 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                         v-tooltip="'Close'"
                         icon="mdi-close"
                         variant="plain"
-                        @click="currentNetwork = undefined"
+                        @click="networkStore.currentNetwork = undefined"
                     />
                 </div>
                 <v-text-field
@@ -264,7 +261,7 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                     <v-list-item
                         v-for="network in filteredNetworks"
                         :key="network.id"
-                        @click="currentNetwork = network"
+                        @click="networkStore.currentNetwork = network"
                     >
                         {{ network.name }}
                         <template v-slot:append>
@@ -274,12 +271,12 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                     </v-list-item>
                 </v-list>
             </div>
-            <v-progress-linear v-else-if="loadingNetworks" indeterminate></v-progress-linear>
+            <v-progress-linear v-else-if="networkStore.loadingNetworks" indeterminate></v-progress-linear>
             <v-card-text v-else class="help-text">No available Networks.</v-card-text>
         </v-card>
         <v-btn
             class="toggle-btn"
-            v-if="currentNetwork && tab == 'nodes-tab' && selectedNodes.length"
+            v-if="networkStore.currentNetwork && tab == 'nodes-tab' && selectedNodes.length"
             @click="toggleSelected"
         >
             Toggle Selected

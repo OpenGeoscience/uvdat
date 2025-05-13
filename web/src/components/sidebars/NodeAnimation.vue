@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { setNetworkDeactivatedNodes } from "@/networks";
 import { Layer } from "@/types";
 import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
 import { useLayerStore } from "@/store/layer";
+import { useNetworkStore } from "@/store/network";
+
+const networkStore = useNetworkStore(); 
 
 const props = defineProps<{
   nodeFailures?: Record<number, number[]>,
@@ -56,7 +58,7 @@ watch(currentTick, async () => {
   const layerStore = useLayerStore();
   if (nodeChanges.value) {
     let deactivated = nodeChanges.value[currentTick.value];
-    if (props.network) setNetworkDeactivatedNodes(props.network, deactivated || [], true);
+    if (props.network) networkStore.setNetworkDeactivatedNodes(props.network, deactivated || [], true);
     if (props.additionalAnimationLayers) {
       props.additionalAnimationLayers.forEach((layer) => {
         const currentStyle = layerStore.selectedLayerStyles[`${layer.id}.${layer.copy_id || 0}`];
