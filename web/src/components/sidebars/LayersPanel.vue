@@ -8,8 +8,14 @@ import DetailView from "../DetailView.vue";
 
 
 const searchText = ref();
-const selectedLayers = computed(() => useLayerStore().selectedLayers);
 const layerStore = useLayerStore();
+const selectedLayers = computed({
+    get: () => layerStore.selectedLayers,
+    set: (value) => {
+        layerStore.selectedLayers = value;
+    }
+});
+
 const filteredLayers = computed(() => {
     return selectedLayers.value?.filter((layer) => {
         return  !searchText.value ||
@@ -18,11 +24,11 @@ const filteredLayers = computed(() => {
 })
 
 function removeLayers(layers: Layer[]) {
-    layerStore.selectedLayers = selectedLayers.value.filter((layer) => !layers.includes(layer))
+    selectedLayers.value = selectedLayers.value.filter((layer) => !layers.includes(layer))
 }
 
 function setVisibility(layers: Layer[], visible=true) {
-    layerStore.selectedLayers = selectedLayers.value.map((layer) => {
+    selectedLayers.value = selectedLayers.value.map((layer) => {
         if (layers.includes(layer)) layer.visible = visible;
         return layer
     })
@@ -30,7 +36,7 @@ function setVisibility(layers: Layer[], visible=true) {
 
 function updateFrame(layer: Layer, value: number) {
     value = value - 1;  // slider values are 1-indexed
-    layerStore.selectedLayers = selectedLayers.value.map((l) => {
+    selectedLayers.value = selectedLayers.value.map((l) => {
         if (l.id === layer.id && l.copy_id === layer.copy_id) {
             l.current_frame = value;
         }

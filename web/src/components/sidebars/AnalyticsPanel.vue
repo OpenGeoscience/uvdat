@@ -23,7 +23,6 @@ import { isVisible, show, showableTypes } from "@/panelFunctions"
 import { useLayerStore } from "@/store/layer";
 
 
-const selectedLayers = computed(() => useLayerStore().selectedLayers);
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
   return availableAnalysisTypes.value?.filter((analysis_type) => {
@@ -215,7 +214,7 @@ watch(tab, () => {
 });
 
 watch(
-  [currentResult, selectedLayers, currentChart, panelArrangement],
+  [currentResult, () => useLayerStore().selectedLayers, currentChart, panelArrangement],
   fillInputsAndOutputs,
   {deep: true}
 );
