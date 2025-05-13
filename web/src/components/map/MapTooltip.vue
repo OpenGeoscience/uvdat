@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import {
-  rasterTooltipDataCache,
-  availableNetworks,
-} from "@/store";
+import { availableNetworks } from "@/store";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
@@ -14,6 +11,7 @@ import { toggleNodeActive } from "@/networks";
 import { useMapStore } from "@/store/map";
 
 
+const rasterTooltipDataCache = computed(() => useMapStore().rasterTooltipDataCache);
 const clickedFeature = computed(() => useMapStore().clickedFeature);
 const clickedFeatureProperties = computed(() => {
   if (clickedFeature.value === undefined) {

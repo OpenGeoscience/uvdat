@@ -1,13 +1,10 @@
-import {
-    availableNetworks,
-    rasterTooltipDataCache,
-} from "./store";
+import { availableNetworks } from "./store";
 
 import { useMapStore } from "@/store/map";
 import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from './types';
 import { LngLatBoundsLike, MapLayerMouseEvent, MapMouseEvent, Source } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
-import { getRasterDataValues, getVectorDataBounds } from "./api/rest";
+import { getVectorDataBounds } from "./api/rest";
 import { setMapLayerStyle } from "./layerStyles";
 import proj4 from "proj4";
 
@@ -113,7 +110,9 @@ export function createVectorTileSource(vector: VectorData, sourceId: string): So
 }
 
 export function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
-    const map = useMapStore().getMap();
+    const mapStore = useMapStore();
+    const map = mapStore.getMap();
+
     const params = {
         projection: 'EPSG:3857'
     }
@@ -143,7 +142,7 @@ export function createRasterTileSource(raster: RasterData, sourceId: string): So
 
     if (tileSource && boundsSource) {
         createRasterFeatureMapLayers(tileSource, boundsSource);
-        cacheRasterData(raster);
+        mapStore.cacheRasterData(raster);
         return tileSource;
     }
 }
@@ -255,14 +254,6 @@ function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) 
     });
 
     map.on("click", boundsSource.id + '.mask', handleLayerClick);
-}
-
-async function cacheRasterData(raster: RasterData) {
-    if (rasterTooltipDataCache.value[raster.id] !== undefined) {
-      return;
-    }
-    const data = await getRasterDataValues(raster.id);
-    rasterTooltipDataCache.value[raster.id] = data;
 }
 
 function handleLayerClick(e: MapLayerMouseEvent) {

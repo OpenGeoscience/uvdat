@@ -6,7 +6,6 @@ import {
   Dataset,
   SourceRegion,
   AnalysisType,
-  RasterDataValues,
   FloatingPanelConfig,
   Network,
   NetworkNode,
@@ -30,9 +29,6 @@ export const projectConfigMode = ref<"new" | "existing">();
 // Datasets
 export const loadingDatasets = ref<boolean>(false);
 export const availableDatasets = ref<Dataset[]>();
-
-// Data Sources
-export const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
 // Charts & Analyses
 export const loadingCharts = ref<boolean>(false);
