@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { ref, shallowRef, watch } from 'vue';
 import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
 import { ClickedFeatureData, Project, RasterData, RasterDataValues } from '@/types';
 
 
 export const useMapStore = defineStore('map', () => {
-  const map = ref<Map>();
+  const map = shallowRef<Map>();
   const mapSources = ref<Record<string, Source>>({});
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
