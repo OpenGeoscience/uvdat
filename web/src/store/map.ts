@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { Map, Popup, Source } from "maplibre-gl";
-import { ClickedFeatureData, Layer, LayerFrame, Project, Style } from '@/types';
+import { ClickedFeatureData, Layer, LayerFrame, Project, RasterData, RasterDataValues, Style } from '@/types';
 import { getDefaultColor, setMapLayerStyle } from '@/layerStyles';
 import { createRasterTileSource, createVectorTileSource } from '@/layers';
+import { getRasterDataValues } from '@/api/rest';
 
 export const useMapStore = defineStore('map', () => {
   const map = ref<Map>();
@@ -13,6 +14,7 @@ export const useMapStore = defineStore('map', () => {
   const clickedFeature = ref<ClickedFeatureData>();
   const selectedLayers = ref<Layer[]>([]);
   const selectedLayerStyles = ref<Record<string, Style>>({});
+  const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
 
   function addFrame(frame: LayerFrame, sourceId: string) {
@@ -165,7 +167,16 @@ export const useMapStore = defineStore('map', () => {
     });
   }
 
+  async function cacheRasterData(raster: RasterData) {
+    if (rasterTooltipDataCache.value[raster.id] !== undefined) {
+      return;
+    }
+    const data = await getRasterDataValues(raster.id);
+    rasterTooltipDataCache.value[raster.id] = data;
+}
+
   return {
+    // Data
     map,
     mapSources,
     showMapBaseLayer,
@@ -173,6 +184,8 @@ export const useMapStore = defineStore('map', () => {
     clickedFeature,
     selectedLayers,
     selectedLayerStyles,
+    rasterTooltipDataCache,
+    // Functions
     addLayer,
     updateLayersShown,
     toggleBaseLayer,
@@ -181,5 +194,6 @@ export const useMapStore = defineStore('map', () => {
     getTooltip,
     setMapCenter,
     clearMapLayers,
+    cacheRasterData,
   }
 });
