@@ -2,10 +2,6 @@
 import { ref, watch, computed } from "vue";
 import {
   currentProject,
-  currentChart,
-  availableAnalysisTypes,
-  loadingAnalysisTypes,
-  currentAnalysisType,
 } from "@/store";
 import {
   getDatasetLayers,
@@ -20,12 +16,14 @@ import { AnalysisResult } from "@/types";
 import { useLayerStore } from "@/store/layer";
 import { useNetworkStore } from "@/store/network";
 import { usePanelStore } from "@/store/panel";
+import { useAnalysisStore } from "@/store/analysis";
 
 const panelStore = usePanelStore();
+const analysisStore = useAnalysisStore();
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
-  return availableAnalysisTypes.value?.filter((analysis_type) => {
+  return analysisStore.availableAnalysisTypes?.filter((analysis_type) => {
     return  !searchText.value ||
     analysis_type.name.toLowerCase().includes(searchText.value.toLowerCase())
   })
@@ -50,7 +48,7 @@ const networkInput = computed(() => {
     const networkId = analysis.inputs.network
     network = useNetworkStore().availableNetworks.find((n) => n.id === networkId)
     if (!network) {
-      const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
+      const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.analysis_type)
       network = analysisType?.input_options.network.find(
         (o: any) => o.id ===  networkId
       )
@@ -83,9 +81,9 @@ const ws = ref();
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
-    if (valid && currentProject.value && currentAnalysisType.value) {
+    if (valid && currentProject.value && analysisStore.currentAnalysisType) {
       runAnalysis(
-        currentAnalysisType.value.db_value,
+        analysisStore.currentAnalysisType.db_value,
         currentProject.value.id,
         selectedInputs.value,
       ).then((result) => {
@@ -98,9 +96,9 @@ function run() {
 }
 
 function fetchResults() {
-  if (!currentProject.value || !currentAnalysisType.value) return;
+  if (!currentProject.value || !analysisStore.currentAnalysisType) return;
   getAnalysisResults(
-    currentAnalysisType.value.db_value,
+    analysisStore.currentAnalysisType.db_value,
     currentProject.value.id
   ).then((results) => {
     availableResults.value = results;
@@ -119,11 +117,11 @@ async function fillInputsAndOutputs() {
   } else {
     fullInputs.value = Object.fromEntries(
       Object.entries(currentResult.value.inputs).map(([key, value]) => {
-        const fullValue = currentAnalysisType.value?.input_options[key]?.find(
+        const fullValue = analysisStore.currentAnalysisType?.input_options[key]?.find(
           (o: any) => o.id == value
         );
         if (fullValue) {
-          fullValue.type = currentAnalysisType.value?.input_types[key].toLowerCase()
+          fullValue.type = analysisStore.currentAnalysisType?.input_types[key].toLowerCase()
           fullValue.visible = panelStore.isVisible({[fullValue.type]: fullValue})
           fullValue.showable = panelStore.showableTypes.includes(fullValue.type)
         }
@@ -146,7 +144,7 @@ async function fillInputsAndOutputs() {
     fullOutputs.value = Object.fromEntries(
       await Promise.all(
         Object.entries(currentResult.value.outputs).map(async ([key, value]) => {
-          const type = currentAnalysisType.value?.output_types[key].toLowerCase();
+          const type = analysisStore.currentAnalysisType?.output_types[key].toLowerCase();
           if (type == 'dataset') {
             value = await getDataset(value)
           }
@@ -194,7 +192,7 @@ function createWebSocket() {
         // completed result object may become an input option
         // for another analysis type, refresh available types
         getProjectAnalysisTypes(currentProject.value.id).then((types) => {
-          availableAnalysisTypes.value = types;
+          analysisStore.availableAnalysisTypes = types;
         })
       }
     }
@@ -203,7 +201,7 @@ function createWebSocket() {
 
 watch(currentProject, createWebSocket)
 
-watch(currentAnalysisType, () => {
+watch(() => analysisStore.currentAnalysisType, () => {
   fetchResults()
 })
 
@@ -214,16 +212,21 @@ watch(tab, () => {
 });
 
 watch(
-  [currentResult, () => useLayerStore().selectedLayers, currentChart, () => panelStore.panelArrangement],
+  [
+    currentResult,
+    () => useLayerStore().selectedLayers,
+    () => analysisStore.currentChart, 
+    () => panelStore.panelArrangement
+  ],
   fillInputsAndOutputs,
   {deep: true}
 );
 </script>
 
 <template>
-  <div :class="currentAnalysisType ? 'panel-content-outer' : 'panel-content-outer with-search'">
+  <div :class="analysisStore.currentAnalysisType ? 'panel-content-outer' : 'panel-content-outer with-search'">
     <v-text-field
-      v-if="!currentAnalysisType"
+      v-if="!analysisStore.currentAnalysisType"
       v-model="searchText"
       label="Search Analytics"
       variant="outlined"
@@ -233,16 +236,16 @@ watch(
       hide-details
     />
     <v-card class="panel-content-inner">
-      <div v-if="currentAnalysisType" style="height: 100%; overflow: auto">
+      <div v-if="analysisStore.currentAnalysisType" style="height: 100%; overflow: auto">
         <v-card-title class="analysis-title">
-          {{ currentAnalysisType.name }}
+          {{ analysisStore.currentAnalysisType.name }}
             <v-tooltip text="Close" location="bottom">
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
                   icon="mdi-close"
                   variant="plain"
-                  @click="currentAnalysisType = undefined"
+                  @click="analysisStore.currentAnalysisType = undefined"
                 />
               </template>
             </v-tooltip>
@@ -258,7 +261,7 @@ watch(
             <v-form class="pa-3" @submit.prevent ref="inputForm">
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
               <v-select
-                v-for="[key, value] in Object.entries(currentAnalysisType.input_options)"
+                v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)"
                 v-model="selectedInputs[key]"
                 :key="key"
                 :label="key.replaceAll('_', ' ')"
@@ -387,7 +390,7 @@ watch(
         <v-list-item
           v-for="simType in filteredAnalysisTypes"
           :key="simType.id"
-          @click="currentAnalysisType=simType"
+          @click="analysisStore.currentAnalysisType=simType"
         >
           {{ simType.name }}
           <template v-slot:append>
@@ -396,7 +399,7 @@ watch(
           </template>
         </v-list-item>
       </v-list>
-      <v-progress-linear v-else-if="loadingAnalysisTypes" indeterminate></v-progress-linear>
+      <v-progress-linear v-else-if="analysisStore.loadingAnalysisTypes" indeterminate></v-progress-linear>
       <v-card-text v-else class="help-text">No available Analytics.</v-card-text>
     </v-card>
   </div>
