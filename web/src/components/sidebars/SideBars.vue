@@ -2,7 +2,7 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { currentUser, openSidebars, panelArrangement, theme, availableDatasets } from "@/store";
+import { panelArrangement, availableDatasets } from "@/store";
 import { logout } from "@/api/auth";
 
 import ProjectConfig from "@/components/projects/ProjectConfig.vue";
@@ -12,13 +12,16 @@ import AnalyticsPanel from "@/components/sidebars/AnalyticsPanel.vue";
 import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
+import { useAppStore } from "@/store/app";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
 
+const appStore = useAppStore();
+
 const themeManager = useTheme();
-const darkMode = ref<boolean>(theme.value === "dark");
+const darkMode = ref<boolean>(appStore.theme === "dark");
 
 function copyToClipboard(content: string) {
   navigator.clipboard.writeText(content).then(() => {
@@ -27,10 +30,10 @@ function copyToClipboard(content: string) {
 }
 
 function toggleSidebar(sidebar: "left" | "right") {
-  if (openSidebars.value.includes(sidebar)) {
-    openSidebars.value = openSidebars.value.filter((s) => s !== sidebar);
+  if (appStore.openSidebars.includes(sidebar)) {
+    appStore.openSidebars = appStore.openSidebars.filter((s) => s !== sidebar);
   } else {
-    openSidebars.value = [...openSidebars.value, sidebar];
+    appStore.openSidebars = [...appStore.openSidebars, sidebar];
   }
 }
 
@@ -42,8 +45,8 @@ function togglePanelVisibility(id: string) {
 }
 
 watch(darkMode, () => {
-  theme.value = darkMode.value ? "dark" : "light";
-  themeManager.global.name.value = theme.value;
+  appStore.theme = darkMode.value ? "dark" : "light";
+  themeManager.global.name.value = appStore.theme;
 });
 </script>
 
@@ -55,7 +58,7 @@ watch(darkMode, () => {
       location="left"
       color="background"
       :class="
-        openSidebars.includes('left') ? 'sidebar left' : 'sidebar left closed'
+        appStore.openSidebars.includes('left') ? 'sidebar left' : 'sidebar left closed'
       "
     >
       <v-toolbar class="toolbar px-5" color="background">
@@ -126,14 +129,14 @@ watch(darkMode, () => {
       location="right"
       color="background"
       :class="
-        openSidebars.includes('right')
+        appStore.openSidebars.includes('right')
           ? 'sidebar right'
           : 'sidebar right closed'
       "
     >
       <v-toolbar
         :class="
-          openSidebars.includes('right') ? 'toolbar px-5' : 'toolbar px-5 right'
+          appStore.openSidebars.includes('right') ? 'toolbar px-5' : 'toolbar px-5 right'
         "
         color="background"
       >
@@ -143,8 +146,8 @@ watch(darkMode, () => {
           v-tooltip="'Toggle Sidebar'"
           @click="toggleSidebar('right')"
         ></v-icon>
-        <div v-if="currentUser">
-          {{ currentUser.first_name }}
+        <div v-if="appStore.currentUser">
+          {{ appStore.currentUser.first_name }}
 
           <v-menu :close-on-content-click="false">
             <template v-slot:activator="{ props }">

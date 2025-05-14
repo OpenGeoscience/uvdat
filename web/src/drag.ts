@@ -1,5 +1,6 @@
-import { draggingFrom, draggingPanel, dragModes, openSidebars, panelArrangement } from "./store";
+import { draggingFrom, draggingPanel, dragModes, panelArrangement } from "./store";
 import { FloatingPanelConfig } from "./types";
+import { useAppStore } from "./store/app";
 
 export function startDrag(
     event: MouseEvent,
@@ -17,6 +18,8 @@ export function startDrag(
 }
 
 export function dragPanel(event: MouseEvent) {
+    const appStore = useAppStore();
+    
     let offsetX = -5;
     const offsetY = 30;
     const minHeight = 100;
@@ -41,7 +44,7 @@ export function dragPanel(event: MouseEvent) {
             )
             if (
                 allowDock &&
-                openSidebars.value.includes("left") &&
+                appStore.openSidebars.includes("left") &&
                 event.clientX < 350
             ) {
                 // dock left
@@ -54,7 +57,7 @@ export function dragPanel(event: MouseEvent) {
                 panel.order = Math.ceil(event.clientY / (document.body.clientHeight / currentDocked.length))
             } else if (
                 allowDock &&
-                openSidebars.value.includes("right") &&
+                appStore.openSidebars.includes("right") &&
                 event.clientX > document.body.clientWidth - 350
             ) {
                 // dock right

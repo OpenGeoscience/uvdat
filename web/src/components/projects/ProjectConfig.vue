@@ -4,7 +4,6 @@ import {
   availableProjects,
   projectConfigMode,
   currentProject,
-  currentUser,
   loadingProjects,
   loadingDatasets,
 } from "@/store";
@@ -23,6 +22,7 @@ import {
   loadProjects,
 } from "@/storeFunctions";
 import { useMapStore } from "@/store/map";
+import { useAppStore } from "@/store/app";
 
 const currentTab = ref();
 const searchText = ref();
@@ -46,6 +46,7 @@ const otherDatasets: ComputedRef<Dataset[]> = computed(() => {
 const otherSelectedDatasetIds: Ref<number[]> = ref([]);
 
 const permissions = computed(() => {
+  const appStore = useAppStore();
   const ret = Object.fromEntries(
     availableProjects.value.map((p) => {
       let perm = "follower";
@@ -53,13 +54,13 @@ const permissions = computed(() => {
         p = selectedProject.value;
       }
       if (
-        p.owner?.id === currentUser.value?.id ||
-        currentUser.value?.is_superuser
+        p.owner?.id === appStore.currentUser?.id ||
+        appStore.currentUser?.is_superuser
       ) {
         perm = "owner";
       } else if (
-        currentUser.value &&
-        p.collaborators.map((u) => u.id).includes(currentUser.value.id)
+        appStore.currentUser &&
+        p.collaborators.map((u) => u.id).includes(appStore.currentUser.id)
       ) {
         perm = "collaborator";
       }

@@ -1,9 +1,9 @@
 import { RasterTileSource } from "maplibre-gl";
 import { Layer, Network, Style } from "./types";
 import { THEMES } from "./themes";
-import { theme } from "./store";
 import { useMapStore } from "./store/map";
 import { useLayerStore } from "./store/layer";
+import { useAppStore } from "./store/app";
 
 
 // ------------------
@@ -34,7 +34,7 @@ export const rasterColormaps = [
 
 export function getDefaultColor() {
     let colorList = THEMES.light.colors;
-    if (theme.value === 'dark') {
+    if (useAppStore().theme === 'dark') {
         colorList = THEMES.dark.colors;
     }
     const colorNames = ['info', 'success', 'error'];
