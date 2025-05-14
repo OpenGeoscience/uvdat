@@ -4,7 +4,6 @@ import {
   availableProjects,
   currentProject,
   availableDatasets,
-  selectedSourceRegions,
   polls,
   availableCharts,
   currentChart,
@@ -56,7 +55,6 @@ export function clearProjectState() {
   useNetworkStore().availableNetworks = [];
   availableAnalysisTypes.value = undefined;
   currentAnalysisType.value = undefined;
-  selectedSourceRegions.value = [];
 }
 
 export function loadProjects() {

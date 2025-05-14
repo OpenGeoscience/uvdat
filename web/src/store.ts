@@ -4,7 +4,6 @@ import {
   Project,
   Chart,
   Dataset,
-  SourceRegion,
   AnalysisType,
   FloatingPanelConfig,
 } from "./types.js";
@@ -34,9 +33,6 @@ export const currentChart = ref<Chart>();
 export const loadingAnalysisTypes = ref<boolean>(false);
 export const availableAnalysisTypes = ref<AnalysisType[]>();
 export const currentAnalysisType = ref<AnalysisType>();
-
-// Regions
-export const selectedSourceRegions = ref<SourceRegion[]>([]);
 
 // ETC
 export const currentUser = ref<User>();
