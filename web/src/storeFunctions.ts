@@ -9,7 +9,6 @@ import {
   currentChart,
   availableAnalysisTypes,
   currentAnalysisType,
-  currentError,
   draggingPanel,
   draggingFrom,
   dragModes,
@@ -22,6 +21,7 @@ import {
 import { useMapStore } from '@/store/map';
 import { useLayerStore } from "./store/layer";
 import { useNetworkStore } from "@/store/network";
+import { useAppStore } from "@/store/app";
 
 import {
   getProjects,
@@ -38,7 +38,7 @@ export function clearState() {
   clearProjectState();
   resetPanels();
   useMapStore().showMapBaseLayer = true;
-  currentError.value = undefined;
+  useAppStore().currentError = undefined;
   polls.value = {};
   draggingPanel.value = undefined;
   draggingFrom.value = undefined;

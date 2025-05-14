@@ -2,9 +2,9 @@
 import { ref } from "vue";
 import html2canvas from "html2canvas";
 
-import { openSidebars } from "@/store";
 import { useMapStore } from "@/store/map";
 import { useLayerStore } from "@/store/layer";
+import { useAppStore } from "@/store/app";
 
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);
@@ -66,7 +66,7 @@ function takeScreenshot(save: boolean) {
   <div
     id="controls-bar"
     :class="
-      openSidebars.includes('left') ? 'controls-bar shifted' : 'controls-bar'
+      useAppStore().openSidebars.includes('left') ? 'controls-bar shifted' : 'controls-bar'
     "
   >
     <v-btn color="primary" class="control-btn" @click="useMapStore().toggleBaseLayer" variant="flat">

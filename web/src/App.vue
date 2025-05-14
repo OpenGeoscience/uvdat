@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
 import {
-  currentUser,
-  currentError,
   projectConfigMode,
   draggingPanel,
 } from "./store";
+import { useAppStore } from "./store/app";
 import { oauthClient } from "./api/auth";
 import { clearState, loadProjects } from "./storeFunctions";
 import { dragPanel, stopDrag } from "@/drag";
@@ -13,7 +12,9 @@ import Map from "./components/map/Map.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
-const showError = computed(() => currentError.value !== undefined);
+const appStore = useAppStore();
+const showError = computed(() => appStore.currentError !== undefined);
+const currentUser = computed(() => appStore.currentUser);
 
 function onReady() {
   if (currentUser.value) {
@@ -54,7 +55,7 @@ watch(projectConfigMode, loadProjects);
         <v-btn
           icon
           variant="flat"
-          @click.stop="currentError = undefined"
+          @click.stop="appStore.currentError = undefined"
           class="pa-3"
           style="float: right"
         >
@@ -62,7 +63,7 @@ watch(projectConfigMode, loadProjects);
         </v-btn>
         <v-card-title> Error: </v-card-title>
         <v-card-text>
-          {{ currentError }}
+          {{ appStore.currentError }}
         </v-card-text>
       </v-card>
     </v-overlay>

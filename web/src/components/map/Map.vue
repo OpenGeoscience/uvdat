@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { Map, Popup, AttributionControl } from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
-import { theme, openSidebars } from "@/store";
+import { useAppStore } from "@/store/app";
 import { useMapStore } from "@/store/map";
 import { useLayerStore } from "@/store/layer";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -43,18 +43,20 @@ attributionControl.onAdd = (map: Map): HTMLElement => {
 };
 
 function setAttributionControlStyle() {
+  const appStore = useAppStore();
+
   const container = attributionControl._container;
   container.style.padding = "3px 8px";
   container.style.marginRight = "5px";
   container.style.borderRadius = "15px";
   container.style.position = "relative";
-  container.style.right = openSidebars.value.includes("right")
+  container.style.right = appStore.openSidebars.includes("right")
     ? "360px"
     : "0px";
-  container.style.background = theme.value === "light" ? "white" : "black";
+  container.style.background = appStore.theme === "light" ? "white" : "black";
   container.childNodes.forEach((child) => {
     const childElement = child as HTMLElement;
-    childElement.style.color = theme.value === "light" ? "black" : "white";
+    childElement.style.color = appStore.theme === "light" ? "black" : "white";
   });
 }
 
@@ -92,7 +94,7 @@ function createMap() {
         {
           id: "base-tiles",
           type: "raster",
-          source: theme.value,
+          source: useAppStore().theme,
           minzoom: 0,
           // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
           maxzoom: 22 + 1,
@@ -152,14 +154,14 @@ onMounted(() => {
   useMapStore().setMapCenter(undefined, true);
 });
 
-watch(theme, () => {
+watch(() => useAppStore().theme, (value) => {
   const mapStore = useMapStore();
   const map = mapStore.getMap();
   map.removeLayer("base-tiles");
   map.addLayer({
     id: "base-tiles",
     type: "raster",
-    source: theme.value,
+    source: value,
     minzoom: 0,
     maxzoom: 22 + 1,
     layout: {
@@ -170,7 +172,7 @@ watch(theme, () => {
   useLayerStore().updateLayersShown();
 });
 
-watch(openSidebars, () => {
+watch(() => useAppStore().openSidebars, () => {
   setAttributionControlStyle();
 });
 </script>

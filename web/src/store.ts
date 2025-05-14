@@ -1,6 +1,5 @@
 import { ref } from "vue";
 import {
-  User,
   Project,
   Chart,
   Dataset,
@@ -8,9 +7,7 @@ import {
   FloatingPanelConfig,
 } from "./types.js";
 
-// UI Config
-export const theme = ref<"dark" | "light">("light");
-export const openSidebars = ref<("left" | "right")[]>(["left", "right"]);
+// panel state
 export const panelArrangement = ref<FloatingPanelConfig[]>([]);
 export const draggingPanel = ref<string | undefined>();
 export const draggingFrom = ref<{ x: number; y: number } | undefined>();
@@ -21,8 +18,7 @@ export const loadingProjects = ref<boolean>(true);
 export const availableProjects = ref<Project[]>([]);
 export const currentProject = ref<Project>();
 export const projectConfigMode = ref<"new" | "existing">();
-
-// Datasets
+export const polls = ref<Record<number, number>>({});
 export const loadingDatasets = ref<boolean>(false);
 export const availableDatasets = ref<Dataset[]>();
 
@@ -33,8 +29,3 @@ export const currentChart = ref<Chart>();
 export const loadingAnalysisTypes = ref<boolean>(false);
 export const availableAnalysisTypes = ref<AnalysisType[]>();
 export const currentAnalysisType = ref<AnalysisType>();
-
-// ETC
-export const currentUser = ref<User>();
-export const currentError = ref<string>();
-export const polls = ref<Record<number, number>>({});
