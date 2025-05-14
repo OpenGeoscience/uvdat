@@ -3,10 +3,9 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useAppStore } from './app';
 import { getDataset } from '@/api/rest';
-import { availableAnalysisTypes } from '@/store';
 import { useLayerStore } from './layer';
-import { currentChart } from '@/store';
 import { getDatasetLayers } from '@/api/rest';
+import { useAnalysisStore } from './analysis';
 
 const showableTypes = ['chart', 'dataset', 'network', 'layer', 'analysisresult', 'rasterdata', 'vectordata']
 
@@ -70,6 +69,8 @@ export const usePanelStore = defineStore('panel', () => {
     const draggingPanel = ref<string | undefined>();
     const draggingFrom = ref<{ x: number; y: number } | undefined>();
     const dragModes = ref<("position" | "height" | "width")[]>();
+
+    const analysisStore = useAnalysisStore();
 
     function resetPanels() {
         panelArrangement.value = defaultPanelArrangement();
@@ -184,7 +185,7 @@ export const usePanelStore = defineStore('panel', () => {
         if (showable.chart) {
             const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
             if (!chartPanel) return false;
-            return currentChart.value?.id == showable.chart.id && chartPanel.visible
+            return analysisStore.currentChart?.id == showable.chart.id && chartPanel.visible
         } else if (showable.dataset) {
             return layerStore.selectedLayers.some((layer) => {
                 return layer.dataset.id === showable.dataset?.id && layer.visible
@@ -196,7 +197,7 @@ export const usePanelStore = defineStore('panel', () => {
         } else if (showable.network) {
             return isVisible({dataset: showable.network.dataset})
         } else if (showable.analysisresult) {
-            const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
+            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
             if (analysisType) {
                 const showableChildren: Record<string, any>[] = []
                 Object.entries(showable.analysisresult.outputs).forEach(
@@ -238,7 +239,7 @@ export const usePanelStore = defineStore('panel', () => {
         if (showable.chart) {
             const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
             if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
-            currentChart.value = showable.chart
+            analysisStore.currentChart = showable.chart
         } else if (showable.dataset) {
             getDatasetLayers(showable.dataset.id).then((layers) => {
                 layers.forEach((layer) => {show({layer})})
@@ -258,7 +259,7 @@ export const usePanelStore = defineStore('panel', () => {
         } else if (showable.network) {
             show({dataset: showable.network.dataset})
         } else if (showable.analysisresult) {
-            const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
+            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
             if (analysisType) {
                 Object.entries(showable.analysisresult.outputs).map(([outputKey, outputValue]) => {
                     const type = analysisType.output_types[outputKey].toLowerCase()

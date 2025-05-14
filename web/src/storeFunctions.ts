@@ -5,13 +5,7 @@ import {
   currentProject,
   availableDatasets,
   polls,
-  availableCharts,
-  currentChart,
-  availableAnalysisTypes,
-  currentAnalysisType,
   loadingDatasets,
-  loadingAnalysisTypes,
-  loadingCharts,
   loadingProjects,
 } from "./store";
 
@@ -20,6 +14,7 @@ import { useLayerStore } from "./store/layer";
 import { useNetworkStore } from "@/store/network";
 import { useAppStore } from "@/store/app";
 import { usePanelStore } from "@/store/panel";
+import { useAnalysisStore } from "@/store/analysis";
 
 import {
   getProjects,
@@ -50,11 +45,13 @@ export function clearProjectState() {
   useLayerStore().selectedLayers = [];
   useLayerStore().selectedLayerStyles = {};
   useMapStore().clickedFeature = undefined;
-  availableCharts.value = undefined;
-  currentChart.value = undefined;
   useNetworkStore().availableNetworks = [];
-  availableAnalysisTypes.value = undefined;
-  currentAnalysisType.value = undefined;
+
+  const analysisStore = useAnalysisStore(); 
+  analysisStore.availableCharts = undefined;
+  analysisStore.currentChart = undefined;
+  analysisStore.availableAnalysisTypes = undefined;
+  analysisStore.currentAnalysisType = undefined;
 }
 
 export function loadProjects() {
@@ -88,13 +85,14 @@ export function pollForProcessingDataset(datasetId: number) {
 
 watch(currentProject, () => {
   const networkStore = useNetworkStore();
+  const analysisStore = useAnalysisStore(); 
   clearProjectState();
   useMapStore().setMapCenter(currentProject.value);
   useMapStore().clearMapLayers();
   if (currentProject.value) {
     loadingDatasets.value = true;
-    loadingCharts.value = true;
-    loadingAnalysisTypes.value = true;
+    analysisStore.loadingCharts = true;
+    analysisStore.loadingAnalysisTypes = true;
     networkStore.loadingNetworks = true;
     getProjectDatasets(currentProject.value.id).then(async (datasets) => {
       availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
@@ -104,9 +102,9 @@ watch(currentProject, () => {
       loadingDatasets.value = false;
     });
     getProjectCharts(currentProject.value.id).then((charts) => {
-      availableCharts.value = charts;
-      currentChart.value = undefined;
-      loadingCharts.value = false;
+      analysisStore.availableCharts = charts;
+      analysisStore.currentChart = undefined;
+      analysisStore.loadingCharts = false;
     });
     getProjectNetworks(currentProject.value.id).then((networks) => {
       networkStore.availableNetworks = networks;
@@ -114,9 +112,9 @@ watch(currentProject, () => {
       networkStore.loadingNetworks = false;
     })
     getProjectAnalysisTypes(currentProject.value.id).then((types) => {
-      availableAnalysisTypes.value = types;
-      currentAnalysisType.value = undefined;
-      loadingAnalysisTypes.value = false;
+      analysisStore.availableAnalysisTypes = types;
+      analysisStore.currentAnalysisType = undefined;
+      analysisStore.loadingAnalysisTypes = false;
     })
   }
 });
