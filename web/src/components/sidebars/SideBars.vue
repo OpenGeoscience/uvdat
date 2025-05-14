@@ -2,7 +2,6 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { availableDatasets } from "@/store";
 import { logout } from "@/api/auth";
 
 import ProjectConfig from "@/components/projects/ProjectConfig.vue";
@@ -12,15 +11,19 @@ import AnalyticsPanel from "@/components/sidebars/AnalyticsPanel.vue";
 import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
+
 import { useAppStore } from "@/store/app";
 import { usePanelStore } from "@/store/panel";
+import { useProjectStore } from "@/store/project";
+
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
-
+  
 const appStore = useAppStore();
 const panelStore = usePanelStore();
+const projectStore = useProjectStore();
 
 const themeManager = useTheme();
 const darkMode = ref<boolean>(appStore.theme === "dark");
@@ -116,7 +119,7 @@ watch(darkMode, () => {
           :id="panel.id"
           :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
         >
-          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
+          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="projectStore.availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
           <ChartsPanel v-else-if="panel.id === 'charts'"/>
           <NetworksPanel v-else-if="panel.id === 'networks'" />
@@ -227,7 +230,7 @@ watch(darkMode, () => {
           :id="panel.id"
           :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
         >
-          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
+          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="projectStore.availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
           <ChartsPanel v-else-if="panel.id === 'charts'"/>
           <NetworksPanel v-else-if="panel.id === 'networks'" />

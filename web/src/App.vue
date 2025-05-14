@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
-import { projectConfigMode } from "./store";
 import { useAppStore } from "./store/app";
 import { usePanelStore } from "@/store/panel";
+import { useProjectStore } from "@/store/project";
 import { oauthClient } from "./api/auth";
-import { clearState, loadProjects } from "./storeFunctions";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
 const appStore = useAppStore();
 const panelStore = usePanelStore();
+const projectStore = useProjectStore();
+
 const showError = computed(() => appStore.currentError !== undefined);
 const currentUser = computed(() => appStore.currentUser);
 
 function onReady() {
   if (currentUser.value) {
-    clearState();
-    loadProjects();
+    projectStore.clearState();
+    projectStore.loadProjects();
   }
 }
 
@@ -27,7 +28,7 @@ const login = () => {
 
 onMounted(onReady);
 watch(currentUser, onReady);
-watch(projectConfigMode, loadProjects);
+
 </script>
 
 <template>

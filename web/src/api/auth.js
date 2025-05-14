@@ -1,9 +1,8 @@
 import axios from "axios";
 import OauthClient from "@resonant/oauth-client";
-import { currentProject } from "@/store";
-import { clearState } from "@/storeFunctions";
 import { useMapStore } from "@/store/map";
 import { useAppStore } from "@/store/app";
+import { useProjectStore } from "@/store/project";
 
 export const baseURL = `${process.env.VUE_APP_API_ROOT}api/v1/`;
 
@@ -61,8 +60,11 @@ apiClient.interceptors.response.use(
 
 export const logout = async () => {
   await oauthClient.logout();
+
   useAppStore().currentUser = undefined;
-  currentProject.value = undefined;
-  clearState();
+
+  useProjectStore().currentProject = undefined;
+  useProjectStore().clearState();
+  
   useMapStore().setMapCenter();
 };
