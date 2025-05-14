@@ -2,7 +2,7 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { panelArrangement, availableDatasets } from "@/store";
+import { availableDatasets } from "@/store";
 import { logout } from "@/api/auth";
 
 import ProjectConfig from "@/components/projects/ProjectConfig.vue";
@@ -13,12 +13,14 @@ import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
 import { useAppStore } from "@/store/app";
+import { usePanelStore } from "@/store/panel";
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
 
 const appStore = useAppStore();
+const panelStore = usePanelStore();
 
 const themeManager = useTheme();
 const darkMode = ref<boolean>(appStore.theme === "dark");
@@ -38,7 +40,7 @@ function toggleSidebar(sidebar: "left" | "right") {
 }
 
 function togglePanelVisibility(id: string) {
-  panelArrangement.value = panelArrangement.value.map((p) => {
+  panelStore.panelArrangement = panelStore.panelArrangement.map((p) => {
     if (p.id == id) p.visible = !p.visible;
     return p;
   });
@@ -110,9 +112,9 @@ watch(darkMode, () => {
       <ProjectConfig />
       <div class="panel-set">
         <FloatingPanel
-          v-for="panel, index in panelArrangement.filter((p) => p.dock == 'left')"
+          v-for="panel, index in panelStore.panelArrangement.filter((p) => p.dock == 'left')"
           :id="panel.id"
-          :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
+          :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
         >
           <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
@@ -199,11 +201,11 @@ watch(darkMode, () => {
             ></v-icon>
           </template>
           <v-list
-            :items="panelArrangement.filter((p) => p.closeable)"
+            :items="panelStore.panelArrangement.filter((p) => p.closeable)"
             item-title="label"
             item-value="id"
             selectable
-            :selected="panelArrangement.filter((p) => p.visible)"
+            :selected="panelStore.panelArrangement.filter((p) => p.visible)"
             @click:select="(item) => togglePanelVisibility(item.id as string)"
             select-strategy="leaf"
             return-object
@@ -221,9 +223,9 @@ watch(darkMode, () => {
       </div>
       <div class="panel-set">
         <FloatingPanel
-          v-for="panel, index in panelArrangement.filter((p) => p.dock == 'right')"
+          v-for="panel, index in panelStore.panelArrangement.filter((p) => p.dock == 'right')"
           :id="panel.id"
-          :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
+          :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
         >
           <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>

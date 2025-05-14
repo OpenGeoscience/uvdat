@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { getDatasetNetworks, getNetworkGCC } from '@/api/rest';
 import { Dataset, Network, NetworkEdge, NetworkNode } from '@/types';
 import { styleNetwork } from '@/layerStyles';
-import { panelArrangement } from '@/store';
+import { usePanelStore } from '@/store/panel';
 interface GCCResult {
     deactivatedNodes: number[];
     gcc: number[];
@@ -42,7 +42,8 @@ export const useNetworkStore = defineStore('network', () => {
             }
         });
         if (availableNetworks.value.length) {
-            panelArrangement.value = panelArrangement.value.map((panel) => {
+            const panelStore = usePanelStore();
+            panelStore.panelArrangement = panelStore.panelArrangement.map((panel) => {
                 if (panel.id === 'networks') panel.visible = true;
                 return panel;
             });

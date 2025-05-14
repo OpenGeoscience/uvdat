@@ -4,14 +4,8 @@ import {
   Chart,
   Dataset,
   AnalysisType,
-  FloatingPanelConfig,
 } from "./types.js";
 
-// panel state
-export const panelArrangement = ref<FloatingPanelConfig[]>([]);
-export const draggingPanel = ref<string | undefined>();
-export const draggingFrom = ref<{ x: number; y: number } | undefined>();
-export const dragModes = ref<("position" | "height" | "width")[]>();
 
 // Project
 export const loadingProjects = ref<boolean>(true);
