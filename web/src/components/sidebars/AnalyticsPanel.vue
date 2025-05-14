@@ -6,7 +6,6 @@ import {
   availableAnalysisTypes,
   loadingAnalysisTypes,
   currentAnalysisType,
-  panelArrangement,
 } from "@/store";
 import {
   getDatasetLayers,
@@ -18,10 +17,11 @@ import {
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
-import { isVisible, show, showableTypes } from "@/panelFunctions"
 import { useLayerStore } from "@/store/layer";
 import { useNetworkStore } from "@/store/network";
+import { usePanelStore } from "@/store/panel";
 
+const panelStore = usePanelStore();
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
@@ -55,7 +55,7 @@ const networkInput = computed(() => {
         (o: any) => o.id ===  networkId
       )
     }
-    const visible = isVisible({network})
+    const visible = panelStore.isVisible({network})
     network = {
       ...network,
       visible
@@ -124,8 +124,8 @@ async function fillInputsAndOutputs() {
         );
         if (fullValue) {
           fullValue.type = currentAnalysisType.value?.input_types[key].toLowerCase()
-          fullValue.visible = isVisible({[fullValue.type]: fullValue})
-          fullValue.showable = showableTypes.includes(fullValue.type)
+          fullValue.visible = panelStore.isVisible({[fullValue.type]: fullValue})
+          fullValue.showable = panelStore.showableTypes.includes(fullValue.type)
         }
         return [key, fullValue || value];
       })
@@ -134,7 +134,7 @@ async function fillInputsAndOutputs() {
       const floodDataset = {
         id: fullInputs.value?.flood_simulation.outputs.flood as number
       }
-      if (isVisible({dataset: floodDataset})) {
+      if (panelStore.isVisible({dataset: floodDataset})) {
         getDatasetLayers(floodDataset.id).then((layers) => {
           additionalAnimationLayers.value = layers;
         })
@@ -155,8 +155,8 @@ async function fillInputsAndOutputs() {
           }
           if (typeof value === 'object') {
             value.type = type
-            value.visible = isVisible({[type]: value})
-            value.showable = showableTypes.includes(value.type)
+            value.visible = panelStore.isVisible({[type]: value})
+            value.showable = panelStore.showableTypes.includes(value.type)
           } else {
             value = {
               name: value,
@@ -214,7 +214,7 @@ watch(tab, () => {
 });
 
 watch(
-  [currentResult, () => useLayerStore().selectedLayers, currentChart, panelArrangement],
+  [currentResult, () => useLayerStore().selectedLayers, currentChart, () => panelStore.panelArrangement],
   fillInputsAndOutputs,
   {deep: true}
 );
@@ -306,7 +306,7 @@ watch(
                             v-if="value.showable && !value.visible"
                             density="compact"
                             color="primary"
-                            @click="() => show({[value.type]: value})"
+                            @click="() => panelStore.show({[value.type]: value})"
                           >
                             Show
                         </v-btn>
@@ -364,7 +364,7 @@ watch(
                               color="primary"
                               density="compact"
                               style="display: block"
-                              @click="() => show({[value.type]: value})"
+                              @click="() => panelStore.show({[value.type]: value})"
                             >
                               Show
                             </v-btn>

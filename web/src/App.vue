@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
-import {
-  projectConfigMode,
-  draggingPanel,
-} from "./store";
+import { projectConfigMode } from "./store";
 import { useAppStore } from "./store/app";
+import { usePanelStore } from "@/store/panel";
 import { oauthClient } from "./api/auth";
 import { clearState, loadProjects } from "./storeFunctions";
-import { dragPanel, stopDrag } from "@/drag";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
 const appStore = useAppStore();
+const panelStore = usePanelStore();
 const showError = computed(() => appStore.currentError !== undefined);
 const currentUser = computed(() => appStore.currentUser);
 
@@ -69,9 +67,9 @@ watch(projectConfigMode, loadProjects);
     </v-overlay>
     <div>
       <div
-        :class="draggingPanel ? 'main-area no-select' : 'main-area'"
-        @mousemove="dragPanel"
-        @mouseup="stopDrag"
+        :class="panelStore.draggingPanel ? 'main-area no-select' : 'main-area'"
+        @mousemove="panelStore.dragPanel"
+        @mouseup="panelStore.stopDrag"
       >
         <Map />
         <SideBars />

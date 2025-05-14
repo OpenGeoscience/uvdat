@@ -9,9 +9,6 @@ import {
   currentChart,
   availableAnalysisTypes,
   currentAnalysisType,
-  draggingPanel,
-  draggingFrom,
-  dragModes,
   loadingDatasets,
   loadingAnalysisTypes,
   loadingCharts,
@@ -22,6 +19,7 @@ import { useMapStore } from '@/store/map';
 import { useLayerStore } from "./store/layer";
 import { useNetworkStore } from "@/store/network";
 import { useAppStore } from "@/store/app";
+import { usePanelStore } from "@/store/panel";
 
 import {
   getProjects,
@@ -33,16 +31,18 @@ import {
   getProjectNetworks,
 } from "@/api/rest";
 import { Dataset } from "./types";
-import { resetPanels } from "./panelFunctions";
+
 export function clearState() {
   clearProjectState();
-  resetPanels();
   useMapStore().showMapBaseLayer = true;
   useAppStore().currentError = undefined;
   polls.value = {};
-  draggingPanel.value = undefined;
-  draggingFrom.value = undefined;
-  dragModes.value = [];
+  
+  const panelStore = usePanelStore();
+  panelStore.resetPanels();
+  panelStore.draggingPanel = undefined;
+  panelStore.draggingFrom = undefined;
+  panelStore.dragModes = [];
 }
 
 export function clearProjectState() {

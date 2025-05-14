@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
-import { isVisible, show } from '@/panelFunctions';
 import { styleNetwork } from '@/layerStyles';
 import { useNetworkStore } from "@/store/network";
+import { usePanelStore } from "@/store/panel";
 
 import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
 const networkStore = useNetworkStore();
+const panelStore = usePanelStore();
 
 const searchText = ref();
 const filteredNetworks = computed(() => {
@@ -69,14 +70,14 @@ const headers = [
 
 function showNetwork() {
     if (networkStore.currentNetwork) {
-        show({network: networkStore.currentNetwork})
+        panelStore.show({network: networkStore.currentNetwork})
         styleNetwork(networkStore.currentNetwork)
     }
 }
 
 function isNetworkVisible() {
     if (networkStore.currentNetwork) {
-        return isVisible({network: networkStore.currentNetwork})
+        return panelStore.isVisible({network: networkStore.currentNetwork})
     }
     return true
 }
