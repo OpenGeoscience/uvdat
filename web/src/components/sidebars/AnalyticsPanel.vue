@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import {
-  currentProject,
-} from "@/store";
-import {
   getDatasetLayers,
   getAnalysisResults,
   runAnalysis,
@@ -13,13 +10,16 @@ import {
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
+
 import { useLayerStore } from "@/store/layer";
 import { useNetworkStore } from "@/store/network";
 import { usePanelStore } from "@/store/panel";
 import { useAnalysisStore } from "@/store/analysis";
+import { useProjectStore } from "@/store/project";
 
 const panelStore = usePanelStore();
 const analysisStore = useAnalysisStore();
+const projectStore = useProjectStore();
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
@@ -81,10 +81,10 @@ const ws = ref();
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
-    if (valid && currentProject.value && analysisStore.currentAnalysisType) {
+    if (valid && projectStore.currentProject && analysisStore.currentAnalysisType) {
       runAnalysis(
         analysisStore.currentAnalysisType.db_value,
-        currentProject.value.id,
+        projectStore.currentProject.id,
         selectedInputs.value,
       ).then((result) => {
         tab.value = 'old';
@@ -96,10 +96,10 @@ function run() {
 }
 
 function fetchResults() {
-  if (!currentProject.value || !analysisStore.currentAnalysisType) return;
+  if (!projectStore.currentProject || !analysisStore.currentAnalysisType) return;
   getAnalysisResults(
     analysisStore.currentAnalysisType.db_value,
-    currentProject.value.id
+    projectStore.currentProject.id
   ).then((results) => {
     availableResults.value = results;
     if (currentResult.value) {
@@ -169,9 +169,9 @@ async function fillInputsAndOutputs() {
 
 function createWebSocket() {
   if (ws.value) ws.value.close()
-  if (currentProject.value) {
+  if (projectStore.currentProject) {
     const urlBase = `${process.env.VUE_APP_API_ROOT}ws/`
-    const url = `${urlBase}analytics/project/${currentProject.value.id}/results/`
+    const url = `${urlBase}analytics/project/${projectStore.currentProject.id}/results/`
     ws.value = new WebSocket(url);
     ws.value.onmessage = (event: any) => {
       const data = JSON.parse(JSON.parse(event.data))
@@ -188,10 +188,10 @@ function createWebSocket() {
           (result) => result.id === data.id ? data : result
         )
       }
-      if (data.completed && currentProject.value) {
+      if (data.completed && projectStore.currentProject) {
         // completed result object may become an input option
         // for another analysis type, refresh available types
-        getProjectAnalysisTypes(currentProject.value.id).then((types) => {
+        getProjectAnalysisTypes(projectStore.currentProject.id).then((types) => {
           analysisStore.availableAnalysisTypes = types;
         })
       }
@@ -199,7 +199,7 @@ function createWebSocket() {
   }
 }
 
-watch(currentProject, createWebSocket)
+watch(() => projectStore.currentProject, createWebSocket)
 
 watch(() => analysisStore.currentAnalysisType, () => {
   fetchResults()

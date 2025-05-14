@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from "vue";
 import { Dataset } from "@/types";
-import { loadingDatasets } from "@/store";
+import { useProjectStore } from "@/store/project";
 
+const projectStore = useProjectStore();
 const props = defineProps<{
     datasets: Dataset[] | undefined;
 }>();
@@ -73,7 +74,7 @@ watch(filteredDatasets, expandAllGroups)
           </v-expansion-panel-text>
         </v-expansion-panel>
       </v-expansion-panels>
-      <v-progress-linear v-else-if="loadingDatasets" indeterminate></v-progress-linear>
+      <v-progress-linear v-else-if="projectStore.loadingDatasets" indeterminate></v-progress-linear>
       <v-card-text class="help-text" v-else>No available Datasets.</v-card-text>
     </v-card>
   </div>
