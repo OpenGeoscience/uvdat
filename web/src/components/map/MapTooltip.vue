@@ -7,9 +7,12 @@ import proj4 from "proj4";
 import RecursiveTable from "../RecursiveTable.vue";
 import { useMapStore, useLayerStore, useNetworkStore } from "@/store";
 
+const mapStore = useMapStore();
+const layerStore = useLayerStore();
+const networkStore = useNetworkStore();
 
-const rasterTooltipDataCache = computed(() => useLayerStore().rasterTooltipDataCache);
-const clickedFeature = computed(() => useMapStore().clickedFeature);
+const rasterTooltipDataCache = computed(() => layerStore.rasterTooltipDataCache);
+const clickedFeature = computed(() => mapStore.clickedFeature);
 const clickedFeatureProperties = computed(() => {
   if (clickedFeature.value === undefined) {
     return {};
@@ -40,7 +43,7 @@ const clickedFeatureSourceType = computed(() => {
 const rasterValue = computed(() => {
   if (clickedFeature.value && clickedFeatureSourceType.value === 'raster') {
     const feature = clickedFeature.value.feature;
-    const { raster } = useLayerStore().getDBObjectsForSourceID(feature.source);
+    const { raster } = layerStore.getDBObjectsForSourceID(feature.source);
     if (raster?.id) {
       const data = rasterTooltipDataCache.value[raster.id]?.data;
       if (data) {
@@ -79,7 +82,7 @@ function zoomToRegion() {
   }
 
   // Set map zoom to match bounding box of region
-  const map = useMapStore().getMap();
+  const map = mapStore.getMap();
   const bbox = turf.bbox(clickedFeature.value.feature.geometry);
   if (bbox.length !== 4) {
     throw new Error("Returned bbox should have 4 elements!");
@@ -89,16 +92,16 @@ function zoomToRegion() {
 }
 
 // Check if the layer associated with the clicked feature is still selected and visible
-const selectedLayers = computed(() => useLayerStore().selectedLayers);
+const selectedLayers = computed(() => layerStore.selectedLayers);
 watch(selectedLayers, () => {
   if (clickedFeature.value === undefined) {
     return;
   }
   const feature = clickedFeature.value.feature;
   const sourceId = feature.source;
-  const { layer } = useLayerStore().getDBObjectsForSourceID(sourceId);
+  const { layer } = layerStore.getDBObjectsForSourceID(sourceId);
   if (!layer?.visible) {
-    useMapStore().clickedFeature = undefined;
+    mapStore.clickedFeature = undefined;
   }
 });
 
@@ -107,7 +110,7 @@ watch(selectedLayers, () => {
 watch(
   clickedFeature,
   () => {
-    const tooltip = useMapStore().getTooltip();
+    const tooltip = mapStore.getTooltip();
     if (clickedFeature.value === undefined) {
       tooltip.remove();
       return;
@@ -115,14 +118,14 @@ watch(
     // Set tooltip position. Give feature clicks priority
     tooltip.setLngLat(clickedFeature.value.pos);
     // This makes the tooltip visible
-    tooltip.addTo(useMapStore().getMap());
+    tooltip.addTo(mapStore.getMap());
   }
 );
 
 const clickedFeatureIsDeactivatedNode = computed(
   () =>
     clickedFeature.value &&
-    useNetworkStore().availableNetworks.find((network) => {
+    networkStore.availableNetworks.find((network) => {
       return network.deactivated?.nodes.includes(
         clickedFeature.value?.feature.properties.node_id
       )
@@ -136,9 +139,9 @@ function toggleNodeHandler() {
   const feature = clickedFeature.value.feature;
   const sourceId = feature.source;
   const nodeId = clickedFeature.value.feature.properties.node_id;
-  const { dataset, layer } = useLayerStore().getDBObjectsForSourceID(sourceId);
+  const { dataset, layer } = layerStore.getDBObjectsForSourceID(sourceId);
   if (nodeId && dataset && layer) {
-    useNetworkStore().toggleNodeActive(nodeId, dataset)
+    networkStore.toggleNodeActive(nodeId, dataset)
   }
 };
 </script>

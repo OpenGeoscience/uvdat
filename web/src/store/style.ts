@@ -62,6 +62,7 @@ export const useStyleStore = defineStore('style', () => {
     
     const mapStore = useMapStore();
     const appStore = useAppStore();
+    const layerStore = useLayerStore();
 
     function getDefaultColor() {
         let colorList = THEMES.light.colors;
@@ -99,7 +100,7 @@ export const useStyleStore = defineStore('style', () => {
     function setMapLayerStyle(mapLayerId: string, style: Style) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
-        const { network } = useLayerStore().getDBObjectsForSourceID(sourceId)
+        const { network } = layerStore.getDBObjectsForSourceID(sourceId)
         let opacity = style.opacity;
         let color = style.color;
         if (!style.visible) {

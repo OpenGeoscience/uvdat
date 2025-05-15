@@ -8,6 +8,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
 
+const appStore = useAppStore();
+const mapStore = useMapStore();
+const layerStore = useLayerStore();
+
 const ATTRIBUTION = [
   "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
   "<span> | </span>",
@@ -41,8 +45,6 @@ attributionControl.onAdd = (map: Map): HTMLElement => {
 };
 
 function setAttributionControlStyle() {
-  const appStore = useAppStore();
-
   const container = attributionControl._container;
   container.style.padding = "3px 8px";
   container.style.marginRight = "5px";
@@ -92,7 +94,7 @@ function createMap() {
         {
           id: "base-tiles",
           type: "raster",
-          source: useAppStore().theme,
+          source: appStore.theme,
           minzoom: 0,
           // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
           maxzoom: 22 + 1,
@@ -120,15 +122,15 @@ function createMap() {
    * this only has a real effect when the base map is clicked, as that means that no other
    * feature layer can "catch" the event, and the tooltip stays hidden.
    */
-  newMap.on("click", () => {useMapStore().clickedFeature = undefined});
+  newMap.on("click", () => {mapStore.clickedFeature = undefined});
 
   // Order is important as the following function relies on the ref being set
-  useMapStore().map = newMap;
+  mapStore.map = newMap;
   createMapControls();
 }
 
 function createMapControls() {
-  if (!useMapStore().map || !tooltip.value) {
+  if (!mapStore.map || !tooltip.value) {
     throw new Error("Map or refs not initialized!");
   }
 
@@ -144,16 +146,15 @@ function createMapControls() {
   popup.setDOMContent(tooltip.value);
 
   // Set store value
-  useMapStore().tooltipOverlay = popup;
+  mapStore.tooltipOverlay = popup;
 }
 
 onMounted(() => {
   createMap();
-  useMapStore().setMapCenter(undefined, true);
+  mapStore.setMapCenter(undefined, true);
 });
 
-watch(() => useAppStore().theme, (value) => {
-  const mapStore = useMapStore();
+watch(() => appStore.theme, (value) => {
   const map = mapStore.getMap();
   map.removeLayer("base-tiles");
   map.addLayer({
@@ -167,10 +168,10 @@ watch(() => useAppStore().theme, (value) => {
     },
   });
   setAttributionControlStyle();
-  useLayerStore().updateLayersShown();
+  layerStore.updateLayersShown();
 });
 
-watch(() => useAppStore().openSidebars, () => {
+watch(() => appStore.openSidebars, () => {
   setAttributionControlStyle();
 });
 </script>

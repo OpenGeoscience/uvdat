@@ -22,14 +22,6 @@ import {
 } from '.';
 
 export const useProjectStore = defineStore('project', () => {
-    const loadingProjects = ref<boolean>(true);
-    const availableProjects = ref<Project[]>([]);
-    const currentProject = ref<Project>();
-    const projectConfigMode = ref<"new" | "existing">();
-    const polls = ref<Record<number, number>>({});
-    const loadingDatasets = ref<boolean>(false);
-    const availableDatasets = ref<Dataset[]>();
-
     const networkStore = useNetworkStore();
     const analysisStore = useAnalysisStore();
     const mapStore = useMapStore();
@@ -37,6 +29,14 @@ export const useProjectStore = defineStore('project', () => {
     const panelStore = usePanelStore();
     const appStore = useAppStore();
     const styleStore = useStyleStore();
+
+    const loadingProjects = ref<boolean>(true);
+    const availableProjects = ref<Project[]>([]);
+    const currentProject = ref<Project>();
+    const projectConfigMode = ref<"new" | "existing">();
+    const polls = ref<Record<number, number>>({});
+    const loadingDatasets = ref<boolean>(false);
+    const availableDatasets = ref<Dataset[]>();
 
     watch(currentProject, () => {
         clearProjectState();
