@@ -6,10 +6,10 @@ import { RasterData, VectorData } from '../types';
 
 
 interface Details {
-  metadata: Record<string, any>;
+  metadata?: Record<string, any>;
   type: string;
   id: number;
-  name: string;
+  name?: string;
   download?: {
     url: string;
     size: number;

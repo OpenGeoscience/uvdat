@@ -16,7 +16,7 @@ export interface Dataset {
   category?: string;
   processing?: boolean;
   layers?: Layer[];
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
 export interface Layer {
@@ -25,7 +25,7 @@ export interface Layer {
   name: string;
   dataset: Dataset;
   frames: LayerFrame[];
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
   visible: boolean;
   current_frame: number;
 }
@@ -54,7 +54,7 @@ export interface VectorData {
   geojson_data: string | null;
   source_file: null | number;
   file_size: number;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
 }
 
 export interface RasterData {
@@ -188,7 +188,7 @@ export interface Network {
   category: string;
   nodes: number[];
   edges: number[];
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
   vector_data: number;
   selected?: {
     nodes: number[];

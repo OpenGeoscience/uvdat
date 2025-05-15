@@ -35,7 +35,7 @@ function toggleSelected(items: Dataset[]) {
                     />
                     {{ dataset.name }}
                 </div>
-                <div style="min-width: 75px; text-align: right">
+                <div v-if="dataset.layers" style="min-width: 75px; text-align: right">
                   <v-icon
                     icon="mdi-layers"
                     size="small"
@@ -51,7 +51,7 @@ function toggleSelected(items: Dataset[]) {
                   ></v-icon>
                 </div>
               </div>
-              <DetailView :details="{...dataset, type: 'dataset'}"/>
+              <DetailView v-if="dataset" :details="{...dataset, type: 'dataset'}"/>
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
