@@ -13,6 +13,8 @@ import {
   FileItem,
   RasterData,
   VectorData,
+  NetworkNode,
+  NetworkEdge,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -104,8 +106,20 @@ export async function getDatasetNetworks(datasetId: number): Promise<Network[]> 
   return (await apiClient.get(`datasets/${datasetId}/networks`)).data;
 }
 
+export async function getProjectNetworks(projectId: number): Promise<Network[]> {
+  return (await apiClient.get(`networks/?project=${projectId}`)).data.results;
+}
+
 export async function getNetwork(networkId: number): Promise<Network> {
   return (await apiClient.get(`networks/${networkId}`)).data;
+}
+
+export async function getNetworkNodes(networkId: number): Promise<NetworkNode[]> {
+  return (await apiClient.get(`networks/${networkId}/nodes`)).data;
+}
+
+export async function getNetworkEdges(networkId: number): Promise<NetworkEdge[]> {
+  return (await apiClient.get(`networks/${networkId}/edges`)).data;
 }
 
 export async function getNetworkGCC(
@@ -154,4 +168,8 @@ export async function getAnalysisResults(
       `analytics/project/${projectId}/types/${analysisType}/results/`
     )
   ).data;
+}
+
+export async function getVectorDataBounds(vectorId: number): Promise<number[]> {
+  return (await apiClient.get(`vectors/${vectorId}/bounds`)).data;
 }

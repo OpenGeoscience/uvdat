@@ -1,6 +1,92 @@
 # CHANGELOG
 
 
+## v0.11.0 (2025-05-09)
+
+### Bug Fixes
+
+- Adjust Network typing and fetch logic
+  ([`dba4e26`](https://github.com/OpenGeoscience/uvdat/commit/dba4e2605217d9e10ebde8ba36775ecfc144e14f))
+
+- Change node coloring behavior when not animating
+  ([`ba5483b`](https://github.com/OpenGeoscience/uvdat/commit/ba5483b10e77dd491b3ad1b86a7bd6930e839731))
+
+- Clear selection after toggle
+  ([`0c3a108`](https://github.com/OpenGeoscience/uvdat/commit/0c3a1087f10ef7220ce4bc932f37b9b3692593df))
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com>
+
+- Disable pagination and default sort by active
+  ([`cb05f3c`](https://github.com/OpenGeoscience/uvdat/commit/cb05f3c415e2289561655a7f920cbcbe0929edc6))
+
+- Persist nodes/edges lists in store to avoid state reset on panel adjustment
+  ([`6cac91b`](https://github.com/OpenGeoscience/uvdat/commit/6cac91ba0ca5d4275cca9445bea1d892a4180c15))
+
+- Prioritize selected style first
+  ([`3f3ade9`](https://github.com/OpenGeoscience/uvdat/commit/3f3ade99b3a85464ebf181d3ef3adb03820a3cec))
+
+- Remove statement executed twice; unnecessary after animation behavior change
+  ([`688ec30`](https://github.com/OpenGeoscience/uvdat/commit/688ec30b075eaeb73348911efeaadfbc8e3cece6))
+
+- Simplify `filter_queryset`
+  ([`e455edf`](https://github.com/OpenGeoscience/uvdat/commit/e455edfd3b3274c1840da5597e99b1066079f332))
+
+- Typo
+  ([`c1134e7`](https://github.com/OpenGeoscience/uvdat/commit/c1134e78f171dd0e762671173f621793b7f18033))
+
+### Features
+
+- Add basic Networks panel
+  ([`3a93c04`](https://github.com/OpenGeoscience/uvdat/commit/3a93c04a92ac6541dbeda4fd13bf2e674a5e137f))
+
+- Add button to show current network
+  ([`4079c84`](https://github.com/OpenGeoscience/uvdat/commit/4079c841231461ee49aee7b5c53e4af0def880da))
+
+- Add network reset button
+  ([`f3a4fe5`](https://github.com/OpenGeoscience/uvdat/commit/f3a4fe5d5ed055832700e9f2a11c5ab463b107dd))
+
+- Color selected nodes white
+  ([`f2d3280`](https://github.com/OpenGeoscience/uvdat/commit/f2d3280772cc4236e05aff4d0b30398e3c369465))
+
+- Display nodes and edges tables
+  ([`29b31f0`](https://github.com/OpenGeoscience/uvdat/commit/29b31f00642e41a40d6cd3104064282597147166))
+
+- Fetch all networks in current project
+  ([`2db42ef`](https://github.com/OpenGeoscience/uvdat/commit/2db42ef58b49c0e8fed0ace093cf7662dbb8692a))
+
+- Highlight nodes and edges on hover
+  ([`813578c`](https://github.com/OpenGeoscience/uvdat/commit/813578c4ac8bd83dcec51fe21feeb9e4ef5c9064))
+
+- Toggle node states in networks panel
+  ([`3a77f49`](https://github.com/OpenGeoscience/uvdat/commit/3a77f49c3509901de7a7d85111367a61ba25b1a2))
+
+### Refactoring
+
+- Separate `isVisible` and `show` functions and apply stronger typing
+  ([`7604d58`](https://github.com/OpenGeoscience/uvdat/commit/7604d586410b4274662af65025e65f3ddced83dc))
+
+
+## v0.10.0 (2025-05-08)
+
+### Chores
+
+- Update screenshot in README ([#137](https://github.com/OpenGeoscience/uvdat/pull/137),
+  [`7417fc2`](https://github.com/OpenGeoscience/uvdat/commit/7417fc21d3d4f4652dbd52bf97717f730193bfca))
+
+### Documentation
+
+- Remove deprecated docker-compose commands from setup docs
+  ([`ee30094`](https://github.com/OpenGeoscience/uvdat/commit/ee30094f2aa6e3a5c5c38122b4b5eba4a4d391fc))
+
+### Features
+
+- Add button to fit map to visible layers
+  ([`8d8d04a`](https://github.com/OpenGeoscience/uvdat/commit/8d8d04ae7032036eb9152b53a88f207be2ffb5b9))
+
+- Show spinner while loading bounds of visible layers
+  ([`1c357aa`](https://github.com/OpenGeoscience/uvdat/commit/1c357aab4a9975362caa129ff4b1bf30d5b2b859))
+
+
 ## v0.9.1 (2025-03-24)
 
 ### Bug Fixes

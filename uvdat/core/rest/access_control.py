@@ -66,6 +66,13 @@ class GuardianPermission(IsAuthenticated):
 
 class GuardianFilter(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
+        ids = request.query_params.get('project', request.query_params.get('project_id'))
+        if ids:
+            # Return queryset filtered by objects that are within these projects
+            return filter_queryset_by_projects(
+                queryset=queryset, projects=Project.objects.filter(id__in=ids)
+            )
+
         if request.user.is_superuser:
             return queryset
 

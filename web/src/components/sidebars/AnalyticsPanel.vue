@@ -19,15 +19,14 @@ import {
   getChart,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { AnalysisResult, Layer, Chart } from "@/types";
-import { addLayer } from "@/layers";
-
+import { AnalysisResult } from "@/types";
+import { isVisible, show, showableTypes } from "@/panelFunctions"
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
-  return availableAnalysisTypes.value?.filter((sim_type) => {
+  return availableAnalysisTypes.value?.filter((analysis_type) => {
     return  !searchText.value ||
-    sim_type.name.toLowerCase().includes(searchText.value.toLowerCase())
+    analysis_type.name.toLowerCase().includes(searchText.value.toLowerCase())
   })
 })
 const tab = ref();
@@ -55,15 +54,14 @@ const networkInput = computed(() => {
         (o: any) => o.id ===  networkId
       )
     }
-    network.type = 'Network'
-    const visible = isVisible(network)
+    const visible = isVisible({network})
     network = {
       ...network,
       visible
     }
   } else {
     network = Object.values(fullInputs.value).find(
-      (input) => input.type === 'Network'
+      (input) => input.type === 'network'
     )
   }
   if (network && !availableNetworks.value.map((n) => n.id).includes(network.id)) {
@@ -81,124 +79,6 @@ const inputSelectionRules = [
 const additionalAnimationLayers = ref();
 const inputForm = ref();
 const ws = ref();
-
-function isVisible(value: any): boolean {
-  if (value.type == 'Chart') {
-    const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
-    if (!chartPanel) return false;
-    return currentChart.value?.id == value.id && chartPanel.visible
-  } else if (value.type === 'Dataset') {
-    return selectedLayers.value.some((layer) => {
-      return layer.dataset.id === value.id && layer.visible
-    })
-  } else if (value.type === 'Layer') {
-    return selectedLayers.value.some((layer) => {
-      return layer.id === value.id && layer.visible
-    });
-  } else if (value.type === 'Network') {
-    return isVisible({
-      ...value.dataset,
-      type: 'Dataset',
-    })
-  } else if (value.type === 'AnalysisResult') {
-    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
-    if (analysisType) {
-      const showables: Record<string, any>[] = []
-       Object.entries(value.outputs).forEach(
-        ([outputKey, outputValue]) => {
-          const type = analysisType?.output_types[outputKey]
-          if (showableTypes.includes(type)) {
-            showables.push({
-              id: outputValue,
-              type
-            })
-          }
-        }
-      );
-      Object.entries(value.inputs).forEach(
-        ([inputKey, inputValue])=> {
-          const type = analysisType?.input_types[inputKey]
-          const value: Record<string, any> = analysisType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
-          if (showableTypes.includes(type)) {
-            showables.push({
-              ...value,
-              type
-            })
-          }
-        }
-      );
-      return showables.every((o) => isVisible(o))
-    }
-  }
-  return false;
-}
-
-function show(value: any) {
-  if (value.type === 'Chart') {
-    const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
-    if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
-    currentChart.value = value as Chart
-  } else if (value.type === 'Dataset') {
-    getDatasetLayers(value.id).then((layers) => {
-      layers.forEach((layer) => {
-        show({
-          ...layer,
-          type: 'Layer'
-        })
-      })
-    })
-  } else if (value.type === 'Layer') {
-    let add = true
-    selectedLayers.value = selectedLayers.value.map((layer) => {
-        if (add && layer.id === value.id) {
-          layer.visible = true;
-          add = false;
-        }
-        return layer
-    })
-    if (add) addLayer(value as Layer)
-  } else if (value.type === 'Network') {
-    show({
-      ...value.dataset,
-      type: 'Dataset',
-    })
-  } else if (value.type === 'AnalysisResult') {
-    const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === value.analysis_type)
-    if (analysisType) {
-      Object.entries(value.outputs).map(([outputKey, outputValue]) => {
-        const type = analysisType.output_types[outputKey]
-        if (showableTypes.includes(type)) {
-          show({
-            id: outputValue,
-            type
-          })
-        }
-      })
-      Object.entries(value.inputs).map(([inputKey, inputValue]) => {
-        const type = analysisType.input_types[inputKey]
-        const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
-        if (showableTypes.includes(type)) {
-          show({
-            ...value,
-            type
-          })
-        }
-      })
-    }
-  }
-   else if (['RasterData', 'VectorData'].includes(value.type)) {
-    if (value.dataset) {
-      getDataset(value.dataset).then((dataset) => {
-        show({
-          ...dataset,
-          type: 'Dataset'
-        })
-      })
-    }
-   }
-}
-
-const showableTypes = ['Chart', 'Dataset', 'Network', 'Layer', 'AnalysisResult', 'RasterData', 'VectorData']
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
@@ -242,8 +122,8 @@ async function fillInputsAndOutputs() {
           (o: any) => o.id == value
         );
         if (fullValue) {
-          fullValue.type = currentAnalysisType.value?.input_types[key]
-          fullValue.visible = isVisible(fullValue)
+          fullValue.type = currentAnalysisType.value?.input_types[key].toLowerCase()
+          fullValue.visible = isVisible({[fullValue.type]: fullValue})
           fullValue.showable = showableTypes.includes(fullValue.type)
         }
         return [key, fullValue || value];
@@ -251,10 +131,9 @@ async function fillInputsAndOutputs() {
     );
     if (fullInputs.value?.flood_simulation && !additionalAnimationLayers.value) {
       const floodDataset = {
-        id: fullInputs.value?.flood_simulation.outputs.flood,
-        type: 'Dataset',
+        id: fullInputs.value?.flood_simulation.outputs.flood as number
       }
-      if (isVisible(floodDataset)) {
+      if (isVisible({dataset: floodDataset})) {
         getDatasetLayers(floodDataset.id).then((layers) => {
           additionalAnimationLayers.value = layers;
         })
@@ -266,16 +145,16 @@ async function fillInputsAndOutputs() {
     fullOutputs.value = Object.fromEntries(
       await Promise.all(
         Object.entries(currentResult.value.outputs).map(async ([key, value]) => {
-          const type = currentAnalysisType.value?.output_types[key];
-          if (type == 'Dataset') {
+          const type = currentAnalysisType.value?.output_types[key].toLowerCase();
+          if (type == 'dataset') {
             value = await getDataset(value)
           }
-          if (type == 'Chart') {
+          if (type == 'chart') {
             value = await getChart(value)
           }
           if (typeof value === 'object') {
-            value.type = type;
-            value.visible = isVisible(value)
+            value.type = type
+            value.visible = isVisible({[type]: value})
             value.showable = showableTypes.includes(value.type)
           } else {
             value = {
@@ -341,8 +220,9 @@ watch(
 </script>
 
 <template>
-  <div class="panel-content-outer with-search">
+  <div :class="currentAnalysisType ? 'panel-content-outer' : 'panel-content-outer with-search'">
     <v-text-field
+      v-if="!currentAnalysisType"
       v-model="searchText"
       label="Search Analytics"
       variant="outlined"
@@ -425,7 +305,7 @@ watch(
                             v-if="value.showable && !value.visible"
                             density="compact"
                             color="primary"
-                            @click="() => show(value)"
+                            @click="() => show({[value.type]: value})"
                           >
                             Show
                         </v-btn>
@@ -483,7 +363,7 @@ watch(
                               color="primary"
                               density="compact"
                               style="display: block"
-                              @click="() => show(value)"
+                              @click="() => show({[value.type]: value})"
                             >
                               Show
                             </v-btn>

@@ -55,7 +55,7 @@ function rewind() {
 watch(currentTick, async () => {
   if (nodeChanges.value) {
     let deactivated = nodeChanges.value[currentTick.value];
-    if (props.network) setNetworkDeactivatedNodes(props.network, deactivated || []);
+    if (props.network) setNetworkDeactivatedNodes(props.network, deactivated || [], true);
     if (props.additionalAnimationLayers) {
       props.additionalAnimationLayers.forEach((layer) => {
         const currentStyle = selectedLayerStyles.value[`${layer.id}.${layer.copy_id || 0}`];

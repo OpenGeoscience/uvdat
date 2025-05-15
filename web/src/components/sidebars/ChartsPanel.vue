@@ -153,8 +153,9 @@ const downloadReady = computed(() => {
 </script>
 
 <template>
-  <div class="panel-content-outer with-search">
+  <div :class="currentChart ? 'panel-content-outer' : 'panel-content-outer with-search'">
     <v-text-field
+      v-if="!currentChart"
       v-model="searchText"
       label="Search Charts"
       variant="outlined"

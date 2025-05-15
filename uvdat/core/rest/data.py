@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.gis.db.models import Extent
 from django.db import connection
 from django.http import HttpResponse
 from django_large_image.rest import LargeImageFileDetailMixin
@@ -8,10 +9,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from uvdat.core.models import RasterData, VectorData
+from uvdat.core.models import RasterData, VectorData, VectorFeature
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
+from uvdat.core.rest.explorer import IPyLeafletTokenAuth
 from uvdat.core.rest.serializers import RasterDataSerializer, VectorDataSerializer
-from uvdat.core.rest.tokenauth import TokenAuth
 
 VECTOR_TILE_SQL = """
 WITH
@@ -80,13 +81,25 @@ def get_filter_string(filters: dict | None = None):
     return return_str
 
 
-class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFileDetailMixin):
-    queryset = RasterData.objects.select_related('dataset').all()
-    serializer_class = RasterDataSerializer
+class GenericDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
     permission_classes = [GuardianPermission]
-    authentication_classes = [TokenAuth]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
+
+    @property
+    def authentication_classes(self):
+        auth_classes = [IPyLeafletTokenAuth]
+
+        existing_auth_classes = super().authentication_classes
+        if existing_auth_classes is not None:
+            auth_classes = existing_auth_classes + auth_classes
+
+        return auth_classes
+
+
+class RasterDataViewSet(GenericDataViewSet, LargeImageFileDetailMixin):
+    queryset = RasterData.objects.select_related('dataset').all()
+    serializer_class = RasterDataSerializer
     FILE_FIELD_NAME = 'cloud_optimized_geotiff'
 
     @action(
@@ -101,18 +114,21 @@ class RasterDataViewSet(GenericViewSet, mixins.RetrieveModelMixin, LargeImageFil
         return HttpResponse(json.dumps(data), status=200)
 
 
-class VectorDataViewSet(GenericViewSet, mixins.RetrieveModelMixin):
+class VectorDataViewSet(GenericDataViewSet):
     queryset = VectorData.objects.select_related('dataset').all()
     serializer_class = VectorDataSerializer
-    permission_classes = [GuardianPermission]
-    authentication_classes = [TokenAuth]
-    filter_backends = [GuardianFilter]
-    lookup_field = 'id'
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = VectorDataSerializer(instance)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def bounds(self, request, **kwargs):
+        instance = self.get_object()
+        features = VectorFeature.objects.filter(vector_data=instance)
+        extent = features.aggregate(Extent('geometry')).get('geometry__extent')
+        return Response(extent, status=200)
 
     @action(
         detail=True,

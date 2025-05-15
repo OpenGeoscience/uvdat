@@ -17,7 +17,6 @@ import {
   currentAnalysisType,
   currentError,
   tooltipOverlay,
-  panelArrangement,
   draggingPanel,
   draggingFrom,
   dragModes,
@@ -26,6 +25,8 @@ import {
   loadingCharts,
   selectedLayerStyles,
   loadingProjects,
+  loadingNetworks,
+  currentNetwork,
 } from "./store";
 import {
   getProjects,
@@ -34,48 +35,18 @@ import {
   getProjectAnalysisTypes,
   getProjectDatasets,
   getDatasetLayers,
+  getProjectNetworks,
 } from "@/api/rest";
 import { clearMapLayers, updateBaseLayer, updateLayersShown } from "./layers";
 import { Dataset, Project } from "./types";
+import { resetPanels } from "./panelFunctions";
 
 export function clearState() {
   clearProjectState();
+  resetPanels();
   showMapBaseLayer.value = true;
   currentError.value = undefined;
   polls.value = {};
-  panelArrangement.value = [
-    { id: "datasets",
-      label: "Datasets",
-      visible: true,
-      closeable: false,
-      dock: 'left',
-      order: 1
-    },
-    {
-      id: "layers",
-      label: "Selected Layers",
-      visible: true,
-      closeable: false,
-      dock: 'left',
-      order: 2,
-    },
-    {
-      id: "charts",
-      label: "Charts",
-      visible: true,
-      closeable: true,
-      dock: 'right',
-      order: 1,
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      visible: true,
-      closeable: true,
-      dock: 'right',
-      order: 2,
-    },
-  ];
   draggingPanel.value = undefined;
   draggingFrom.value = undefined;
   dragModes.value = [];
@@ -173,6 +144,7 @@ watch(currentProject, () => {
     loadingDatasets.value = true;
     loadingCharts.value = true;
     loadingAnalysisTypes.value = true;
+    loadingNetworks.value = true;
     getProjectDatasets(currentProject.value.id).then(async (datasets) => {
       availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
         dataset.layers = await getDatasetLayers(dataset.id);
@@ -185,6 +157,11 @@ watch(currentProject, () => {
       currentChart.value = undefined;
       loadingCharts.value = false;
     });
+    getProjectNetworks(currentProject.value.id).then((networks) => {
+      availableNetworks.value = networks;
+      currentNetwork.value = undefined;
+      loadingNetworks.value = false;
+    })
     getProjectAnalysisTypes(currentProject.value.id).then((types) => {
       availableAnalysisTypes.value = types;
       currentAnalysisType.value = undefined;
