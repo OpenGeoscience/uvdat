@@ -155,7 +155,7 @@ watch([showModal, currentDetails], getRelated)
   <v-dialog v-model="showModal" class="details-dialog">
     <v-card>
       <Transition :name="transitionName" mode="out-in">
-        <div :key="currentDetails.id">
+        <div :key="currentDetails.type + '_' + currentDetails.id">
           <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
             <v-icon icon="mdi-arrow-left" v-if="stackPoppable" @click="popStack" />
             {{ currentDetails.name }}
