@@ -17,7 +17,7 @@ function formatIfDate(key: string, value: string) {
 
 <template>
   <v-table>
-    <tbody>
+    <tbody v-if="props.data">
       <tr
         v-for="[key, value] in Object.entries(props.data)"
         :key="key"
