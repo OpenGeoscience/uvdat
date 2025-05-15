@@ -17,6 +17,7 @@ import { useLayerStore } from './layer';
 import { useAnalysisStore } from './analysis';
 import { usePanelStore } from './panel';
 import { useAppStore } from './app';
+import { useStyleStore } from './style';
 
 export const useProjectStore = defineStore('project', () => {
     const loadingProjects = ref<boolean>(true);
@@ -33,6 +34,7 @@ export const useProjectStore = defineStore('project', () => {
     const layerStore = useLayerStore();
     const panelStore = usePanelStore();
     const appStore = useAppStore();
+    const styleStore = useStyleStore();
 
     watch(currentProject, () => {
         clearProjectState();
@@ -84,7 +86,7 @@ export const useProjectStore = defineStore('project', () => {
         availableDatasets.value = undefined;
 
         layerStore.selectedLayers = [];
-        layerStore.selectedLayerStyles = {};
+        styleStore.selectedLayerStyles = {};
 
         mapStore.clickedFeature = undefined;
 

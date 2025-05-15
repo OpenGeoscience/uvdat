@@ -4,6 +4,7 @@ import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
 import { useLayerStore } from "@/store/layer";
 import { useNetworkStore } from "@/store/network";
+import { useStyleStore } from "@/store/style";
 
 const networkStore = useNetworkStore(); 
 
@@ -56,12 +57,14 @@ function rewind() {
 
 watch(currentTick, async () => {
   const layerStore = useLayerStore();
+  const styleStore = useStyleStore();
+  
   if (nodeChanges.value) {
     let deactivated = nodeChanges.value[currentTick.value];
     if (props.network) networkStore.setNetworkDeactivatedNodes(props.network, deactivated || [], true);
     if (props.additionalAnimationLayers) {
       props.additionalAnimationLayers.forEach((layer) => {
-        const currentStyle = layerStore.selectedLayerStyles[`${layer.id}.${layer.copy_id || 0}`];
+        const currentStyle = styleStore.selectedLayerStyles[`${layer.id}.${layer.copy_id || 0}`];
         if (currentStyle.visible) {
           layerStore.selectedLayers = layerStore.selectedLayers.map((l) => {
             if (l.id === layer.id) l.current_frame = currentTick.value

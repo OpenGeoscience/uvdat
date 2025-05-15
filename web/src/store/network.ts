@@ -2,8 +2,9 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getDatasetNetworks, getNetworkGCC } from '@/api/rest';
 import { Dataset, Network, NetworkEdge, NetworkNode } from '@/types';
-import { styleNetwork } from '@/layerStyles';
 import { usePanelStore } from '@/store/panel';
+import { useStyleStore } from '@/store/style';
+
 interface GCCResult {
     deactivatedNodes: number[];
     gcc: number[];
@@ -89,7 +90,7 @@ export const useNetworkStore = defineStore('network', () => {
         } else {
             network.gcc = network.nodes;
         }
-        styleNetwork(network);
+        useStyleStore().styleNetwork(network);
         availableNetworks.value = availableNetworks.value.map((n) => (n.id === network.id ? network : n));
     }
 

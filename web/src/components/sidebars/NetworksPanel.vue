@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
-import { styleNetwork } from '@/layerStyles';
 import { useNetworkStore } from "@/store/network";
 import { usePanelStore } from "@/store/panel";
+import { useStyleStore } from "@/store/style";
 
 import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
 const networkStore = useNetworkStore();
 const panelStore = usePanelStore();
+const styleStore = useStyleStore();
 
 const searchText = ref();
 const filteredNetworks = computed(() => {
@@ -71,7 +72,7 @@ const headers = [
 function showNetwork() {
     if (networkStore.currentNetwork) {
         panelStore.show({network: networkStore.currentNetwork})
-        styleNetwork(networkStore.currentNetwork)
+        styleStore.styleNetwork(networkStore.currentNetwork)
     }
 }
 
@@ -150,7 +151,7 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
         } else {
             networkStore.currentNetwork.selected.nodes = selectedNodes.value;
         }
-        styleNetwork(networkStore.currentNetwork)
+        styleStore.styleNetwork(networkStore.currentNetwork)
     }
 }, {deep: true})
 </script>
