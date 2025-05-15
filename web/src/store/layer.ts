@@ -2,12 +2,12 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { LngLatBoundsLike, Source } from "maplibre-gl";
 import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, Style, VectorData } from '@/types';
-import { getDefaultColor, setMapLayerStyle } from '@/layerStyles';
 import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
 import { useMapStore } from './map';
-import { useNetworkStore } from '@/store/network';
+import { useStyleStore } from './style';
+import { useNetworkStore } from './network';
 
 interface SourceDBObjects {
   dataset?: Dataset,
@@ -21,7 +21,6 @@ interface SourceDBObjects {
 
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
-  const selectedLayerStyles = ref<Record<string, Style>>({});
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
   // Sibling store imports
@@ -280,20 +279,21 @@ export const useLayerStore = defineStore('layer', () => {
   watch(selectedLayers, updateLayersShown);
   function updateLayersShown() {
     const map = mapStore.getMap();
+    const styleStore = useStyleStore();
 
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
       layer.frames.forEach((frame) => {
         const styleId = `${layer.id}.${layer.copy_id}`
         const sourceId = `${styleId}.${frame.id}`
-        if (!selectedLayerStyles.value[styleId]) {
-          selectedLayerStyles.value[styleId] = {
-            color: getDefaultColor(),
+        if (!styleStore.selectedLayerStyles[styleId]) {
+          styleStore.selectedLayerStyles[styleId] = {
+            color: styleStore.getDefaultColor(),
             opacity: 1,
             visible: true,
           }
         }
-        const currentStyle = selectedLayerStyles.value[styleId];
+        const currentStyle = styleStore.selectedLayerStyles[styleId];
         currentStyle.visible = layer.visible
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
@@ -304,7 +304,7 @@ export const useLayerStore = defineStore('layer', () => {
           if (mapLayerId !== 'base-tiles') {
             if (mapLayerId.includes(sourceId)) {
               map.moveLayer(mapLayerId);  // handles reordering
-              setMapLayerStyle(mapLayerId, {
+              styleStore.setMapLayerStyle(mapLayerId, {
                 ...currentStyle,
                 visible: layer.visible && layer.current_frame === frame.index
               })
@@ -330,7 +330,6 @@ export const useLayerStore = defineStore('layer', () => {
     // Data
     rasterTooltipDataCache,
     selectedLayers,
-    selectedLayerStyles,
     // Functions
     updateLayersShown,
     addLayer,
