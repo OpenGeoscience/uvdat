@@ -34,7 +34,6 @@ export const useProjectStore = defineStore('project', () => {
     const availableProjects = ref<Project[]>([]);
     const currentProject = ref<Project>();
     const projectConfigMode = ref<"new" | "existing">();
-    const polls = ref<Record<number, number>>({});
     const loadingDatasets = ref<boolean>(false);
     const availableDatasets = ref<Dataset[]>();
 
@@ -76,7 +75,6 @@ export const useProjectStore = defineStore('project', () => {
         clearProjectState();
         mapStore.showMapBaseLayer = true;
         appStore.currentError = undefined;
-        polls.value = {};
 
         panelStore.resetPanels();
         panelStore.draggingPanel = undefined;
@@ -109,34 +107,11 @@ export const useProjectStore = defineStore('project', () => {
         });
     }
 
-    // TODO: Seems unused entirely
-    function pollForProcessingDataset(datasetId: number) {
-        // fetch dataset every 10 seconds until it is not in a processing state
-        polls.value[datasetId] = setInterval(() => {
-            const currentVersion = currentProject.value?.datasets.find(
-                (d) => d.id === datasetId
-            );
-            if (currentProject.value && currentVersion?.processing) {
-                getDataset(datasetId).then((newVersion) => {
-                    if (currentProject.value && !newVersion.processing) {
-                        currentProject.value.datasets = currentProject.value.datasets.map(
-                            (d) => (d.id === datasetId ? newVersion : d)
-                        );
-                    }
-                });
-            } else {
-                clearInterval(polls.value[datasetId]);
-                delete polls.value[datasetId];
-            }
-        }, 10000);
-    }
-
     return {
         loadingProjects,
         availableProjects,
         currentProject,
         projectConfigMode,
-        polls,
         loadingDatasets,
         availableDatasets,
         clearState,
