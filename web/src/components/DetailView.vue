@@ -160,8 +160,10 @@ watch([showModal, currentDetails], getRelated)
     <v-card>
       <Transition :name="transitionName" mode="out-in">
         <div :key="currentDetails.type + '_' + currentDetails.id">
-          <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
+          <v-card-title class="d-flex" style="max-width: 90%; margin: 4px 4em 0 0; align-items: center;">
             <v-icon icon="mdi-arrow-left" v-if="stackPoppable" @click="popStack" />
+            <v-icon v-if="currentDetails.prependIcon" :icon="currentDetails.prependIcon" class="mr-3" />
+            <span class="mr-5 secondary-text font-weight-thin">{{ currentDetails.type.toUpperCase() }}</span>
             {{ currentDetails.name }}
           </v-card-title>
 
@@ -185,7 +187,7 @@ watch([showModal, currentDetails], getRelated)
             >
               <template v-slot:prepend="{ item }">
                 <v-icon v-if="item.prependIcon" :icon="item.prependIcon" class="mr-3" />
-                <span class="secondary-text text-sm">{{ item.type.toUpperCase() }}</span>
+                <span class="secondary-text font-weight-thin">{{ item.type.toUpperCase() }}</span>
               </template>
               <template v-slot:title="{ item }">
                 <div v-if="item" v-tooltip="item.name">{{ item.name }}</div>
