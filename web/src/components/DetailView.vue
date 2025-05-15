@@ -18,6 +18,7 @@ interface Details {
   description?: string;
   created?: string;
   modified?: string;
+  prependIcon?: string;
 }
 
 const props = defineProps<{
@@ -25,21 +26,26 @@ const props = defineProps<{
 }>();
 
 const showModal = ref(false);
-const hasMetadata = computed(() => props.details.metadata && Object.keys(props.details.metadata).length > 0);
-const related = ref<(Details | undefined)[]>();
+const detailStack = ref<Details[]>([]);
+const currentDetails = computed(() => {
+  if (detailStack.value.length) return detailStack.value[detailStack.value.length - 1];
+  return props.details
+});
+const hasMetadata = computed(() => currentDetails.value.metadata && Object.keys(currentDetails.value.metadata).length > 0);
+const related = ref<Details[]>();
 const relatedLabel = ref('Objects');
 const basicInfo = computed(() => {
   return Object.fromEntries(
-    Object.entries(props.details).filter(
+    Object.entries(currentDetails.value).filter(
       ([key]) => ['description', 'created', 'modified'].includes(key)
     )
   )
 })
 
 async function getRelated() {
-  if (props.details.type === 'dataset') {
+  if (currentDetails.value.type === 'dataset') {
     relatedLabel.value = 'Files'
-    const files = await getDatasetFiles(props.details.id)
+    const files = await getDatasetFiles(currentDetails.value.id)
     related.value = files.map((file) => ({
       ...file,
       type: 'file',
@@ -48,13 +54,11 @@ async function getRelated() {
         size: file.file_size,
         type: file.file_type
       },
-      props: {
-        prependIcon: 'mdi-file',
-      },
+      prependIcon: 'mdi-file',
     }))
-  } else if (props.details.type === 'chart') {
+  } else if (currentDetails.value.type === 'chart') {
     relatedLabel.value = 'Files'
-    const files = await getChartFiles(props.details.id)
+    const files = await getChartFiles(currentDetails.value.id)
     related.value = files.map((file) => ({
       ...file,
       type: 'file',
@@ -63,13 +67,11 @@ async function getRelated() {
         size: file.file_size,
         type: file.file_type
       },
-      props: {
-        prependIcon: 'mdi-file',
-      },
+      prependIcon: 'mdi-file',
     }))
-  } else if (props.details.type === 'file') {
+  } else if (currentDetails.value.type === 'file') {
     relatedLabel.value = 'Converted Data'
-    const dataObjects = await getFileDataObjects(props.details.id)
+    const dataObjects = await getFileDataObjects(currentDetails.value.id)
     related.value = dataObjects.map((data) => {
       const raster = data as RasterData
       const vector = data as VectorData
@@ -82,9 +84,7 @@ async function getRelated() {
             size: raster.file_size,
             type: 'cog',
           },
-          props: {
-            prependIcon: 'mdi-checkerboard',
-          },
+          prependIcon: 'mdi-checkerboard',
         }
       } else if (vector.geojson_data) {
         return {
@@ -95,13 +95,19 @@ async function getRelated() {
             size: vector.file_size,
             type: 'geojson',
           },
-          props: {
-            prependIcon: 'mdi-vector-square',
-          },
+          prependIcon: 'mdi-vector-square',
         }
       }
-    })
+    }).filter((item) => !!item)
+  } else {
+    relatedLabel.value = '';
+    related.value = [];
   }
+
+  // ensure no object in the detailStack appears in the related list
+  related.value = related.value.filter((r) => {
+    return !detailStack.value.find((d) => d.id === r.id && d.type === r.type)
+  })
 }
 
 function getFileSizeString(size: number) {
@@ -110,7 +116,25 @@ function getFileSizeString(size: number) {
   return +((size / Math.pow(1024, i)).toFixed(2)) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
 }
 
-watch(showModal, getRelated)
+function addToStack(relatedId: number) {
+  const child = related.value?.find((r) => r.id === relatedId)
+  if (child) {
+    detailStack.value = [
+      ...detailStack.value,
+      child
+    ]
+  }
+}
+
+function popStack() {
+  if (detailStack.value.length) {
+    detailStack.value = [
+      ...detailStack.value.slice(0, -1)
+    ]
+  }
+}
+
+watch([showModal, currentDetails], getRelated)
 </script>
 
 <template>
@@ -125,7 +149,8 @@ watch(showModal, getRelated)
   <v-dialog v-model="showModal" width="min-content">
     <v-card>
       <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
-        {{ props.details.name }}
+        <v-icon icon="mdi-arrow-left" v-if="detailStack.length" @click="popStack" />
+        {{ currentDetails.name }}
       </v-card-title>
 
       <div v-if="basicInfo?.length">
@@ -134,21 +159,26 @@ watch(showModal, getRelated)
       </div>
 
       <v-card-subtitle>Metadata</v-card-subtitle>
-      <v-card-text v-if="!hasMetadata">This {{ props.details.type }} has no metadata.</v-card-text>
+      <v-card-text v-if="!hasMetadata">This {{ currentDetails.type }} has no metadata.</v-card-text>
       <v-card-text v-else>
-        <RecursiveTable :data="props.details.metadata" />
+        <RecursiveTable :data="currentDetails.metadata" />
       </v-card-text>
 
-      <div v-if="related" style="min-width: 500px;">
+      <div v-if="related?.length" style="min-width: 500px;">
         <v-card-subtitle>Related {{ relatedLabel }} </v-card-subtitle>
-        <v-list :items="related" item-value="id" >
+        <v-list
+          :items="related"
+          item-value="id"
+          @click:select="({id}) => addToStack(id as number)"
+        >
+          <template v-slot:prepend="{ item }">
+            <v-icon v-if="item.prependIcon" :icon="item.prependIcon" class="mr-3" />
+            <span class="secondary-text text-sm">{{ item.type.toUpperCase() }}</span>
+          </template>
           <template v-slot:title="{ item }">
             <div v-if="item" v-tooltip="item.name">{{ item.name }}</div>
           </template>
-          <template v-slot:subtitle="{ item }">
-          </template>
           <template v-slot:append="{ item }">
-            <DetailView v-if="item" :details="item"/>
             <a
               v-if="item?.download"
               :href="item.download.url"
