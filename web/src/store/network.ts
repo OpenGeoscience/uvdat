@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getDatasetNetworks, getNetworkGCC } from '@/api/rest';
+import { getDatasetNetworks, getNetworkGCC, getProjectNetworks } from '@/api/rest';
 import { Dataset, Network, NetworkEdge, NetworkNode } from '@/types';
 
 import { usePanelStore, useStyleStore } from '.';
@@ -25,6 +25,16 @@ export const useNetworkStore = defineStore('network', () => {
     const currentNetworkEdges = ref<NetworkEdge[]>([]);
 
     // Actions
+    function initNetworks(projectId: number) {
+        loadingNetworks.value = true;
+        getProjectNetworks(projectId).then((networks) => {
+            availableNetworks.value = networks;
+            currentNetwork.value = undefined;
+
+            loadingNetworks.value = false;
+        })
+    }
+
     async function getNetwork(nodeId: number, dataset: Dataset): Promise<Network | undefined> {
         let network: Network | undefined;
         availableNetworks.value.forEach((net) => {
@@ -103,6 +113,7 @@ export const useNetworkStore = defineStore('network', () => {
         loadingNetworks,
         currentNetworkNodes,
         currentNetworkEdges,
+        initNetworks,
         getNetwork,
         toggleNodeActive,
         setNetworkDeactivatedNodes,

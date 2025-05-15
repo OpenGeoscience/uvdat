@@ -36,37 +36,30 @@ export const useProjectStore = defineStore('project', () => {
     const loadingDatasets = ref<boolean>(false);
     const availableDatasets = ref<Dataset[]>();
 
+
+    function fetchProjectDatasets() {
+        if (!currentProject.value) { return; }
+
+        loadingDatasets.value = true;
+        getProjectDatasets(currentProject.value.id).then(async (datasets) => {
+            availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
+                dataset.layers = await getDatasetLayers(dataset.id);
+                return dataset;
+            }));
+            loadingDatasets.value = false;
+        });
+    }
+
     watch(currentProject, () => {
         clearProjectState();
         mapStore.setMapCenter(currentProject.value);
         mapStore.clearMapLayers();
+
         if (currentProject.value) {
-            loadingDatasets.value = true;
-            analysisStore.loadingCharts = true;
-            analysisStore.loadingAnalysisTypes = true;
-            networkStore.loadingNetworks = true;
-            getProjectDatasets(currentProject.value.id).then(async (datasets) => {
-                availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
-                    dataset.layers = await getDatasetLayers(dataset.id);
-                    return dataset;
-                }));
-                loadingDatasets.value = false;
-            });
-            getProjectCharts(currentProject.value.id).then((charts) => {
-                analysisStore.availableCharts = charts;
-                analysisStore.currentChart = undefined;
-                analysisStore.loadingCharts = false;
-            });
-            getProjectNetworks(currentProject.value.id).then((networks) => {
-                networkStore.availableNetworks = networks;
-                networkStore.currentNetwork = undefined;
-                networkStore.loadingNetworks = false;
-            })
-            getProjectAnalysisTypes(currentProject.value.id).then((types) => {
-                analysisStore.availableAnalysisTypes = types;
-                analysisStore.currentAnalysisType = undefined;
-                analysisStore.loadingAnalysisTypes = false;
-            })
+            fetchProjectDatasets();
+            analysisStore.initCharts(currentProject.value.id);
+            analysisStore.initAnalysisTypes(currentProject.value.id);
+            networkStore.initNetworks(currentProject.value.id);
         }
     });
 
