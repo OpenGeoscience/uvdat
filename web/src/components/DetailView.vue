@@ -19,6 +19,7 @@ interface Details {
   created?: string;
   modified?: string;
   prependIcon?: string;
+  related?: Details[];
 }
 
 const props = defineProps<{
@@ -32,7 +33,6 @@ const stackPoppable = computed(() => detailStack.value.length > 1);
 const currentDetails = computed(() => detailStack.value[detailStack.value.length - 1]);
 const hasMetadata = computed(() => currentDetails.value.metadata && Object.keys(currentDetails.value.metadata).length > 0);
 const related = ref<Details[]>();
-const relatedLabel = ref('Objects');
 const basicInfo = computed(() => {
   return Object.fromEntries(
     Object.entries(currentDetails.value).filter(
@@ -41,15 +41,13 @@ const basicInfo = computed(() => {
   )
 })
 
-async function getRelated() {
-  if (!showModal.value) {
-    detailStack.value = [props.details]
-    return
-  }
-  if (currentDetails.value.type === 'dataset') {
-    relatedLabel.value = 'Files'
-    const files = await getDatasetFiles(currentDetails.value.id)
-    related.value = files.map((file) => ({
+async function getRelated(target: Details): Promise<Details[]> {
+  let results: Details[] = [];
+  if (target.related) {
+    results = target.related
+  } else if (target.type === 'dataset') {
+    const files = await getDatasetFiles(target.id)
+    const fileDetails: Details[] = files.map((file) => ({
       ...file,
       type: 'file',
       download: {
@@ -59,10 +57,12 @@ async function getRelated() {
       },
       prependIcon: 'mdi-file',
     }))
-  } else if (currentDetails.value.type === 'chart') {
-    relatedLabel.value = 'Files'
-    const files = await getChartFiles(currentDetails.value.id)
-    related.value = files.map((file) => ({
+    results = (await Promise.all(fileDetails.map(async (fDetail) => {
+      return (await getRelated(fDetail)).map((r) => ({...r, related: [fDetail]}))
+    }))).flat()
+  } else if (target.type === 'chart') {
+    const files = await getChartFiles(target.id)
+    results = files.map((file) => ({
       ...file,
       type: 'file',
       download: {
@@ -72,10 +72,9 @@ async function getRelated() {
       },
       prependIcon: 'mdi-file',
     }))
-  } else if (currentDetails.value.type === 'file') {
-    relatedLabel.value = 'Converted Data'
-    const dataObjects = await getFileDataObjects(currentDetails.value.id)
-    related.value = dataObjects.map((data) => {
+  } else if (target.type === 'file') {
+    const dataObjects = await getFileDataObjects(target.id)
+    results = dataObjects.map((data) => {
       const raster = data as RasterData
       const vector = data as VectorData
       if (raster.cloud_optimized_geotiff){
@@ -102,15 +101,24 @@ async function getRelated() {
         }
       }
     }).filter((item) => !!item)
-  } else {
-    relatedLabel.value = '';
-    related.value = [];
   }
+  return results;
+}
 
-  // ensure no object in the detailStack appears in the related list
-  related.value = related.value.filter((r) => {
-    return !detailStack.value.find((d) => d.id === r.id && d.type === r.type)
-  })
+function fetchRelated() {
+  if (!showModal.value) {
+    detailStack.value = [props.details]
+    return
+  }
+  if (currentDetails.value) {
+    getRelated(currentDetails.value).then((results) => {
+      // ensure no object in the detailStack appears in the related list
+      results = results.filter((r) => {
+        return !detailStack.value.find((d) => d.id === r.id && d.type === r.type)
+      })
+      related.value = results;
+    })
+  }
 }
 
 function getFileSizeString(size: number) {
@@ -144,7 +152,7 @@ function popStack() {
   }
 }
 
-watch([showModal, currentDetails], getRelated)
+watch([showModal, currentDetails], fetchRelated)
 </script>
 
 <template>
@@ -179,7 +187,7 @@ watch([showModal, currentDetails], getRelated)
           </v-card-text>
 
           <div v-if="related?.length" style="min-width: 500px;">
-            <v-card-subtitle>Related {{ relatedLabel }} </v-card-subtitle>
+            <v-card-subtitle>Related Objects </v-card-subtitle>
             <v-list
               :items="related"
               item-value="id"
