@@ -42,6 +42,10 @@ const basicInfo = computed(() => {
 })
 
 async function getRelated() {
+  if (!showModal.value) {
+    detailStack.value = [props.details]
+    return
+  }
   if (currentDetails.value.type === 'dataset') {
     relatedLabel.value = 'Files'
     const files = await getDatasetFiles(currentDetails.value.id)
