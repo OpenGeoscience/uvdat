@@ -25,13 +25,13 @@ function formatIfDate(key: string, value: string) {
       >
         <td class="font-weight-bold">{{ key.replaceAll("_", " ") }}</td>
         <td v-if="!value">NULL</td>
-        <td v-else-if="Array.isArray(value) && typeof value[0] === 'object'">
+        <td v-else-if="Array.isArray(value) && typeof value.filter((v) => v)[0] === 'object'">
           <v-card v-for="item in value" :key="item" class="mb-3">
             <RecursiveTable :data="item" />
           </v-card>
         </td>
         <td v-else-if="Array.isArray(value)">
-          {{ value.join(", ") }}
+          {{ value.filter((v) => v).join(", ") }}
         </td>
         <td v-else-if="!Array.isArray(value) && typeof value === 'object'">
           <v-card class="mb-3">
