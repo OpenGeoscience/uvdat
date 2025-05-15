@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { usePanelStore } from "@/store/panel";
+import { usePanelStore } from "@/store";
 
 
 const props = defineProps<{

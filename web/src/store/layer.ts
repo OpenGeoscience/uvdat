@@ -5,9 +5,8 @@ import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, Styl
 import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
-import { useMapStore } from './map';
-import { useStyleStore } from './style';
-import { useNetworkStore } from './network';
+
+import { useMapStore, useStyleStore, useNetworkStore } from '.';
 
 interface SourceDBObjects {
   dataset?: Dataset,

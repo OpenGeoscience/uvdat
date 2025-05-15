@@ -4,9 +4,11 @@ import { RasterTileSource } from "maplibre-gl";
 import { Layer, Network, Style } from "@/types";
 import { THEMES } from "@/themes";
 
-import { useMapStore } from "./map";
-import { useLayerStore } from "./layer";
-import { useAppStore } from "./app";
+import {
+    useMapStore,
+    useLayerStore,
+    useAppStore,
+} from '.';
 
 
 const rasterColormaps = [

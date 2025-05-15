@@ -12,9 +12,7 @@ import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
 
-import { useAppStore } from "@/store/app";
-import { usePanelStore } from "@/store/panel";
-import { useProjectStore } from "@/store/project";
+import { useAppStore, usePanelStore, useProjectStore } from "@/store";
 
 
 const version = process.env.VUE_APP_VERSION;

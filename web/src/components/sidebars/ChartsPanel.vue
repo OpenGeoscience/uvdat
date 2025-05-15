@@ -13,7 +13,7 @@ import {
 } from "chart.js";
 import { Chart, ChartOptions } from "@/types";
 import MetadataView from "../MetadataView.vue";
-import { useAnalysisStore } from "@/store/analysis";
+import { useAnalysisStore } from "@/store";
 
 const analysisStore = useAnalysisStore();
 

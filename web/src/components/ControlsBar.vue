@@ -2,9 +2,7 @@
 import { ref } from "vue";
 import html2canvas from "html2canvas";
 
-import { useMapStore } from "@/store/map";
-import { useLayerStore } from "@/store/layer";
-import { useAppStore } from "@/store/app";
+import { useAppStore, useLayerStore, useMapStore } from "@/store";
 
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);

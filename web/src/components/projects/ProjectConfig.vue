@@ -11,9 +11,7 @@ import {
   getDatasetLayers,
 } from "@/api/rest";
 import { Project, Dataset } from "@/types";
-import { useMapStore } from "@/store/map";
-import { useAppStore } from "@/store/app";
-import { useProjectStore } from "@/store/project";
+import { useMapStore, useAppStore, useProjectStore } from "@/store";
 
 const projectStore = useProjectStore();
 

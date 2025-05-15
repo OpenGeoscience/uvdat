@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
-import { useLayerStore } from '@/store/layer';
+import { useLayerStore } from '@/store';
 import MetadataView from '@/components/MetadataView.vue'
 import { Dataset, Layer } from '@/types';
 

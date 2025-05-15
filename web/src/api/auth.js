@@ -1,8 +1,6 @@
 import axios from "axios";
 import OauthClient from "@resonant/oauth-client";
-import { useMapStore } from "@/store/map";
-import { useAppStore } from "@/store/app";
-import { useProjectStore } from "@/store/project";
+import { useAppStore, useMapStore, useProjectStore } from "@/store";
 
 export const baseURL = `${process.env.VUE_APP_API_ROOT}api/v1/`;
 

@@ -5,9 +5,7 @@ import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
-import { useMapStore } from "@/store/map";
-import { useLayerStore } from "@/store/layer";
-import { useNetworkStore } from "@/store/network";
+import { useMapStore, useLayerStore, useNetworkStore } from "@/store";
 
 
 const rasterTooltipDataCache = computed(() => useLayerStore().rasterTooltipDataCache);

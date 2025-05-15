@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useStyleStore } from '@/store/style';
+import { useStyleStore } from '@/store';
 import { Layer } from '@/types';
 import { computed, watch } from 'vue';
 import _ from 'lodash';
