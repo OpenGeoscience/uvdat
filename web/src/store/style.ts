@@ -59,12 +59,12 @@ function getRasterTilesQuery(style: Style) {
 
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, Style>>({});
-    
+
     const mapStore = useMapStore();
     const appStore = useAppStore();
     const layerStore = useLayerStore();
 
-    function getDefaultColor() {
+    function getNextDefaultColor() {
         let colorList = THEMES.light.colors;
         if (appStore.theme === 'dark') {
             colorList = THEMES.dark.colors;
@@ -77,6 +77,14 @@ export const useStyleStore = defineStore('style', () => {
         ))
         const i = Object.keys(mapStore.mapSources).length % colors.length;
         return colors[i];
+    }
+
+    function getDefaultStyle(): Style {
+        return {
+            color: getNextDefaultColor(),
+            opacity: 1,
+            visible: true,
+        }
     }
 
     function updateLayerStyles(layer: Layer) {
@@ -247,7 +255,7 @@ export const useStyleStore = defineStore('style', () => {
 
     return {
         selectedLayerStyles,
-        getDefaultColor,
+        getDefaultStyle,
         updateLayerStyles,
         setMapLayerStyle,
         styleNetwork,
