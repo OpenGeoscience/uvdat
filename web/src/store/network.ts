@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
-import { getDatasetNetworks, getNetworkGCC, getProjectNetworks } from '@/api/rest';
+import { ref, watch } from 'vue';
+import { getDatasetNetworks, getNetworkEdges, getNetworkGCC, getNetworkNodes, getProjectNetworks } from '@/api/rest';
 import { Dataset, Network, NetworkEdge, NetworkNode } from '@/types';
 
 import { usePanelStore, useStyleStore } from '.';
@@ -17,12 +17,31 @@ export const useNetworkStore = defineStore('network', () => {
 
     const loadingNetworks = ref<boolean>(false);
     const availableNetworks = ref<Network[]>([]);
-    const currentNetwork = ref<Network>();
 
     // These are only used in NetworksPanel.vue, but must be here
     // so the state persists when the panel is moved around
     const currentNetworkNodes = ref<NetworkNode[]>([]);
     const currentNetworkEdges = ref<NetworkEdge[]>([]);
+    
+    const currentNetwork = ref<Network>();
+    watch(currentNetwork, () => {
+        if (currentNetwork.value) {
+            currentNetwork.value.selected = {
+                nodes: [],
+                edges: [],
+            }
+            getNetworkNodes(currentNetwork.value.id).then((results) => {
+                currentNetworkNodes.value = results;
+            })
+            getNetworkEdges(currentNetwork.value.id).then((results) => {
+                currentNetworkEdges.value = results;
+            })
+        } else {
+            currentNetworkNodes.value = [];
+            currentNetworkEdges.value = [];
+        }
+    });
+
 
     // Actions
     function initNetworks(projectId: number) {

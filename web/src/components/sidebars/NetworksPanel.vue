@@ -115,24 +115,10 @@ function toggleSelected() {
     }
 }
 
+// Clear search text when network changes
 watch(() => networkStore.currentNetwork, () => {
     searchText.value = ''
-    if (networkStore.currentNetwork) {
-        networkStore.currentNetwork.selected = {
-            nodes: [],
-            edges: [],
-        }
-        getNetworkNodes(networkStore.currentNetwork.id).then((results) => {
-            networkStore.currentNetworkNodes = results;
-        })
-        getNetworkEdges(networkStore.currentNetwork.id).then((results) => {
-            networkStore.currentNetworkEdges = results;
-        })
-    } else {
-        networkStore.currentNetworkNodes = [];
-        networkStore.currentNetworkEdges = [];
-    }
-})
+});
 
 watch([selectedNodes, hoverNode, hoverEdge], () => {
     if (networkStore.currentNetwork) {
