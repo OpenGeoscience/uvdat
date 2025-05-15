@@ -36,7 +36,7 @@ const relatedLabel = ref('Objects');
 const basicInfo = computed(() => {
   return Object.fromEntries(
     Object.entries(currentDetails.value).filter(
-      ([key]) => ['description', 'created', 'modified'].includes(key)
+      ([key]) => ['description', 'created', 'modified', 'category', 'id'].includes(key)
     )
   )
 })
@@ -161,7 +161,7 @@ watch([showModal, currentDetails], getRelated)
             {{ currentDetails.name }}
           </v-card-title>
 
-          <div v-if="basicInfo?.length">
+          <div v-if="basicInfo">
             <v-card-subtitle>Basic Information</v-card-subtitle>
             <v-card-text><RecursiveTable :data="basicInfo"/></v-card-text>
           </div>
