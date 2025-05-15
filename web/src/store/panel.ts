@@ -1,11 +1,10 @@
 import { FloatingPanelConfig, AnalysisResult, Chart, Dataset, Layer, Network, RasterData, VectorData } from '@/types';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useAppStore } from './app';
 import { getDataset } from '@/api/rest';
-import { useLayerStore } from './layer';
 import { getDatasetLayers } from '@/api/rest';
-import { useAnalysisStore } from './analysis';
+
+import { useAppStore, useLayerStore, useAnalysisStore } from '.';
 
 const showableTypes = ['chart', 'dataset', 'network', 'layer', 'analysisresult', 'rasterdata', 'vectordata']
 

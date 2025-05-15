@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Layer } from "@/types";
 import { computed, ref } from "vue";
-import { useLayerStore } from "@/store/layer";
+import { useLayerStore } from "@/store";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";

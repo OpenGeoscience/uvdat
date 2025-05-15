@@ -10,14 +10,16 @@ import {
 import { Dataset, Project } from '@/types';
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
-import { useNetworkStore } from './network';
 
-import { useMapStore } from './map';
-import { useLayerStore } from './layer';
-import { useAnalysisStore } from './analysis';
-import { usePanelStore } from './panel';
-import { useAppStore } from './app';
-import { useStyleStore } from './style';
+import {
+    useNetworkStore,
+    useMapStore,
+    useLayerStore,
+    useAnalysisStore,
+    usePanelStore,
+    useAppStore,
+    useStyleStore,
+} from '.';
 
 export const useProjectStore = defineStore('project', () => {
     const loadingProjects = ref<boolean>(true);

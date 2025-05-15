@@ -11,11 +11,13 @@ import {
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
 
-import { useLayerStore } from "@/store/layer";
-import { useNetworkStore } from "@/store/network";
-import { usePanelStore } from "@/store/panel";
-import { useAnalysisStore } from "@/store/analysis";
-import { useProjectStore } from "@/store/project";
+import {
+  useLayerStore,
+  useNetworkStore,
+  usePanelStore,
+  useAnalysisStore,
+  useProjectStore,
+} from "@/store";
 
 const panelStore = usePanelStore();
 const analysisStore = useAnalysisStore();

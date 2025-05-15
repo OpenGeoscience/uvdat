@@ -7,7 +7,7 @@ import { createVuetify } from "vuetify";
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import { restoreLogin } from "./api/auth";
-import { useAppStore } from "@/store/app";
+import { useAppStore } from "@/store";
 
 import "@mdi/font/css/materialdesignicons.css";
 import { THEMES } from "./themes";

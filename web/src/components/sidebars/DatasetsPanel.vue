@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DatasetList from '@/components/DatasetList.vue'
 import DetailView from '@/components/DetailView.vue'
-import { useLayerStore } from '@/store/layer';
+import { useLayerStore } from '@/store';
 import { Dataset, Layer } from '@/types';
 
 

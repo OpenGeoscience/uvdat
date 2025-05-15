@@ -2,8 +2,8 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getDatasetNetworks, getNetworkGCC } from '@/api/rest';
 import { Dataset, Network, NetworkEdge, NetworkNode } from '@/types';
-import { usePanelStore } from '@/store/panel';
-import { useStyleStore } from '@/store/style';
+
+import { usePanelStore, useStyleStore } from '.';
 
 interface GCCResult {
     deactivatedNodes: number[];

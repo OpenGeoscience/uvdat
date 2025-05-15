@@ -2,9 +2,7 @@
 <script setup lang="ts">
 import { Map, Popup, AttributionControl } from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
-import { useAppStore } from "@/store/app";
-import { useMapStore } from "@/store/map";
-import { useLayerStore } from "@/store/layer";
+import { useAppStore, useMapStore, useLayerStore } from "@/store";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
