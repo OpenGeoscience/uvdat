@@ -103,11 +103,7 @@ export const useLayerStore = defineStore('layer', () => {
         const styleId = `${layer.id}.${layer.copy_id}`
         const sourceId = `${styleId}.${frame.id}`
         if (!styleStore.selectedLayerStyles[styleId]) {
-          styleStore.selectedLayerStyles[styleId] = {
-            color: styleStore.getDefaultColor(),
-            opacity: 1,
-            visible: true,
-          }
+          styleStore.selectedLayerStyles[styleId] = styleStore.getDefaultStyle();
         }
         const currentStyle = styleStore.selectedLayerStyles[styleId];
         currentStyle.visible = layer.visible
