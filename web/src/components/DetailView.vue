@@ -152,7 +152,7 @@ watch([showModal, currentDetails], getRelated)
     @click.stop="showModal = true"
   ></v-icon>
 
-  <v-dialog v-model="showModal" width="min-content">
+  <v-dialog v-model="showModal" class="details-dialog">
     <v-card>
       <Transition :name="transitionName" mode="out-in">
         <div :key="currentDetails.id">
@@ -216,6 +216,11 @@ watch([showModal, currentDetails], getRelated)
 </template>
 
 <style scoped>
+.details-dialog {
+  max-width: 50vw;
+  max-height: 70vh;
+}
+
 .slide-in-enter-active,
 .slide-in-leave-active,
 .slide-out-enter-active,
