@@ -11,7 +11,7 @@ const mapStore = useMapStore();
 const layerStore = useLayerStore();
 const networkStore = useNetworkStore();
 
-const rasterTooltipDataCache = computed(() => layerStore.rasterTooltipDataCache);
+const rasterTooltipDataCache = computed(() => mapStore.rasterTooltipDataCache);
 const clickedFeature = computed(() => mapStore.clickedFeature);
 const clickedFeatureProperties = computed(() => {
   if (clickedFeature.value === undefined) {
