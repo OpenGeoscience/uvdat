@@ -26,6 +26,7 @@ const props = defineProps<{
 }>();
 
 const showModal = ref(false);
+const transitionName = ref('slide-in');
 const detailStack = ref<Details[]>([]);
 const currentDetails = computed(() => {
   if (detailStack.value.length) return detailStack.value[detailStack.value.length - 1];
@@ -117,6 +118,7 @@ function getFileSizeString(size: number) {
 }
 
 function addToStack(relatedId: number) {
+  transitionName.value = 'slide-in'
   const child = related.value?.find((r) => r.id === relatedId)
   if (child) {
     detailStack.value = [
@@ -127,6 +129,7 @@ function addToStack(relatedId: number) {
 }
 
 function popStack() {
+  transitionName.value = 'slide-out'
   if (detailStack.value.length) {
     detailStack.value = [
       ...detailStack.value.slice(0, -1)
@@ -148,50 +151,54 @@ watch([showModal, currentDetails], getRelated)
 
   <v-dialog v-model="showModal" width="min-content">
     <v-card>
-      <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
-        <v-icon icon="mdi-arrow-left" v-if="detailStack.length" @click="popStack" />
-        {{ currentDetails.name }}
-      </v-card-title>
+      <Transition :name="transitionName" mode="out-in">
+        <div :key="currentDetails.id">
+          <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
+            <v-icon icon="mdi-arrow-left" v-if="detailStack.length" @click="popStack" />
+            {{ currentDetails.name }}
+          </v-card-title>
 
-      <div v-if="basicInfo?.length">
-        <v-card-subtitle>Basic Information</v-card-subtitle>
-        <v-card-text><RecursiveTable :data="basicInfo"/></v-card-text>
-      </div>
+          <div v-if="basicInfo?.length">
+            <v-card-subtitle>Basic Information</v-card-subtitle>
+            <v-card-text><RecursiveTable :data="basicInfo"/></v-card-text>
+          </div>
 
-      <v-card-subtitle>Metadata</v-card-subtitle>
-      <v-card-text v-if="!hasMetadata">This {{ currentDetails.type }} has no metadata.</v-card-text>
-      <v-card-text v-else>
-        <RecursiveTable :data="currentDetails.metadata" />
-      </v-card-text>
+          <v-card-subtitle>Metadata</v-card-subtitle>
+          <v-card-text v-if="!hasMetadata">This {{ currentDetails.type }} has no metadata.</v-card-text>
+          <v-card-text v-else>
+            <RecursiveTable :data="currentDetails.metadata" />
+          </v-card-text>
 
-      <div v-if="related?.length" style="min-width: 500px;">
-        <v-card-subtitle>Related {{ relatedLabel }} </v-card-subtitle>
-        <v-list
-          :items="related"
-          item-value="id"
-          @click:select="({id}) => addToStack(id as number)"
-        >
-          <template v-slot:prepend="{ item }">
-            <v-icon v-if="item.prependIcon" :icon="item.prependIcon" class="mr-3" />
-            <span class="secondary-text text-sm">{{ item.type.toUpperCase() }}</span>
-          </template>
-          <template v-slot:title="{ item }">
-            <div v-if="item" v-tooltip="item.name">{{ item.name }}</div>
-          </template>
-          <template v-slot:append="{ item }">
-            <a
-              v-if="item?.download"
-              :href="item.download.url"
-              download
-              >
-              <v-icon
-                v-tooltip="'Download ' + item.download.type.toUpperCase() + ' (' + getFileSizeString(item.download.size) + ')'"
-                icon="mdi-download"
-              ></v-icon>
-            </a>
-          </template>
-        </v-list>
-      </div>
+          <div v-if="related?.length" style="min-width: 500px;">
+            <v-card-subtitle>Related {{ relatedLabel }} </v-card-subtitle>
+            <v-list
+              :items="related"
+              item-value="id"
+              @click:select="({id}) => addToStack(id as number)"
+            >
+              <template v-slot:prepend="{ item }">
+                <v-icon v-if="item.prependIcon" :icon="item.prependIcon" class="mr-3" />
+                <span class="secondary-text text-sm">{{ item.type.toUpperCase() }}</span>
+              </template>
+              <template v-slot:title="{ item }">
+                <div v-if="item" v-tooltip="item.name">{{ item.name }}</div>
+              </template>
+              <template v-slot:append="{ item }">
+                <a
+                  v-if="item?.download"
+                  :href="item.download.url"
+                  download
+                  >
+                  <v-icon
+                    v-tooltip="'Download ' + item.download.type.toUpperCase() + ' (' + getFileSizeString(item.download.size) + ')'"
+                    icon="mdi-download"
+                  ></v-icon>
+                </a>
+              </template>
+            </v-list>
+          </div>
+        </div>
+      </Transition>
 
       <v-btn
         class="close-button transparent"
@@ -204,3 +211,22 @@ watch([showModal, currentDetails], getRelated)
   </v-card>
 </v-dialog>
 </template>
+
+<style scoped>
+.slide-in-enter-active,
+.slide-in-leave-active,
+.slide-out-enter-active,
+.slide-out-leave-active  {
+  transition: all 0.25s ease-out;
+}
+
+.slide-in-enter-from, .slide-out-leave-to  {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-in-leave-to, .slide-out-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+</style>
