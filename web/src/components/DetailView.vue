@@ -27,11 +27,9 @@ const props = defineProps<{
 
 const showModal = ref(false);
 const transitionName = ref('slide-in');
-const detailStack = ref<Details[]>([]);
-const currentDetails = computed(() => {
-  if (detailStack.value.length) return detailStack.value[detailStack.value.length - 1];
-  return props.details
-});
+const detailStack = ref<Details[]>([props.details]);
+const stackPoppable = computed(() => detailStack.value.length > 1);
+const currentDetails = computed(() => detailStack.value[detailStack.value.length - 1]);
 const hasMetadata = computed(() => currentDetails.value.metadata && Object.keys(currentDetails.value.metadata).length > 0);
 const related = ref<Details[]>();
 const relatedLabel = ref('Objects');
@@ -129,6 +127,11 @@ function addToStack(relatedId: number) {
 }
 
 function popStack() {
+  // Don't ever pop the stack completely, always leave the first item
+  if (!stackPoppable.value) {
+    return;
+  }
+
   transitionName.value = 'slide-out'
   if (detailStack.value.length) {
     detailStack.value = [
@@ -154,7 +157,7 @@ watch([showModal, currentDetails], getRelated)
       <Transition :name="transitionName" mode="out-in">
         <div :key="currentDetails.id">
           <v-card-title style="max-width: 90%; margin: 4px 4em 0 0;">
-            <v-icon icon="mdi-arrow-left" v-if="detailStack.length" @click="popStack" />
+            <v-icon icon="mdi-arrow-left" v-if="stackPoppable" @click="popStack" />
             {{ currentDetails.name }}
           </v-card-title>
 
