@@ -180,12 +180,6 @@ watch([showModal, currentDetails], fetchRelated)
             <v-card-text><RecursiveTable :data="basicInfo"/></v-card-text>
           </div>
 
-          <v-card-subtitle>Metadata</v-card-subtitle>
-          <v-card-text v-if="!hasMetadata">This {{ currentDetails.type }} has no metadata.</v-card-text>
-          <v-card-text v-else>
-            <RecursiveTable :data="currentDetails.metadata" />
-          </v-card-text>
-
           <div v-if="related?.length" style="min-width: 500px;">
             <v-card-subtitle>Related Objects </v-card-subtitle>
             <v-list
@@ -214,6 +208,12 @@ watch([showModal, currentDetails], fetchRelated)
               </template>
             </v-list>
           </div>
+
+          <v-card-subtitle>Metadata</v-card-subtitle>
+          <v-card-text v-if="!hasMetadata">This {{ currentDetails.type }} has no metadata.</v-card-text>
+          <v-card-text v-else>
+            <RecursiveTable :data="currentDetails.metadata" />
+          </v-card-text>
         </div>
       </Transition>
 
