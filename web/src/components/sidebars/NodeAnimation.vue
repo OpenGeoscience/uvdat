@@ -4,7 +4,9 @@ import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
 import { useLayerStore, useNetworkStore, useStyleStore } from "@/store";
 
-const networkStore = useNetworkStore(); 
+const networkStore = useNetworkStore();
+const layerStore = useLayerStore();
+const styleStore = useStyleStore();
 
 const props = defineProps<{
   nodeFailures?: Record<number, number[]>,
@@ -54,9 +56,6 @@ function rewind() {
 }
 
 watch(currentTick, async () => {
-  const layerStore = useLayerStore();
-  const styleStore = useStyleStore();
-  
   if (nodeChanges.value) {
     let deactivated = nodeChanges.value[currentTick.value];
     if (props.network) networkStore.setNetworkDeactivatedNodes(props.network, deactivated || [], true);

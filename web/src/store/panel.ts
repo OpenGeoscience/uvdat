@@ -64,12 +64,15 @@ function defaultPanelArrangement(): FloatingPanelConfig[] {
 }
 
 export const usePanelStore = defineStore('panel', () => {
+    const analysisStore = useAnalysisStore();
+    const layerStore = useLayerStore();
+    const appStore = useAppStore();
+    
     const panelArrangement = ref<FloatingPanelConfig[]>([]);
     const draggingPanel = ref<string | undefined>();
     const draggingFrom = ref<{ x: number; y: number } | undefined>();
     const dragModes = ref<("position" | "height" | "width")[]>();
 
-    const analysisStore = useAnalysisStore();
 
     function resetPanels() {
         panelArrangement.value = defaultPanelArrangement();
@@ -91,8 +94,6 @@ export const usePanelStore = defineStore('panel', () => {
     }
 
     function dragPanel(event: MouseEvent) {
-        const appStore = useAppStore();
-
         let offsetX = -5;
         const offsetY = 30;
         const minHeight = 100;
@@ -180,7 +181,6 @@ export const usePanelStore = defineStore('panel', () => {
     }
 
     function isVisible(showable: Showable): boolean {
-        const layerStore = useLayerStore();
         if (showable.chart) {
             const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
             if (!chartPanel) return false;
@@ -234,7 +234,6 @@ export const usePanelStore = defineStore('panel', () => {
     
     
     function show(showable: Showable) {
-        const layerStore = useLayerStore();
         if (showable.chart) {
             const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
             if (chartPanel && !chartPanel?.visible) chartPanel.visible = true

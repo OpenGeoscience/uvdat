@@ -12,10 +12,13 @@ interface GCCResult {
 const GCCcache: GCCResult[] = [];
 
 export const useNetworkStore = defineStore('network', () => {
+    const panelStore = usePanelStore();
+    const styleStore = useStyleStore();
+
     const loadingNetworks = ref<boolean>(false);
     const availableNetworks = ref<Network[]>([]);
     const currentNetwork = ref<Network>();
-    
+
     // These are only used in NetworksPanel.vue, but must be here
     // so the state persists when the panel is moved around
     const currentNetworkNodes = ref<NetworkNode[]>([]);
@@ -43,7 +46,6 @@ export const useNetworkStore = defineStore('network', () => {
             }
         });
         if (availableNetworks.value.length) {
-            const panelStore = usePanelStore();
             panelStore.panelArrangement = panelStore.panelArrangement.map((panel) => {
                 if (panel.id === 'networks') panel.visible = true;
                 return panel;
@@ -90,7 +92,7 @@ export const useNetworkStore = defineStore('network', () => {
         } else {
             network.gcc = network.nodes;
         }
-        useStyleStore().styleNetwork(network);
+        styleStore.styleNetwork(network);
         availableNetworks.value = availableNetworks.value.map((n) => (n.id === network.id ? network : n));
     }
 

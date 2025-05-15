@@ -22,6 +22,8 @@ import {
 const panelStore = usePanelStore();
 const analysisStore = useAnalysisStore();
 const projectStore = useProjectStore();
+const networkStore = useNetworkStore(); 
+const layerStore = useLayerStore();
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
@@ -48,7 +50,7 @@ const networkInput = computed(() => {
   if (fullInputs.value['network_failure']) {
     const analysis = fullInputs.value['network_failure']
     const networkId = analysis.inputs.network
-    network = useNetworkStore().availableNetworks.find((n) => n.id === networkId)
+    network = networkStore.availableNetworks.find((n) => n.id === networkId)
     if (!network) {
       const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.analysis_type)
       network = analysisType?.input_options.network.find(
@@ -65,9 +67,9 @@ const networkInput = computed(() => {
       (input) => input.type === 'network'
     )
   }
-  if (network && !useNetworkStore().availableNetworks.map((n) => n.id).includes(network.id)) {
-    useNetworkStore().availableNetworks = [
-      ...useNetworkStore().availableNetworks,
+  if (network && !networkStore.availableNetworks.map((n) => n.id).includes(network.id)) {
+    networkStore.availableNetworks = [
+      ...networkStore.availableNetworks,
       network
     ]
   }
@@ -216,7 +218,7 @@ watch(tab, () => {
 watch(
   [
     currentResult,
-    () => useLayerStore().selectedLayers,
+    () => layerStore.selectedLayers,
     () => analysisStore.currentChart, 
     () => panelStore.panelArrangement
   ],

@@ -14,6 +14,8 @@ import { Project, Dataset } from "@/types";
 import { useMapStore, useAppStore, useProjectStore } from "@/store";
 
 const projectStore = useProjectStore();
+const appStore = useAppStore();
+const mapStore = useMapStore();
 
 const currentTab = ref();
 const searchText = ref();
@@ -37,7 +39,6 @@ const otherDatasets: ComputedRef<Dataset[]> = computed(() => {
 const otherSelectedDatasetIds: Ref<number[]> = ref([]);
 
 const permissions = computed(() => {
-  const appStore = useAppStore();
   const ret = Object.fromEntries(
     projectStore.availableProjects.map((p) => {
       let perm = "follower";
@@ -70,7 +71,7 @@ function openProjectConfig(create = false) {
 }
 
 function create() {
-  const { center, zoom } = useMapStore().getCurrentMapPosition();
+  const { center, zoom } = mapStore.getCurrentMapPosition();
   createProject(newProjectName.value, center, zoom).then((project) => {
     newProjectName.value = undefined;
     projectStore.projectConfigMode = "existing";
@@ -115,7 +116,7 @@ function saveProjectName() {
 function saveProjectMapLocation(project: Project | undefined) {
   if (project) {
     saving.value = "waiting";
-    const { center, zoom } = useMapStore().getCurrentMapPosition();
+    const { center, zoom } = mapStore.getCurrentMapPosition();
     patchProject(project.id, {
       default_map_center: center,
       default_map_zoom: zoom,
@@ -131,7 +132,7 @@ function saveProjectMapLocation(project: Project | undefined) {
         projectStore.currentProject.default_map_center = project.default_map_center
         projectStore.currentProject.default_map_zoom = project.default_map_zoom
       }
-      useMapStore().setMapCenter(project);
+      mapStore.setMapCenter(project);
       saving.value = "done";
       setTimeout(() => {
         saving.value = undefined;
@@ -358,7 +359,7 @@ watch(() => projectStore.projectConfigMode, () => {
         </template>
         <v-card width="250">
           <v-list selectable>
-            <v-list-item @click="() => useMapStore().setMapCenter(projectStore.currentProject)">
+            <v-list-item @click="() => mapStore.setMapCenter(projectStore.currentProject)">
               Go to project default map position
             </v-list-item>
             <v-list-item @click="() => saveProjectMapLocation(projectStore.currentProject)">

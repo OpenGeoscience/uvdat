@@ -25,6 +25,7 @@ export const useLayerStore = defineStore('layer', () => {
   // Sibling store imports
   const mapStore = useMapStore();
   const networkStore = useNetworkStore();
+  const styleStore = useStyleStore();
 
   function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects: SourceDBObjects = {}
@@ -278,7 +279,6 @@ export const useLayerStore = defineStore('layer', () => {
   watch(selectedLayers, updateLayersShown);
   function updateLayersShown() {
     const map = mapStore.getMap();
-    const styleStore = useStyleStore();
 
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {

@@ -4,6 +4,10 @@ import html2canvas from "html2canvas";
 
 import { useAppStore, useLayerStore, useMapStore } from "@/store";
 
+const appStore = useAppStore();
+const layerStore = useLayerStore();
+const mapStore = useMapStore();
+
 const copyMenuShown = ref(false);
 const screenOverlayShown = ref(false);
 const mapOnly = ref(false);
@@ -11,8 +15,8 @@ const loadingBounds = ref(false);
 
 async function fitMap() {
   loadingBounds.value = true;
-  const map = useMapStore().getMap();
-  const bounds = await useLayerStore().getBoundsOfVisibleLayers()
+  const map = mapStore.getMap();
+  const bounds = await layerStore.getBoundsOfVisibleLayers()
   if (bounds) map.fitBounds(bounds)
   loadingBounds.value = false;
 }
@@ -64,10 +68,10 @@ function takeScreenshot(save: boolean) {
   <div
     id="controls-bar"
     :class="
-      useAppStore().openSidebars.includes('left') ? 'controls-bar shifted' : 'controls-bar'
+      appStore.openSidebars.includes('left') ? 'controls-bar shifted' : 'controls-bar'
     "
   >
-    <v-btn color="primary" class="control-btn" @click="useMapStore().toggleBaseLayer" variant="flat">
+    <v-btn color="primary" class="control-btn" @click="mapStore.toggleBaseLayer" variant="flat">
       <v-icon icon="mdi-layers" v-tooltip="'Toggle Base Layer'"></v-icon>
     </v-btn>
     <v-btn class="control-btn" @click="fitMap" variant="flat">

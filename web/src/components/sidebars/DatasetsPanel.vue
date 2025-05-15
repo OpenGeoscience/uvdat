@@ -4,6 +4,7 @@ import DetailView from '@/components/DetailView.vue'
 import { useLayerStore } from '@/store';
 import { Dataset, Layer } from '@/types';
 
+const layerStore = useLayerStore();
 
 const props = defineProps<{
   datasets: Dataset[] | undefined;
@@ -12,7 +13,7 @@ const props = defineProps<{
 function toggleSelected(items: Layer[]) {
   items.forEach((item) => {
     const layer = item as Layer;
-    useLayerStore().addLayer(layer);
+    layerStore.addLayer(layer);
   })
 }
 </script>
