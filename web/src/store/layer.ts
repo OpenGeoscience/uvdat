@@ -20,7 +20,6 @@ interface SourceDBObjects {
 
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
-  const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
   // Sibling store imports
   const mapStore = useMapStore();
@@ -76,188 +75,6 @@ export const useLayerStore = defineStore('layer', () => {
     }
   }
 
-  function createVectorFeatureMapLayers(source: Source) {
-    const map = mapStore.getMap();
-    const sourceIdentifiers = source.id.split('.');
-    const metadata = {
-      layer_id: sourceIdentifiers[0],
-      layer_copy_id: sourceIdentifiers[1],
-      frame_id: sourceIdentifiers[2],
-    }
-
-    // Fill Layer
-    map.addLayer({
-      id: source.id + '.fill',
-      type: "fill",
-      source: source.id,
-      metadata,
-      "source-layer": "default",
-      filter: [
-        "match",
-        ["geometry-type"],
-        ["Polygon", "MultiPolygon"],
-        true,
-        false,
-      ],
-      layout: {
-        visibility: "visible",
-      },
-      paint: {
-        "fill-color": "black",
-        "fill-opacity": 0.5,
-      },
-    });
-
-    // Line Layer
-    map.addLayer({
-      id: source.id + '.line',
-      type: "line",
-      source: source.id,
-      metadata,
-      "source-layer": "default",
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-        visibility: "visible",
-      },
-      paint: {
-        "line-color": "black",
-        "line-width": 2,
-        "line-opacity": 1,
-      },
-    });
-
-    // Circle Layer
-    // Filtered to point geometries. If not filtered,
-    // this will add a circle at the vertices of all lines.
-    // This should be added LAST, as it has click priority over the other layer types.
-    map.addLayer({
-      id: source.id + '.circle',
-      type: "circle",
-      source: source.id,
-      metadata,
-      "source-layer": "default",
-      filter: ["match", ["geometry-type"], ["Point", "MultiPoint"], true, false],
-      paint: {
-        "circle-color": "black",
-        "circle-opacity": 1,
-        "circle-stroke-color": "black",
-        "circle-stroke-opacity": 1,
-        "circle-stroke-width": 2,
-        "circle-radius": 5,
-      },
-      layout: {
-        visibility: "visible",
-      },
-    });
-
-    map.on("click", source.id + '.fill', mapStore.handleLayerClick);
-    map.on("click", source.id + '.line', mapStore.handleLayerClick);
-    map.on("click", source.id + '.circle', mapStore.handleLayerClick);
-  }
-
-
-  function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
-    const map = mapStore.getMap();
-    const vectorSourceId = sourceId + '.vector.' + vector.id
-    map.addSource(vectorSourceId, {
-      type: "vector",
-      tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
-    });
-    const source = map.getSource(vectorSourceId);
-    if (source) {
-      createVectorFeatureMapLayers(source);
-      return source;
-    }
-  }
-  function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) {
-    const map = mapStore.getMap();
-    const sourceIdentifiers = tileSource.id.split('.');
-    const metadata = {
-      layer_id: sourceIdentifiers[0],
-      layer_copy_id: sourceIdentifiers[1],
-      frame_id: sourceIdentifiers[2],
-    }
-
-    // Tile Layer
-    map.addLayer({
-      id: tileSource.id + '.tile',
-      type: "raster",
-      source: tileSource.id,
-      metadata,
-    });
-
-    map.addLayer({
-      id: boundsSource.id + '.mask',
-      type: "fill",
-      source: boundsSource.id,
-      paint: {
-        "fill-opacity": 0,
-      },
-    });
-
-    map.on("click", boundsSource.id + '.mask', mapStore.handleLayerClick);
-  }
-
-  async function cacheRasterData(raster: RasterData) {
-    if (rasterTooltipDataCache.value[raster.id] !== undefined) {
-      return;
-    }
-    const data = await getRasterDataValues(raster.id);
-    rasterTooltipDataCache.value[raster.id] = data;
-  }
-
-  function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
-    const map = mapStore.getMap();
-
-    const params = {
-      projection: 'EPSG:3857'
-    }
-    const tileParamString = new URLSearchParams(params).toString();
-    const tilesSourceId = sourceId + '.raster.' + raster.id;
-    map.addSource(tilesSourceId, {
-      type: "raster",
-      tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
-    });
-    const tileSource = map.getSource(tilesSourceId);
-
-    const bounds = raster.metadata.bounds;
-    const boundsSourceId = sourceId + '.bounds.' + raster.id;
-    let { xmin, xmax, ymin, ymax, srs } = bounds;
-    [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
-    [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
-    map.addSource(boundsSourceId, {
-      type: "geojson",
-      data: {
-        type: "Polygon",
-        coordinates: [[
-          [xmin, ymin], [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin],
-        ]]
-      }
-    });
-    const boundsSource = map.getSource(boundsSourceId);
-
-    if (tileSource && boundsSource) {
-      createRasterFeatureMapLayers(tileSource, boundsSource);
-      cacheRasterData(raster);
-      return tileSource;
-    }
-  }
-
-  function addFrame(frame: LayerFrame, sourceId: string) {
-    if (!mapStore.mapSources[sourceId]) {
-      if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId);
-        if (vector) mapStore.mapSources[sourceId] = vector;
-
-      }
-      if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId);
-        if (raster) mapStore.mapSources[sourceId] = raster;
-      }
-    }
-  }
-
   // Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
   function addLayer(layer: Layer) {
     let name = layer.name;
@@ -294,11 +111,14 @@ export const useLayerStore = defineStore('layer', () => {
         }
         const currentStyle = styleStore.selectedLayerStyles[styleId];
         currentStyle.visible = layer.visible
+
+        // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame === frame.index) {
-          addFrame(frame, sourceId);
+          mapStore.addLayerFrameToMap(frame, sourceId);
         }
+
         map.getLayersOrder().forEach((mapLayerId) => {
           if (mapLayerId !== 'base-tiles') {
             if (mapLayerId.includes(sourceId)) {
@@ -326,10 +146,7 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   return {
-    // Data
-    rasterTooltipDataCache,
     selectedLayers,
-    // Functions
     updateLayersShown,
     addLayer,
     getDBObjectsForSourceID,
