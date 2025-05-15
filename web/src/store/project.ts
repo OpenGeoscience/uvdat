@@ -1,6 +1,5 @@
 import {
     getProjects,
-    getDataset,
     getProjectCharts,
     getProjectAnalysisTypes,
     getProjectDatasets,

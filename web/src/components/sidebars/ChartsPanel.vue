@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -11,7 +11,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Chart, ChartOptions } from "@/types";
+import { ChartOptions } from "@/types";
 import MetadataView from "../MetadataView.vue";
 import { useAnalysisStore } from "@/store";
 

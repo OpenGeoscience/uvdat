@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { LngLatBoundsLike, Source } from "maplibre-gl";
-import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, Style, VectorData } from '@/types';
+import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, VectorData } from '@/types';
 import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
