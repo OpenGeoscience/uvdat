@@ -10,6 +10,9 @@ import {
   AnalysisType,
   Network,
   RasterDataValues,
+  FileItem,
+  RasterData,
+  VectorData,
   NetworkNode,
   NetworkEdge,
 } from "@/types";
@@ -64,6 +67,10 @@ export async function getChart(chartId: number): Promise<Chart> {
   return (await apiClient.get(`charts/${chartId}`)).data;
 }
 
+export async function getChartFiles(chartId: number): Promise<FileItem[]> {
+  return (await apiClient.get(`charts/${chartId}/files`)).data;
+}
+
 export async function getProjectCharts(projectId: number): Promise<Chart[]> {
   return (await apiClient.get(`charts?project=${projectId}`)).data.results;
 }
@@ -85,6 +92,14 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
 
 export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
   return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
+}
+
+export async function getDatasetFiles(datasetId: number): Promise<FileItem[]> {
+  return (await apiClient.get(`datasets/${datasetId}/files`)).data;
+}
+
+export async function getFileDataObjects(fileId: number): Promise<(RasterData | VectorData)[]> {
+  return (await apiClient.get(`files/${fileId}/data`)).data;
 }
 
 export async function getDatasetNetworks(datasetId: number): Promise<Network[]> {

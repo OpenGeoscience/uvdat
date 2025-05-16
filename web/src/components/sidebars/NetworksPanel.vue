@@ -3,7 +3,7 @@ import { ref, computed, watch } from "vue";
 import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
 import { useNetworkStore, usePanelStore, useStyleStore } from "@/store";
 
-import MetadataView from "../MetadataView.vue";
+import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
 const networkStore = useNetworkStore();
@@ -110,7 +110,7 @@ function toggleSelected() {
             networkStore.currentNetwork,
             deactivated,
         )
-        
+
         selectedNodes.value = [];
     }
 }
@@ -212,7 +212,7 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                                     />
                                 </template>
                                 <template v-slot:item.metadata="{ item }">
-                                    <MetadataView :metadata="item.metadata" :name="item.name" />
+                                    <DetailView :details="{...item, type: 'networknode'}" />
                                 </template>
                             </v-data-table>
                         </v-window-item>
@@ -236,7 +236,7 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                                     />
                                 </template>
                                 <template v-slot:item.metadata="{ item }">
-                                    <MetadataView :metadata="item.metadata" :name="item.name" />
+                                    <DetailView :details="{...item, type: 'networkedge'}" />
                                 </template>
                             </v-data-table>
                         </v-window-item>
@@ -252,7 +252,7 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                         {{ network.name }}
                         <template v-slot:append>
                             <v-icon icon="mdi-transit-connection-variant" size="small" class="ml-2"></v-icon>
-                            <MetadataView :metadata="network.metadata" :name="network.name" />
+                            <DetailView :details="{...network, type: 'network'}" />
                         </template>
                     </v-list-item>
                 </v-list>

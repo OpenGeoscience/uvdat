@@ -12,7 +12,7 @@ import {
   Legend,
 } from "chart.js";
 import { ChartOptions } from "@/types";
-import MetadataView from "../MetadataView.vue";
+import DetailView from "../DetailView.vue";
 import { useAnalysisStore } from "@/store";
 
 const analysisStore = useAnalysisStore();
@@ -216,7 +216,7 @@ const downloadReady = computed(() => {
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
             <v-icon icon="mdi-poll" size="small" class="ml-2"></v-icon>
-            <MetadataView :metadata="chart.metadata" :name="chart.name" />
+            <DetailView :details="{...chart, type: 'chart'}"/>
           </template>
         </v-list-item>
       </v-list>

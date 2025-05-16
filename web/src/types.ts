@@ -16,7 +16,7 @@ export interface Dataset {
   category?: string;
   processing?: boolean;
   layers?: Layer[];
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, any>;
 }
 
 export interface Layer {
@@ -25,7 +25,7 @@ export interface Layer {
   name: string;
   dataset: Dataset;
   frames: LayerFrame[];
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
   visible: boolean;
   current_frame: number;
 }
@@ -53,7 +53,8 @@ export interface VectorData {
   dataset: number;
   geojson_data: string | null;
   source_file: null | number;
-  metadata: Record<string, unknown>;
+  file_size: number;
+  metadata: Record<string, any>;
 }
 
 export interface RasterData {
@@ -62,6 +63,7 @@ export interface RasterData {
   cloud_optimized_geotiff: string | null;
   dataset: number;
   source_file: null | number;
+  file_size: number;
   metadata: RasterMetadata;
 }
 
@@ -186,7 +188,7 @@ export interface Network {
   category: string;
   nodes: number[];
   edges: number[];
-  metadata: Record<string, unknown>;
+  metadata: Record<string, any>;
   vector_data: number;
   selected?: {
     nodes: number[];
@@ -317,4 +319,18 @@ export interface FloatingPanelConfig {
   width?: number | undefined;
   height?: number | undefined;
   element?: HTMLElement;
+}
+
+export interface FileItem {
+  id: number;
+  name: string;
+  chart?: Chart;
+  dataset?: Dataset;
+  created: string;
+  modified: string;
+  file: string;
+  file_size: number;
+  file_type: string;
+  index: number;
+  metadata: Record<string, any>;
 }
