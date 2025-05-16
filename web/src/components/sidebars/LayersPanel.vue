@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { selectedLayers } from "@/store";
 import { Layer } from "@/types";
 import { computed, ref } from "vue";
-
+import { useLayerStore } from "@/store";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
 
 
 const searchText = ref();
+const layerStore = useLayerStore();
+const selectedLayers = computed({
+    get: () => layerStore.selectedLayers,
+    set: (value) => {
+        layerStore.selectedLayers = value;
+    }
+});
+
 const filteredLayers = computed(() => {
     return selectedLayers.value?.filter((layer) => {
         return  !searchText.value ||
