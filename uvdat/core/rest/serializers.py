@@ -116,12 +116,26 @@ class LayerFrameSerializer(serializers.ModelSerializer):
 
 
 class VectorDataSerializer(serializers.ModelSerializer):
+    file_size = serializers.SerializerMethodField('get_file_size')
+
+    def get_file_size(self, obj):
+        if obj.geojson_data:
+            return obj.geojson_data.size
+        return -1
+
     class Meta:
         model = VectorData
         fields = '__all__'
 
 
 class RasterDataSerializer(serializers.ModelSerializer):
+    file_size = serializers.SerializerMethodField('get_file_size')
+
+    def get_file_size(self, obj):
+        if obj.cloud_optimized_geotiff:
+            return obj.cloud_optimized_geotiff.size
+        return -1
+
     class Meta:
         model = RasterData
         fields = '__all__'

@@ -1,10 +1,11 @@
 from django.http import HttpResponse
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Chart
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
-from uvdat.core.rest.serializers import ChartSerializer
+from uvdat.core.rest.serializers import ChartSerializer, FileItemSerializer
 
 
 class ChartViewSet(ModelViewSet):
@@ -21,6 +22,14 @@ class ChartViewSet(ModelViewSet):
             return qs
 
         return qs.filter(project=int(project_id))
+
+    @action(detail=True, methods=['get'])
+    def files(self, request, **kwargs):
+        chart = self.get_object()
+        return Response(
+            [FileItemSerializer(file).data for file in chart.fileitem_set.all()],
+            status=200,
+        )
 
     def validate_editable(self, chart, func, *args, **kwargs):
         if chart.editable:

@@ -19,10 +19,6 @@ class FileItem(TimeStampedModel):
     metadata = models.JSONField(blank=True, null=True)
     index = models.IntegerField(null=True)
 
-    def download(self):
-        # TODO: download
-        pass
-
 
 @receiver(models.signals.post_delete, sender=FileItem)
 def delete_content(sender, instance, **kwargs):
