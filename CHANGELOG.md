@@ -1,6 +1,60 @@
 # CHANGELOG
 
 
+## v0.12.0 (2025-05-16)
+
+### Features
+
+- Detailview - Download related files ([#136](https://github.com/OpenGeoscience/uvdat/pull/136),
+  [`8d0a3ba`](https://github.com/OpenGeoscience/uvdat/commit/8d0a3ba35c841ff9ff7dc4a44b1b59def3769e46))
+
+* feat: Expand MetadataView into DetailView
+
+* feat: Get list of files related to dataset
+
+* feat: Get list of files related to chart
+
+* chore: Remove unnecessary placeholder `download` method from fileitem model
+
+* feat: Create `FileItemViewSet`
+
+* feat: Get list of data objects related to file
+
+* fix: Display null values in recursive table
+
+* refactor: Pass whole object to DetailView and display table of basic info
+
+* fix: Resolve name & type conflicts after merging master
+
+* fix: protect against null values in metadata
+
+* refactor: Use stack to track current details instead of recursive dialogs
+
+* feat: Add slide transition when changing current details
+
+* Use stack for all details, including first one
+
+* fix: Adjust basic info display
+
+* style: Adjust dialog sizing
+
+* fix: Use type in transition key so different-type objects with same id will show transition
+
+* fix: Reset stack when dialog closed
+
+* style: Make object types clearer
+
+* refactor: Show converted data before files
+
+* style: Move metadata section to the bottom of the dialog
+
+* fix: More protection from null values in RecursiveTable
+
+---------
+
+Co-authored-by: Jacob Nesbitt <jjnesbitt2@gmail.com>
+
+
 ## v0.11.0 (2025-05-09)
 
 ### Bug Fixes

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-__version__ = '0.11.0'
+__version__ = '0.12.0'
 
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
