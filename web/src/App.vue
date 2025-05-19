@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
-import { useAppStore, usePanelStore, useProjectStore } from "@/store";
 import { oauthClient } from "./api/auth";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
+import { useAppStore, usePanelStore, useProjectStore } from "@/store";
 const appStore = useAppStore();
 const panelStore = usePanelStore();
 const projectStore = useProjectStore();

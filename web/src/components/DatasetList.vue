@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, watch } from "vue";
 import { Dataset } from "@/types";
-import { useProjectStore } from "@/store";
 
+import { useProjectStore } from "@/store";
 const projectStore = useProjectStore();
+
 const props = defineProps<{
     datasets: Dataset[] | undefined;
 }>();

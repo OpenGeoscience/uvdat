@@ -3,7 +3,6 @@ import { ref } from "vue";
 import html2canvas from "html2canvas";
 
 import { useAppStore, useLayerStore, useMapStore } from "@/store";
-
 const appStore = useAppStore();
 const layerStore = useLayerStore();
 const mapStore = useMapStore();

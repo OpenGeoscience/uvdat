@@ -5,8 +5,8 @@ import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
-import { useMapStore, useLayerStore, useNetworkStore } from "@/store";
 
+import { useMapStore, useLayerStore, useNetworkStore } from "@/store";
 const layerStore = useLayerStore();
 const networkStore = useNetworkStore();
 const mapStore = useMapStore();

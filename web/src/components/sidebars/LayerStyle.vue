@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { useStyleStore } from '@/store';
 import { Layer } from '@/types';
 import { computed, watch } from 'vue';
 import _ from 'lodash';
+
+import { useStyleStore } from '@/store';
+const styleStore = useStyleStore();
 
 const props = defineProps<{
   layer: Layer;
 }>();
 
-const styleStore = useStyleStore();
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;

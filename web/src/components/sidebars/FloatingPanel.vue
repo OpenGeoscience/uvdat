@@ -2,14 +2,13 @@
 import { computed, ref } from "vue";
 
 import { usePanelStore } from "@/store";
-
+const panelStore = usePanelStore();
 
 const props = defineProps<{
   id: string;
   bottom?: boolean;
 }>();
 
-const panelStore = usePanelStore();
 const startDrag = panelStore.startDrag;
 const panel = computed(() =>
   panelStore.panelArrangement.find((p) => p.id === props.id)

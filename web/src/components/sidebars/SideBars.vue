@@ -13,15 +13,14 @@ import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
 
 import { useAppStore, usePanelStore, useProjectStore } from "@/store";
+const appStore = useAppStore();
+const panelStore = usePanelStore();
+const projectStore = useProjectStore();
 
 
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
-  
-const appStore = useAppStore();
-const panelStore = usePanelStore();
-const projectStore = useProjectStore();
 
 const themeManager = useTheme();
 const darkMode = ref<boolean>(appStore.theme === "dark");

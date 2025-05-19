@@ -2,8 +2,8 @@
 import { Layer } from "@/types";
 import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
-import { useLayerStore, useNetworkStore, useStyleStore } from "@/store";
 
+import { useLayerStore, useNetworkStore, useStyleStore } from "@/store";
 const networkStore = useNetworkStore();
 const layerStore = useLayerStore();
 const styleStore = useStyleStore();
