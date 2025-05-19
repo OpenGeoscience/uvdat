@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from jsonschema import validate
 
@@ -61,16 +60,12 @@ class LayerStyle(models.Model):
         return LAYER_STYLE_SCHEMA
 
     def clean(self):
-        if (
-            self.is_default
-            and LayerStyle.objects.filter(
-                layer=self.layer,
-                is_default=True,
-            )
-            .exclude(id=self.id)
-            .count()
-        ):
-            raise ValidationError('Only one LayerStyle per Layer can be marked as default.')
+        if self.is_default:
+            for style in LayerStyle.objects.filter(layer=self.layer, is_default=True).exclude(
+                id=self.id
+            ):
+                style.is_default = False
+                style.save()
         if len(self.style_spec):
             validate(instance=self.style_spec, schema=self.schema)
 
