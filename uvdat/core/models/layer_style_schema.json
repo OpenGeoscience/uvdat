@@ -10,42 +10,6 @@
             "minimum": 0,
             "maximum": 1
         },
-        "widgets": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "opacity_widget": {
-                        "type": "boolean"
-                    },
-                    "visibility_widget": {
-                        "type": "boolean"
-                    },
-                    "color_widget": {
-                        "type": "boolean"
-                    },
-                    "size_widget": {
-                        "type": "boolean"
-                    },
-                    "filter_widget": {
-                        "type": "boolean"
-                    }
-                },
-                "required": [
-                    "name",
-                    "opacity_widget",
-                    "visibility_widget",
-                    "color_widget",
-                    "size_widget",
-                    "filter_widget"
-                ]
-            },
-            "minItems": 1,
-            "uniqueItems": true
-        },
         "colors": {
             "type": "array",
             "items": {
@@ -68,6 +32,17 @@
                             },
                             "color_by": {
                                 "type": "string"
+                            },
+                            "null_color": {
+                                "type": "string"
+                            },
+                            "range": {
+                                "type": "array",
+                                "items": {
+                                    "type": "number"
+                                },
+                                "minItems": 2,
+                                "maxItems": 2
                             },
                             "markers": {
                                 "type": "array",
@@ -96,6 +71,8 @@
                             "name",
                             "discrete",
                             "color_by",
+                            "null_color",
+                            "range",
                             "markers"
                         ]
                     }
@@ -135,12 +112,28 @@
                             "maximum": {
                                 "type": "integer",
                                 "minimum": 0
+                            },
+                            "null_size": {
+                                "type": "object",
+                                "properties": {
+                                    "transparency": {
+                                        "type": "boolean"
+                                    },
+                                    "size": {
+                                        "type": "number"
+                                    }
+                                },
+                                "required": [
+                                    "transparency",
+                                    "size"
+                                ]
                             }
                         },
                         "required": [
                             "size_by",
                             "minimum",
-                            "maximum"
+                            "maximum",
+                            "null_size"
                         ]
                     }
                 },
@@ -191,7 +184,6 @@
     "required": [
         "default_frame",
         "opacity",
-        "widgets",
         "colors",
         "sizes",
         "filters"

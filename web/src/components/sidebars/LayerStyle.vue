@@ -190,7 +190,10 @@ function setRowSizeMode(rowName: string, sizeMode: string) {
                     return { ...s, size_range: {
                         minimum: 1,
                         maximum: 10,
-                        null_size: 'transparent'
+                        null_size: {
+                            transparency: true,
+                            size: 0
+                        }
                     }, single_size: undefined}
                 }
             }
@@ -791,13 +794,16 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         style="align-items: center;"
                                     >
                                         <v-btn-toggle
-                                            :model-value="row.size_range.null_size === 'transparent' ? 'transparent' : 2"
+                                            :model-value="row.size_range.null_size?.transparency ? 'transparent' : 2"
                                             density="compact"
                                             color="primary"
                                             variant="outlined"
                                             divided
                                             mandatory
-                                            @update:model-value="(value: string | number) => {if (row.size_range) row.size_range.null_size = value}"
+                                            @update:model-value="(value: string | number) => {if (row.size_range) {
+                                                if (value === 'transparent') {row.size_range.null_size = {transparency: true, size: 0}}
+                                                else {row.size_range.null_size = {transparency: true, size: value as number}}
+                                            }}"
                                         >
                                             <v-btn :value="'transparent'">Transparent</v-btn>
                                             <v-btn :value="2">Single Size</v-btn>

@@ -44,9 +44,7 @@ export interface ColorMap {
   name: string;
   discrete?: boolean;
   color_by?: string;
-  // TODO: add this to server-side schema
   range?: [number, number],
-  // TODO: add this to server-side schema
   null_color?: string;
   markers: {
     color: string;
@@ -86,8 +84,10 @@ export interface StyleSpec {
     single_size?: number;
     size_range?: {
       size_by?: string;
-      // TODO: add this to server-side schema
-      null_size?: number | string;
+      null_size?: {
+        transparency: boolean,
+        size: number,
+      };
       minimum: number;
       maximum: number;
     }

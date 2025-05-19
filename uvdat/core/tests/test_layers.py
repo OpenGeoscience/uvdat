@@ -33,23 +33,6 @@ def test_layer_style_validation(layer: Layer, project: Project):
                 (2, '2 is greater than the maximum of 1'),
             ],
         },
-        'widgets': {
-            'valid': [
-                {
-                    'name': 'polygons',
-                    'opacity_widget': True,
-                    'visibility_widget': True,
-                    'color_widget': True,
-                    'size_widget': True,
-                    'filter_widget': True,
-                },
-            ],
-            'invalid': [
-                ([], 'should be non-empty'),
-                ([{}], r'\'name\' is a required property'),
-                ([{'name': 'polygons'}], r'\'opacity_widget\' is a required property'),
-            ],
-        },
         'colors': {
             'valid': [{'name': 'polygons', 'single_color': '#ffffff'}],
             'invalid': [
@@ -72,6 +55,50 @@ def test_layer_style_validation(layer: Layer, project: Project):
                             'colormap': {'name': 'viridis', 'discrete': False, 'color_by': 'depth'},
                         }
                     ],
+                    r'\'null_color\' is a required property',
+                ),
+                (
+                    [
+                        {
+                            'name': 'polygons',
+                            'colormap': {
+                                'name': 'viridis',
+                                'discrete': False,
+                                'color_by': 'depth',
+                                'null_color': '#000000',
+                            },
+                        }
+                    ],
+                    r'\'range\' is a required property',
+                ),
+                (
+                    [
+                        {
+                            'name': 'polygons',
+                            'colormap': {
+                                'name': 'viridis',
+                                'discrete': False,
+                                'color_by': 'depth',
+                                'null_color': '#000000',
+                                'range': [],
+                            },
+                        }
+                    ],
+                    r'\'minItems\': 2',
+                ),
+                (
+                    [
+                        {
+                            'name': 'polygons',
+                            'colormap': {
+                                'name': 'viridis',
+                                'discrete': False,
+                                'color_by': 'depth',
+                                'null_color': '#000000',
+                                'range': [0, 100],
+                            },
+                        }
+                    ],
                     r'\'markers\' is a required property',
                 ),
                 (
@@ -82,6 +109,8 @@ def test_layer_style_validation(layer: Layer, project: Project):
                                 'name': 'viridis',
                                 'discrete': False,
                                 'color_by': 'depth',
+                                'null_color': '#000000',
+                                'range': [0, 100],
                                 'markers': [{'color': '#ffffff', 'value': 0}],
                             },
                         }
@@ -96,6 +125,8 @@ def test_layer_style_validation(layer: Layer, project: Project):
                                 'name': 'viridis',
                                 'discrete': False,
                                 'color_by': 'depth',
+                                'null_color': '#000000',
+                                'range': [0, 100],
                                 'markers': [
                                     {'color': '#ffffff', 'value': 0},
                                     {'color': '#ffffff', 'value': -1},
@@ -128,6 +159,21 @@ def test_layer_style_validation(layer: Layer, project: Project):
                             'zoom_scaling': False,
                             'name': 'polygons',
                             'size_range': {'size_by': 'depth', 'minimum': 0, 'maximum': -1},
+                        }
+                    ],
+                    r'\'null_size\' is a required property',
+                ),
+                (
+                    [
+                        {
+                            'zoom_scaling': False,
+                            'name': 'polygons',
+                            'size_range': {
+                                'size_by': 'depth',
+                                'minimum': 0,
+                                'maximum': -1,
+                                'null_size': {'transparency': False, 'size': 5},
+                            },
                         }
                     ],
                     '-1 is less than the minimum of 0',
