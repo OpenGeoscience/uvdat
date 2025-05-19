@@ -9,26 +9,19 @@ import DetailView from "../DetailView.vue";
 
 const searchText = ref();
 const layerStore = useLayerStore();
-const selectedLayers = computed({
-    get: () => layerStore.selectedLayers,
-    set: (value) => {
-        layerStore.selectedLayers = value;
-    }
-});
-
 const filteredLayers = computed(() => {
-    return selectedLayers.value?.filter((layer) => {
+    return layerStore.selectedLayers?.filter((layer) => {
         return  !searchText.value ||
         layer.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
 })
 
 function removeLayers(layers: Layer[]) {
-    selectedLayers.value = selectedLayers.value.filter((layer) => !layers.includes(layer))
+    layerStore.selectedLayers = layerStore.selectedLayers.filter((layer) => !layers.includes(layer))
 }
 
 function setVisibility(layers: Layer[], visible=true) {
-    selectedLayers.value = selectedLayers.value.map((layer) => {
+    layerStore.selectedLayers = layerStore.selectedLayers.map((layer) => {
         if (layers.includes(layer)) layer.visible = visible;
         return layer
     })
@@ -36,7 +29,7 @@ function setVisibility(layers: Layer[], visible=true) {
 
 function updateFrame(layer: Layer, value: number) {
     value = value - 1;  // slider values are 1-indexed
-    selectedLayers.value = selectedLayers.value.map((l) => {
+    layerStore.selectedLayers = layerStore.selectedLayers.map((l) => {
         if (l.id === layer.id && l.copy_id === layer.copy_id) {
             l.current_frame = value;
         }
@@ -73,12 +66,12 @@ function getFrameInputWidth(layer: Layer) {
                 <v-icon
                     color="primary"
                     icon="mdi-close"
-                    @click="() => removeLayers(selectedLayers)"
+                    @click="() => removeLayers(layerStore.selectedLayers)"
                     class="layer-select-button"
                 />
                 <v-checkbox-btn
-                    :model-value="selectedLayers.every((l) => l.visible)"
-                    @click="() => setVisibility(selectedLayers, !selectedLayers.every((l) => l.visible))"
+                    :model-value="layerStore.selectedLayers.every((l) => l.visible)"
+                    @click="() => setVisibility(layerStore.selectedLayers, !layerStore.selectedLayers.every((l) => l.visible))"
                     style="display: inline"
                 />
             </div>
@@ -87,7 +80,7 @@ function getFrameInputWidth(layer: Layer) {
                 density="compact"
             >
                 <draggable
-                    v-model="selectedLayers"
+                    v-model="layerStore.selectedLayers"
                     item-key="id"
                 >
                     <template #item="{ element }">

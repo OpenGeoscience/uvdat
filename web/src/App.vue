@@ -11,10 +11,9 @@ const panelStore = usePanelStore();
 const projectStore = useProjectStore();
 
 const showError = computed(() => appStore.currentError !== undefined);
-const currentUser = computed(() => appStore.currentUser);
 
 function onReady() {
-  if (currentUser.value) {
+  if (appStore.currentUser) {
     projectStore.clearState();
     projectStore.loadProjects();
   }
@@ -25,14 +24,14 @@ const login = () => {
 };
 
 onMounted(onReady);
-watch(currentUser, onReady);
+watch(() => appStore.currentUser, onReady);
 
 </script>
 
 <template>
   <v-app>
     <v-overlay
-      :model-value="!currentUser"
+      :model-value="!appStore.currentUser"
       absolute
       persistent
       :opacity="0.8"
@@ -42,7 +41,7 @@ watch(currentUser, onReady);
       <v-btn @click="login"> Log in to Continue </v-btn>
     </v-overlay>
     <v-overlay
-      v-if="currentUser"
+      v-if="appStore.currentUser"
       :model-value="showError"
       absolute
       :opacity="0.8"
