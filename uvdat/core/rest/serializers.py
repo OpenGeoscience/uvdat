@@ -108,7 +108,8 @@ class LayerSerializer(serializers.ModelSerializer):
 
     def get_default_style(self, obj):
         try:
-            return LayerStyle.objects.get(layer=obj, is_default=True)
+            default_style = LayerStyle.objects.filter(layer=obj, is_default=True).first()
+            return LayerStyleSerializer(default_style).data
         except LayerStyle.DoesNotExist:
             return None
 
