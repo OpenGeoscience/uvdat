@@ -1,24 +1,21 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
-import {
-  currentUser,
-  currentError,
-  projectConfigMode,
-  draggingPanel,
-} from "./store";
 import { oauthClient } from "./api/auth";
-import { clearState, loadProjects } from "./storeFunctions";
-import { dragPanel, stopDrag } from "@/drag";
 import Map from "./components/map/Map.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
-const showError = computed(() => currentError.value !== undefined);
+import { useAppStore, usePanelStore, useProjectStore } from "@/store";
+const appStore = useAppStore();
+const panelStore = usePanelStore();
+const projectStore = useProjectStore();
+
+const showError = computed(() => appStore.currentError !== undefined);
 
 function onReady() {
-  if (currentUser.value) {
-    clearState();
-    loadProjects();
+  if (appStore.currentUser) {
+    projectStore.clearState();
+    projectStore.loadProjects();
   }
 }
 
@@ -27,14 +24,14 @@ const login = () => {
 };
 
 onMounted(onReady);
-watch(currentUser, onReady);
-watch(projectConfigMode, loadProjects);
+watch(() => appStore.currentUser, onReady);
+
 </script>
 
 <template>
   <v-app>
     <v-overlay
-      :model-value="!currentUser"
+      :model-value="!appStore.currentUser"
       absolute
       persistent
       :opacity="0.8"
@@ -44,7 +41,7 @@ watch(projectConfigMode, loadProjects);
       <v-btn @click="login"> Log in to Continue </v-btn>
     </v-overlay>
     <v-overlay
-      v-if="currentUser"
+      v-if="appStore.currentUser"
       :model-value="showError"
       absolute
       :opacity="0.8"
@@ -54,7 +51,7 @@ watch(projectConfigMode, loadProjects);
         <v-btn
           icon
           variant="flat"
-          @click.stop="currentError = undefined"
+          @click.stop="appStore.currentError = undefined"
           class="pa-3"
           style="float: right"
         >
@@ -62,15 +59,15 @@ watch(projectConfigMode, loadProjects);
         </v-btn>
         <v-card-title> Error: </v-card-title>
         <v-card-text>
-          {{ currentError }}
+          {{ appStore.currentError }}
         </v-card-text>
       </v-card>
     </v-overlay>
     <div>
       <div
-        :class="draggingPanel ? 'main-area no-select' : 'main-area'"
-        @mousemove="dragPanel"
-        @mouseup="stopDrag"
+        :class="panelStore.draggingPanel ? 'main-area no-select' : 'main-area'"
+        @mousemove="panelStore.dragPanel"
+        @mouseup="panelStore.stopDrag"
       >
         <Map />
         <SideBars />

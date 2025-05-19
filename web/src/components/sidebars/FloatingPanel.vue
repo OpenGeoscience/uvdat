@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { panelArrangement } from "@/store";
-import { startDrag } from "@/drag";
+import { usePanelStore } from "@/store";
+const panelStore = usePanelStore();
 
 const props = defineProps<{
   id: string;
   bottom?: boolean;
 }>();
 
+const startDrag = panelStore.startDrag;
 const panel = computed(() =>
-  panelArrangement.value.find((p) => p.id === props.id)
+  panelStore.panelArrangement.find((p) => p.id === props.id)
 );
 
 const element = ref();
@@ -75,9 +76,9 @@ function updatePanelElement() {
 
 function panelUpdated() {
   if (panel.value) {
-    panelArrangement.value = [
+    panelStore.panelArrangement = [
       panel.value,
-      ...panelArrangement.value.filter((p) => p.id !== props.id),
+      ...panelStore.panelArrangement.filter((p) => p.id !== props.id),
     ];
   }
 }

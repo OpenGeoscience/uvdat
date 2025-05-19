@@ -1,16 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import {
-  currentProject,
-  currentChart,
-  availableAnalysisTypes,
-  loadingAnalysisTypes,
-  currentAnalysisType,
-  selectedLayers,
-  availableNetworks,
-  panelArrangement,
-} from "@/store";
-import {
   getDatasetLayers,
   getAnalysisResults,
   runAnalysis,
@@ -20,11 +10,24 @@ import {
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import { AnalysisResult } from "@/types";
-import { isVisible, show, showableTypes } from "@/panelFunctions"
+
+import {
+  useLayerStore,
+  useNetworkStore,
+  usePanelStore,
+  useAnalysisStore,
+  useProjectStore,
+} from "@/store";
+
+const panelStore = usePanelStore();
+const analysisStore = useAnalysisStore();
+const projectStore = useProjectStore();
+const networkStore = useNetworkStore(); 
+const layerStore = useLayerStore();
 
 const searchText = ref();
 const filteredAnalysisTypes = computed(() => {
-  return availableAnalysisTypes.value?.filter((analysis_type) => {
+  return analysisStore.availableAnalysisTypes?.filter((analysis_type) => {
     return  !searchText.value ||
     analysis_type.name.toLowerCase().includes(searchText.value.toLowerCase())
   })
@@ -47,14 +50,14 @@ const networkInput = computed(() => {
   if (fullInputs.value['network_failure']) {
     const analysis = fullInputs.value['network_failure']
     const networkId = analysis.inputs.network
-    network = availableNetworks.value.find((n) => n.id === networkId)
+    network = networkStore.availableNetworks.find((n) => n.id === networkId)
     if (!network) {
-      const analysisType = availableAnalysisTypes.value?.find((t) => t.db_value === analysis.analysis_type)
+      const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.analysis_type)
       network = analysisType?.input_options.network.find(
         (o: any) => o.id ===  networkId
       )
     }
-    const visible = isVisible({network})
+    const visible = panelStore.isVisible({network})
     network = {
       ...network,
       visible
@@ -64,9 +67,9 @@ const networkInput = computed(() => {
       (input) => input.type === 'network'
     )
   }
-  if (network && !availableNetworks.value.map((n) => n.id).includes(network.id)) {
-    availableNetworks.value = [
-      ...availableNetworks.value,
+  if (network && !networkStore.availableNetworks.map((n) => n.id).includes(network.id)) {
+    networkStore.availableNetworks = [
+      ...networkStore.availableNetworks,
       network
     ]
   }
@@ -82,10 +85,10 @@ const ws = ref();
 
 function run() {
   inputForm.value.validate().then(({ valid }: { valid: boolean }) => {
-    if (valid && currentProject.value && currentAnalysisType.value) {
+    if (valid && projectStore.currentProject && analysisStore.currentAnalysisType) {
       runAnalysis(
-        currentAnalysisType.value.db_value,
-        currentProject.value.id,
+        analysisStore.currentAnalysisType.db_value,
+        projectStore.currentProject.id,
         selectedInputs.value,
       ).then((result) => {
         tab.value = 'old';
@@ -97,10 +100,10 @@ function run() {
 }
 
 function fetchResults() {
-  if (!currentProject.value || !currentAnalysisType.value) return;
+  if (!projectStore.currentProject || !analysisStore.currentAnalysisType) return;
   getAnalysisResults(
-    currentAnalysisType.value.db_value,
-    currentProject.value.id
+    analysisStore.currentAnalysisType.db_value,
+    projectStore.currentProject.id
   ).then((results) => {
     availableResults.value = results;
     if (currentResult.value) {
@@ -118,13 +121,13 @@ async function fillInputsAndOutputs() {
   } else {
     fullInputs.value = Object.fromEntries(
       Object.entries(currentResult.value.inputs).map(([key, value]) => {
-        const fullValue = currentAnalysisType.value?.input_options[key]?.find(
+        const fullValue = analysisStore.currentAnalysisType?.input_options[key]?.find(
           (o: any) => o.id == value
         );
         if (fullValue) {
-          fullValue.type = currentAnalysisType.value?.input_types[key].toLowerCase()
-          fullValue.visible = isVisible({[fullValue.type]: fullValue})
-          fullValue.showable = showableTypes.includes(fullValue.type)
+          fullValue.type = analysisStore.currentAnalysisType?.input_types[key].toLowerCase()
+          fullValue.visible = panelStore.isVisible({[fullValue.type]: fullValue})
+          fullValue.showable = panelStore.showableTypes.includes(fullValue.type)
         }
         return [key, fullValue || value];
       })
@@ -133,7 +136,7 @@ async function fillInputsAndOutputs() {
       const floodDataset = {
         id: fullInputs.value?.flood_simulation.outputs.flood as number
       }
-      if (isVisible({dataset: floodDataset})) {
+      if (panelStore.isVisible({dataset: floodDataset})) {
         getDatasetLayers(floodDataset.id).then((layers) => {
           additionalAnimationLayers.value = layers;
         })
@@ -145,7 +148,7 @@ async function fillInputsAndOutputs() {
     fullOutputs.value = Object.fromEntries(
       await Promise.all(
         Object.entries(currentResult.value.outputs).map(async ([key, value]) => {
-          const type = currentAnalysisType.value?.output_types[key].toLowerCase();
+          const type = analysisStore.currentAnalysisType?.output_types[key].toLowerCase();
           if (type == 'dataset') {
             value = await getDataset(value)
           }
@@ -154,8 +157,8 @@ async function fillInputsAndOutputs() {
           }
           if (typeof value === 'object') {
             value.type = type
-            value.visible = isVisible({[type]: value})
-            value.showable = showableTypes.includes(value.type)
+            value.visible = panelStore.isVisible({[type]: value})
+            value.showable = panelStore.showableTypes.includes(value.type)
           } else {
             value = {
               name: value,
@@ -170,9 +173,9 @@ async function fillInputsAndOutputs() {
 
 function createWebSocket() {
   if (ws.value) ws.value.close()
-  if (currentProject.value) {
+  if (projectStore.currentProject) {
     const urlBase = `${process.env.VUE_APP_API_ROOT}ws/`
-    const url = `${urlBase}analytics/project/${currentProject.value.id}/results/`
+    const url = `${urlBase}analytics/project/${projectStore.currentProject.id}/results/`
     ws.value = new WebSocket(url);
     ws.value.onmessage = (event: any) => {
       const data = JSON.parse(JSON.parse(event.data))
@@ -189,20 +192,20 @@ function createWebSocket() {
           (result) => result.id === data.id ? data : result
         )
       }
-      if (data.completed && currentProject.value) {
+      if (data.completed && projectStore.currentProject) {
         // completed result object may become an input option
         // for another analysis type, refresh available types
-        getProjectAnalysisTypes(currentProject.value.id).then((types) => {
-          availableAnalysisTypes.value = types;
+        getProjectAnalysisTypes(projectStore.currentProject.id).then((types) => {
+          analysisStore.availableAnalysisTypes = types;
         })
       }
     }
   }
 }
 
-watch(currentProject, createWebSocket)
+watch(() => projectStore.currentProject, createWebSocket)
 
-watch(currentAnalysisType, () => {
+watch(() => analysisStore.currentAnalysisType, () => {
   fetchResults()
 })
 
@@ -213,16 +216,21 @@ watch(tab, () => {
 });
 
 watch(
-  [currentResult, selectedLayers, currentChart, panelArrangement],
+  [
+    currentResult,
+    () => layerStore.selectedLayers,
+    () => analysisStore.currentChart, 
+    () => panelStore.panelArrangement
+  ],
   fillInputsAndOutputs,
   {deep: true}
 );
 </script>
 
 <template>
-  <div :class="currentAnalysisType ? 'panel-content-outer' : 'panel-content-outer with-search'">
+  <div :class="analysisStore.currentAnalysisType ? 'panel-content-outer' : 'panel-content-outer with-search'">
     <v-text-field
-      v-if="!currentAnalysisType"
+      v-if="!analysisStore.currentAnalysisType"
       v-model="searchText"
       label="Search Analytics"
       variant="outlined"
@@ -232,16 +240,16 @@ watch(
       hide-details
     />
     <v-card class="panel-content-inner">
-      <div v-if="currentAnalysisType" style="height: 100%; overflow: auto">
+      <div v-if="analysisStore.currentAnalysisType" style="height: 100%; overflow: auto">
         <v-card-title class="analysis-title">
-          {{ currentAnalysisType.name }}
+          {{ analysisStore.currentAnalysisType.name }}
             <v-tooltip text="Close" location="bottom">
               <template v-slot:activator="{ props }">
                 <v-btn
                   v-bind="props"
                   icon="mdi-close"
                   variant="plain"
-                  @click="currentAnalysisType = undefined"
+                  @click="analysisStore.currentAnalysisType = undefined"
                 />
               </template>
             </v-tooltip>
@@ -257,7 +265,7 @@ watch(
             <v-form class="pa-3" @submit.prevent ref="inputForm">
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
               <v-select
-                v-for="[key, value] in Object.entries(currentAnalysisType.input_options)"
+                v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)"
                 v-model="selectedInputs[key]"
                 :key="key"
                 :label="key.replaceAll('_', ' ')"
@@ -305,7 +313,7 @@ watch(
                             v-if="value.showable && !value.visible"
                             density="compact"
                             color="primary"
-                            @click="() => show({[value.type]: value})"
+                            @click="() => panelStore.show({[value.type]: value})"
                           >
                             Show
                         </v-btn>
@@ -363,7 +371,7 @@ watch(
                               color="primary"
                               density="compact"
                               style="display: block"
-                              @click="() => show({[value.type]: value})"
+                              @click="() => panelStore.show({[value.type]: value})"
                             >
                               Show
                             </v-btn>
@@ -386,7 +394,7 @@ watch(
         <v-list-item
           v-for="simType in filteredAnalysisTypes"
           :key="simType.id"
-          @click="currentAnalysisType=simType"
+          @click="analysisStore.currentAnalysisType=simType"
         >
           {{ simType.name }}
           <template v-slot:append>
@@ -395,7 +403,7 @@ watch(
           </template>
         </v-list-item>
       </v-list>
-      <v-progress-linear v-else-if="loadingAnalysisTypes" indeterminate></v-progress-linear>
+      <v-progress-linear v-else-if="analysisStore.loadingAnalysisTypes" indeterminate></v-progress-linear>
       <v-card-text v-else class="help-text">No available Analytics.</v-card-text>
     </v-card>
   </div>

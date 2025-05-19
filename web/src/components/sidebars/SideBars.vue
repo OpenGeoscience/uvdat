@@ -2,7 +2,6 @@
 import { ref, Ref, watch } from "vue";
 import { useTheme } from "vuetify/lib/framework.mjs";
 
-import { currentUser, openSidebars, panelArrangement, theme, availableDatasets } from "@/store";
 import { logout } from "@/api/auth";
 
 import ProjectConfig from "@/components/projects/ProjectConfig.vue";
@@ -13,12 +12,18 @@ import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
 
+import { useAppStore, usePanelStore, useProjectStore } from "@/store";
+const appStore = useAppStore();
+const panelStore = usePanelStore();
+const projectStore = useProjectStore();
+
+
 const version = process.env.VUE_APP_VERSION;
 const hash = process.env.VUE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
 
 const themeManager = useTheme();
-const darkMode = ref<boolean>(theme.value === "dark");
+const darkMode = ref<boolean>(appStore.theme === "dark");
 
 function copyToClipboard(content: string) {
   navigator.clipboard.writeText(content).then(() => {
@@ -27,23 +32,23 @@ function copyToClipboard(content: string) {
 }
 
 function toggleSidebar(sidebar: "left" | "right") {
-  if (openSidebars.value.includes(sidebar)) {
-    openSidebars.value = openSidebars.value.filter((s) => s !== sidebar);
+  if (appStore.openSidebars.includes(sidebar)) {
+    appStore.openSidebars = appStore.openSidebars.filter((s) => s !== sidebar);
   } else {
-    openSidebars.value = [...openSidebars.value, sidebar];
+    appStore.openSidebars = [...appStore.openSidebars, sidebar];
   }
 }
 
 function togglePanelVisibility(id: string) {
-  panelArrangement.value = panelArrangement.value.map((p) => {
+  panelStore.panelArrangement = panelStore.panelArrangement.map((p) => {
     if (p.id == id) p.visible = !p.visible;
     return p;
   });
 }
 
 watch(darkMode, () => {
-  theme.value = darkMode.value ? "dark" : "light";
-  themeManager.global.name.value = theme.value;
+  appStore.theme = darkMode.value ? "dark" : "light";
+  themeManager.global.name.value = appStore.theme;
 });
 </script>
 
@@ -55,7 +60,7 @@ watch(darkMode, () => {
       location="left"
       color="background"
       :class="
-        openSidebars.includes('left') ? 'sidebar left' : 'sidebar left closed'
+        appStore.openSidebars.includes('left') ? 'sidebar left' : 'sidebar left closed'
       "
     >
       <v-toolbar class="toolbar px-5" color="background">
@@ -107,11 +112,11 @@ watch(darkMode, () => {
       <ProjectConfig />
       <div class="panel-set">
         <FloatingPanel
-          v-for="panel, index in panelArrangement.filter((p) => p.dock == 'left')"
+          v-for="panel, index in panelStore.panelArrangement.filter((p) => p.dock == 'left')"
           :id="panel.id"
-          :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
+          :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
         >
-          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
+          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="projectStore.availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
           <ChartsPanel v-else-if="panel.id === 'charts'"/>
           <NetworksPanel v-else-if="panel.id === 'networks'" />
@@ -126,14 +131,14 @@ watch(darkMode, () => {
       location="right"
       color="background"
       :class="
-        openSidebars.includes('right')
+        appStore.openSidebars.includes('right')
           ? 'sidebar right'
           : 'sidebar right closed'
       "
     >
       <v-toolbar
         :class="
-          openSidebars.includes('right') ? 'toolbar px-5' : 'toolbar px-5 right'
+          appStore.openSidebars.includes('right') ? 'toolbar px-5' : 'toolbar px-5 right'
         "
         color="background"
       >
@@ -143,8 +148,8 @@ watch(darkMode, () => {
           v-tooltip="'Toggle Sidebar'"
           @click="toggleSidebar('right')"
         ></v-icon>
-        <div v-if="currentUser">
-          {{ currentUser.first_name }}
+        <div v-if="appStore.currentUser">
+          {{ appStore.currentUser.first_name }}
 
           <v-menu :close-on-content-click="false">
             <template v-slot:activator="{ props }">
@@ -196,11 +201,11 @@ watch(darkMode, () => {
             ></v-icon>
           </template>
           <v-list
-            :items="panelArrangement.filter((p) => p.closeable)"
+            :items="panelStore.panelArrangement.filter((p) => p.closeable)"
             item-title="label"
             item-value="id"
             selectable
-            :selected="panelArrangement.filter((p) => p.visible)"
+            :selected="panelStore.panelArrangement.filter((p) => p.visible)"
             @click:select="(item) => togglePanelVisibility(item.id as string)"
             select-strategy="leaf"
             return-object
@@ -218,11 +223,11 @@ watch(darkMode, () => {
       </div>
       <div class="panel-set">
         <FloatingPanel
-          v-for="panel, index in panelArrangement.filter((p) => p.dock == 'right')"
+          v-for="panel, index in panelStore.panelArrangement.filter((p) => p.dock == 'right')"
           :id="panel.id"
-          :bottom="index ==  panelArrangement.filter((p) => p.dock == 'right').length -1"
+          :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
         >
-          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="availableDatasets"/>
+          <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="projectStore.availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>
           <ChartsPanel v-else-if="panel.id === 'charts'"/>
           <NetworksPanel v-else-if="panel.id === 'networks'" />

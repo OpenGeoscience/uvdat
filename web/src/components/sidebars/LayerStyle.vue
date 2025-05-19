@@ -1,30 +1,31 @@
 <script setup lang="ts">
-import { updateLayerStyles } from '@/layers';
-import { rasterColormaps } from '@/layerStyles';
-import { selectedLayerStyles } from '@/store';
 import { Layer } from '@/types';
 import { computed, watch } from 'vue';
 import _ from 'lodash';
 
+import { useStyleStore } from '@/store';
+const styleStore = useStyleStore();
+
 const props = defineProps<{
   layer: Layer;
 }>();
+
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
 })
 
 const currentStyle = computed(() => {
-    if (!selectedLayerStyles.value[styleKey.value]) {
-        selectedLayerStyles.value[styleKey.value] = {
+    if (!styleStore.selectedLayerStyles[styleKey.value]) {
+        styleStore.selectedLayerStyles[styleKey.value] = {
             visible: true,
             opacity: 1,
         }
     }
-    if (!selectedLayerStyles.value[styleKey.value].colormap_range) {
-        selectedLayerStyles.value[styleKey.value].colormap_range = dataRange.value
+    if (!styleStore.selectedLayerStyles[styleKey.value].colormap_range) {
+        styleStore.selectedLayerStyles[styleKey.value].colormap_range = dataRange.value
     }
-    return selectedLayerStyles.value[styleKey.value];
+    return styleStore.selectedLayerStyles[styleKey.value];
 });
 
 const showRasterOptions = computed(() => {
@@ -54,7 +55,7 @@ function getFrameInputWidth(value: number) {
 }
 
 watch(currentStyle, _.debounce(() => {
-    updateLayerStyles(props.layer)
+    styleStore.updateLayerStyles(props.layer)
 }, 100), {deep: true})
 </script>
 
@@ -103,7 +104,7 @@ watch(currentStyle, _.debounce(() => {
                 </v-label>
                 <v-select
                     v-model="currentStyle.colormap"
-                    :items="rasterColormaps"
+                    :items="styleStore.rasterColormaps"
                     label="Color Map"
                     density="compact"
                 />

@@ -2,20 +2,15 @@
 <script setup lang="ts">
 import { Map, Popup, AttributionControl } from "maplibre-gl";
 import { onMounted, ref, watch } from "vue";
-import {
-  theme,
-  map,
-  tooltipOverlay,
-  openSidebars,
-  showMapBaseLayer,
-  clickedFeature,
-} from "@/store";
-import { setMapCenter } from "@/storeFunctions";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
-import { updateLayersShown } from "@/layers";
+
+import { useAppStore, useMapStore, useLayerStore } from "@/store";
+const appStore = useAppStore();
+const mapStore = useMapStore();
+const layerStore = useLayerStore();
 
 const ATTRIBUTION = [
   "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
@@ -55,13 +50,13 @@ function setAttributionControlStyle() {
   container.style.marginRight = "5px";
   container.style.borderRadius = "15px";
   container.style.position = "relative";
-  container.style.right = openSidebars.value.includes("right")
+  container.style.right = appStore.openSidebars.includes("right")
     ? "360px"
     : "0px";
-  container.style.background = theme.value === "light" ? "white" : "black";
+  container.style.background = appStore.theme === "light" ? "white" : "black";
   container.childNodes.forEach((child) => {
     const childElement = child as HTMLElement;
-    childElement.style.color = theme.value === "light" ? "black" : "white";
+    childElement.style.color = appStore.theme === "light" ? "black" : "white";
   });
 }
 
@@ -99,7 +94,7 @@ function createMap() {
         {
           id: "base-tiles",
           type: "raster",
-          source: theme.value,
+          source: appStore.theme,
           minzoom: 0,
           // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
           maxzoom: 22 + 1,
@@ -127,20 +122,20 @@ function createMap() {
    * this only has a real effect when the base map is clicked, as that means that no other
    * feature layer can "catch" the event, and the tooltip stays hidden.
    */
-  newMap.on("click", () => {clickedFeature.value = undefined});
+  newMap.on("click", () => {mapStore.clickedFeature = undefined});
 
   // Order is important as the following function relies on the ref being set
-  map.value = newMap;
+  mapStore.map = newMap;
   createMapControls();
 }
 
 function createMapControls() {
-  if (!map.value || !tooltip.value) {
+  if (!mapStore.map || !tooltip.value) {
     throw new Error("Map or refs not initialized!");
   }
 
   // Add tooltip overlay
-  tooltipOverlay.value = new Popup({
+  const popup = new Popup({
     anchor: "bottom-left",
     closeOnClick: false,
     maxWidth: "none",
@@ -148,42 +143,42 @@ function createMapControls() {
   });
 
   // Link overlay ref to dom, allowing for modification elsewhere
-  tooltipOverlay.value.setDOMContent(tooltip.value);
+  popup.setDOMContent(tooltip.value);
+
+  // Set store value
+  mapStore.tooltipOverlay = popup;
 }
 
 onMounted(() => {
   createMap();
-  setMapCenter(undefined, true);
+  mapStore.setMapCenter(undefined, true);
 });
 
-watch(theme, () => {
-  map.value?.removeLayer("base-tiles");
-  map.value?.addLayer({
+watch(() => appStore.theme, (value) => {
+  const map = mapStore.getMap();
+  map.removeLayer("base-tiles");
+  map.addLayer({
     id: "base-tiles",
     type: "raster",
-    source: theme.value,
+    source: value,
     minzoom: 0,
     maxzoom: 22 + 1,
     layout: {
-      visibility: showMapBaseLayer.value ? "visible" : "none",
+      visibility: mapStore.showMapBaseLayer ? "visible" : "none",
     },
   });
   setAttributionControlStyle();
-  updateLayersShown()
+  layerStore.updateLayersShown();
 });
 
-watch(openSidebars, () => {
+watch(() => appStore.openSidebars, () => {
   setAttributionControlStyle();
 });
 </script>
 
 <template>
   <div id="mapContainer" class="map">
-    <div
-      id="map-tooltip"
-      ref="tooltip"
-      class="tooltip pa-0"
-    >
+    <div id="map-tooltip" ref="tooltip" class="tooltip pa-0">
       <MapTooltip />
     </div>
   </div>

@@ -1,7 +1,6 @@
 import axios from "axios";
 import OauthClient from "@resonant/oauth-client";
-import { currentError, currentUser, currentProject } from "@/store";
-import { clearState, setMapCenter } from "@/storeFunctions";
+import { useAppStore, useMapStore, useProjectStore } from "@/store";
 
 export const baseURL = `${process.env.VUE_APP_API_ROOT}api/v1/`;
 
@@ -22,7 +21,7 @@ export async function restoreLogin() {
   if (oauthClient.isLoggedIn) {
     apiClient.get("/users/me").then((response) => {
       if (response.data) {
-        currentUser.value = response.data;
+        useAppStore().currentUser = response.data;
       }
     });
   }
@@ -41,16 +40,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    const appStore = useAppStore();
     if (error.response?.status === 500) {
-      currentError.value = "Server error; see server logs for details.";
+      appStore.currentError = "Server error; see server logs for details.";
     } else if (error.response?.status === 404) {
-      currentError.value = "Not found.";
+      appStore.currentError = "Not found.";
     } else if (error.response?.status === 401) {
-      currentError.value = "Not authenticated.";
+      appStore.currentError = "Not authenticated.";
     } else if (error.response) {
-      currentError.value = error.response?.data;
+      appStore.currentError = error.response?.data;
     } else {
-      currentError.value = "An error occurred.";
+      appStore.currentError = "An error occurred.";
     }
     return { data: undefined };
   }
@@ -58,8 +58,11 @@ apiClient.interceptors.response.use(
 
 export const logout = async () => {
   await oauthClient.logout();
-  currentUser.value = undefined;
-  currentProject.value = undefined;
-  clearState();
-  setMapCenter();
+
+  useAppStore().currentUser = undefined;
+
+  useProjectStore().currentProject = undefined;
+  useProjectStore().clearState();
+  
+  useMapStore().setMapCenter();
 };

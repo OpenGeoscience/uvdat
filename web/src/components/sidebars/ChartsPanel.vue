@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { currentChart, availableCharts, loadingCharts } from "@/store";
+import { computed, ref } from "vue";
 import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -15,6 +14,9 @@ import {
 import { ChartOptions } from "@/types";
 import DetailView from "../DetailView.vue";
 
+import { useAnalysisStore } from "@/store";
+const analysisStore = useAnalysisStore();
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -27,7 +29,7 @@ ChartJS.register(
 
 const searchText = ref();
 const filteredCharts = computed(() => {
-  return availableCharts.value?.filter((chart) => {
+  return analysisStore.availableCharts?.filter((chart) => {
     return  !searchText.value ||
     chart.name.toLowerCase().includes(searchText.value.toLowerCase())
   })
@@ -49,7 +51,7 @@ const currentXRange = ref(500);
 const downloadButton = ref();
 
 const options = computed(() => {
-  if (!currentChart.value) {
+  if (!analysisStore.currentChart) {
     return defaultOptions;
   }
 
@@ -57,7 +59,7 @@ const options = computed(() => {
     plugins: {},
     scales: {},
   };
-  const savedOptions = currentChart.value.chart_options;
+  const savedOptions = analysisStore.currentChart.chart_options;
   if (savedOptions.chart_title) {
     customOptions.plugins.title = {
       display: true,
@@ -101,19 +103,19 @@ const options = computed(() => {
 
 const showXRange = computed(() => {
   return (
-    currentChart.value?.chart_data?.labels &&
-    currentChart.value.chart_data.labels.length > 500
+    analysisStore.currentChart?.chart_data?.labels &&
+    analysisStore.currentChart.chart_data.labels.length > 500
   );
 });
 
 const maxX = computed(() => {
-  return currentChart.value?.chart_data?.labels && showXRange.value
-    ? currentChart.value.chart_data.labels.length
+  return analysisStore.currentChart?.chart_data?.labels && showXRange.value
+    ? analysisStore.currentChart.chart_data.labels.length
     : 0;
 });
 
 const data = computed(() => {
-  let currentData = currentChart.value?.chart_data;
+  let currentData = analysisStore.currentChart?.chart_data;
 
   if (!currentData || Object.keys(currentData).length === 0) {
     currentData = defaultChartData;
@@ -138,8 +140,8 @@ const data = computed(() => {
 });
 
 const downloadReady = computed(() => {
-  if (downloadButton.value && currentChart.value) {
-    const filename = `${currentChart.value.name}.json`;
+  if (downloadButton.value && analysisStore.currentChart) {
+    const filename = `${analysisStore.currentChart.name}.json`;
     const contents = data.value;
     downloadButton.value.setAttribute(
       "href",
@@ -153,9 +155,9 @@ const downloadReady = computed(() => {
 </script>
 
 <template>
-  <div :class="currentChart ? 'panel-content-outer' : 'panel-content-outer with-search'">
+  <div :class="analysisStore.currentChart ? 'panel-content-outer' : 'panel-content-outer with-search'">
     <v-text-field
-      v-if="!currentChart"
+      v-if="!analysisStore.currentChart"
       v-model="searchText"
       label="Search Charts"
       variant="outlined"
@@ -165,7 +167,7 @@ const downloadReady = computed(() => {
       hide-details
     />
     <v-card class="panel-content-inner">
-      <div v-if="currentChart" class="pa-2">
+      <div v-if="analysisStore.currentChart" class="pa-2">
         <div style="position: absolute; right: 0;">
           <a ref="downloadButton">
             <v-btn
@@ -179,7 +181,7 @@ const downloadReady = computed(() => {
             v-tooltip="'Close'"
             icon="mdi-close"
             variant="plain"
-            @click="currentChart = undefined"
+            @click="analysisStore.currentChart = undefined"
           />
         </div>
           <Line :data="data" :options="options" />
@@ -209,7 +211,7 @@ const downloadReady = computed(() => {
         v-else-if="filteredCharts?.length"
         density="compact"
       >
-        <v-list-item v-for="chart in filteredCharts" :key="chart.id" @click="currentChart=chart">
+        <v-list-item v-for="chart in filteredCharts" :key="chart.id" @click="analysisStore.currentChart=chart">
           {{ chart.name }}
           <template v-slot:append>
             <v-icon icon="mdi-information-outline" size="small" v-tooltip="chart.description"></v-icon>
@@ -218,7 +220,7 @@ const downloadReady = computed(() => {
           </template>
         </v-list-item>
       </v-list>
-      <v-progress-linear v-else-if="loadingCharts" indeterminate></v-progress-linear>
+      <v-progress-linear v-else-if="analysisStore.loadingCharts" indeterminate></v-progress-linear>
       <v-card-text v-else class="help-text">No available Charts.</v-card-text>
     </v-card>
   </div>

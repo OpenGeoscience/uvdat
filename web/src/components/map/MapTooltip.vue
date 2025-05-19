@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import {
-  clickedFeature,
-  selectedLayers,
-  rasterTooltipDataCache,
-  availableNetworks,
-} from "@/store";
-import { getMap, getTooltip } from "@/storeFunctions";
 import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
 import RecursiveTable from "../RecursiveTable.vue";
-import { getDBObjectsForSourceID } from "@/layers";
-import { toggleNodeActive } from "@/networks";
+
+import { useMapStore, useLayerStore, useNetworkStore } from "@/store";
+const layerStore = useLayerStore();
+const networkStore = useNetworkStore();
+const mapStore = useMapStore();
 
 const clickedFeatureProperties = computed(() => {
-  if (clickedFeature.value === undefined) {
+  if (mapStore.clickedFeature === undefined) {
     return {};
   }
   const unwantedKeys = new Set([
@@ -28,28 +24,28 @@ const clickedFeatureProperties = computed(() => {
     "edge_id",
   ]);
   return Object.fromEntries(
-    Object.entries(clickedFeature.value.feature.properties).filter(
+    Object.entries(mapStore.clickedFeature.feature.properties).filter(
       ([k, v]: [string, unknown]) => k && !unwantedKeys.has(k) && v
     )
   );
 });
 
 const clickedFeatureSourceType = computed(() => {
-  if (clickedFeature.value) {
-    const feature = clickedFeature.value.feature;
+  if (mapStore.clickedFeature) {
+    const feature = mapStore.clickedFeature.feature;
     if (feature.source.includes('.vector')) return 'vector'
     if (feature.source.includes('.bounds')) return 'raster'
   }
 })
 
 const rasterValue = computed(() => {
-  if (clickedFeature.value && clickedFeatureSourceType.value === 'raster') {
-    const feature = clickedFeature.value.feature;
-    const { raster } = getDBObjectsForSourceID(feature.source);
+  if (mapStore.clickedFeature && clickedFeatureSourceType.value === 'raster') {
+    const feature = mapStore.clickedFeature.feature;
+    const { raster } = layerStore.getDBObjectsForSourceID(feature.source);
     if (raster?.id) {
-      const data = rasterTooltipDataCache.value[raster.id]?.data;
+      const data = mapStore.rasterTooltipDataCache[raster.id]?.data;
       if (data) {
-        const {lng, lat} = clickedFeature.value.pos;
+        const {lng, lat} = mapStore.clickedFeature.pos;
         let {xmin, xmax, ymin, ymax, srs} = raster.metadata.bounds;
         [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
         [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
@@ -63,7 +59,7 @@ const rasterValue = computed(() => {
 })
 
 const clickedRegion = computed(() => {
-  const props = clickedFeature.value?.feature?.properties;
+  const props = mapStore.clickedFeature?.feature?.properties;
   const regionId = props?.region_id;
   const regionName = props?.region_name;
   const regionDatasetId = props?.dataset_id;
@@ -79,13 +75,13 @@ const clickedRegion = computed(() => {
 });
 
 function zoomToRegion() {
-  if (clickedFeature.value === undefined) {
+  if (mapStore.clickedFeature === undefined) {
     return;
   }
 
   // Set map zoom to match bounding box of region
-  const map = getMap();
-  const bbox = turf.bbox(clickedFeature.value.feature.geometry);
+  const map = mapStore.getMap();
+  const bbox = turf.bbox(mapStore.clickedFeature.feature.geometry);
   if (bbox.length !== 4) {
     throw new Error("Returned bbox should have 4 elements!");
   }
@@ -94,59 +90,61 @@ function zoomToRegion() {
 }
 
 // Check if the layer associated with the clicked feature is still selected and visible
-watch(selectedLayers, () => {
-  if (clickedFeature.value === undefined) {
+watch(() => layerStore.selectedLayers, () => {
+  if (mapStore.clickedFeature === undefined) {
     return;
   }
-  const feature = clickedFeature.value.feature;
+  const feature = mapStore.clickedFeature.feature;
   const sourceId = feature.source;
-  const { layer } = getDBObjectsForSourceID(sourceId);
-  if (!layer?.visible) clickedFeature.value = undefined;
+  const { layer } = layerStore.getDBObjectsForSourceID(sourceId);
+  if (!layer?.visible) {
+    mapStore.clickedFeature = undefined;
+  }
 });
 
 // Handle clicked features and raster tooltip behavior.
 // Feature clicks are given tooltip priority.
 watch(
-  clickedFeature,
+  () => mapStore.clickedFeature,
   () => {
-    const tooltip = getTooltip();
-    if (clickedFeature.value === undefined) {
+    const tooltip = mapStore.getTooltip();
+    if (mapStore.clickedFeature === undefined) {
       tooltip.remove();
       return;
     }
     // Set tooltip position. Give feature clicks priority
-    tooltip.setLngLat(clickedFeature.value.pos);
+    tooltip.setLngLat(mapStore.clickedFeature.pos);
     // This makes the tooltip visible
-    tooltip.addTo(getMap());
+    tooltip.addTo(mapStore.getMap());
   }
 );
 
 const clickedFeatureIsDeactivatedNode = computed(
   () =>
-    clickedFeature.value &&
-    availableNetworks.value.find((network) => {
+    mapStore.clickedFeature &&
+    networkStore.availableNetworks.find((network) => {
       return network.deactivated?.nodes.includes(
-        clickedFeature.value?.feature.properties.node_id
+        mapStore.clickedFeature?.feature.properties.node_id
       )
     })
 );
 
 function toggleNodeHandler() {
-  if (clickedFeature.value === undefined) {
+  if (mapStore.clickedFeature === undefined) {
     throw new Error("Clicked node is undefined!");
   }
-  const feature = clickedFeature.value.feature;
+  const feature = mapStore.clickedFeature.feature;
   const sourceId = feature.source;
-  const nodeId = clickedFeature.value.feature.properties.node_id;
-  const { dataset, layer } = getDBObjectsForSourceID(sourceId);
+  const nodeId = mapStore.clickedFeature.feature.properties.node_id;
+  const { dataset, layer } = layerStore.getDBObjectsForSourceID(sourceId);
   if (nodeId && dataset && layer) {
-    toggleNodeActive(nodeId, dataset)
+    networkStore.toggleNodeActive(nodeId, dataset)
   }
 };
 </script>
 
 <template>
-  <div v-if="clickedFeature && clickedFeatureSourceType === 'vector'" style="max-height: 50vh; overflow: auto">
+  <div v-if="mapStore.clickedFeature && clickedFeatureSourceType === 'vector'" style="max-height: 50vh; overflow: auto">
     <RecursiveTable :data="clickedFeatureProperties" />
 
     <!-- Render for Source Regions -->
@@ -162,7 +160,7 @@ function toggleNodeHandler() {
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
     <v-btn
-      v-else-if="clickedFeature.feature.properties.node_id"
+      v-else-if="mapStore.clickedFeature.feature.properties.node_id"
       block
       variant="outlined"
       @click="toggleNodeHandler"

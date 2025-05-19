@@ -1,13 +1,5 @@
 <script setup lang="ts">
 import { ref, Ref, computed, onMounted, ComputedRef, watch } from "vue";
-import {
-  availableProjects,
-  projectConfigMode,
-  currentProject,
-  currentUser,
-  loadingProjects,
-  loadingDatasets,
-} from "@/store";
 import DatasetSelect from "@/components/projects/DatasetSelect.vue";
 import AccessControl from "@/components/projects/AccessControl.vue";
 import {
@@ -19,16 +11,16 @@ import {
   getDatasetLayers,
 } from "@/api/rest";
 import { Project, Dataset } from "@/types";
-import {
-  getCurrentMapPosition,
-  loadProjects,
-  setMapCenter,
-} from "@/storeFunctions";
+
+import { useMapStore, useAppStore, useProjectStore } from "@/store";
+const projectStore = useProjectStore();
+const appStore = useAppStore();
+const mapStore = useMapStore();
 
 const currentTab = ref();
 const searchText = ref();
 const filteredProjects = computed(() => {
-  return availableProjects.value.filter((proj) => {
+  return projectStore.availableProjects.filter((proj) => {
     return (
       !searchText.value ||
       proj.name.toLowerCase().includes(searchText.value.toLowerCase())
@@ -48,19 +40,19 @@ const otherSelectedDatasetIds: Ref<number[]> = ref([]);
 
 const permissions = computed(() => {
   const ret = Object.fromEntries(
-    availableProjects.value.map((p) => {
+    projectStore.availableProjects.map((p) => {
       let perm = "follower";
       if (p.id === selectedProject.value?.id) {
         p = selectedProject.value;
       }
       if (
-        p.owner?.id === currentUser.value?.id ||
-        currentUser.value?.is_superuser
+        p.owner?.id === appStore.currentUser?.id ||
+        appStore.currentUser?.is_superuser
       ) {
         perm = "owner";
       } else if (
-        currentUser.value &&
-        p.collaborators.map((u) => u.id).includes(currentUser.value.id)
+        appStore.currentUser &&
+        p.collaborators.map((u) => u.id).includes(appStore.currentUser.id)
       ) {
         perm = "collaborator";
       }
@@ -75,15 +67,15 @@ const projectToEdit: Ref<Project | undefined> = ref();
 const projectToDelete: Ref<Project | undefined> = ref();
 
 function openProjectConfig(create = false) {
-  projectConfigMode.value = create ? "new" : "existing";
+  projectStore.projectConfigMode = create ? "new" : "existing";
 }
 
 function create() {
-  const { center, zoom } = getCurrentMapPosition();
+  const { center, zoom } = mapStore.getCurrentMapPosition();
   createProject(newProjectName.value, center, zoom).then((project) => {
     newProjectName.value = undefined;
-    projectConfigMode.value = "existing";
-    loadProjects();
+    projectStore.projectConfigMode = "existing";
+    projectStore.loadProjects();
     selectProject(project);
   });
 }
@@ -91,7 +83,7 @@ function create() {
 function del() {
   if (projectToDelete.value) {
     deleteProject(projectToDelete.value.id).then(() => {
-      loadProjects();
+      projectStore.loadProjects();
       if (selectedProject.value?.id === projectToDelete.value?.id) {
         selectedProject.value = undefined;
       }
@@ -113,7 +105,7 @@ function saveProjectName() {
       projectToEdit.value = undefined;
       newProjectName.value = undefined;
       saving.value = "done";
-      loadProjects();
+      projectStore.loadProjects();
       setTimeout(() => {
         saving.value = undefined;
       }, 2000);
@@ -124,23 +116,23 @@ function saveProjectName() {
 function saveProjectMapLocation(project: Project | undefined) {
   if (project) {
     saving.value = "waiting";
-    const { center, zoom } = getCurrentMapPosition();
+    const { center, zoom } = mapStore.getCurrentMapPosition();
     patchProject(project.id, {
       default_map_center: center,
       default_map_zoom: zoom,
     }).then((project) => {
-      availableProjects.value = availableProjects.value.map((p) => {
+      projectStore.availableProjects = projectStore.availableProjects.map((p) => {
         if (p.id === project.id) {
           p.default_map_center = project.default_map_center;
           p.default_map_zoom = project.default_map_zoom;
         }
         return p;
       });
-      if (currentProject.value) {
-        currentProject.value.default_map_center = project.default_map_center
-        currentProject.value.default_map_zoom = project.default_map_zoom
+      if (projectStore.currentProject) {
+        projectStore.currentProject.default_map_center = project.default_map_center
+        projectStore.currentProject.default_map_zoom = project.default_map_zoom
       }
-      setMapCenter(project);
+      mapStore.setMapCenter(project);
       saving.value = "done";
       setTimeout(() => {
         saving.value = undefined;
@@ -152,7 +144,7 @@ function saveProjectMapLocation(project: Project | undefined) {
 function selectProject(project: Project) {
   if (selectedProject.value?.id !== project.id) {
     selectedProject.value = project;
-    loadingDatasets.value = true;
+    projectStore.loadingDatasets = true;
     getDatasets().then(async (datasets) => {
       allDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
         dataset.layers = await getDatasetLayers(dataset.id);
@@ -164,8 +156,8 @@ function selectProject(project: Project) {
 }
 
 function loadSelectedProject() {
-  currentProject.value = selectedProject.value;
-  projectConfigMode.value = undefined;
+  projectStore.currentProject = selectedProject.value;
+  projectStore.projectConfigMode = undefined;
 }
 
 function toggleOtherDatasetSelection(datasets: Dataset[]) {
@@ -230,7 +222,7 @@ function saveDatasetsToProject(ids: number[]) {
 }
 
 function updateSelectedProject(newProjectData: Project) {
-  loadProjects();
+  projectStore.loadProjects();
   selectedProject.value = newProjectData;
 }
 
@@ -247,7 +239,7 @@ function refreshProjectDatasets(callback: Function | null) {
 }
 
 function resetProjectEdit() {
-  projectConfigMode.value = "existing";
+  projectStore.projectConfigMode = "existing";
   newProjectName.value = undefined;
   projectToDelete.value = undefined;
   projectToEdit.value = undefined;
@@ -261,8 +253,8 @@ function handleEditFocus(focused: boolean) {
 
 onMounted(() => {
   window.addEventListener("keydown", (e) => {
-    if (e.key == "Escape" && projectConfigMode.value) {
-      projectConfigMode.value = undefined;
+    if (e.key == "Escape" && projectStore.projectConfigMode) {
+      projectStore.projectConfigMode = undefined;
     }
   });
 });
@@ -271,15 +263,15 @@ watch(selectedProject, resetProjectEdit);
 
 watch(otherDatasets, () => {
   if (allDatasets.value && projDatasets.value) {
-    loadingDatasets.value = false;
+    projectStore.loadingDatasets = false;
   }
 })
 
-watch(projectConfigMode, () => {
-  if (currentProject.value) {
-    if (projectConfigMode.value) selectProject(currentProject.value)
-    else currentProject.value = availableProjects.value.find(
-      (p) => p.id === currentProject.value?.id
+watch(() => projectStore.projectConfigMode, () => {
+  if (projectStore.currentProject) {
+    if (projectStore.projectConfigMode) selectProject(projectStore.currentProject)
+    else projectStore.currentProject = projectStore.availableProjects.find(
+      (p) => p.id === projectStore.currentProject?.id
     )  // trigger project reload
   }
 })
@@ -292,9 +284,9 @@ watch(projectConfigMode, () => {
         label="Current Project"
         placeholder="Select a Project"
         no-data-text="No available projects."
-        :items="availableProjects"
-        :autofocus="!currentProject"
-        v-model="currentProject"
+        :items="projectStore.availableProjects"
+        :autofocus="!projectStore.currentProject"
+        v-model="projectStore.currentProject"
         item-title="name"
         item-value="id"
         density="compact"
@@ -328,27 +320,27 @@ watch(projectConfigMode, () => {
       </v-btn>
     </div>
     <v-card
-      v-if="!loadingProjects && availableProjects.length === 0"
+      v-if="!projectStore.loadingProjects && projectStore.availableProjects.length === 0"
       class="tutorial-popup"
     >
       <v-card-text>
         To get started, create a project and add datasets to it.
       </v-card-text>
     </v-card>
-    <div class="project-row" v-if="currentProject">
+    <div class="project-row" v-if="projectStore.currentProject">
       <span class="item-counts">
         <v-icon icon="mdi-database-outline" v-tooltip="'Datasets'"></v-icon>
-        {{ currentProject.item_counts.datasets || 0 }}
+        {{ projectStore.currentProject.item_counts.datasets || 0 }}
         <v-icon
           icon="mdi-border-none-variant"
           v-tooltip="'Regions'"
           class="ml-3"
         ></v-icon>
-        {{ currentProject.item_counts.regions || 0 }}
+        {{ projectStore.currentProject.item_counts.regions || 0 }}
         <v-icon icon="mdi-poll" v-tooltip="'Charts'" class="ml-3"></v-icon>
-        {{ currentProject.item_counts.charts || 0 }}
+        {{ projectStore.currentProject.item_counts.charts || 0 }}
         <v-icon icon="mdi-earth" v-tooltip="'Analyses'" class="ml-3"></v-icon>
-        {{ currentProject.item_counts.analyses || 0 }}
+        {{ projectStore.currentProject.item_counts.analyses || 0 }}
       </span>
       <v-menu
         location="end"
@@ -367,10 +359,10 @@ watch(projectConfigMode, () => {
         </template>
         <v-card width="250">
           <v-list selectable>
-            <v-list-item @click="() => setMapCenter(currentProject)">
+            <v-list-item @click="() => mapStore.setMapCenter(projectStore.currentProject)">
               Go to project default map position
             </v-list-item>
-            <v-list-item @click="() => saveProjectMapLocation(currentProject)">
+            <v-list-item @click="() => saveProjectMapLocation(projectStore.currentProject)">
               Set current map position as project default
               <v-icon
                 v-if="saving === 'done'"
@@ -389,14 +381,14 @@ watch(projectConfigMode, () => {
         </v-card>
       </v-menu>
     </div>
-    <v-card v-if="projectConfigMode" flat class="config" color="background">
+    <v-card v-if="projectStore.projectConfigMode" flat class="config" color="background">
       <v-card-title class="pa-3">
         Projects Configuration
         <v-btn
           class="close-button transparent"
           variant="flat"
           icon
-          @click="projectConfigMode = undefined"
+          @click="projectStore.projectConfigMode = undefined"
         >
           <v-icon>mdi-close</v-icon>
         </v-btn>
@@ -470,7 +462,7 @@ watch(projectConfigMode, () => {
             </template>
             </v-list-item>
           </v-list>
-          <div class="pa-2 d-flex" v-if="projectConfigMode === 'new'">
+          <div class="pa-2 d-flex" v-if="projectStore.projectConfigMode === 'new'">
             <v-text-field
               v-model="newProjectName"
               label="Project Name"
@@ -494,7 +486,7 @@ watch(projectConfigMode, () => {
             v-else
             variant="tonal"
             width="100%"
-            @click="projectConfigMode = 'new'"
+            @click="projectStore.projectConfigMode = 'new'"
             >+ New</v-btn
           >
           <v-btn
@@ -514,7 +506,7 @@ watch(projectConfigMode, () => {
           <div
             v-if="currentTab === 'datasets'"
           >
-            <v-progress-linear v-if="loadingDatasets" indeterminate></v-progress-linear>
+            <v-progress-linear v-if="projectStore.loadingDatasets" indeterminate></v-progress-linear>
             <div v-else class="py-3 px-6 d-flex">
               <div style="width: 30%">
                 <v-card-text>Available Datasets</v-card-text>
