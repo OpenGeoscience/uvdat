@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { draggingPanel, selectedLayerStyles } from '@/store';
-import { Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
+import { currentProject, draggingPanel, selectedLayerStyles } from '@/store';
+import { ColorMap, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
 import { computed, ref, watch } from 'vue';
 import _ from 'lodash';
-import { getLayerStyles, getVectorDataSummary } from '@/api/rest';
-import { defaultStyleSpec, colormaps, getDefaultColor, getColormap } from '@/layerStyles';
+import { createLayerStyle, getLayerStyles, getVectorDataSummary, updateLayerStyle } from '@/api/rest';
+import { defaultStyleSpec, colormaps, getDefaultColor } from '@/layerStyles';
 import ColormapPreview from '../ColormapPreview.vue';
 
 
@@ -13,6 +13,8 @@ const props = defineProps<{
 }>();
 
 const showMenu = ref(false);
+const newNameMode = ref<'create' | 'update' | undefined>();
+const newName = ref();
 const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
 const currentLayerStyle = ref<LayerStyle>({name: 'Default', is_default: true});
@@ -51,8 +53,18 @@ const dataRange = computed(() => {
     }
 })
 
+async function init() {
+    if (!availableStyles.value) availableStyles.value = await getLayerStyles(props.layer.id)
+    if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
+        currentLayerStyle.value = {...props.layer.default_style};
+        currentStyleSpec.value = {...props.layer.default_style.style_spec}
+    } else currentStyleSpec.value = selectedLayerStyles.value[styleKey.value];
+    fetchVectorProperties()
+    fetchRasterBands()
+}
+
 function selectStyle(style: LayerStyle) {
-    console.log('select', style)
+    currentStyleSpec.value = style.style_spec
 }
 
 async function fetchVectorProperties() {
@@ -144,18 +156,40 @@ function setRowColorMode(rowName: string, colorMode: string) {
             if (c.name === rowName) {
                 if (colorMode === 'colormap') {
                     const terrain = colormaps.find((colormap) => colormap.name === 'terrain')
-                    if (terrain) return {
+                    if (terrain && !c.colormap) return {
                         ...c,
                         colormap: {
                             ...terrain,
-                            discrete: true,
+                            discrete: false,
                             range: dataRange.value,
                             null_color: 'transparent',
                         },
                         single_color: undefined,
                     }
-                } else {
+                } else if (!c.single_color) {
                     return {...c, colormap: undefined, single_color: getDefaultColor()}
+                }
+            }
+            return c
+        }
+    )
+}
+
+function setRowColorMap(rowName: string, colormap: ColorMap) {
+    if (!currentStyleSpec.value) return
+    currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
+        (c) => {
+            if (c.name === rowName) {
+                return {
+                    ...c,
+                    colormap: {
+                        ...colormap,
+                        discrete: false,
+                        range: dataRange.value,
+                        color_by: showRasterOptions.value ? 'value' : undefined,
+                        null_color: 'transparent',
+                    },
+                    single_color: undefined
                 }
             }
             return c
@@ -255,11 +289,38 @@ function cancel() {
 }
 
 function save() {
-    console.log('save', currentStyleSpec.value, currentLayerStyle.value)
+    if (!currentLayerStyle.value?.id || !currentStyleSpec.value) return;
+    updateLayerStyle(
+        currentLayerStyle.value.id,
+        {
+            name: newName.value || currentLayerStyle.value.name,
+            is_default: currentLayerStyle.value.is_default,
+            style_spec: currentStyleSpec.value,
+        }
+    ).then((style) => {
+        currentLayerStyle.value = style;
+        newName.value = undefined;
+        newNameMode.value = undefined;
+        // update other styles in case default overriden
+        getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+    })
 }
 
 function saveAsNew() {
-    console.log('saveAsNew', currentStyleSpec.value)
+    if (!currentProject.value || !currentStyleSpec.value) return;
+    createLayerStyle({
+        ...currentLayerStyle.value,
+        name: newName.value,
+        layer: props.layer.id,
+        project: currentProject.value.id,
+        style_spec: currentStyleSpec.value,
+    }).then((style: LayerStyle) => {
+        currentLayerStyle.value = style;
+        newName.value = undefined;
+        newNameMode.value = undefined;
+        // update other styles in case default overriden
+        getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+    })
 }
 
 watch(draggingPanel, () => {
@@ -270,29 +331,7 @@ watch(currentStyleSpec, _.debounce(() => {
     // updateLayerStyles(props.layer)
 }, 100), {deep: true})
 
-watch([props.layer, showMenu], async () => {
-    availableStyles.value = await getLayerStyles(props.layer.id)
-    if (props.layer.default_style) {
-        currentLayerStyle.value = props.layer.default_style;
-        currentStyleSpec.value = props.layer.default_style.style_spec
-    } else currentStyleSpec.value = selectedLayerStyles.value[styleKey.value];
-    fetchVectorProperties()
-    fetchRasterBands()
-})
-
-watch(dataRange, () => {
-    if (!currentStyleSpec.value) return
-    currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
-        (c) => {
-            if (c.colormap && !c.colormap.range) {
-                return {...c, colormap: {
-                    ...c.colormap,
-                    range: dataRange.value,
-                }}
-            } else return c
-        }
-    )
-})
+watch(showMenu, init)
 
 watch(currentVectorFilterBy, updateCurrentFilterProperty)
 </script>
@@ -318,16 +357,21 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
             </v-card-subtitle>
 
             <v-card-text class="pa-2">
-                <v-select
-                    v-model="currentLayerStyle"
-                    :items="availableStyles"
-                    item-title="name"
-                    item-value="id"
-                    label="Layer Style"
-                    density="compact"
-                    no-data-text="No saved styles exist yet."
-                    @update:model-value="selectStyle"
-                ></v-select>
+                <div class="d-flex mb-4" style="align-items: center; column-gap: 5px;">
+                    <v-select
+                        v-model="currentLayerStyle"
+                        :items="availableStyles"
+                        item-value="id"
+                        :item-props="(item) => ({title: item.is_default ? item.name + ' (default)' : item.name})"
+                        label="Layer Style"
+                        density="compact"
+                        no-data-text="No saved styles exist yet."
+                        return-object
+                        hide-details
+                        @update:model-value="selectStyle"
+                    ></v-select>
+                    <v-icon icon="mdi-pencil" @click="newNameMode = 'update'"/>
+                </div>
 
                 <div class="d-flex mx-2">
                     <v-label>Set as default style</v-label>
@@ -453,6 +497,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         density="compact"
                                         hide-details
                                         return-object
+                                        @update:model-value="(v) => setRowColorMap(row.name, v)"
                                     >
                                         <template v-slot:item="{ props, item }">
                                             <v-list-item v-bind="props">
@@ -460,7 +505,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     <colormap-preview
                                                         :colormap="item.raw"
                                                         :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                        :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
                                                     />
                                                 </template>
                                             </v-list-item>
@@ -470,7 +515,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <colormap-preview
                                                 :colormap="item.raw"
                                                 :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
                                             />
                                         </template>
                                     </v-select>
@@ -590,6 +635,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         density="compact"
                                         hide-details
                                         return-object
+                                        @update:model-value="(v) => setRowColorMap(row.name, v)"
                                     >
                                         <template v-slot:item="{ props, item }">
                                             <v-list-item v-bind="props">
@@ -597,7 +643,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     <colormap-preview
                                                         :colormap="item.raw"
                                                         :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                        :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
                                                     />
                                                 </template>
                                             </v-list-item>
@@ -607,7 +653,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <colormap-preview
                                                 :colormap="item.raw"
                                                 :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
                                             />
                                         </template>
                                     </v-select>
@@ -1018,19 +1064,55 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                     <v-icon color="button-text" class="mr-1">mdi-content-save</v-icon>
                     Save
                 </v-btn>
-                <v-btn class="primary-button" @click="saveAsNew">
+                <v-btn class="primary-button" @click="newNameMode = 'create'">
                     <v-icon color="button-text" class="mr-1">mdi-plus-circle</v-icon>
                     Save As New
                 </v-btn>
             </v-card-actions>
+
+            <v-dialog
+                contained
+                :model-value="!!newNameMode"
+                @update:model-value="(v) => {if (!v) {newNameMode = undefined; newName = undefined;}}"
+            >
+                <v-card color="background">
+                    <v-card-subtitle class="pa-2" style="background-color: rgb(var(--v-theme-surface));">
+                        {{ newNameMode === 'create' ? 'New' : 'Rename' }} Layer Style
+                        <span v-if="newNameMode === 'update'" class="secondary-text">({{ currentLayerStyle.name }})</span>
+
+                        <v-icon
+                            icon="mdi-close"
+                            style="float:right"
+                            @click="newNameMode = undefined; newName = undefined"
+                        />
+                    </v-card-subtitle>
+
+                    <v-card-text>
+                        <v-text-field
+                            label="Name"
+                            v-model="newName"
+                            autofocus
+                            :placeholder="newNameMode === 'update' ? currentLayerStyle.name : ''"
+                        />
+                    </v-card-text>
+
+                    <v-card-actions style="float: right;">
+                        <v-btn class="secondary-button" @click="newNameMode = undefined; newName = undefined">
+                            <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
+                            Cancel
+                        </v-btn>
+                        <v-btn class="primary-button" @click="() => {if (newNameMode === 'update') {save()} else {saveAsNew()}}">
+                            <v-icon color="button-text" class="mr-1">mdi-content-save</v-icon>
+                            {{ newNameMode === 'update' ? 'Rename' : 'Create' }}
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
         </v-card>
     </v-menu>
 </template>
 
 <style>
-.layer-style-card {
-    width: 400px;
-}
 .layer-style-card  .v-label {
     font-size: 14px;
 }

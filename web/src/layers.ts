@@ -90,7 +90,11 @@ export function updateLayersShown () {
             const styleId = `${layer.id}.${layer.copy_id}`
             const sourceId = `${styleId}.${frame.id}`
             if (!selectedLayerStyles.value[styleId]) {
-                selectedLayerStyles.value[styleId] = layer.default_style?.style_spec || {...defaultStyleSpec}
+                if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
+                    selectedLayerStyles.value[styleId] = {...layer.default_style?.style_spec}
+                } else {
+                    selectedLayerStyles.value[styleId] = {...defaultStyleSpec}
+                }
             }
             const currentStyle = selectedLayerStyles.value[styleId];
             currentStyle.visible = layer.visible

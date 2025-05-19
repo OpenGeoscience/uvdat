@@ -180,5 +180,13 @@ export async function getVectorDataBounds(vectorId: number): Promise<number[]> {
 }
 
 export async function getLayerStyles(layerId: number): Promise<LayerStyle[]> {
-  return (await apiClient.get(`layers/${layerId}/styles`)).data;
+  return (await apiClient.get(`layer-styles/?layer=${layerId}`)).data.results;
+}
+
+export async function createLayerStyle(data: LayerStyle): Promise<LayerStyle> {
+  return (await apiClient.post('layer-styles/create/', data)).data;
+}
+
+export async function updateLayerStyle(styleId: number, data: LayerStyle): Promise<LayerStyle> {
+  return (await apiClient.patch(`layer-styles/${styleId}/update/`, data)).data;
 }
