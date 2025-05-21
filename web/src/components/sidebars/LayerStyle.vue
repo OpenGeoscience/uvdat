@@ -430,7 +430,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                 >
                     <template v-slot:append>
                         <v-text-field
-                            v-model="currentStyleSpec.opacity"
+                            :model-value="currentStyleSpec.opacity"
                             max="1"
                             min="0"
                             step="0.1"
@@ -440,6 +440,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                             type="number"
                             hide-details
                             single-line
+                            @update:model-value="(v) => {if (currentStyleSpec) currentStyleSpec.opacity = parseFloat(v)}"
                         >
                         </v-text-field>
                     </template>
@@ -537,7 +538,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         <template v-slot:prepend>
                                             <v-text-field
                                                 v-if="row.colormap.range"
-                                                v-model="row.colormap.range[0]"
+                                                :model-value="row.colormap.range[0]"
                                                 :min="dataRange[0]"
                                                 :max="row.colormap.range[1]"
                                                 :step="1"
@@ -547,13 +548,14 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 type="number"
                                                 hide-details
                                                 single-line
+                                                @update:model-value="(v) => {if (row.colormap?.range) row.colormap.range[0] = parseInt(v)}"
                                             >
                                             </v-text-field>
                                         </template>
                                         <template v-slot:append>
                                             <v-text-field
                                                 v-if="row.colormap.range"
-                                                v-model="row.colormap.range[1]"
+                                                :model-value="row.colormap.range[1]"
                                                 :min="row.colormap.range[0]"
                                                 :max="dataRange[1]"
                                                 :step="1"
@@ -563,6 +565,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 type="number"
                                                 hide-details
                                                 single-line
+                                                @update:model-value="(v) => {if (row.colormap?.range) row.colormap.range[1] = parseInt(v)}"
                                             >
                                             </v-text-field>
                                         </template>
@@ -769,7 +772,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                     </v-btn-toggle>
                                     <v-text-field
                                         v-if="row.single_size"
-                                        v-model="row.single_size"
+                                        :model-value="row.single_size"
                                         :min="1"
                                         :max="10"
                                         :step="1"
@@ -778,6 +781,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         type="number"
                                         hide-details
                                         single-line
+                                        @update:model-value="(v) => row.single_size = parseInt(v)"
                                     />
                                     <v-range-slider
                                         v-if="row.size_range"
@@ -792,7 +796,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         <template v-slot:prepend>
                                             <v-text-field
                                                 v-if="row.size_range"
-                                                v-model="row.size_range.minimum"
+                                                :model-value="row.size_range.minimum"
                                                 :min="1"
                                                 :max="row.size_range.maximum"
                                                 :step="1"
@@ -802,13 +806,14 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 type="number"
                                                 hide-details
                                                 single-line
+                                                @update:model-value="(v) => {if (row.size_range) row.size_range.minimum = parseInt(v)}"
                                             >
                                             </v-text-field>
                                         </template>
                                         <template v-slot:append>
                                             <v-text-field
                                                 v-if="row.size_range"
-                                                v-model="row.size_range.maximum"
+                                                :model-value="row.size_range.maximum"
                                                 :min="row.size_range.minimum"
                                                 :max="10"
                                                 :step="1"
@@ -818,6 +823,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 type="number"
                                                 hide-details
                                                 single-line
+                                                @update:model-value="(v) => {if (row.size_range) row.size_range.maximum = parseInt(v)}"
                                             >
                                             </v-text-field>
                                         </template>
@@ -861,16 +867,17 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <v-btn :value="2">Single Size</v-btn>
                                         </v-btn-toggle>
                                         <v-text-field
-                                            v-if="typeof row.size_range.null_size === 'number'"
-                                            v-model="row.size_range.null_size"
+                                            v-if="row.size_range.null_size && !row.size_range.null_size.transparency"
+                                            :model-value="row.size_range.null_size.size"
                                             :min="1"
                                             :max="10"
                                             :step="1"
                                             density="compact"
-                                            :style="{'width': getInputWidth(row.size_range.null_size)}"
+                                            :style="{'width': getInputWidth(row.size_range.null_size.size)}"
                                             type="number"
                                             hide-details
                                             single-line
+                                            @update:model-value="(v) => {if (row.size_range?.null_size) row.size_range.null_size.size = parseInt(v)}"
                                         />
                                     </div>
                                 </div>
@@ -900,7 +907,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                 <template v-slot:prepend>
                                     <v-text-field
                                         v-if="currentStyleSpec.filters[0].range"
-                                        v-model="currentStyleSpec.filters[0].range[0]"
+                                        :model-value="currentStyleSpec.filters[0].range[0]"
                                         :min="dataRange[0]"
                                         :max="currentStyleSpec.filters[0].range[1]"
                                         :step="1"
@@ -910,13 +917,14 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         type="number"
                                         hide-details
                                         single-line
+                                        @update:model-value="(v) => {if (currentStyleSpec?.filters[0].range) currentStyleSpec.filters[0].range[0] = parseInt(v)}"
                                     >
                                     </v-text-field>
                                 </template>
                                 <template v-slot:append>
                                     <v-text-field
                                         v-if="currentStyleSpec.filters[0].range"
-                                        v-model="currentStyleSpec.filters[0].range[1]"
+                                        :model-value="currentStyleSpec.filters[0].range[1]"
                                         :min="currentStyleSpec.filters[0].range[0]"
                                         :max="dataRange[1]"
                                         :step="1"
@@ -926,6 +934,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         type="number"
                                         hide-details
                                         single-line
+                                        @update:model-value="(v) => {if (currentStyleSpec?.filters[0].range) currentStyleSpec.filters[0].range[1] = parseInt(v)}"
                                     >
                                     </v-text-field>
                                 </template>
@@ -999,7 +1008,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                 <template v-slot:prepend>
                                     <v-text-field
                                         v-if="currentVectorFilter.range"
-                                        v-model="currentVectorFilter.range[0]"
+                                        :model-value="currentVectorFilter.range[0]"
                                         :min="currentVectorFilterProperty.range[0]"
                                         :max="currentVectorFilter.range[1]"
                                         :step="1"
@@ -1009,13 +1018,14 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         type="number"
                                         hide-details
                                         single-line
+                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[0] = parseInt(v)}"
                                     >
                                     </v-text-field>
                                 </template>
                                 <template v-slot:append>
                                     <v-text-field
                                         v-if="currentVectorFilter.range"
-                                        v-model="currentVectorFilter.range[1]"
+                                        :model-value="currentVectorFilter.range[1]"
                                         :min="currentVectorFilter.range[0]"
                                         :max="currentVectorFilterProperty.range[1]"
                                         :step="1"
@@ -1025,6 +1035,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         type="number"
                                         hide-details
                                         single-line
+                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[1] = parseInt(v)}"
                                     >
                                     </v-text-field>
                                 </template>
