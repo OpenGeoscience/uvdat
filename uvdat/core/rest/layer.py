@@ -56,5 +56,8 @@ class LayerStyleViewSet(ReadOnlyModelViewSet):
         style = self.get_object()
         for k, v in request.data.items():
             setattr(style, k, v)
-        style.save()
+        try:
+            style.save()
+        except jsonschema.exceptions.ValidationError as e:
+            return Response(e.message, status=400)
         return Response(LayerStyleSerializer(style).data, status=200)
