@@ -1,37 +1,34 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
-import { Layer, Network, Style } from "@/types";
+import { ColorMap, Layer, Network, StyleSpec } from "@/types";
 import { THEMES } from "@/themes";
+import colormap from 'colormap'
 
-import {
-    useMapStore,
-    useLayerStore,
-    useAppStore,
-} from '.';
+import { useMapStore, useLayerStore } from '.';
 
 
-const rasterColormaps = [
-    "terrain",
-    "plasma",
-    "viridis",
-    "magma",
-    "cividis",
-    "rainbow",
-    "jet",
-    "spring",
-    "summer",
-    "autumn",
-    "winter",
-    "coolwarm",
-    "cool",
-    "hot",
-    "seismic",
-    "twilight",
-    "tab20",
-    "hsv",
-    "gray",
-];
+const getColormap = (name: string, nshades: number) => colormap({
+    nshades,
+    colormap: name === 'terrain' ? 'earth' : name.toLowerCase(),
+    format: 'hex',
+    alpha: 1
+})
+
+const colormaps: ColorMap[] = [
+    'terrain', 'viridis', 'plasma', 'inferno', 'magma',
+    'greys', 'greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
+    'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
+].map((name) => {
+    const colors = getColormap(name, 30)
+    return {
+        name,
+        markers: colors.map((color: string, index: number) => ({
+            color,
+            value: index / (colors.length - 1)
+        }))
+    }
+})
 
 interface NetworkStyle {
     inactive?: number | string,
@@ -42,48 +39,58 @@ interface NetworkStyle {
     default: number | string,
 }
 
-function getRasterTilesQuery(style: Style) {
-    const query: Record<string, string> = {
-        projection: "EPSG:3857",
-    }
-    if (style.colormap) {
-        query.palette = style.colormap;
-        query.band = "1";
-    }
-    if (Array.isArray(style.colormap_range) && style.colormap_range?.length === 2) {
-        query.min = style.colormap_range[0].toString();
-        query.max = style.colormap_range[1].toString();
-    }
+function getRasterTilesQuery(styleSpec: StyleSpec) {
+    let query: Record<string, any> = {}
+    styleSpec.colors.forEach((colorSpec) => {
+        if (colorSpec.colormap) {
+            const colorQuery: Record<string, any> = {
+                projection: "EPSG:3857",
+            }
+            if (colorSpec.colormap.range) {
+                colorQuery.min = colorSpec.colormap.range[0];
+                colorQuery.max = colorSpec.colormap.range[1];
+            }
+            if (colorSpec.colormap.discrete) {
+                colorQuery.scheme = 'discrete'
+            }
+            colorQuery.palette = colorSpec.colormap.markers.map((marker) => marker.color)
+
+            if (colorSpec.name === 'all') {
+                query = {...query, ...colorQuery}
+            } else {
+                colorQuery.band = colorSpec.name.replace('Band ', '')
+                if (!query.bands) query.bands = []
+                query.bands.push(colorQuery)
+            }
+        }
+    })
     return query;
 }
 
 export const useStyleStore = defineStore('style', () => {
-    const selectedLayerStyles = ref<Record<string, Style>>({});
+    const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
 
     const mapStore = useMapStore();
-    const appStore = useAppStore();
     const layerStore = useLayerStore();
 
-    function getNextDefaultColor() {
-        let colorList = THEMES.light.colors;
-        if (appStore.theme === 'dark') {
-            colorList = THEMES.dark.colors;
-        }
-        const colorNames = ['info', 'success', 'error'];
-        const colors = Object.values(Object.fromEntries(
-            Object.entries(colorList)
-                .filter(([name,]) => colorNames.includes(name))
-                .toSorted(([name,]) => colorNames.indexOf(name))
-        ))
-        const i = Object.keys(mapStore.mapSources).length % colors.length;
-        return colors[i];
+    function getDefaultColor() {
+        return THEMES.light.colors.primary;
     }
 
-    function getDefaultStyle(): Style {
+    function getDefaultStyleSpec(): StyleSpec {
         return {
-            color: getNextDefaultColor(),
             opacity: 1,
-            visible: true,
+            default_frame: 0,
+            colors: [
+                {
+                    name: 'all',
+                    single_color: getDefaultColor(),
+                }
+            ],
+            sizes: [
+                {name: 'all', zoom_scaling: true, single_size: 5}
+            ],
+            filters: [],
         }
     }
 
@@ -93,25 +100,24 @@ export const useStyleStore = defineStore('style', () => {
             if (mapLayerId !== 'base-tiles') {
                 const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
                 if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
-                    const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+                    const currentStyleSpec: StyleSpec = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
                     const frame = layer.frames.find((f) => f.id === parseInt(frameId))
-                    currentStyle.visible = false;
+                    let visible = false;
                     if (frame) {
-                        currentStyle.visible = layer.visible && layer.current_frame === frame.index
+                        visible = layer.visible && layer.current_frame === frame.index
                     }
-                    setMapLayerStyle(mapLayerId, currentStyle);
+                    setMapLayerStyle(mapLayerId, currentStyleSpec, visible);
                 }
             }
         });
     }
 
-    function setMapLayerStyle(mapLayerId: string, style: Style) {
+    function setMapLayerStyle(mapLayerId: string, styleSpec: StyleSpec, visible: boolean) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
         const { network } = layerStore.getDBObjectsForSourceID(sourceId)
-        let opacity = style.opacity;
-        let color = style.color;
-        if (!style.visible) {
+        let opacity = styleSpec.opacity;
+        if (!visible) {
             // use opacity to control visibility
             // toggling layout.visibility causes tiles to reload when layer becomes visible again
             // opacity has a smooth transition, too.
@@ -126,24 +132,24 @@ export const useStyleStore = defineStore('style', () => {
 
         if (mapLayerId.includes("fill")) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
-            map.setPaintProperty(mapLayerId, 'fill-color', color);
+        //     map.setPaintProperty(mapLayerId, 'fill-color', color);
         } else if (mapLayerId.includes("line")) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
-            map.setPaintProperty(mapLayerId, 'line-color', color);
+        //     map.setPaintProperty(mapLayerId, 'line-color', color);
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-            map.setPaintProperty(mapLayerId, 'circle-color', color);
-            map.setPaintProperty(mapLayerId, 'circle-stroke-color', color);
+        //     map.setPaintProperty(mapLayerId, 'circle-color', color);
+        //     map.setPaintProperty(mapLayerId, 'circle-stroke-color', color);
         } else if (mapLayerId.includes("raster")) {
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
             if (source?.tiles?.length) {
-                const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
-                const newQuery = new URLSearchParams(getRasterTilesQuery(style));
-                if (newQuery.toString() !== oldQuery.toString()) {
-                    source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
-                }
+                const query = new URLSearchParams({
+                    projection: 'epsg:3857',
+                    style: JSON.stringify(getRasterTilesQuery(styleSpec))
+                })
+                source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + query))
             }
         }
         if (network?.gcc && opacity) styleNetwork(network)
@@ -161,7 +167,9 @@ export const useStyleStore = defineStore('style', () => {
             if (mapLayerId.includes(".vector." + vectorId)) {
                 const [layerId, layerCopyId] = mapLayerId.split('.');
                 const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
-                let defaultColor = currentStyle.color || 'black'
+                // TODO: put this back when types are consistent
+                // let defaultColor = currentStyle.color || 'black'
+                let defaultColor = 'black'
                 const colorStyle: NetworkStyle = {
                     deactivate: deactivateColor,
                     activate: activateColor,
@@ -254,11 +262,12 @@ export const useStyleStore = defineStore('style', () => {
     }
 
     return {
+        colormaps,
         selectedLayerStyles,
-        getDefaultStyle,
+        getRasterTilesQuery,
+        getDefaultStyleSpec,
         updateLayerStyles,
         setMapLayerStyle,
         styleNetwork,
-        rasterColormaps,
     }
 });

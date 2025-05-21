@@ -1,7 +1,17 @@
+import json
+from pathlib import Path
+
 from django.db import models
+from jsonschema import validate
 
 from .data import RasterData, VectorData
 from .dataset import Dataset
+from .project import Project
+
+# TODO: Where is the best place for this file?
+SCHEMA_FILE = Path(__file__).parent / 'layer_style_schema.json'
+with open(SCHEMA_FILE) as f:
+    LAYER_STYLE_SCHEMA = dict(json.load(f))
 
 
 def default_source_filters():
@@ -36,3 +46,29 @@ class LayerFrame(models.Model):
         if self.raster is not None:
             return self.raster
         return self.vector
+
+
+class LayerStyle(models.Model):
+    name = models.CharField(max_length=255, default='Layer Style')
+    layer = models.ForeignKey(Layer, related_name='styles', on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name='styles', on_delete=models.CASCADE)
+    is_default = models.BooleanField(default=False)
+    style_spec = models.JSONField(blank=True, default=dict)
+
+    @property
+    def schema(self):
+        return LAYER_STYLE_SCHEMA
+
+    def clean(self):
+        if self.is_default:
+            for style in LayerStyle.objects.filter(layer=self.layer, is_default=True).exclude(
+                id=self.id
+            ):
+                style.is_default = False
+                style.save()
+        if len(self.style_spec):
+            validate(instance=self.style_spec, schema=self.schema)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
