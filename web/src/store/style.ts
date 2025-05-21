@@ -1,37 +1,37 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
-import { Layer, Network, Style } from "@/types";
+import { ColorMap, Layer, Network, Style, StyleSpec } from "@/types";
 import { THEMES } from "@/themes";
+import colormap from 'colormap'
 
 import {
     useMapStore,
     useLayerStore,
-    useAppStore,
 } from '.';
 
 
-const rasterColormaps = [
-    "terrain",
-    "plasma",
-    "viridis",
-    "magma",
-    "cividis",
-    "rainbow",
-    "jet",
-    "spring",
-    "summer",
-    "autumn",
-    "winter",
-    "coolwarm",
-    "cool",
-    "hot",
-    "seismic",
-    "twilight",
-    "tab20",
-    "hsv",
-    "gray",
-];
+const getColormap = (name: string, nshades: number) => colormap({
+    nshades,
+    colormap: name === 'terrain' ? 'earth' : name.toLowerCase(),
+    format: 'hex',
+    alpha: 1
+})
+
+const colormaps: ColorMap[] = [
+    'terrain', 'viridis', 'plasma', 'inferno', 'magma',
+    'Greys', 'Greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
+    'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
+].map((name) => {
+    const colors = getColormap(name, 30)
+    return {
+        name,
+        markers: colors.map((color: string, index: number) => ({
+            color,
+            value: index / (colors.length - 1)
+        }))
+    }
+})
 
 interface NetworkStyle {
     inactive?: number | string,
@@ -58,32 +58,30 @@ function getRasterTilesQuery(style: Style) {
 }
 
 export const useStyleStore = defineStore('style', () => {
-    const selectedLayerStyles = ref<Record<string, Style>>({});
+    const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
 
     const mapStore = useMapStore();
-    const appStore = useAppStore();
     const layerStore = useLayerStore();
 
-    function getNextDefaultColor() {
-        let colorList = THEMES.light.colors;
-        if (appStore.theme === 'dark') {
-            colorList = THEMES.dark.colors;
-        }
-        const colorNames = ['info', 'success', 'error'];
-        const colors = Object.values(Object.fromEntries(
-            Object.entries(colorList)
-                .filter(([name,]) => colorNames.includes(name))
-                .toSorted(([name,]) => colorNames.indexOf(name))
-        ))
-        const i = Object.keys(mapStore.mapSources).length % colors.length;
-        return colors[i];
+    function getDefaultColor() {
+        return THEMES.light.colors.primary;
     }
 
-    function getDefaultStyle(): Style {
+    function getDefaultStyleSpec(): StyleSpec {
         return {
-            color: getNextDefaultColor(),
-            opacity: 1,
             visible: true,
+            opacity: 1,
+            default_frame: 0,
+            colors: [
+                {
+                    name: 'all',
+                    single_color: getDefaultColor(),
+                }
+            ],
+            sizes: [
+                {name: 'all', zoom_scaling: true, single_size: 5}
+            ],
+            filters: [],
         }
     }
 
@@ -161,7 +159,9 @@ export const useStyleStore = defineStore('style', () => {
             if (mapLayerId.includes(".vector." + vectorId)) {
                 const [layerId, layerCopyId] = mapLayerId.split('.');
                 const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
-                let defaultColor = currentStyle.color || 'black'
+                // TODO: put this back when types are consistent
+                // let defaultColor = currentStyle.color || 'black'
+                let defaultColor = 'black'
                 const colorStyle: NetworkStyle = {
                     deactivate: deactivateColor,
                     activate: activateColor,
@@ -255,10 +255,10 @@ export const useStyleStore = defineStore('style', () => {
 
     return {
         selectedLayerStyles,
-        getDefaultStyle,
+        getDefaultStyleSpec,
         updateLayerStyles,
         setMapLayerStyle,
         styleNetwork,
-        rasterColormaps,
+        colormaps,
     }
 });
