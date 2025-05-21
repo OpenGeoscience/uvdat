@@ -28,6 +28,7 @@ export interface Layer {
   metadata: Record<string, any>;
   visible: boolean;
   current_frame: number;
+  default_style: LayerStyle | null;
 }
 
 export interface LayerFrame {
@@ -39,12 +40,68 @@ export interface LayerFrame {
   raster: RasterData | null;
 }
 
+export interface ColorMap {
+  name: string;
+  discrete?: boolean;
+  color_by?: string;
+  range?: [number, number],
+  null_color?: string;
+  markers: {
+    color: string;
+    value: number;
+  }[]
+}
+
+export interface StyleFilter {
+  filter_by?: string;
+  include: boolean;
+  transparency: boolean;
+  list?: any[];
+  range?: number[];
+}
+
+// TODO: Remove Plain Style
 export interface Style {
   visible?: boolean;
   opacity?: number;
   color?: string;
   colormap?: string;
   colormap_range?: number[];
+}
+
+export interface StyleSpec {
+  visible?: boolean;
+  default_frame: number;
+  opacity: number;
+  colors: {
+    name: string;
+    single_color?: string;
+    colormap?: ColorMap,
+  }[],
+  sizes: {
+    name: string;
+    zoom_scaling: boolean;
+    single_size?: number;
+    size_range?: {
+      size_by?: string;
+      null_size?: {
+        transparency: boolean,
+        size: number,
+      };
+      minimum: number;
+      maximum: number;
+    }
+  }[],
+  filters: StyleFilter[]
+}
+
+export interface LayerStyle {
+  id?: number;
+  name: string;
+  layer?: number;
+  project?: number;
+  is_default: boolean;
+  style_spec?: StyleSpec;
 }
 
 export interface VectorData {
