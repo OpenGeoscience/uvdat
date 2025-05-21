@@ -1,5 +1,4 @@
-from django.core.exceptions import ValidationError as djValidationError
-from jsonschema.exceptions import ValidationError as jsonValidationError
+from jsonschema.exceptions import ValidationError
 import pytest
 
 from uvdat.core.models import Layer, LayerStyle, Project
@@ -7,13 +6,14 @@ from uvdat.core.models import Layer, LayerStyle, Project
 
 @pytest.mark.django_db
 def test_layer_style_multiple_defaults(layer: Layer, project: Project):
-    LayerStyle.objects.create(
+    style_1 = LayerStyle.objects.create(
         project=project, layer=layer, name='Style 1', is_default=True, style_spec={}
     )
-    with pytest.raises(djValidationError):
-        LayerStyle.objects.create(
-            project=project, layer=layer, name='Style 2', is_default=True, style_spec={}
-        )
+    LayerStyle.objects.create(
+        project=project, layer=layer, name='Style 2', is_default=True, style_spec={}
+    )
+    style_1.refresh_from_db()
+    assert not style_1.is_default
 
 
 @pytest.mark.django_db
@@ -204,7 +204,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
         # test missing key
         style = {k: v['valid'] for k, v in test_values.items() if k != key}
         msg = rf'\'{key}\' is a required property'
-        with pytest.raises(jsonValidationError, match=msg):
+        with pytest.raises(ValidationError, match=msg):
             LayerStyle.objects.create(
                 project=project, layer=layer, name='Style 1', is_default=True, style_spec=style
             )
@@ -212,7 +212,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
         # test invalid values
         for invalid, msg in value['invalid']:
             style = {k: v['valid'] if k != key else invalid for k, v in test_values.items()}
-            with pytest.raises(jsonValidationError, match=msg):
+            with pytest.raises(ValidationError, match=msg):
                 LayerStyle.objects.create(
                     project=project, layer=layer, name='Style 1', is_default=True, style_spec=style
                 )
