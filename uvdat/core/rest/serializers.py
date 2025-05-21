@@ -10,6 +10,7 @@ from uvdat.core.models import (
     FileItem,
     Layer,
     LayerFrame,
+    LayerStyle,
     Network,
     NetworkEdge,
     NetworkNode,
@@ -103,15 +104,30 @@ class ChartSerializer(serializers.ModelSerializer):
 
 
 class LayerSerializer(serializers.ModelSerializer):
+    default_style = serializers.SerializerMethodField('get_default_style')
+
+    def get_default_style(self, obj):
+        try:
+            default_style = LayerStyle.objects.filter(layer=obj, is_default=True).first()
+            return LayerStyleSerializer(default_style).data
+        except LayerStyle.DoesNotExist:
+            return None
+
     class Meta:
         model = Layer
         depth = 2
-        fields = ['id', 'name', 'frames', 'metadata', 'dataset']
+        fields = ['id', 'name', 'frames', 'metadata', 'dataset', 'default_style']
 
 
 class LayerFrameSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerFrame
+        fields = '__all__'
+
+
+class LayerStyleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LayerStyle
         fields = '__all__'
 
 
