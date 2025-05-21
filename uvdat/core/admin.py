@@ -7,6 +7,7 @@ from uvdat.core.models import (
     FileItem,
     Layer,
     LayerFrame,
+    LayerStyle,
     Network,
     NetworkEdge,
     NetworkNode,
@@ -50,6 +51,13 @@ class LayerAdmin(admin.ModelAdmin):
 
 class LayerFrameAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'index', 'get_layer_name']
+
+    def get_layer_name(self, obj):
+        return obj.layer.name
+
+
+class LayerStyleAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'get_layer_name']
 
     def get_layer_name(self, obj):
         return obj.layer.name
@@ -124,6 +132,7 @@ admin.site.register(FileItem, FileItemAdmin)
 admin.site.register(Chart, ChartAdmin)
 admin.site.register(Layer, LayerAdmin)
 admin.site.register(LayerFrame, LayerFrameAdmin)
+admin.site.register(LayerStyle, LayerStyleAdmin)
 admin.site.register(RasterData, RasterDataAdmin)
 admin.site.register(VectorData, VectorDataAdmin)
 admin.site.register(VectorFeature, VectorFeatureAdmin)
