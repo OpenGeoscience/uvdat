@@ -70,7 +70,6 @@ export interface Style {
 }
 
 export interface StyleSpec {
-  visible?: boolean;
   default_frame: number;
   opacity: number;
   colors: {

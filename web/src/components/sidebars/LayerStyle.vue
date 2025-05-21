@@ -64,7 +64,7 @@ async function init() {
     if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
         currentLayerStyle.value = {...props.layer.default_style};
         currentStyleSpec.value = {...props.layer.default_style.style_spec}
-    } else currentStyleSpec.value = styleStore.selectedLayerStyles[styleKey.value];
+    } else currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
     fetchVectorProperties()
     fetchRasterBands()
 }
@@ -169,6 +169,7 @@ function setRowColorMode(rowName: string, colorMode: string) {
                             discrete: false,
                             range: dataRange.value,
                             null_color: 'transparent',
+                            color_by: showRasterOptions.value ? 'value' : undefined
                         },
                         single_color: undefined,
                     }
@@ -334,7 +335,8 @@ watch(panelStore.draggingPanel, () => {
 })
 
 watch(currentStyleSpec, _.debounce(() => {
-    // updateLayerStyles(props.layer)
+    styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
+    styleStore.updateLayerStyles(props.layer)
 }, 100), {deep: true})
 
 watch(showMenu, init)

@@ -109,10 +109,9 @@ export const useLayerStore = defineStore('layer', () => {
           }
         }
         const currentStyle = styleStore.selectedLayerStyles[styleId];
-        currentStyle.visible = layer.visible
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
-        if (currentStyle.visible && !map.getLayersOrder().some(
+        if (layer.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame === frame.index) {
           mapStore.addLayerFrameToMap(frame, sourceId);
@@ -122,10 +121,11 @@ export const useLayerStore = defineStore('layer', () => {
           if (mapLayerId !== 'base-tiles') {
             if (mapLayerId.includes(sourceId)) {
               map.moveLayer(mapLayerId);  // handles reordering
-              styleStore.setMapLayerStyle(mapLayerId, {
-                ...currentStyle,
-                visible: layer.visible && layer.current_frame === frame.index
-              })
+              styleStore.setMapLayerStyle(
+                mapLayerId,
+                currentStyle,
+                layer.visible && layer.current_frame === frame.index
+              )
             }
           }
         });
