@@ -5,6 +5,7 @@ import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, 
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
+import { useStyleStore } from './style';
 
 function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   // Since visibility must be 'visible' for a feature click to even be registered,
@@ -31,6 +32,8 @@ export const useMapStore = defineStore('map', () => {
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
+
+  const styleStore = useStyleStore();
 
   function handleLayerClick(e: MapLayerMouseEvent) {
     const map = getMap();
@@ -269,14 +272,16 @@ export const useMapStore = defineStore('map', () => {
   function createRasterTileSource(raster: RasterData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
 
-    const params = {
-      projection: 'EPSG:3857'
-    }
-    const tileParamString = new URLSearchParams(params).toString();
     const tilesSourceId = sourceId + '.raster.' + raster.id;
+    const [layerId, layerCopyId] = sourceId.split('.');
+    const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`];
+    const query = new URLSearchParams({
+      projection: 'epsg:3857',
+      style: JSON.stringify(styleStore.getRasterTilesQuery(styleSpec))
+    })
     map.addSource(tilesSourceId, {
       type: "raster",
-      tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
+      tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${query}`],
     });
     const tileSource = map.getSource(tilesSourceId);
 
