@@ -99,6 +99,7 @@ export const useLayerStore = defineStore('layer', () => {
 
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
+      const multiFrame = layer.frames.length > 1;
       layer.frames.forEach((frame) => {
         const styleId = `${layer.id}.${layer.copy_id}`
         const sourceId = `${styleId}.${frame.id}`
@@ -112,7 +113,7 @@ export const useLayerStore = defineStore('layer', () => {
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame === frame.index) {
-          mapStore.addLayerFrameToMap(frame, sourceId);
+          mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
         map.getLayersOrder().forEach((mapLayerId) => {
