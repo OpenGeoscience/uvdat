@@ -2,7 +2,7 @@
 import _ from 'lodash';
 import { computed, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
-import { createLayerStyle, getLayerStyles, getVectorDataSummary, updateLayerStyle } from '@/api/rest';
+import { createLayerStyle, getLayerStyles, updateLayerStyle } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 
 import { useStyleStore, useProjectStore, usePanelStore } from '@/store';
@@ -22,7 +22,6 @@ const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
 const currentLayerStyle = ref<LayerStyle>({name: 'Default', is_default: true});
 const currentStyleSpec = ref<StyleSpec>();
-const vectorProperties = ref<Record<string, Record<string, any>[]>>();
 const rasterBands = ref<Record<number, Record<string, number | string>>>();
 const currentVectorFilter = ref<StyleFilter>({include: true, transparency: true});
 const currentVectorFilterProperty = ref<Record<string, any>>();
@@ -40,6 +39,10 @@ const showRasterOptions = computed(() => {
 
 const showVectorOptions = computed(() => {
     return props.layer.frames.some((frame) => frame.vector)
+})
+
+const vectorProperties = computed(() => {
+    return styleStore.selectedLayerVectorProperties[styleKey.value]
 })
 
 const currentVectorFilterBy = computed(() => currentVectorFilter.value.filter_by)
@@ -65,53 +68,11 @@ async function init() {
         currentLayerStyle.value = {...props.layer.default_style};
         currentStyleSpec.value = {...props.layer.default_style.style_spec}
     } else currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
-    fetchVectorProperties()
     fetchRasterBands()
 }
 
 function selectStyle(style: LayerStyle) {
     currentStyleSpec.value = style.style_spec
-}
-
-async function fetchVectorProperties() {
-    if (!currentStyleSpec.value) return
-    if (showVectorOptions.value) {
-        if (props.layer.frames.length) {
-            const currentFrame = props.layer.frames[currentStyleSpec.value.default_frame]
-            if (currentFrame.vector) {
-                const summary: Record<string, Record<string, any>> = await getVectorDataSummary(currentFrame.vector.id)
-                vectorProperties.value = Object.fromEntries(
-                    Object.entries(summary).map(([rowName, properties]) => {
-                        return [rowName, Object.entries(properties).map(([name, values]) => {
-                            values = values.filter((v: any) => v)
-                            let sampleLabel;
-                            let range;
-                            if (values.every((v: any) => typeof v === 'number')) {
-                                range = [Math.min(...values), Math.max(...values)]
-                                sampleLabel = `[${range[0].toFixed(1)} - ${range[1].toFixed(1)}]`
-                            } else {
-                                let sample = values.slice(0, 3).map((v: any) => {
-                                    let str = v.toString()
-                                    if (str.length > 10) return str.slice(0,5) + '...'
-                                    return str
-                                })
-                                if (values.length > sample.length) {
-                                    sample.push('...')
-                                }
-                                sampleLabel = `[${sample.join(', ')}]`
-                            }
-                            return {
-                                name,
-                                sampleLabel,
-                                range,
-                                values,
-                            }
-                        })]
-                    })
-                )
-            }
-        }
-    }
 }
 
 function getVectorPropertyValues (groupName: string, propertyName: string) {
@@ -250,7 +211,7 @@ function updateCurrentFilterProperty() {
         currentVectorFilter.value.filter_by
     ) {
         const property = vectorProperties.value['all'].find(
-            (p) => p.name === currentVectorFilter.value.filter_by
+            (p: Record<string, any>) => p.name === currentVectorFilter.value.filter_by
         )
         currentVectorFilter.value.list = undefined
         currentVectorFilter.value.range = undefined
@@ -514,7 +475,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     <colormap-preview
                                                         :colormap="item.raw"
                                                         :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                        :nColors="-1"
                                                     />
                                                 </template>
                                             </v-list-item>
@@ -524,7 +485,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <colormap-preview
                                                 :colormap="item.raw"
                                                 :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                :nColors="-1"
                                             />
                                         </template>
                                     </v-select>
@@ -654,7 +615,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     <colormap-preview
                                                         :colormap="item.raw"
                                                         :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                        :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by)?.length : -1"
                                                     />
                                                 </template>
                                             </v-list-item>
@@ -664,7 +625,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <colormap-preview
                                                 :colormap="item.raw"
                                                 :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.color_by && row.colormap.color_by !== 'value' ? getVectorPropertyValues(row.name, row.colormap.color_by).length : -1"
+                                                :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by)?.length : -1"
                                             />
                                         </template>
                                     </v-select>
@@ -681,7 +642,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         <template v-slot:item="{ props, item }">
                                             <v-list-item v-bind="props">
                                                 <template v-slot:append>
-                                                    <v-chip size="small" v-if="item.raw.sampleLabel">{{ item.raw.sampleLabel }}</v-chip>
+                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
                                                 </template>
                                             </v-list-item>
                                         </template>
@@ -841,9 +802,9 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         hide-details
                                     >
                                         <template v-slot:item="{ props, item }">
-                                            <v-list-item v-bind="props" :disabled="!item.raw.range">
+                                            <v-list-item v-bind="props" :disabled="!(item.raw as Record<string, any>).range">
                                                 <template v-slot:append>
-                                                    <v-chip size="small" v-if="item.raw.sampleLabel">{{ item.raw.sampleLabel }}</v-chip>
+                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
                                                 </template>
                                             </v-list-item>
                                         </template>
@@ -993,7 +954,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                 <template v-slot:item="{ props, item }">
                                     <v-list-item v-bind="props">
                                         <template v-slot:append>
-                                            <v-chip size="small" v-if="item.raw.sampleLabel">{{ item.raw.sampleLabel }}</v-chip>
+                                            <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
                                         </template>
                                     </v-list-item>
                                 </template>

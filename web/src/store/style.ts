@@ -6,6 +6,7 @@ import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
 import { useMapStore, useLayerStore } from '.';
+import { getVectorDataSummary } from '@/api/rest';
 
 
 const getColormap = (name: string, nshades: number) => colormap({
@@ -67,8 +68,47 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
     return query;
 }
 
+function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<string, any>[]) {
+    const colorByProp = propsSpec.find((p) => p.name === colormap?.color_by)
+    const markers = colormap?.markers
+    let interpType: any[] = ['match']
+    let fallback = ['#000']
+    if (colorByProp && markers) {
+        const sortedValues = colorByProp.values.sort((a: any, b: any) => a - b)
+        const valueColorList: any[] = [];
+        if (
+            !colormap.discrete &&
+            sortedValues.every((v: any) => typeof(v) === 'number') &&
+            sortedValues.length > markers.length
+        ) {
+            markers.forEach((marker: Record<string, any>, i: number) => {
+                valueColorList.push(
+                    sortedValues[Math.floor(i / markers.length * sortedValues.length)]
+                )
+                valueColorList.push(marker.color)
+            })
+            interpType = ['interpolate', ['linear']]
+            fallback = []
+        } else {
+            sortedValues.forEach((v: any, i: number) => {
+                valueColorList.push(v),
+                valueColorList.push(
+                    markers[Math.floor(i / sortedValues.length * markers.length)].color
+                )
+            })
+        }
+        return [
+            ...interpType,
+            ['get', colormap.color_by],
+            ...valueColorList,
+            ...fallback,
+        ]
+    }
+}
+
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
+    const selectedLayerVectorProperties = ref<Record<string, Record<string, any>>>({});
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
@@ -100,11 +140,17 @@ export const useStyleStore = defineStore('style', () => {
             if (mapLayerId !== 'base-tiles') {
                 const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
                 if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
-                    const currentStyleSpec: StyleSpec = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
+                    const styleKey = `${layer.id}.${layer.copy_id}`
+                    const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
                     const frame = layer.frames.find((f) => f.id === parseInt(frameId))
                     let visible = false;
                     if (frame) {
                         visible = layer.visible && layer.current_frame === frame.index
+                    }
+                    if (!selectedLayerVectorProperties.value[styleKey]) {
+                        fetchVectorProperties(layer).then(() => {
+                            setMapLayerStyle(mapLayerId, currentStyleSpec, visible);
+                        })
                     }
                     setMapLayerStyle(mapLayerId, currentStyleSpec, visible);
                 }
@@ -115,6 +161,8 @@ export const useStyleStore = defineStore('style', () => {
     function setMapLayerStyle(mapLayerId: string, styleSpec: StyleSpec, visible: boolean) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
+        const [layerId, layerCopyId] = sourceId.split('.');
+        const styleKey = `${layerId}.${layerCopyId}`
         const { network } = layerStore.getDBObjectsForSourceID(sourceId)
 
         const mapLayer = map.getLayer(mapLayerId) as MapLibreLayerWithMetadata | undefined;
@@ -136,17 +184,38 @@ export const useStyleStore = defineStore('style', () => {
             opacity = 0;
         }
 
+        const vectorProperties = selectedLayerVectorProperties.value[styleKey]
         if (mapLayerId.includes("fill")) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
-        //     map.setPaintProperty(mapLayerId, 'fill-color', color);
+            const propsSpec = vectorProperties?.polygons
+            const colorSpec = styleSpec.colors.find((c) => ['polygons', 'all'].includes(c.name))
+            if (colorSpec?.single_color) {
+                map.setPaintProperty(mapLayerId, 'fill-color', colorSpec?.single_color);
+            } else if (colorSpec?.colormap?.color_by && propsSpec) {
+                map.setPaintProperty(mapLayerId, 'fill-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
+            }
         } else if (mapLayerId.includes("line")) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
-        //     map.setPaintProperty(mapLayerId, 'line-color', color);
+            const propsSpec = vectorProperties?.lines
+            const colorSpec = styleSpec.colors.find((c) => ['lines', 'all'].includes(c.name))
+            if (colorSpec?.single_color) {
+                map.setPaintProperty(mapLayerId, 'line-color', colorSpec?.single_color);
+            } else if (colorSpec?.colormap?.color_by && propsSpec) {
+                map.setPaintProperty(mapLayerId, 'line-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
+            }
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-        //     map.setPaintProperty(mapLayerId, 'circle-color', color);
-        //     map.setPaintProperty(mapLayerId, 'circle-stroke-color', color);
+            const propsSpec = vectorProperties?.points
+            const colorSpec = styleSpec.colors.find((c) => ['points', 'all'].includes(c.name))
+            if (colorSpec?.single_color) {
+                map.setPaintProperty(mapLayerId, 'circle-color', colorSpec?.single_color);
+                map.setPaintProperty(mapLayerId, 'circle-stroke-color', colorSpec?.single_color);
+            } else if (colorSpec?.colormap?.color_by && propsSpec) {
+                const paintProperty = getVectorColormapPaintProperty(colorSpec.colormap, propsSpec)
+                map.setPaintProperty(mapLayerId, 'circle-color', paintProperty);
+                map.setPaintProperty(mapLayerId, 'circle-stroke-color', paintProperty);
+            }
         } else if (mapLayerId.includes("raster")) {
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
@@ -267,10 +336,51 @@ export const useStyleStore = defineStore('style', () => {
         });
     }
 
+    async function fetchVectorProperties(layer: Layer) {
+        const styleKey = `${layer.id}.${layer.copy_id}`
+        if (layer.frames.length) {
+            const currentFrame = layer.frames[layer.current_frame]
+            if (currentFrame.vector) {
+                const summary: Record<string, Record<string, any>> = await getVectorDataSummary(currentFrame.vector.id)
+                selectedLayerVectorProperties.value[styleKey] = Object.fromEntries(
+                    Object.entries(summary).map(([rowName, properties]) => {
+                        return [rowName, Object.entries(properties).map(([name, values]) => {
+                            values = values.filter((v: any) => v)
+                            let sampleLabel;
+                            let range;
+                            if (values.every((v: any) => typeof v === 'number')) {
+                                range = [Math.min(...values), Math.max(...values)]
+                                sampleLabel = `[${range[0].toFixed(1)} - ${range[1].toFixed(1)}]`
+                            } else {
+                                let sample = values.slice(0, 3).map((v: any) => {
+                                    let str = v.toString()
+                                    if (str.length > 10) return str.slice(0,5) + '...'
+                                    return str
+                                })
+                                if (values.length > sample.length) {
+                                    sample.push('...')
+                                }
+                                sampleLabel = `[${sample.join(', ')}]`
+                            }
+                            return {
+                                name,
+                                sampleLabel,
+                                range,
+                                values,
+                            }
+                        })]
+                    })
+                )
+            }
+        }
+    }
+
     return {
         colormaps,
         selectedLayerStyles,
+        selectedLayerVectorProperties,
         getRasterTilesQuery,
+        getDefaultColor,
         getDefaultStyleSpec,
         updateLayerStyles,
         setMapLayerStyle,

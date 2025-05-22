@@ -109,7 +109,6 @@ export const useLayerStore = defineStore('layer', () => {
               styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec()}
           }
         }
-        const currentStyle = styleStore.selectedLayerStyles[styleId];
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         if (layer.visible && !map.getLayersOrder().some(
@@ -122,14 +121,10 @@ export const useLayerStore = defineStore('layer', () => {
           if (mapLayerId !== 'base-tiles') {
             if (mapLayerId.includes(sourceId)) {
               map.moveLayer(mapLayerId);  // handles reordering
-              styleStore.setMapLayerStyle(
-                mapLayerId,
-                currentStyle,
-                layer.visible && layer.current_frame === frame.index
-              )
             }
           }
         });
+        styleStore.updateLayerStyles(layer)
       })
     })
     // hide any removed layers
