@@ -43,6 +43,7 @@ export interface LayerFrame {
 export interface ColorMap {
   name: string;
   discrete?: boolean;
+  n_colors?: number;
   color_by?: string;
   range?: [number, number],
   null_color?: string;

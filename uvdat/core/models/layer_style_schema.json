@@ -30,6 +30,10 @@
                             "discrete": {
                                 "type": "boolean"
                             },
+                            "n_colors": {
+                                "type": "integer",
+                                "minimum": 2
+                            },
                             "color_by": {
                                 "type": "string"
                             },

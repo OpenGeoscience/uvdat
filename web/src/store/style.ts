@@ -40,6 +40,20 @@ interface NetworkStyle {
     default: number | string,
 }
 
+function colormapMarkersSubsample(colormap: ColorMap) {
+    if (colormap.discrete && colormap.n_colors) {
+        const elements = [colormap.markers[0]];
+        const totalItems = colormap.markers.length - 1;
+        const interval = Math.floor(totalItems/(colormap.n_colors - 1));
+        for (let i = 1; i < colormap.n_colors - 1; i++) {
+            elements.push(colormap.markers[i * interval]);
+        }
+        elements.push(colormap.markers[colormap.markers.length - 1]);
+        return elements;
+    }
+    return colormap.markers
+}
+
 function getRasterTilesQuery(styleSpec: StyleSpec) {
     let query: Record<string, any> = {}
     styleSpec.colors.forEach((colorSpec) => {
@@ -54,7 +68,7 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
             if (colorSpec.colormap.discrete) {
                 colorQuery.scheme = 'discrete'
             }
-            colorQuery.palette = colorSpec.colormap.markers.map((marker) => marker.color)
+            colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap).map((marker) => marker.color)
 
             if (colorSpec.name === 'all') {
                 query = {...query, ...colorQuery}
@@ -70,40 +84,39 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
 
 function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<string, any>[]) {
     const colorByProp = propsSpec.find((p) => p.name === colormap?.color_by)
-    const markers = colormap?.markers
+    if (!colorByProp) return undefined
     let interpType: any[] = ['match']
     let fallback = ['#000']
-    if (colorByProp && markers) {
-        const sortedValues = colorByProp.values.sort((a: any, b: any) => a - b)
-        const valueColorList: any[] = [];
-        if (
-            !colormap.discrete &&
-            sortedValues.every((v: any) => typeof(v) === 'number') &&
-            sortedValues.length > markers.length
-        ) {
-            markers.forEach((marker: Record<string, any>, i: number) => {
-                valueColorList.push(
-                    sortedValues[Math.floor(i / markers.length * sortedValues.length)]
-                )
-                valueColorList.push(marker.color)
-            })
-            interpType = ['interpolate', ['linear']]
-            fallback = []
-        } else {
-            sortedValues.forEach((v: any, i: number) => {
-                valueColorList.push(v),
-                valueColorList.push(
-                    markers[Math.floor(i / sortedValues.length * markers.length)].color
-                )
-            })
-        }
-        return [
-            ...interpType,
-            ['get', colormap.color_by],
-            ...valueColorList,
-            ...fallback,
-        ]
+    const markers = colormapMarkersSubsample(colormap)
+    const sortedValues = colorByProp.values.sort((a: any, b: any) => a - b)
+    const valueColorList: any[] = [];
+    if (
+        !colormap.discrete &&
+        sortedValues.every((v: any) => typeof(v) === 'number') &&
+        sortedValues.length > markers.length
+    ) {
+        markers.forEach((marker: Record<string, any>, i: number) => {
+            valueColorList.push(
+                sortedValues[Math.floor(i / markers.length * sortedValues.length)]
+            )
+            valueColorList.push(marker.color)
+        })
+        interpType = ['interpolate', ['linear']]
+        fallback = []
+    } else {
+        sortedValues.forEach((v: any, i: number) => {
+            valueColorList.push(v),
+            valueColorList.push(
+                markers[Math.floor(i / sortedValues.length * markers.length)].color
+            )
+        })
     }
+    return [
+        ...interpType,
+        ['get', colormap.color_by],
+        ...valueColorList,
+        ...fallback,
+    ]
 }
 
 export const useStyleStore = defineStore('style', () => {
@@ -383,6 +396,7 @@ export const useStyleStore = defineStore('style', () => {
         selectedLayerStyles,
         selectedLayerVectorProperties,
         getRasterTilesQuery,
+        colormapMarkersSubsample,
         getDefaultColor,
         getDefaultStyleSpec,
         updateLayerStyles,
