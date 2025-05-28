@@ -104,11 +104,15 @@ export const useLayerStore = defineStore('layer', () => {
         const sourceId = `${styleId}.${frame.id}`
         if (!styleStore.selectedLayerStyles[styleId]) {
           if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
-              styleStore.selectedLayerStyles[styleId] = {...layer.default_style?.style_spec}
+            styleStore.selectedLayerStyles[styleId] = {...layer.default_style?.style_spec}
+            if (styleStore.selectedLayerStyles[styleId]?.default_frame !== layer.current_frame) {
+              layer.current_frame = styleStore.selectedLayerStyles[styleId].default_frame
+            }
           } else {
-              styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec()}
+            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec()}
           }
         }
+
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         if (layer.visible && !map.getLayersOrder().some(
