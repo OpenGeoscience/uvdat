@@ -60,15 +60,6 @@ export interface StyleFilter {
   range?: number[];
 }
 
-// TODO: Remove Plain Style
-export interface Style {
-  visible?: boolean;
-  opacity?: number;
-  color?: string;
-  colormap?: string;
-  colormap_range?: number[];
-}
-
 export interface StyleSpec {
   default_frame: number;
   opacity: number;

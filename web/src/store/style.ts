@@ -220,11 +220,14 @@ export const useStyleStore = defineStore('style', () => {
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
             if (source?.tiles?.length) {
-                const query = new URLSearchParams({
+                const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
+                const newQuery = new URLSearchParams({
                     projection: 'epsg:3857',
                     style: JSON.stringify(getRasterTilesQuery(styleSpec))
                 })
-                source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + query))
+                if (newQuery.toString() !== oldQuery.toString()) {
+                    source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
+                }
             }
         }
         if (network?.gcc && opacity) styleNetwork(network)

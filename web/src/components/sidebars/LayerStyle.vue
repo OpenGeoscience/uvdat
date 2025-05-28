@@ -65,7 +65,7 @@ const dataRange = computed(() => {
 async function init() {
     if (!availableStyles.value) availableStyles.value = await getLayerStyles(props.layer.id)
     if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
-        currentLayerStyle.value = {...props.layer.default_style};
+        currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style));  // deep copy
         currentStyleSpec.value = {...props.layer.default_style.style_spec}
     } else currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
     fetchRasterBands()
@@ -249,9 +249,9 @@ function getInputWidth(value: number) {
 
 function cancel() {
     if (currentLayerStyle.value.style_spec) {
-        styleStore.selectedLayerStyles[styleKey.value] = currentLayerStyle.value.style_spec
+        currentStyleSpec.value = {...currentLayerStyle.value.style_spec}
     } else {
-        styleStore.selectedLayerStyles[styleKey.value] = {...styleStore.getDefaultStyleSpec()}
+        currentStyleSpec.value = {...styleStore.getDefaultStyleSpec()}
     }
     showMenu.value = false;
 }
@@ -291,13 +291,15 @@ function saveAsNew() {
     })
 }
 
-watch(panelStore.draggingPanel, () => {
+watch(() => panelStore.draggingPanel, () => {
     showMenu.value = false;
 })
 
 watch(currentStyleSpec, _.debounce(() => {
-    styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
-    styleStore.updateLayerStyles(props.layer)
+    if (currentStyleSpec.value) {
+        styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
+        styleStore.updateLayerStyles(props.layer)
+    }
 }, 100), {deep: true})
 
 watch(showMenu, init)
