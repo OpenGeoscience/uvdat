@@ -262,11 +262,13 @@ function save() {
             style_spec: currentStyleSpec.value,
         }
     ).then((style) => {
-        currentLayerStyle.value = style;
-        newName.value = undefined;
-        newNameMode.value = undefined;
-        // update other styles in case default overriden
-        getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+        if (style) {
+            currentLayerStyle.value = style;
+            newName.value = undefined;
+            newNameMode.value = undefined;
+            // update other styles in case default overriden
+            getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+        }
     })
 }
 
@@ -279,11 +281,13 @@ function saveAsNew() {
         project: projectStore.currentProject.id,
         style_spec: currentStyleSpec.value,
     }).then((style: LayerStyle) => {
-        currentLayerStyle.value = style;
-        newName.value = undefined;
-        newNameMode.value = undefined;
-        // update other styles in case default overriden
-        getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+        if (style) {
+            currentLayerStyle.value = style;
+            newName.value = undefined;
+            newNameMode.value = undefined;
+            // update other styles in case default overriden
+            getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+        }
     })
 }
 
@@ -1131,6 +1135,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                             v-model="newName"
                             autofocus
                             :placeholder="newNameMode === 'update' ? currentLayerStyle.name : ''"
+                            :rules="[() => !availableStyles?.map((s) => s.name).includes(newName) || `${newName} already exists.`]"
                         />
                     </v-card-text>
 
@@ -1139,7 +1144,11 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                             <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                             Cancel
                         </v-btn>
-                        <v-btn class="primary-button" @click="() => {if (newNameMode === 'update') {save()} else {saveAsNew()}}">
+                        <v-btn
+                            class="primary-button"
+                            :disabled="availableStyles?.map((s) => s.name).includes(newName)"
+                            @click="() => {if (newNameMode === 'update') {save()} else {saveAsNew()}}"
+                        >
                             <v-icon color="button-text" class="mr-1">mdi-content-save</v-icon>
                             {{ newNameMode === 'update' ? 'Rename' : 'Create' }}
                         </v-btn>
