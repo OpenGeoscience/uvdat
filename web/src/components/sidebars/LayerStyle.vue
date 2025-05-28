@@ -75,12 +75,6 @@ function selectStyle(style: LayerStyle) {
     currentStyleSpec.value = style.style_spec
 }
 
-function getVectorPropertyValues (groupName: string, propertyName: string) {
-    if (!vectorProperties.value) return
-    const property = vectorProperties.value[groupName].find((p: Record<string, string>) => p.name === propertyName);
-    return property?.values
-}
-
 function fetchRasterBands() {
     if (!currentStyleSpec.value) return
     if (showRasterOptions.value) {
@@ -128,6 +122,7 @@ function setRowColorMode(rowName: string, colorMode: string) {
                         colormap: {
                             ...terrain,
                             discrete: false,
+                            n_colors: 10,
                             range: dataRange.value,
                             null_color: 'transparent',
                             color_by: showRasterOptions.value ? 'value' : undefined
@@ -153,6 +148,7 @@ function setRowColorMap(rowName: string, colormap: ColorMap) {
                     colormap: {
                         ...colormap,
                         discrete: false,
+                        n_colors: 10,
                         range: dataRange.value,
                         color_by: showRasterOptions.value ? 'value' : undefined,
                         null_color: 'transparent',
@@ -460,6 +456,36 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         <v-btn :value="'discrete'">Discrete</v-btn>
                                         <v-btn :value="'continuous'">Continuous</v-btn>
                                     </v-btn-toggle>
+                                    <v-slider
+                                        v-if="row.colormap?.discrete"
+                                        v-model="row.colormap.n_colors"
+                                        label="Number of colors"
+                                        max="30"
+                                        min="2"
+                                        step="1"
+                                        color="primary"
+                                        thumb-size="15"
+                                        track-size="8"
+                                        hide-details
+                                        type="number"
+                                    >
+                                        <template v-slot:append>
+                                            <v-text-field
+                                                :model-value="row.colormap.n_colors"
+                                                max="30"
+                                                min="2"
+                                                step="1"
+                                                density="compact"
+                                                class="number-input"
+                                                style="width: 60px"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                                @update:model-value="(v) => {if (row.colormap) row.colormap.n_colors = parseFloat(v)}"
+                                            >
+                                            </v-text-field>
+                                        </template>
+                                    </v-slider>
                                     <v-select
                                         v-if="row.colormap"
                                         v-model="row.colormap"
@@ -477,7 +503,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     <colormap-preview
                                                         :colormap="item.raw"
                                                         :discrete="row.colormap.discrete || false"
-                                                        :nColors="-1"
+                                                        :nColors="row.colormap.n_colors || -1"
                                                     />
                                                 </template>
                                             </v-list-item>
@@ -487,7 +513,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <colormap-preview
                                                 :colormap="item.raw"
                                                 :discrete="row.colormap.discrete || false"
-                                                :nColors="-1"
+                                                :nColors="row.colormap.n_colors || -1"
                                             />
                                         </template>
                                     </v-select>
@@ -600,6 +626,36 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         <v-btn :value="'discrete'">Discrete</v-btn>
                                         <v-btn :value="'continuous'">Continuous</v-btn>
                                     </v-btn-toggle>
+                                    <v-slider
+                                        v-if="row.colormap?.discrete"
+                                        v-model="row.colormap.n_colors"
+                                        label="Number of colors"
+                                        max="30"
+                                        min="2"
+                                        step="1"
+                                        color="primary"
+                                        thumb-size="15"
+                                        track-size="8"
+                                        hide-details
+                                        type="number"
+                                    >
+                                        <template v-slot:append>
+                                            <v-text-field
+                                                :model-value="row.colormap.n_colors"
+                                                max="30"
+                                                min="2"
+                                                step="1"
+                                                density="compact"
+                                                class="number-input"
+                                                style="width: 60px"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                                @update:model-value="(v) => {if (row.colormap) row.colormap.n_colors = parseFloat(v)}"
+                                            >
+                                            </v-text-field>
+                                        </template>
+                                    </v-slider>
                                     <v-select
                                         v-if="row.colormap"
                                         v-model="row.colormap"
@@ -617,7 +673,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     <colormap-preview
                                                         :colormap="item.raw"
                                                         :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by)?.length : -1"
+                                                        :nColors="row.colormap.n_colors || -1"
                                                     />
                                                 </template>
                                             </v-list-item>
@@ -627,7 +683,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <colormap-preview
                                                 :colormap="item.raw"
                                                 :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.color_by ? getVectorPropertyValues(row.name, row.colormap.color_by)?.length : -1"
+                                                :nColors="row.colormap.n_colors || -1"
                                             />
                                         </template>
                                     </v-select>

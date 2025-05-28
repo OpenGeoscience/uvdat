@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { ColorMap } from '@/types';
 import { watch, ref, onMounted } from 'vue';
+import { useStyleStore } from '@/store';
+
+const styleStore = useStyleStore();
+
 const canvas = ref();
 const props = defineProps<{
   colormap: ColorMap,
   discrete: boolean,
   nColors: number,
 }>();
+
+
 function draw() {
     const ctx = canvas.value.getContext("2d");
     const rect = [0, 0, canvas.value.width, canvas.value.height]
@@ -14,7 +20,12 @@ function draw() {
     if (props.discrete) {
         let markers = props.colormap.markers
         if (props.nColors > 0 && props.nColors < markers.length) {
-            markers = markers.filter((c, index) => c && index % Math.floor(markers.length / props.nColors) === 0)
+            markers = styleStore.colormapMarkersSubsample({
+                name: 'colormap',
+                markers,
+                discrete: props.discrete,
+                n_colors: props.nColors,
+            })
         }
         markers.forEach((marker, index) => {
             ctx.fillStyle = marker.color;
