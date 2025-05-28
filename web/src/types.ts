@@ -181,6 +181,17 @@ export interface ClickedFeatureData {
   feature: MapGeoJSONFeature;
 }
 
+export interface MapLibreLayerMetadata {
+  layer_id: string;
+  layer_copy_id: string;
+  frame_id: string;
+  multiFrame: boolean;
+}
+
+export type MapLibreLayerWithMetadata = MapGeoJSONFeature["layer"] & {
+  metadata: MapLibreLayerMetadata;
+}
+
 export interface Network {
   id: number;
   name: string;

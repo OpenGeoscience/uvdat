@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
-import { Layer, Network, Style } from "@/types";
+import { Layer, MapLibreLayerMetadata, MapLibreLayerWithMetadata, Network, Style } from "@/types";
 import { THEMES } from "@/themes";
 
 import {
@@ -109,21 +109,27 @@ export const useStyleStore = defineStore('style', () => {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
         const { network } = layerStore.getDBObjectsForSourceID(sourceId)
-        let opacity = style.opacity;
-        let color = style.color;
-        if (!style.visible) {
-            // use opacity to control visibility
-            // toggling layout.visibility causes tiles to reload when layer becomes visible again
-            // opacity has a smooth transition, too.
-            opacity = 0;
-        }
-        if (opacity === undefined) opacity = 1
-
-        const mapLayer = map.getLayer(mapLayerId);
+        
+        const mapLayer = map.getLayer(mapLayerId) as MapLibreLayerWithMetadata | undefined;
         if (mapLayer === undefined) {
             return;
         }
+        
+        // Opacity can be zero, so must check for undefined explicitly
+        let opacity = style.opacity;
+        if (opacity === undefined) {
+            opacity = 1;
+        }
+        
+        // MultiFrame uses opacity for visibility (with visibility always set to 'visible'), while single-frame uses 'visibility'
+        const { multiFrame } = mapLayer.metadata;
+        if (!multiFrame) {
+            map.setLayoutProperty(mapLayerId, 'visibility', style.visible ? 'visible' : 'none');
+        } else if (!style.visible) {
+            opacity = 0;
+        }
 
+        let color = style.color;
         if (mapLayerId.includes("fill")) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
             map.setPaintProperty(mapLayerId, 'fill-color', color);
