@@ -1,11 +1,29 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef, watch } from 'vue';
 import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
-import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame } from '@/types';
+import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
 import { useStyleStore } from './style';
+
+function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
+  // Since visibility must be 'visible' for a feature click to even be registered,
+  // we know that if it's not multiFrame, then it is indeed visible
+  if (!layer.metadata.multiFrame) {
+    return true;
+  }
+
+  // Try to check opacity now
+  if (layer.paint === undefined) {
+    throw new Error("Layer paint property is undefined");
+  }
+
+  const opacityKeys = Object.keys(layer.paint).filter((key) => key.endsWith('-opacity'));
+  const opaque = opacityKeys.every((key) => layer.paint![key as keyof MapLibreLayerWithMetadata["paint"]] > 0);
+
+  return opaque;
+}
 
 export const useMapStore = defineStore('map', () => {
   const map = shallowRef<Map>();
@@ -19,7 +37,10 @@ export const useMapStore = defineStore('map', () => {
 
   function handleLayerClick(e: MapLayerMouseEvent) {
     const map = getMap();
-    const clickedFeatures = map.queryRenderedFeatures(e.point);
+    const clickedFeatures = map.queryRenderedFeatures(e.point).filter(
+      (feat) => getLayerIsVisible(feat.layer as MapLibreLayerWithMetadata)
+    );
+
     if (!clickedFeatures.length) {
         return;
     }
@@ -114,13 +135,14 @@ export const useMapStore = defineStore('map', () => {
     });
   }
 
-  function createVectorFeatureMapLayers(source: Source) {
+  function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
     const map = getMap();
     const sourceIdentifiers = source.id.split('.');
-    const metadata = {
+    const metadata: MapLibreLayerMetadata = {
       layer_id: sourceIdentifiers[0],
       layer_copy_id: sourceIdentifiers[1],
       frame_id: sourceIdentifiers[2],
+      multiFrame,
     }
 
     // Fill Layer
@@ -191,13 +213,14 @@ export const useMapStore = defineStore('map', () => {
     map.on("click", source.id + '.circle', handleLayerClick);
   }
 
-  function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source) {
+  function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source, multiFrame: boolean) {
     const map = getMap();
     const sourceIdentifiers = tileSource.id.split('.');
-    const metadata = {
+    const metadata: MapLibreLayerMetadata = {
       layer_id: sourceIdentifiers[0],
       layer_copy_id: sourceIdentifiers[1],
       frame_id: sourceIdentifiers[2],
+      multiFrame,
     }
 
     // Tile Layer
@@ -215,6 +238,10 @@ export const useMapStore = defineStore('map', () => {
       paint: {
         "fill-opacity": 0,
       },
+
+      // Must ensure multiFrame is always false for this layer, since
+      // the opacity of will always be 0, but it must still be clickable
+      metadata: { ...metadata, multiFrame: false },
     });
 
     map.on("click", boundsSource.id + '.mask', handleLayerClick);
@@ -228,7 +255,7 @@ export const useMapStore = defineStore('map', () => {
     rasterTooltipDataCache.value[raster.id] = data;
   }
 
-  function createVectorTileSource(vector: VectorData, sourceId: string): Source | undefined {
+  function createVectorTileSource(vector: VectorData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
     const vectorSourceId = sourceId + '.vector.' + vector.id
     map.addSource(vectorSourceId, {
@@ -237,12 +264,12 @@ export const useMapStore = defineStore('map', () => {
     });
     const source = map.getSource(vectorSourceId);
     if (source) {
-      createVectorFeatureMapLayers(source);
+      createVectorFeatureMapLayers(source, multiFrame);
       return source;
     }
   }
 
-  function createRasterTileSource(raster: RasterData, sourceId: string): Source | undefined {
+  function createRasterTileSource(raster: RasterData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
 
     const tilesSourceId = sourceId + '.raster.' + raster.id;
@@ -275,20 +302,20 @@ export const useMapStore = defineStore('map', () => {
     const boundsSource = map.getSource(boundsSourceId);
 
     if (tileSource && boundsSource) {
-      createRasterFeatureMapLayers(tileSource, boundsSource);
+      createRasterFeatureMapLayers(tileSource, boundsSource, multiFrame);
       cacheRasterData(raster);
       return tileSource;
     }
   }
 
-  function addLayerFrameToMap(frame: LayerFrame, sourceId: string) {
+  function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
     if (!mapSources.value[sourceId]) {
       if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId);
+        const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
         if (vector) mapSources.value[sourceId] = vector;
       }
       if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId);
+        const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
         if (raster) mapSources.value[sourceId] = raster;
       }
     }
