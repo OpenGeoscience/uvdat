@@ -69,36 +69,6 @@ def test_layer_style_validation(layer: Layer, project: Project):
                             },
                         }
                     ],
-                    r'\'range\' is a required property',
-                ),
-                (
-                    [
-                        {
-                            'name': 'polygons',
-                            'colormap': {
-                                'name': 'viridis',
-                                'discrete': False,
-                                'color_by': 'depth',
-                                'null_color': '#000000',
-                                'range': [],
-                            },
-                        }
-                    ],
-                    r'\'minItems\': 2',
-                ),
-                (
-                    [
-                        {
-                            'name': 'polygons',
-                            'colormap': {
-                                'name': 'viridis',
-                                'discrete': False,
-                                'color_by': 'depth',
-                                'null_color': '#000000',
-                                'range': [0, 100],
-                            },
-                        }
-                    ],
                     r'\'markers\' is a required property',
                 ),
                 (
@@ -110,7 +80,6 @@ def test_layer_style_validation(layer: Layer, project: Project):
                                 'discrete': False,
                                 'color_by': 'depth',
                                 'null_color': '#000000',
-                                'range': [0, 100],
                                 'markers': [{'color': '#ffffff', 'value': 0}],
                             },
                         }
@@ -126,7 +95,6 @@ def test_layer_style_validation(layer: Layer, project: Project):
                                 'discrete': False,
                                 'color_by': 'depth',
                                 'null_color': '#000000',
-                                'range': [0, 100],
                                 'markers': [
                                     {'color': '#ffffff', 'value': 0},
                                     {'color': '#ffffff', 'value': -1},
