@@ -2,7 +2,7 @@
 import _ from 'lodash';
 import { computed, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
-import { createLayerStyle, getLayerStyles, updateLayerStyle } from '@/api/rest';
+import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 
 import { useStyleStore, useProjectStore, usePanelStore } from '@/store';
@@ -16,6 +16,8 @@ const props = defineProps<{
 }>();
 
 const showMenu = ref(false);
+const showEditOptions = ref(false);
+const showDeleteConfirmation = ref(false);
 const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
@@ -291,6 +293,21 @@ function saveAsNew() {
     })
 }
 
+function deleteStyle() {
+    if (!currentLayerStyle.value?.id) return;
+    deleteLayerStyle(currentLayerStyle.value.id).then(() => {
+        getLayerStyles(props.layer.id).then((styles) => {
+            availableStyles.value = styles;
+            const newDefault = styles.find((style) => style.is_default)
+            if (newDefault) {
+                currentLayerStyle.value = newDefault;
+                currentStyleSpec.value = newDefault.style_spec;
+            }
+            showDeleteConfirmation.value = false;
+        })
+    })
+}
+
 watch(() => panelStore.draggingPanel, () => {
     showMenu.value = false;
 })
@@ -341,7 +358,15 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                         hide-details
                         @update:model-value="selectStyle"
                     ></v-select>
-                    <v-icon icon="mdi-pencil" @click="newNameMode = 'update'"/>
+                    <v-menu v-if="currentLayerStyle.id" v-model="showEditOptions" open-on-hover :close-on-content-click="false" location="start">
+                        <template v-slot:activator="{ props }">
+                            <v-icon v-bind="props" icon="mdi-pencil"/>
+                        </template>
+                        <v-list>
+                            <v-list-item @click="showEditOptions = false; newNameMode = 'update'">Rename</v-list-item>
+                            <v-list-item @click="showEditOptions = false; showDeleteConfirmation = true">Delete</v-list-item>
+                        </v-list>
+                    </v-menu>
                 </div>
 
                 <div class="d-flex mx-2">
@@ -1149,8 +1174,46 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                             :disabled="availableStyles?.map((s) => s.name).includes(newName)"
                             @click="() => {if (newNameMode === 'update') {save()} else {saveAsNew()}}"
                         >
-                            <v-icon color="button-text" class="mr-1">mdi-content-save</v-icon>
-                            {{ newNameMode === 'update' ? 'Rename' : 'Create' }}
+                            <v-icon color="button-text" class="mr-1">
+                                {{ newNameMode === 'update' ? 'mdi-content-save' : 'mdi-plus-circle' }}
+                            </v-icon>
+                            {{ newNameMode === 'update' ? 'Rename Style' : 'Create Style' }}
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="showDeleteConfirmation" contained>
+                <v-card color="background">
+                    <v-card-subtitle class="pa-2" style="background-color: rgb(var(--v-theme-surface))">
+                        Delete Layer Style
+                        <span class="secondary-text">({{ currentLayerStyle.name }})</span>
+
+                        <v-icon
+                            icon="mdi-close"
+                            style="float:right"
+                            @click="showDeleteConfirmation = false"
+                        />
+                    </v-card-subtitle>
+
+                    <v-card-text>
+                        Are you sure you want to delete "{{ currentLayerStyle.name }}"?
+                        <div class="pa-3 d-flex" style="align-items: center; column-gap: 10px">
+                            <v-icon icon="mdi-alert" color="warning" />
+                            <span class="secondary-text">
+                                This action cannot be undone. Any layer using this style will revert to default settings.
+                            </span>
+                        </div>
+                    </v-card-text>
+
+                    <v-card-actions>
+                        <v-btn class="secondary-button" @click="showDeleteConfirmation = false">
+                            <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
+                            Cancel
+                        </v-btn>
+                        <v-btn color="error" variant="tonal" @click="deleteStyle">
+                            <v-icon color="error" class="mr-1">mdi-delete</v-icon>
+                            Delete
                         </v-btn>
                     </v-card-actions>
                 </v-card>
