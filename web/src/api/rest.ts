@@ -184,9 +184,13 @@ export async function getLayerStyles(layerId: number): Promise<LayerStyle[]> {
 }
 
 export async function createLayerStyle(data: LayerStyle): Promise<LayerStyle> {
-  return (await apiClient.post('layer-styles/create/', data)).data;
+  return (await apiClient.post('layer-styles/', data)).data;
 }
 
 export async function updateLayerStyle(styleId: number, data: LayerStyle): Promise<LayerStyle> {
-  return (await apiClient.patch(`layer-styles/${styleId}/update/`, data)).data;
+  return (await apiClient.patch(`layer-styles/${styleId}/`, data)).data;
+}
+
+export async function deleteLayerStyle(styleId: number): Promise<LayerStyle> {
+  return (await apiClient.delete(`layer-styles/${styleId}/`)).data;
 }

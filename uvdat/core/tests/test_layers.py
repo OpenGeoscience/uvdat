@@ -17,6 +17,19 @@ def test_layer_style_multiple_defaults(layer: Layer, project: Project):
 
 
 @pytest.mark.django_db
+def test_layer_style_delete_default(layer: Layer, project: Project):
+    style_1 = LayerStyle.objects.create(
+        project=project, layer=layer, name='Style 1', is_default=True, style_spec={}
+    )
+    style_2 = LayerStyle.objects.create(
+        project=project, layer=layer, name='Style 2', is_default=False, style_spec={}
+    )
+    style_1.delete()
+    style_2.refresh_from_db()
+    assert style_2.is_default
+
+
+@pytest.mark.django_db
 def test_layer_style_validation(layer: Layer, project: Project):
     test_values = {
         'default_frame': {

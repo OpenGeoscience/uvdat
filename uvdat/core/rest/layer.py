@@ -1,7 +1,6 @@
 import jsonschema
-from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from uvdat.core.models import Layer, LayerFrame, LayerStyle
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
@@ -24,7 +23,7 @@ class LayerFrameViewSet(ReadOnlyModelViewSet):
     lookup_field = 'id'
 
 
-class LayerStyleViewSet(ReadOnlyModelViewSet):
+class LayerStyleViewSet(ModelViewSet):
     queryset = LayerStyle.objects.all()
     serializer_class = LayerStyleSerializer
     permission_classes = [GuardianPermission]
@@ -41,8 +40,7 @@ class LayerStyleViewSet(ReadOnlyModelViewSet):
             qs = qs.filter(layer=int(layer_id))
         return qs
 
-    @action(methods=['post'], detail=False, url_path='create')
-    def create_style(self, request, **kwargs):
+    def create(self, request, **kwargs):
         serializer = LayerStyleSerializer(data=request.data)
         if serializer.is_valid():
             try:
@@ -51,8 +49,7 @@ class LayerStyleViewSet(ReadOnlyModelViewSet):
                 return Response(e.message, status=400)
             return Response(serializer.data, status=200)
 
-    @action(methods=['patch'], detail=True, url_path='update')
-    def update_style(self, request, **kwargs):
+    def update(self, request, **kwargs):
         style = self.get_object()
         for k, v in request.data.items():
             setattr(style, k, v)

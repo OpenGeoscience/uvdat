@@ -72,3 +72,11 @@ class LayerStyle(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def delete(self):
+        if self.is_default:
+            # pick a new default
+            new_default = LayerStyle.objects.filter(layer=self.layer).exclude(id=self.id).first()
+            new_default.is_default = True
+            new_default.save()
+        super(LayerStyle, self).delete()
