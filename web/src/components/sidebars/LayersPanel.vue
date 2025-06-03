@@ -109,7 +109,7 @@ function getFrameInputWidth(layer: Layer) {
                                         <v-icon :icon="element.hideFrameMenu ? 'mdi-menu-down' :'mdi-menu-up'" />
                                     </span>
                                     <LayerStyle :layer="element" />
-                                    <span class="material-symbols-outlined" style="cursor: grab;">
+                                    <span class="v-icon material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>
                                 </template>

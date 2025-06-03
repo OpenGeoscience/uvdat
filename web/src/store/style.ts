@@ -96,15 +96,16 @@ function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<st
         sortedValues.length > markers.length
     ) {
         markers.forEach((marker: Record<string, any>, i: number) => {
-            valueColorList.push(
+            valueColorList.push(Math.round(
                 sortedValues[Math.floor(i / markers.length * sortedValues.length)]
-            )
+            ))
             valueColorList.push(marker.color)
         })
         interpType = ['interpolate', ['linear']]
         fallback = []
     } else {
         sortedValues.forEach((v: any, i: number) => {
+            if (typeof v === 'number') v = Math.round(v)
             valueColorList.push(v),
             valueColorList.push(
                 markers[Math.floor(i / sortedValues.length * markers.length)].color
