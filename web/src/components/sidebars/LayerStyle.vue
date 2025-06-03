@@ -22,8 +22,10 @@ const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
-const currentLayerStyle = ref<LayerStyle>({name: 'Default', is_default: true});
+const currentLayerStyle = ref<LayerStyle>({name: 'None', is_default: true});
 const currentStyleSpec = ref<StyleSpec>();
+const availableGroups = ref<Record<string, string[]>>({color: [], size: []});
+const currentGroups = ref<Record<string, string | undefined>>({color: undefined, size: undefined});
 const rasterBands = ref<Record<number, Record<string, number | string>>>();
 const currentVectorFilter = ref<StyleFilter>({include: true, transparency: true});
 const currentVectorFilterProperty = ref<Record<string, any>>();
@@ -65,6 +67,7 @@ const dataRange = computed(() => {
 })
 
 async function init() {
+    if (!showMenu.value) return
     if (!availableStyles.value) availableStyles.value = await getLayerStyles(props.layer.id)
     if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
         currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style));  // deep copy
@@ -80,7 +83,7 @@ function selectStyle(style: LayerStyle) {
 function fetchRasterBands() {
     if (!currentStyleSpec.value) return
     if (showRasterOptions.value) {
-        setRowColorMode('all', 'colormap')
+        setGroupColorMode('all', 'colormap')
         if (props.layer.frames.length) {
             const currentFrame = props.layer.frames[currentStyleSpec.value.default_frame]
             if (currentFrame.raster) {
@@ -90,33 +93,38 @@ function fetchRasterBands() {
     }
 }
 
-function setColorRows(different: boolean | null) {
+function setColorGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
     if (different) {
         if (showRasterOptions.value && rasterBands.value) {
-            const all = currentStyleSpec.value.colors.find((row) => row.name === 'all')
+            const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
             const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
             currentStyleSpec.value.colors = bandNames.map((name) => {
                 return { ...all, name }
             })
-            bandNames.forEach((name) => setRowColorMode(name, 'colormap'))
+            bandNames.forEach((name) => setGroupColorMode(name, 'colormap'))
+            availableGroups.value['color'] = bandNames;
         } else if (showVectorOptions.value) {
-            const all = currentStyleSpec.value.colors.find((row) => row.name === 'all')
-            currentStyleSpec.value.colors = ['polygons', 'lines', 'points'].map((name) => {
+            const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
+            availableGroups.value['color'] = ['polygons', 'lines', 'points']
+            currentStyleSpec.value.colors = availableGroups.value['color'].map((name) => {
                 return {  ...all, name }
             })
         }
+        if (availableGroups.value['color']?.length) currentGroups.value['color'] = availableGroups.value['color'][0]
     } else {
         currentStyleSpec.value.colors = [...styleStore.getDefaultStyleSpec().colors]
-        if (showRasterOptions) setRowColorMode('all', 'colormap')
+        if (showRasterOptions) setGroupColorMode('all', 'colormap')
+        availableGroups.value['color'] = []
+        currentGroups.value['color'] = 'all'
     }
 }
 
-function setRowColorMode(rowName: string, colorMode: string) {
+function setGroupColorMode(groupName: string, colorMode: string) {
     if (!currentStyleSpec.value) return
     currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
         (c) => {
-            if (c.name === rowName) {
+            if (c.name === groupName) {
                 if (colorMode === 'colormap') {
                     const terrain = colormaps.find((colormap: ColorMap) => colormap.name === 'terrain')
                     if (terrain && !c.colormap) return {
@@ -140,20 +148,16 @@ function setRowColorMode(rowName: string, colorMode: string) {
     )
 }
 
-function setRowColorMap(rowName: string, colormap: ColorMap) {
+function setGroupColorMap(groupName: string, colormap: ColorMap) {
     if (!currentStyleSpec.value) return
     currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
         (c) => {
-            if (c.name === rowName) {
+            if (c.name === groupName) {
                 return {
                     ...c,
                     colormap: {
+                        ...c.colormap,
                         ...colormap,
-                        discrete: false,
-                        n_colors: 10,
-                        range: dataRange.value,
-                        color_by: showRasterOptions.value ? 'value' : undefined,
-                        null_color: 'transparent',
                     },
                     single_color: undefined
                 }
@@ -163,27 +167,31 @@ function setRowColorMap(rowName: string, colormap: ColorMap) {
     )
 }
 
-function setSizeRows(different: boolean | null) {
+function setSizeGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
     if (different) {
         if (showVectorOptions.value) {
-            const all = currentStyleSpec.value.sizes.find((row) => row.name === 'all')
+            availableGroups.value['size'] = ['polygons', 'lines', 'points']
+            currentGroups.value['size'] = 'polygons'
+            const all = currentStyleSpec.value.sizes.find((group) => group.name === 'all')
             if (all) {
-                currentStyleSpec.value.sizes = ['polygons', 'lines', 'points'].map((name) => {
+                currentStyleSpec.value.sizes = availableGroups.value['size'].map((name) => {
                     return {  ...all, name }
                 })
             }
         }
     } else {
         currentStyleSpec.value.sizes = [...styleStore.getDefaultStyleSpec().sizes]
+        availableGroups.value['size'] = []
+        currentGroups.value['size'] = 'all'
     }
 }
 
-function setRowSizeMode(rowName: string, sizeMode: string) {
+function setGroupSizeMode(groupName: string, sizeMode: string) {
     if (!currentStyleSpec.value) return
     currentStyleSpec.value.sizes = currentStyleSpec.value.sizes.map(
         (s) => {
-            if (s.name === rowName) {
+            if (s.name === groupName) {
                 if (sizeMode === 'single_size') {
                     return {...s, single_size: 2, size_range: undefined}
                 } else if (sizeMode === 'range') {
@@ -246,7 +254,11 @@ function getInputWidth(value: number) {
 }
 
 function cancel() {
-    if (currentLayerStyle.value.style_spec) {
+    const defaultStyle = availableStyles.value?.find((s) => s.is_default)
+    if (defaultStyle?.style_spec) {
+        currentStyleSpec.value = {...defaultStyle.style_spec}
+    }
+    else if (currentLayerStyle.value.style_spec) {
         currentStyleSpec.value = {...currentLayerStyle.value.style_spec}
     } else {
         currentStyleSpec.value = {...styleStore.getDefaultStyleSpec()}
@@ -316,6 +328,14 @@ watch(currentStyleSpec, _.debounce(() => {
     if (currentStyleSpec.value) {
         styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
         styleStore.updateLayerStyles(props.layer)
+        availableGroups.value['color'] = currentStyleSpec.value.colors.map((c) => c.name)
+        availableGroups.value['size'] = currentStyleSpec.value.sizes.map((c) => c.name)
+        if (availableGroups.value['color'].length && !currentGroups.value['color']) {
+            currentGroups.value['color'] = availableGroups.value['color'][0]
+        }
+        if (availableGroups.value['size'].length && !currentGroups.value['size']) {
+            currentGroups.value['size'] = availableGroups.value['size'][0]
+        }
     }
 }, 100), {deep: true})
 
@@ -333,19 +353,19 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
             />
         </template>
         <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="450">
-            <v-card-subtitle class="pa-2" style="background-color: rgb(var(--v-theme-surface));">
-                Create or Edit Layer Style
+            <v-card-subtitle class="pr-10 py-3" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
+                Edit Style
                 <span class="secondary-text">(Layer: {{ layer.name }})</span>
 
                 <v-icon
                     icon="mdi-close"
-                    style="float:right"
+                    style="position: absolute; top: 10px; right: 5px;"
                     @click="cancel"
                 />
             </v-card-subtitle>
 
             <v-card-text class="pa-2">
-                <div class="d-flex mb-4" style="align-items: center; column-gap: 5px;">
+                <div class="d-flex mb-1" style="align-items: center; column-gap: 5px;">
                     <v-select
                         v-model="currentLayerStyle"
                         :items="availableStyles"
@@ -353,6 +373,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                         :item-props="(item) => ({title: item.is_default ? item.name + ' (default)' : item.name})"
                         label="Layer Style"
                         density="compact"
+                        variant="outlined"
                         no-data-text="No saved styles exist yet."
                         return-object
                         hide-details
@@ -370,752 +391,893 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                 </div>
 
                 <div class="d-flex mx-2">
-                    <v-label>Set as default style</v-label>
-                    <v-checkbox-btn v-model="currentLayerStyle.is_default" class="ml-2" />
+                    <v-checkbox
+                        v-model="currentLayerStyle.is_default"
+                        label="Set as default style"
+                        class="primary-control"
+                        density="compact"
+                        hide-details
+                    />
                 </div>
 
-                <v-slider
-                    v-if="props.layer.frames.length > 1"
-                    :model-value="currentStyleSpec.default_frame + 1"
-                    label="Default frame"
-                    :max="props.layer.frames.length"
-                    min="1"
-                    step="1"
-                    color="primary"
-                    thumb-size="15"
-                    track-size="8"
-                    hide-details
-                    type="number"
-                    @update:model-value="(value: number) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = value - 1}"
-                >
-                    <template v-slot:append>
-                        <v-text-field
-                            :model-value="currentStyleSpec.default_frame + 1"
-                            :max="props.layer.frames.length"
-                            min="1"
-                            step="1"
-                            density="compact"
-                            class="number-input"
-                            style="width: 60px"
-                            type="number"
-                            hide-details
-                            single-line
-                            @update:model-value="(value: string) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = parseInt(value) - 1}"
-                        >
-                        </v-text-field>
-                    </template>
-                </v-slider>
+                <table class="aligned-controls">
+                    <tbody>
+                        <tr v-if="props.layer.frames.length > 1">
+                            <td><v-label>Default frame</v-label></td>
+                            <td>
+                                <v-slider
+                                    :model-value="currentStyleSpec.default_frame + 1"
+                                    :max="props.layer.frames.length"
+                                    min="1"
+                                    step="1"
+                                    color="primary"
+                                    hide-details
+                                    type="number"
+                                    @update:model-value="(value: number) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = value - 1}"
+                                >
+                                    <template v-slot:append>
+                                        <v-text-field
+                                            :model-value="currentStyleSpec.default_frame + 1"
+                                            :max="props.layer.frames.length"
+                                            min="1"
+                                            step="1"
+                                            density="compact"
+                                            class="number-input"
+                                            style="width: 60px"
+                                            type="number"
+                                            hide-details
+                                            single-line
+                                            @update:model-value="(value: string) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = parseInt(value) - 1}"
+                                        >
+                                        </v-text-field>
+                                    </template>
+                                </v-slider>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><v-label color="primary-text">Opacity</v-label></td>
+                            <td>
+                                <v-slider
+                                    v-model="currentStyleSpec.opacity"
+                                    max="1"
+                                    min="0"
+                                    step="0.1"
+                                    color="primary"
+                                    hide-details
+                                    type="number"
+                                >
+                                    <template v-slot:append>
+                                        <v-text-field
+                                            :model-value="currentStyleSpec.opacity"
+                                            max="1"
+                                            min="0"
+                                            step="0.1"
+                                            density="compact"
+                                            class="number-input"
+                                            style="width: 60px"
+                                            type="number"
+                                            hide-details
+                                            single-line
+                                            @update:model-value="(v) => {if (currentStyleSpec) currentStyleSpec.opacity = parseFloat(v)}"
+                                        >
+                                        </v-text-field>
+                                    </template>
+                                </v-slider>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <v-slider
-                    v-model="currentStyleSpec.opacity"
-                    label="Opacity"
-                    max="1"
-                    min="0"
-                    step="0.1"
-                    color="primary"
-                    thumb-size="15"
-                    track-size="8"
-                    hide-details
-                    type="number"
-                >
-                    <template v-slot:append>
-                        <v-text-field
-                            :model-value="currentStyleSpec.opacity"
-                            max="1"
-                            min="0"
-                            step="0.1"
-                            density="compact"
-                            class="number-input"
-                            style="width: 60px"
-                            type="number"
-                            hide-details
-                            single-line
-                            @update:model-value="(v) => {if (currentStyleSpec) currentStyleSpec.opacity = parseFloat(v)}"
-                        >
-                        </v-text-field>
-                    </template>
-                </v-slider>
-
-                <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact">
+                <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact" color="primary">
                     <v-tab value="color">
-                        <v-icon icon="mdi-palette" class="mr-1"/>
+                        <v-icon icon="mdi-palette" class="mr-1" :color="tab === 'color' ? 'primary' : 'gray'"/>
                         Color
                     </v-tab>
                     <v-tab value="size">
-                        <span class="material-symbols-outlined mr-1">
+                        <span class="material-symbols-outlined mr-1" :style="tab === 'size' ? 'color: primary' : 'color: gray'">
                             straighten
                         </span>
                         Size
                     </v-tab>
                     <v-tab value="filters">
-                        <v-icon icon="mdi-filter" class="mr-1"/>
+                        <v-icon icon="mdi-filter" class="mr-1" :color="tab === 'filters' ? 'primary' : 'gray'"/>
                         Filters
                     </v-tab>
                 </v-tabs>
 
-                <v-window v-model="tab">
+                <v-window v-model="tab" class="tab-contents">
                     <v-window-item value="color" class="pa-2">
                         <div v-if="showRasterOptions">
-                            <v-card-subtitle>Raster Options</v-card-subtitle>
+                            <v-label class="secondary-text px-3">Raster Options</v-label>
                             <v-divider class="mb-2"/>
-                            <v-checkbox
-                                label="Different colors for each band"
-                                :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
-                                density="compact"
-                                class="px-5 py-0"
-                                hide-details
-                                @update:model-value="setColorRows"
-                            />
-                            <div v-for="row in currentStyleSpec.colors">
-                                <v-card-subtitle class="mt-3">{{ (row.name + (row.name === 'all' ? ' bands' : '')).toUpperCase() }}</v-card-subtitle>
-                                <div
-                                    class="px-4 d-flex"
-                                    style="flex-direction: column; row-gap: 10px;"
-                                >
-                                    <v-btn-toggle
-                                        v-if="row.colormap"
-                                        :model-value="row.colormap.discrete ? 'discrete' : 'continuous'"
-                                        density="compact"
-                                        color="primary"
-                                        variant="outlined"
-                                        divided
-                                        mandatory
-                                        @update:model-value="(value: string) => {if (row.colormap) row.colormap.discrete = value === 'discrete'}"
-                                    >
-                                        <v-btn :value="'discrete'">Discrete</v-btn>
-                                        <v-btn :value="'continuous'">Continuous</v-btn>
-                                    </v-btn-toggle>
-                                    <v-slider
-                                        v-if="row.colormap?.discrete"
-                                        v-model="row.colormap.n_colors"
-                                        label="Number of colors"
-                                        max="30"
-                                        min="2"
-                                        step="1"
-                                        color="primary"
-                                        thumb-size="15"
-                                        track-size="8"
-                                        hide-details
-                                        type="number"
-                                    >
-                                        <template v-slot:append>
-                                            <v-text-field
-                                                :model-value="row.colormap.n_colors"
-                                                max="30"
-                                                min="2"
-                                                step="1"
+                            <table class="aligned-controls">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2">
+                                            <v-checkbox
+                                                label="Different color per band (multi-band images)"
+                                                :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
                                                 density="compact"
-                                                class="number-input"
-                                                style="width: 60px"
-                                                type="number"
+                                                class="primary-control"
                                                 hide-details
-                                                single-line
-                                                @update:model-value="(v) => {if (row.colormap) row.colormap.n_colors = parseFloat(v)}"
-                                            >
-                                            </v-text-field>
-                                        </template>
-                                    </v-slider>
-                                    <v-select
-                                        v-if="row.colormap"
-                                        v-model="row.colormap"
-                                        :items="colormaps"
-                                        item-title="name"
-                                        label="Colormap"
-                                        density="compact"
-                                        hide-details
-                                        return-object
-                                        @update:model-value="(v) => setRowColorMap(row.name, v)"
-                                    >
-                                        <template v-slot:item="{ props, item }">
-                                            <v-list-item v-bind="props">
-                                                <template v-slot:append>
-                                                    <colormap-preview
-                                                        :colormap="item.raw"
-                                                        :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.n_colors || -1"
-                                                    />
-                                                </template>
-                                            </v-list-item>
-                                        </template>
-                                        <template v-slot:selection="{ item }">
-                                            <span class="pr-15">{{ item.title }}</span>
-                                            <colormap-preview
-                                                :colormap="item.raw"
-                                                :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.n_colors || -1"
+                                                @update:model-value="setColorGroups"
                                             />
-                                        </template>
-                                    </v-select>
-                                    <v-range-slider
-                                        v-if="row.colormap && dataRange"
-                                        v-model="row.colormap.range"
-                                        color="primary"
-                                        :min="dataRange[0]"
-                                        :max="dataRange[1]"
-                                        step="1"
-                                        strict
-                                    >
-                                        <template v-slot:prepend>
-                                            <v-text-field
-                                                v-if="row.colormap.range"
-                                                :model-value="row.colormap.range[0]"
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentGroups['color'] !== 'all'">
+                                        <td><v-label>Band</v-label></td>
+                                        <td>
+                                            <v-select
+                                                v-model="currentGroups['color']"
+                                                :items="availableGroups['color']"
+                                                density="compact"
+                                                variant="outlined"
+                                                hide-details
+                                            ></v-select>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentGroups['color'] !== 'all'">
+                                        <td colspan="2">
+                                            <v-label class="secondary-text py-2">Selected Band Options [{{ currentGroups['color'] }}]</v-label>
+                                        </td>
+                                    </tr>
+                                    <template v-for="group in currentStyleSpec.colors.filter((c) => c.name === currentGroups['color'])">
+                                        <tr>
+                                            <td><v-label>Colormap</v-label></td>
+                                            <td>
+                                                <v-select
+                                                    v-if="group.colormap"
+                                                    :model-value="group.colormap"
+                                                    :items="colormaps"
+                                                    item-title="name"
+                                                    density="compact"
+                                                    variant="outlined"
+                                                    hide-details
+                                                    return-object
+                                                    @update:model-value="(v) => setGroupColorMap(group.name, v)"
+                                                >
+                                                    <template v-slot:item="{ props, item }">
+                                                        <v-list-item v-bind="props">
+                                                            <template v-slot:append>
+                                                                <colormap-preview
+                                                                    :colormap="item.raw"
+                                                                    :discrete="group.colormap.discrete || false"
+                                                                    :nColors="group.colormap.n_colors || -1"
+                                                                />
+                                                            </template>
+                                                        </v-list-item>
+                                                    </template>
+                                                    <template v-slot:selection="{ item }">
+                                                        <span class="pr-15">{{ item.title }}</span>
+                                                        <colormap-preview
+                                                            :colormap="item.raw"
+                                                            :discrete="group.colormap.discrete || false"
+                                                            :nColors="group.colormap.n_colors || -1"
+                                                        />
+                                                    </template>
+                                                </v-select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><v-label>Colormap class</v-label></td>
+                                            <td>
+                                                <v-btn-toggle
+                                                    v-if="group.colormap"
+                                                    :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
+                                                    density="compact"
+                                                    color="primary"
+                                                    variant="outlined"
+                                                    divided
+                                                    mandatory
+                                                    @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
+                                                >
+                                                    <v-btn :value="'discrete'">Discrete</v-btn>
+                                                    <v-btn :value="'continuous'">Continuous</v-btn>
+                                                </v-btn-toggle>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><v-label>No. of colors</v-label></td>
+                                            <td>
+                                                <v-slider
+                                                    v-if="group.colormap?.discrete"
+                                                    v-model="group.colormap.n_colors"
+                                                    max="30"
+                                                    min="2"
+                                                    step="1"
+                                                    color="primary"
+                                                    thumb-size="15"
+                                                    track-size="8"
+                                                    hide-details
+                                                    type="number"
+                                                >
+                                                    <template v-slot:append>
+                                                        <v-text-field
+                                                            :model-value="group.colormap.n_colors"
+                                                            max="30"
+                                                            min="2"
+                                                            step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            style="width: 60px"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(v) => {if (group.colormap) group.colormap.n_colors = parseFloat(v)}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                </v-slider>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><v-label>Range</v-label></td>
+                                            <v-range-slider
+                                                v-if="group.colormap && dataRange"
+                                                v-model="group.colormap.range"
+                                                color="primary"
                                                 :min="dataRange[0]"
-                                                :max="row.colormap.range[1]"
-                                                :step="1"
-                                                density="compact"
-                                                class="number-input"
-                                                :style="{'width': getInputWidth(row.colormap.range[0])}"
-                                                type="number"
-                                                hide-details
-                                                single-line
-                                                @update:model-value="(v) => {if (row.colormap?.range) row.colormap.range[0] = parseInt(v)}"
-                                            >
-                                            </v-text-field>
-                                        </template>
-                                        <template v-slot:append>
-                                            <v-text-field
-                                                v-if="row.colormap.range"
-                                                :model-value="row.colormap.range[1]"
-                                                :min="row.colormap.range[0]"
                                                 :max="dataRange[1]"
-                                                :step="1"
-                                                density="compact"
-                                                class="number-input"
-                                                :style="{'width': getInputWidth(row.colormap.range[1])}"
-                                                type="number"
-                                                hide-details
-                                                single-line
-                                                @update:model-value="(v) => {if (row.colormap?.range) row.colormap.range[1] = parseInt(v)}"
+                                                step="1"
+                                                strict
                                             >
-                                            </v-text-field>
-                                        </template>
-                                    </v-range-slider>
-                                </div>
-                            </div>
+                                                <template v-slot:prepend>
+                                                    <v-text-field
+                                                        v-if="group.colormap.range"
+                                                        :model-value="group.colormap.range[0]"
+                                                        :min="dataRange[0]"
+                                                        :max="group.colormap.range[1]"
+                                                        :step="1"
+                                                        density="compact"
+                                                        class="number-input"
+                                                        :style="{'width': getInputWidth(group.colormap.range[0])}"
+                                                        type="number"
+                                                        hide-details
+                                                        single-line
+                                                        @update:model-value="(v) => {if (group.colormap?.range) group.colormap.range[0] = parseInt(v)}"
+                                                    >
+                                                    </v-text-field>
+                                                </template>
+                                                <template v-slot:append>
+                                                    <v-text-field
+                                                        v-if="group.colormap.range"
+                                                        :model-value="group.colormap.range[1]"
+                                                        :min="group.colormap.range[0]"
+                                                        :max="dataRange[1]"
+                                                        :step="1"
+                                                        density="compact"
+                                                        class="number-input"
+                                                        :style="{'width': getInputWidth(group.colormap.range[1])}"
+                                                        type="number"
+                                                        hide-details
+                                                        single-line
+                                                        @update:model-value="(v) => {if (group.colormap?.range) group.colormap.range[1] = parseInt(v)}"
+                                                    >
+                                                    </v-text-field>
+                                                </template>
+                                            </v-range-slider>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
                         <div v-if="showVectorOptions">
-                            <v-card-subtitle>Vector Options</v-card-subtitle>
+                            <v-label class="secondary-text px-3">Vector Options</v-label>
                             <v-divider class="mb-2"/>
-                            <v-checkbox
-                                label="Different colors for each feature type"
-                                :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
-                                density="compact"
-                                class="px-5 py-0"
-                                hide-details
-                                @update:model-value="setColorRows"
-                            />
-                            <div v-for="row in currentStyleSpec.colors">
-                                <v-card-subtitle class="mt-3">{{ (row.name + (row.name === 'all' ? ' feature types' : '')).toUpperCase() }}</v-card-subtitle>
-                                <div
-                                    class="px-4 d-flex"
-                                    :style="row.single_color ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
-                                >
-                                    <v-btn-toggle
-                                        :model-value="row.single_color ? 'single_color' : 'colormap'"
-                                        density="compact"
-                                        color="primary"
-                                        variant="outlined"
-                                        divided
-                                        mandatory
-                                        @update:model-value="(value: string) => setRowColorMode(row.name, value)"
-                                    >
-                                        <v-btn :value="'single_color'">Single Color</v-btn>
-                                        <v-btn :value="'colormap'">Colormap</v-btn>
-                                    </v-btn-toggle>
-                                    <v-menu
-                                        v-if="row.single_color"
-                                        :close-on-content-click="false"
-                                        open-on-hover
-                                        location="end"
-                                    >
-                                        <template v-slot:activator="{ props }">
-                                            <div
-                                                v-bind="props"
-                                                class="color-square"
-                                                :style="{backgroundColor: row.single_color}"
-                                            ></div>
-                                        </template>
-                                        <v-card>
-                                            <v-color-picker
-                                                v-model:model-value="row.single_color"
-                                                mode="rgb"
-                                            />
-                                        </v-card>
-                                    </v-menu>
-                                    <v-btn-toggle
-                                        v-if="row.colormap"
-                                        :model-value="row.colormap.discrete ? 'discrete' : 'continuous'"
-                                        density="compact"
-                                        color="primary"
-                                        variant="outlined"
-                                        divided
-                                        mandatory
-                                        @update:model-value="(value: string) => {if (row.colormap) row.colormap.discrete = value === 'discrete'}"
-                                    >
-                                        <v-btn :value="'discrete'">Discrete</v-btn>
-                                        <v-btn :value="'continuous'">Continuous</v-btn>
-                                    </v-btn-toggle>
-                                    <v-slider
-                                        v-if="row.colormap?.discrete"
-                                        v-model="row.colormap.n_colors"
-                                        label="Number of colors"
-                                        max="30"
-                                        min="2"
-                                        step="1"
-                                        color="primary"
-                                        thumb-size="15"
-                                        track-size="8"
-                                        hide-details
-                                        type="number"
-                                    >
-                                        <template v-slot:append>
-                                            <v-text-field
-                                                :model-value="row.colormap.n_colors"
-                                                max="30"
-                                                min="2"
-                                                step="1"
+                            <table class="aligned-controls">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2">
+                                            <v-checkbox
+                                                label="Different color per feature type"
+                                                :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
                                                 density="compact"
-                                                class="number-input"
-                                                style="width: 60px"
-                                                type="number"
+                                                class="primary-control"
                                                 hide-details
-                                                single-line
-                                                @update:model-value="(v) => {if (row.colormap) row.colormap.n_colors = parseFloat(v)}"
-                                            >
-                                            </v-text-field>
-                                        </template>
-                                    </v-slider>
-                                    <v-select
-                                        v-if="row.colormap"
-                                        v-model="row.colormap"
-                                        :items="colormaps"
-                                        item-title="name"
-                                        label="Colormap"
-                                        density="compact"
-                                        hide-details
-                                        return-object
-                                        @update:model-value="(v) => setRowColorMap(row.name, v)"
-                                    >
-                                        <template v-slot:item="{ props, item }">
-                                            <v-list-item v-bind="props">
-                                                <template v-slot:append>
-                                                    <colormap-preview
-                                                        :colormap="item.raw"
-                                                        :discrete="row.colormap.discrete || false"
-                                                        :nColors="row.colormap.n_colors || -1"
-                                                    />
-                                                </template>
-                                            </v-list-item>
-                                        </template>
-                                        <template v-slot:selection="{ item }">
-                                            <span class="pr-15">{{ item.title }}</span>
-                                            <colormap-preview
-                                                :colormap="item.raw"
-                                                :discrete="row.colormap.discrete || false"
-                                                :nColors="row.colormap.n_colors || -1"
+                                                @update:model-value="setColorGroups"
                                             />
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentGroups['color'] !== 'all'">
+                                        <td><v-label>Feature Type</v-label></td>
+                                        <td>
+                                            <v-select
+                                                v-model="currentGroups['color']"
+                                                :items="availableGroups['color']"
+                                                density="compact"
+                                                variant="outlined"
+                                                hide-details
+                                            ></v-select>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentGroups['color'] !== 'all'">
+                                        <td colspan="2">
+                                            <v-label class="secondary-text py-2">Selected Feature Type Options [{{ currentGroups['color'] }}]</v-label>
+                                        </td>
+                                    </tr>
+                                    <template v-for="group in currentStyleSpec.colors.filter((c) => c.name === currentGroups['color'])">
+                                        <tr>
+                                            <td><v-label>Color scheme</v-label></td>
+                                            <td>
+                                                <div class="d-flex" style="align-items: center;">
+                                                    <v-btn-toggle
+                                                        :model-value="group.single_color ? 'single_color' : 'colormap'"
+                                                        density="compact"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        divided
+                                                        mandatory
+                                                        @update:model-value="(value: string) => setGroupColorMode(group.name, value)"
+                                                    >
+                                                        <v-btn :value="'single_color'">Single Color</v-btn>
+                                                        <v-btn :value="'colormap'">Colormap</v-btn>
+                                                    </v-btn-toggle>
+                                                    <v-menu
+                                                        v-if="group.single_color"
+                                                        :close-on-content-click="false"
+                                                        open-on-hover
+                                                        location="end"
+                                                    >
+                                                        <template v-slot:activator="{ props }">
+                                                            <div
+                                                                v-bind="props"
+                                                                class="color-square"
+                                                                :style="{backgroundColor: group.single_color}"
+                                                            ></div>
+                                                        </template>
+                                                        <v-card>
+                                                            <v-color-picker
+                                                                v-model:model-value="group.single_color"
+                                                                mode="rgb"
+                                                            />
+                                                        </v-card>
+                                                    </v-menu>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <template v-if="group.colormap">
+                                            <tr>
+                                                <td><v-label>Color by property</v-label></td>
+                                                <td>
+                                                    <v-select
+                                                        v-if="vectorProperties && vectorProperties[group.name]"
+                                                        v-model="group.colormap.color_by"
+                                                        :items="vectorProperties[group.name]"
+                                                        item-title="name"
+                                                        item-value="name"
+                                                        density="compact"
+                                                        variant="outlined"
+                                                        hide-details
+                                                    >
+                                                        <template v-slot:item="{ props, item }">
+                                                            <v-list-item v-bind="props">
+                                                                <template v-slot:append>
+                                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                                </template>
+                                                            </v-list-item>
+                                                        </template>
+                                                    </v-select>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><v-label>Colormap</v-label></td>
+                                                <td>
+                                                    <v-select
+                                                        :model-value="group.colormap"
+                                                        :items="colormaps"
+                                                        item-title="name"
+                                                        density="compact"
+                                                        variant="outlined"
+                                                        hide-details
+                                                        return-object
+                                                        @update:model-value="(v) => setGroupColorMap(group.name, v)"
+                                                    >
+                                                        <template v-slot:item="{ props, item }">
+                                                            <v-list-item v-bind="props">
+                                                                <template v-slot:append>
+                                                                    <colormap-preview
+                                                                        :colormap="item.raw"
+                                                                        :discrete="group.colormap.discrete || false"
+                                                                        :nColors="group.colormap.n_colors || -1"
+                                                                    />
+                                                                </template>
+                                                            </v-list-item>
+                                                        </template>
+                                                        <template v-slot:selection="{ item }">
+                                                            <span class="pr-15">{{ item.title }}</span>
+                                                            <colormap-preview
+                                                                :colormap="item.raw"
+                                                                :discrete="group.colormap.discrete || false"
+                                                                :nColors="group.colormap.n_colors || -1"
+                                                            />
+                                                        </template>
+                                                    </v-select>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><v-label>Colormap class</v-label></td>
+                                                <td>
+                                                    <v-btn-toggle
+                                                        :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
+                                                        density="compact"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        divided
+                                                        mandatory
+                                                        @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
+                                                    >
+                                                        <v-btn :value="'discrete'">Discrete</v-btn>
+                                                        <v-btn :value="'continuous'">Continuous</v-btn>
+                                                    </v-btn-toggle>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="group.colormap?.discrete">
+                                                <td><v-label>No. of colors</v-label></td>
+                                                <td>
+                                                    <v-slider
+                                                        v-model="group.colormap.n_colors"
+                                                        max="30"
+                                                        min="2"
+                                                        step="1"
+                                                        color="primary"
+                                                        thumb-size="15"
+                                                        track-size="8"
+                                                        hide-details
+                                                        type="number"
+                                                    >
+                                                        <template v-slot:append>
+                                                            <v-text-field
+                                                                :model-value="group.colormap.n_colors"
+                                                                max="30"
+                                                                min="2"
+                                                                step="1"
+                                                                density="compact"
+                                                                class="number-input"
+                                                                style="width: 60px"
+                                                                type="number"
+                                                                hide-details
+                                                                single-line
+                                                                @update:model-value="(v) => {if (group.colormap) group.colormap.n_colors = parseFloat(v)}"
+                                                            >
+                                                            </v-text-field>
+                                                        </template>
+                                                    </v-slider>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="group.colormap && group.colormap.color_by">
+                                                <td><v-label>Null values</v-label></td>
+                                                <td>
+                                                    <div
+                                                        class="d-flex"
+                                                        style="align-items: center;"
+                                                    >
+                                                        <v-btn-toggle
+                                                            :model-value="group.colormap.null_color === 'transparent' ? 'transparent' : '#000000'"
+                                                            density="compact"
+                                                            color="primary"
+                                                            variant="outlined"
+                                                            divided
+                                                            mandatory
+                                                            @update:model-value="(value: string) => {if (group.colormap) group.colormap.null_color = value}"
+                                                        >
+                                                            <v-btn :value="'transparent'">Transparent</v-btn>
+                                                            <v-btn :value="'#000000'">Single Color</v-btn>
+                                                        </v-btn-toggle>
+                                                        <v-menu
+                                                            v-if="group.colormap.null_color !== 'transparent'"
+                                                            :close-on-content-click="false"
+                                                            open-on-hover
+                                                            location="end"
+                                                        >
+                                                            <template v-slot:activator="{ props }">
+                                                                <div
+                                                                    v-bind="props"
+                                                                    class="color-square"
+                                                                    :style="{backgroundColor: group.colormap.null_color}"
+                                                                ></div>
+                                                            </template>
+                                                            <v-card>
+                                                                <v-color-picker
+                                                                    v-model:model-value="group.colormap.null_color"
+                                                                    mode="rgb"
+                                                                />
+                                                            </v-card>
+                                                        </v-menu>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         </template>
-                                    </v-select>
-                                    <v-select
-                                        v-if="row.colormap && vectorProperties && vectorProperties[row.name]"
-                                        v-model="row.colormap.color_by"
-                                        :items="vectorProperties[row.name]"
-                                        item-title="name"
-                                        item-value="name"
-                                        label="Color by Property"
-                                        density="compact"
-                                        hide-details
-                                    >
-                                        <template v-slot:item="{ props, item }">
-                                            <v-list-item v-bind="props">
-                                                <template v-slot:append>
-                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
-                                                </template>
-                                            </v-list-item>
-                                        </template>
-                                    </v-select>
-                                    <div
-                                        v-if="row.colormap && row.colormap.color_by"
-                                        class="px-4 d-flex"
-                                        style="align-items: center;"
-                                    >
-                                        <v-btn-toggle
-                                            :model-value="row.colormap.null_color === 'transparent' ? 'transparent' : '#000000'"
-                                            density="compact"
-                                            color="primary"
-                                            variant="outlined"
-                                            divided
-                                            mandatory
-                                            @update:model-value="(value: string) => {if (row.colormap) row.colormap.null_color = value}"
-                                        >
-                                            <v-btn :value="'transparent'">Transparent</v-btn>
-                                            <v-btn :value="'#000000'">Single Color</v-btn>
-                                        </v-btn-toggle>
-                                        <v-menu
-                                            v-if="row.colormap.null_color !== 'transparent'"
-                                            :close-on-content-click="false"
-                                            open-on-hover
-                                            location="end"
-                                        >
-                                            <template v-slot:activator="{ props }">
-                                                <div
-                                                    v-bind="props"
-                                                    class="color-square"
-                                                    :style="{backgroundColor: row.colormap.null_color}"
-                                                ></div>
-                                            </template>
-                                            <v-card>
-                                                <v-color-picker
-                                                    v-model:model-value="row.colormap.null_color"
-                                                    mode="rgb"
-                                                />
-                                            </v-card>
-                                        </v-menu>
-                                    </div>
-                                </div>
-                            </div>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
                     </v-window-item>
                     <v-window-item value="size" class="pa-2">
                         <div v-if="showRasterOptions">
-                            <v-card-subtitle>Raster Options</v-card-subtitle>
+                            <v-label class="secondary-text px-3">Raster Options</v-label>
                             <v-divider class="mb-2"/>
-                            <v-card-subtitle>Size options do not apply to raster data.</v-card-subtitle>
+                            <v-label class="secondary-text px-3">Size options do not apply to raster data.</v-label>
                         </div>
                         <div v-if="showVectorOptions">
-                            <v-card-subtitle>Vector Options</v-card-subtitle>
+                            <v-label class="secondary-text px-3">Vector Options</v-label>
                             <v-divider class="mb-2"/>
-                            <v-checkbox
-                                label="Different sizes for each feature type"
-                                :model-value="Array.from(currentStyleSpec.sizes.keys()).length > 1"
-                                density="compact"
-                                class="px-5 py-0"
-                                hide-details
-                                @update:model-value="setSizeRows"
-                            />
-                            <div v-for="row in currentStyleSpec.sizes">
-                                <div class="d-flex" style="align-items: baseline;">
-                                    <v-card-subtitle class="mt-3">{{ (row.name + (row.name === 'all' ? ' feature types' : '')).toUpperCase() }}</v-card-subtitle>
-                                    <v-icon
-                                        v-if="row.name !== 'all'"
-                                        icon="mdi-information-outline"
-                                        color="primary"
-                                        size="small"
-                                        v-tooltip="row.name === 'polygons' ? 'Border thickness' : row.name === 'lines' ? 'Line thickness' : 'Point radius'"
-                                    />
-                                </div>
-                                <div
-                                    class="px-4 d-flex"
-                                    :style="row.single_size ? {alignItems: 'center'} : {flexDirection: 'column', rowGap: '10px'}"
-                                >
-                                    <v-btn-toggle
-                                        :model-value="row.single_size ? 'single_size' : 'range'"
-                                        density="compact"
-                                        color="primary"
-                                        variant="outlined"
-                                        divided
-                                        mandatory
-                                        @update:model-value="(value: string) => setRowSizeMode(row.name, value)"
-                                    >
-                                        <v-btn :value="'single_size'">Single Size</v-btn>
-                                        <v-btn :value="'range'">Range of Sizes</v-btn>
-                                    </v-btn-toggle>
-                                    <v-text-field
-                                        v-if="row.single_size"
-                                        :model-value="row.single_size"
-                                        :min="1"
-                                        :max="10"
-                                        :step="1"
-                                        density="compact"
-                                        :style="{'width': getInputWidth(row.single_size)}"
-                                        type="number"
-                                        hide-details
-                                        single-line
-                                        @update:model-value="(v) => row.single_size = parseInt(v)"
-                                    />
-                                    <v-range-slider
-                                        v-if="row.size_range"
-                                        :model-value="[row.size_range.minimum, row.size_range.maximum]"
-                                        color="primary"
-                                        :min="1"
-                                        :max="10"
-                                        step="1"
-                                        strict
-                                        @update:model-value="([min, max]) => {if (!row.size_range) return; row.size_range.minimum = min; row.size_range.maximum = max;}"
-                                    >
-                                        <template v-slot:prepend>
-                                            <v-text-field
-                                                v-if="row.size_range"
-                                                :model-value="row.size_range.minimum"
-                                                :min="1"
-                                                :max="row.size_range.maximum"
-                                                :step="1"
+                            <table class="aligned-controls">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2">
+                                            <v-checkbox
+                                                label="Different size per feature type"
+                                                :model-value="Array.from(currentStyleSpec.sizes.keys()).length > 1"
                                                 density="compact"
-                                                class="number-input"
-                                                :style="{'width': getInputWidth(row.size_range.minimum)}"
-                                                type="number"
+                                                class="primary-control"
                                                 hide-details
-                                                single-line
-                                                @update:model-value="(v) => {if (row.size_range) row.size_range.minimum = parseInt(v)}"
-                                            >
-                                            </v-text-field>
-                                        </template>
-                                        <template v-slot:append>
-                                            <v-text-field
-                                                v-if="row.size_range"
-                                                :model-value="row.size_range.maximum"
-                                                :min="row.size_range.minimum"
-                                                :max="10"
-                                                :step="1"
+                                                @update:model-value="setSizeGroups"
+                                            />
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentGroups['size'] !== 'all'">
+                                        <td><v-label>Feature Type</v-label></td>
+                                        <td>
+                                            <v-select
+                                                v-model="currentGroups['size']"
+                                                :items="availableGroups['size']"
                                                 density="compact"
-                                                class="number-input"
-                                                :style="{'width': getInputWidth(row.size_range.maximum)}"
-                                                type="number"
+                                                variant="outlined"
                                                 hide-details
-                                                single-line
-                                                @update:model-value="(v) => {if (row.size_range) row.size_range.maximum = parseInt(v)}"
+                                            ></v-select>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentGroups['size'] !== 'all'">
+                                        <td colspan="2">
+                                            <v-label class="secondary-text py-2">Selected Feature Type Options [{{ currentGroups['size'] }}]</v-label>
+                                        </td>
+                                    </tr>
+                                    <template v-for="group in currentStyleSpec.sizes.filter((c) => c.name === currentGroups['size'])">
+                                        <tr>
+                                            <td><v-label>Size choice</v-label></td>
+                                            <td>
+                                                <v-btn-toggle
+                                                :model-value="group.single_size ? 'single_size' : 'range'"
+                                                density="compact"
+                                                color="primary"
+                                                variant="outlined"
+                                                divided
+                                                mandatory
+                                                @update:model-value="(value: string) => setGroupSizeMode(group.name, value)"
                                             >
-                                            </v-text-field>
-                                        </template>
-                                    </v-range-slider>
-                                    <v-select
-                                        v-if="row.size_range && vectorProperties && vectorProperties[row.name]"
-                                        v-model="row.size_range.size_by"
-                                        :items="vectorProperties[row.name]"
-                                        item-title="name"
-                                        item-value="name"
-                                        label="Size by Property"
-                                        density="compact"
-                                        hide-details
-                                    >
-                                        <template v-slot:item="{ props, item }">
-                                            <v-list-item v-bind="props" :disabled="!(item.raw as Record<string, any>).range">
-                                                <template v-slot:append>
-                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
-                                                </template>
-                                            </v-list-item>
-                                        </template>
-                                    </v-select>
-                                    <div
-                                        v-if="row.size_range && row.size_range.size_by"
-                                        class="px-4 d-flex"
-                                        style="align-items: center;"
-                                    >
-                                        <v-btn-toggle
-                                            :model-value="row.size_range.null_size?.transparency ? 'transparent' : 2"
-                                            density="compact"
-                                            color="primary"
-                                            variant="outlined"
-                                            divided
-                                            mandatory
-                                            @update:model-value="(value: string | number) => {if (row.size_range) {
-                                                if (value === 'transparent') {row.size_range.null_size = {transparency: true, size: 0}}
-                                                else {row.size_range.null_size = {transparency: true, size: value as number}}
-                                            }}"
-                                        >
-                                            <v-btn :value="'transparent'">Transparent</v-btn>
-                                            <v-btn :value="2">Single Size</v-btn>
-                                        </v-btn-toggle>
-                                        <v-text-field
-                                            v-if="row.size_range.null_size && !row.size_range.null_size.transparency"
-                                            :model-value="row.size_range.null_size.size"
-                                            :min="1"
-                                            :max="10"
-                                            :step="1"
-                                            density="compact"
-                                            :style="{'width': getInputWidth(row.size_range.null_size.size)}"
-                                            type="number"
-                                            hide-details
-                                            single-line
-                                            @update:model-value="(v) => {if (row.size_range?.null_size) row.size_range.null_size.size = parseInt(v)}"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                                                <v-btn :value="'single_size'">Single Size</v-btn>
+                                                <v-btn :value="'range'">Range of Sizes</v-btn>
+                                            </v-btn-toggle>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="group.single_size">
+                                            <td>
+                                                <v-label>Size</v-label>
+                                                <v-icon
+                                                    icon="mdi-information-outline"
+                                                    color="primary"
+                                                    size="small"
+                                                    class="ml-2"
+                                                    v-tooltip="group.name === 'all' ? 'Range: 1 to 10' : group.name === 'polygons' ? 'Border thickness' : group.name === 'lines' ? 'Line thickness' : 'Point radius'"
+                                                />
+                                            </td>
+                                            <td>
+                                                <v-slider
+                                                    :model-value="group.single_size"
+                                                    max="10"
+                                                    min="1"
+                                                    step="1"
+                                                    color="primary"
+                                                    hide-details
+                                                    type="number"
+                                                    @update:model-value="(value: number) => {group.single_size = value}"
+                                                >
+                                                    <template v-slot:append>
+                                                        <v-text-field
+                                                            :model-value="group.single_size"
+                                                            max="10"
+                                                            min="1"
+                                                            step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            style="width: 60px"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(value: string) => {group.single_size = parseInt(value)}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                </v-slider>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="group.size_range">
+                                            <td>
+                                                <v-label>Size Range</v-label>
+                                                <v-icon
+                                                    v-if="group.name !== 'all'"
+                                                    icon="mdi-information-outline"
+                                                    color="primary"
+                                                    size="small"
+                                                    class="ml-2"
+                                                    v-tooltip="group.name === 'polygons' ? 'Border thickness' : group.name === 'lines' ? 'Line thickness' : 'Point radius'"
+                                                />
+                                            </td>
+                                            <td>
+                                                <v-range-slider
+                                                    :model-value="[group.size_range.minimum, group.size_range.maximum]"
+                                                    color="primary"
+                                                    :min="1"
+                                                    :max="10"
+                                                    step="1"
+                                                    strict
+                                                    hide-details
+                                                    @update:model-value="([min, max]) => {if (!group.size_range) return; group.size_range.minimum = min; group.size_range.maximum = max;}"
+                                                >
+                                                    <template v-slot:prepend>
+                                                        <v-text-field
+                                                            :model-value="group.size_range.minimum"
+                                                            :min="1"
+                                                            :max="group.size_range.maximum"
+                                                            :step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            :style="{'width': getInputWidth(group.size_range.minimum)}"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(v) => {if (group.size_range) group.size_range.minimum = parseInt(v)}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                    <template v-slot:append>
+                                                        <v-text-field
+                                                            :model-value="group.size_range.maximum"
+                                                            :min="group.size_range.minimum"
+                                                            :max="10"
+                                                            :step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            :style="{'width': getInputWidth(group.size_range.maximum)}"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(v) => {if (group.size_range) group.size_range.maximum = parseInt(v)}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                </v-range-slider>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="group.size_range && vectorProperties && vectorProperties[group.name]">
+                                            <td><v-label>Size by property</v-label></td>
+                                            <td>
+                                                <v-select
+                                                    v-model="group.size_range.size_by"
+                                                    :items="vectorProperties[group.name]"
+                                                    item-title="name"
+                                                    item-value="name"
+                                                    density="compact"
+                                                    variant="outlined"
+                                                    hide-details
+                                                >
+                                                    <template v-slot:item="{ props, item }">
+                                                        <v-list-item v-bind="props" :disabled="!(item.raw as Record<string, any>).range">
+                                                            <template v-slot:append>
+                                                                <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                            </template>
+                                                        </v-list-item>
+                                                    </template>
+                                                </v-select>
+                                            </td>
+                                        </tr>
+                                        <tr v-if="group.size_range && group.size_range.size_by">
+                                            <td><v-label>Null values</v-label></td>
+                                            <td>
+                                                <div class="d-flex" style="align-items: center">
+                                                    <v-btn-toggle
+                                                        :model-value="group.size_range.null_size?.transparency ? 'transparent' : 2"
+                                                        density="compact"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        divided
+                                                        mandatory
+                                                        @update:model-value="(value: string | number) => {if (group.size_range) {
+                                                            if (value === 'transparent') {group.size_range.null_size = {transparency: true, size: 0}}
+                                                            else {group.size_range.null_size = {transparency: true, size: value as number}}
+                                                        }}"
+                                                    >
+                                                        <v-btn :value="'transparent'">Transparent</v-btn>
+                                                        <v-btn :value="2">Single Size</v-btn>
+                                                    </v-btn-toggle>
+                                                    <v-text-field
+                                                        v-if="group.size_range.null_size && !group.size_range.null_size.transparency"
+                                                        :model-value="group.size_range.null_size.size"
+                                                        :min="1"
+                                                        :max="10"
+                                                        :step="1"
+                                                        density="compact"
+                                                        :style="{'width': getInputWidth(group.size_range.null_size.size)}"
+                                                        type="number"
+                                                        hide-details
+                                                        single-line
+                                                        @update:model-value="(v) => {if (group.size_range?.null_size) group.size_range.null_size.size = parseInt(v)}"
+                                                    />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <v-label>
+                                                    Zoom scaling
+                                                    <v-icon
+                                                        icon="mdi-information-outline"
+                                                        color="primary"
+                                                        size="small"
+                                                        class="ml-2"
+                                                        v-tooltip="'Size of features will change according to the current map zoom level, multiplied by a factor of the size value'"
+                                                    />
+                                                </v-label>
+                                            </td>
+                                            <td>
+                                                <v-checkbox
+                                                    v-model="group.zoom_scaling"
+                                                    class="primary-control"
+                                                    density="compact"
+                                                    hide-details
+                                                />
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
                     </v-window-item>
                     <v-window-item value="filters" class="pa-2">
                         <div v-if="showRasterOptions">
-                            <v-card-subtitle>Raster Options</v-card-subtitle>
+                            <v-label class="secondary-text px-3">Raster Options</v-label>
                             <v-divider class="mb-2"/>
-                            <v-checkbox
-                                :model-value="currentStyleSpec.filters.length === 1"
-                                label="Enable Clamping"
-                                density="compact"
-                                hide-details
-                                @update:model-value="(value: boolean | null) => {if (!currentStyleSpec) return; currentStyleSpec.filters = value ? [{filter_by: 'value', include: true, transparency: true, range: dataRange}] : []}"
-                            />
-                            <v-range-slider
-                                v-if="currentStyleSpec.filters.length === 1 && dataRange"
-                                v-model="currentStyleSpec.filters[0].range"
-                                color="primary"
-                                :min="dataRange[0]"
-                                :max="dataRange[1]"
-                                step="1"
-                                strict
-                            >
-                                <template v-slot:prepend>
-                                    <v-text-field
-                                        v-if="currentStyleSpec.filters[0].range"
-                                        :model-value="currentStyleSpec.filters[0].range[0]"
-                                        :min="dataRange[0]"
-                                        :max="currentStyleSpec.filters[0].range[1]"
-                                        :step="1"
-                                        density="compact"
-                                        class="number-input"
-                                        :style="{'width': getInputWidth(currentStyleSpec.filters[0].range[0])}"
-                                        type="number"
-                                        hide-details
-                                        single-line
-                                        @update:model-value="(v) => {if (currentStyleSpec?.filters[0].range) currentStyleSpec.filters[0].range[0] = parseInt(v)}"
-                                    >
-                                    </v-text-field>
-                                </template>
-                                <template v-slot:append>
-                                    <v-text-field
-                                        v-if="currentStyleSpec.filters[0].range"
-                                        :model-value="currentStyleSpec.filters[0].range[1]"
-                                        :min="currentStyleSpec.filters[0].range[0]"
-                                        :max="dataRange[1]"
-                                        :step="1"
-                                        density="compact"
-                                        class="number-input"
-                                        :style="{'width': getInputWidth(currentStyleSpec.filters[0].range[1])}"
-                                        type="number"
-                                        hide-details
-                                        single-line
-                                        @update:model-value="(v) => {if (currentStyleSpec?.filters[0].range) currentStyleSpec.filters[0].range[1] = parseInt(v)}"
-                                    >
-                                    </v-text-field>
-                                </template>
-                            </v-range-slider>
-                            <v-btn-toggle
-                                v-if="currentStyleSpec.filters.length === 1 && currentStyleSpec.filters[0].range"
-                                :model-value="currentStyleSpec.filters[0].transparency ? 'transparent' : '#000000'"
-                                density="compact"
-                                color="primary"
-                                variant="outlined"
-                                divided
-                                mandatory
-                                @update:model-value="(value: string) => {if (currentStyleSpec?.filters[0]) currentStyleSpec.filters[0].transparency = value === 'transparent'}"
-                            >
-                                <v-btn :value="'transparent'">Transparent</v-btn>
-                                <v-btn :value="'#000000'">Black</v-btn>
-                            </v-btn-toggle>
+                            <v-label class="secondary-text px-3">Filter options do not apply to raster data.</v-label>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
-                            <div v-if="currentStyleSpec && currentStyleSpec.filters.length" class="mb-3">
-                                Filters ({{ currentStyleSpec.filters.length }})
-                                <div>
-                                    <v-chip
-                                        v-for="filter, index in currentStyleSpec.filters"
-                                        :key="index"
-                                        color="primary"
-                                        density="compact"
-                                        class="mb-1"
-                                    >
-                                        <template v-slot>
-                                            <div class="d-flex" style="column-gap: 5px; align-items: center;">
-                                                {{ filter.filter_by }}
-                                                <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
-                                                {{ filter.list }}
-                                                {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
-                                                <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
-                                            </div>
-                                        </template>
-                                    </v-chip>
-                                </div>
-                            </div>
-                            <v-select
-                                v-if="currentVectorFilter && vectorProperties"
-                                v-model="currentVectorFilter.filter_by"
-                                :items="vectorProperties['all']"
-                                item-title="name"
-                                item-value="name"
-                                label="Filter by Property"
-                                density="compact"
-                                hide-details
-                            >
-                                <template v-slot:item="{ props, item }">
-                                    <v-list-item v-bind="props">
-                                        <template v-slot:append>
-                                            <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
-                                        </template>
-                                    </v-list-item>
-                                </template>
-                            </v-select>
-                            <v-range-slider
-                                v-if="currentVectorFilterProperty && currentVectorFilterProperty.range"
-                                v-model="currentVectorFilter.range"
-                                color="primary"
-                                :min="currentVectorFilterProperty.range[0]"
-                                :max="currentVectorFilterProperty.range[1]"
-                                step="1"
-                                strict
-                            >
-                                <template v-slot:prepend>
-                                    <v-text-field
-                                        v-if="currentVectorFilter.range"
-                                        :model-value="currentVectorFilter.range[0]"
-                                        :min="currentVectorFilterProperty.range[0]"
-                                        :max="currentVectorFilter.range[1]"
-                                        :step="1"
-                                        density="compact"
-                                        class="number-input"
-                                        :style="{'width': getInputWidth(currentVectorFilter.range[0])}"
-                                        type="number"
-                                        hide-details
-                                        single-line
-                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[0] = parseInt(v)}"
-                                    >
-                                    </v-text-field>
-                                </template>
-                                <template v-slot:append>
-                                    <v-text-field
-                                        v-if="currentVectorFilter.range"
-                                        :model-value="currentVectorFilter.range[1]"
-                                        :min="currentVectorFilter.range[0]"
-                                        :max="currentVectorFilterProperty.range[1]"
-                                        :step="1"
-                                        density="compact"
-                                        class="number-input"
-                                        :style="{'width': getInputWidth(currentVectorFilter.range[1])}"
-                                        type="number"
-                                        hide-details
-                                        single-line
-                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[1] = parseInt(v)}"
-                                    >
-                                    </v-text-field>
-                                </template>
-                            </v-range-slider>
-                            <v-select
-                                v-else-if="currentVectorFilterProperty"
-                                label="Select values"
-                                v-model="currentVectorFilter.list"
-                                :items="currentVectorFilterProperty.values"
-                                density="compact"
-                                multiple
-                                chips
-                                closable-chips
-                            />
-                            <v-btn-toggle
-                                :model-value="currentVectorFilter.include ? 'include' : 'exclude'"
-                                density="compact"
-                                color="primary"
-                                variant="outlined"
-                                divided
-                                mandatory
-                                @update:model-value="(value: string) => {currentVectorFilter.include = value === 'include'}"
-                            >
-                                <v-btn :value="'include'">Include</v-btn>
-                                <v-btn :value="'exclude'">Exclude</v-btn>
-                            </v-btn-toggle>
-                            <v-btn color="primary" style="float: right" @click="applyCurrentFilter">
-                                <v-icon icon="mdi-filter"/>
-                                Filter
-                            </v-btn>
+                            <table class="aligned-controls">
+                                <tbody>
+                                    <tr>
+                                        <td colspan="2">
+                                            <v-select
+                                                v-if="currentVectorFilter && vectorProperties"
+                                                v-model="currentVectorFilter.filter_by"
+                                                :items="vectorProperties['all']"
+                                                placeholder="Select Property"
+                                                label="Property"
+                                                item-title="name"
+                                                item-value="name"
+                                                density="compact"
+                                                variant="outlined"
+                                                hide-details
+                                            >
+                                                <template v-slot:item="{ props, item }">
+                                                    <v-list-item v-bind="props">
+                                                        <template v-slot:append>
+                                                            <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                        </template>
+                                                    </v-list-item>
+                                                </template>
+                                            </v-select>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentVectorFilterProperty">
+                                        <td>Values</td>
+                                        <td>
+                                            <v-range-slider
+                                                v-if="currentVectorFilterProperty.range"
+                                                v-model="currentVectorFilter.range"
+                                                color="primary"
+                                                :min="currentVectorFilterProperty.range[0]"
+                                                :max="currentVectorFilterProperty.range[1]"
+                                                step="1"
+                                                strict
+                                            >
+                                                <template v-slot:prepend>
+                                                    <v-text-field
+                                                        v-if="currentVectorFilter.range"
+                                                        :model-value="currentVectorFilter.range[0]"
+                                                        :min="currentVectorFilterProperty.range[0]"
+                                                        :max="currentVectorFilter.range[1]"
+                                                        :step="1"
+                                                        density="compact"
+                                                        class="number-input"
+                                                        :style="{'width': getInputWidth(currentVectorFilter.range[0])}"
+                                                        type="number"
+                                                        hide-details
+                                                        single-line
+                                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[0] = parseInt(v)}"
+                                                    >
+                                                    </v-text-field>
+                                                </template>
+                                                <template v-slot:append>
+                                                    <v-text-field
+                                                        v-if="currentVectorFilter.range"
+                                                        :model-value="currentVectorFilter.range[1]"
+                                                        :min="currentVectorFilter.range[0]"
+                                                        :max="currentVectorFilterProperty.range[1]"
+                                                        :step="1"
+                                                        density="compact"
+                                                        class="number-input"
+                                                        :style="{'width': getInputWidth(currentVectorFilter.range[1])}"
+                                                        type="number"
+                                                        hide-details
+                                                        single-line
+                                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[1] = parseInt(v)}"
+                                                    >
+                                                    </v-text-field>
+                                                </template>
+                                            </v-range-slider>
+                                            <v-select
+                                                v-else
+                                                v-model="currentVectorFilter.list"
+                                                :items="currentVectorFilterProperty.values"
+                                                density="compact"
+                                                variant="outlined"
+                                                multiple
+                                                chips
+                                                closable-chips
+                                                hide-details
+                                            />
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentVectorFilterProperty">
+                                        <td>Filter Mode</td>
+                                        <td>
+                                            <v-btn-toggle
+                                                :model-value="currentVectorFilter.include ? 'include' : 'exclude'"
+                                                density="compact"
+                                                color="primary"
+                                                variant="outlined"
+                                                divided
+                                                mandatory
+                                                @update:model-value="(value: string) => {currentVectorFilter.include = value === 'include'}"
+                                            >
+                                                <v-btn :value="'include'">Include</v-btn>
+                                                <v-btn :value="'exclude'">Exclude</v-btn>
+                                            </v-btn-toggle>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td>
+                                            <v-btn color="primary" @click="applyCurrentFilter">
+                                                <v-icon icon="mdi-plus"/>
+                                                Add Filter
+                                            </v-btn>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="currentStyleSpec && currentStyleSpec.filters.length">
+                                        <td>Filters ({{ currentStyleSpec.filters.length }})</td>
+                                        <td>
+                                            <v-chip
+                                                v-for="filter, index in currentStyleSpec.filters"
+                                                :key="index"
+                                                color="primary"
+                                                density="compact"
+                                                class="mb-1"
+                                            >
+                                                <template v-slot>
+                                                    <div class="d-flex" style="column-gap: 5px; align-items: center;">
+                                                        {{ filter.filter_by }}
+                                                        <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
+                                                        {{ filter.list }}
+                                                        {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
+                                                        <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
+                                                    </div>
+                                                </template>
+                                            </v-chip>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </v-window-item>
                 </v-window>
@@ -1160,7 +1322,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                             v-model="newName"
                             autofocus
                             :placeholder="newNameMode === 'update' ? currentLayerStyle.name : ''"
-                            :rules="[() => !availableStyles?.map((s) => s.name).includes(newName) || `${newName} already exists.`]"
+                            :rules="[() => !availableStyles?.map((s) => s.name).includes(newName) || `Style ''${newName}'' already exists.`]"
                         />
                     </v-card-text>
 
@@ -1226,11 +1388,38 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
 .layer-style-card  .v-label {
     font-size: 14px;
 }
+.aligned-controls {
+    padding: 0px 10px;
+    width: 100%;
+}
+.aligned-controls td:first-child {
+    /* minimize width of first column (labels) */
+    width: 1%;
+    padding-right: 10px;
+    vertical-align: middle;
+    align-items: center;
+}
+.aligned-controls .v-select {
+    max-width: calc(100% - 15px);
+}
+.primary-control .v-icon:not(.mdi-checkbox-blank-outline) {
+    color: rgb(var(--v-theme-primary)) !important
+}
+.tab-contents {
+    background-color: rgb(var(--v-theme-surface-light));
+}
 .color-square {
     height: 25px;
     width: 25px;
     display: inline-block;
     margin: 5px 15px;
     border: 1px solid rgb(var(--v-theme-on-surface-variant));
+}
+.v-label {
+    opacity: 1 !important;
+}
+.v-btn-toggle .v-btn {
+    text-transform: none;
+    padding: 5px;
 }
 </style>
