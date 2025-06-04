@@ -120,6 +120,85 @@ function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<st
     ]
 }
 
+function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, any>[]) {
+    const zoomScalingConstant = 500;
+    const sizeSpec = styleSpec.sizes.find((c) => [groupName, 'all'].includes(c.name))
+    let singleSize = 5;
+    if (sizeSpec?.single_size) singleSize = sizeSpec.single_size
+    else if (sizeSpec?.size_range && propsSpec) {
+        const sizeByProp = propsSpec.find((p) => p.name === sizeSpec.size_range?.size_by)
+        if (sizeByProp) {
+            const sortedValues = sizeByProp.values.sort((a: any, b: any) => a - b)
+            if (sortedValues.length > 1) {
+                const sizeSteps = [
+                    'step',
+                    ['get', sizeSpec.size_range.size_by],
+                    0,
+                    sortedValues[0],
+                    sizeSpec.size_range.minimum,
+                    sortedValues[sortedValues.length - 1],
+                    sizeSpec.size_range.maximum,
+                ]
+                if (sizeSpec.zoom_scaling) {
+                    const greaterSizeSteps = [...sizeSteps]
+                    greaterSizeSteps[4] *= zoomScalingConstant
+                    greaterSizeSteps[6] *= zoomScalingConstant
+                    return [
+                        'interpolate',
+                        ['exponential', 2],
+                        ['zoom'],
+                        12, sizeSteps,
+                        24, greaterSizeSteps,
+                    ]
+                }
+                return sizeSteps
+            }
+        }
+        singleSize = sizeSpec.size_range.null_size?.size || 1;
+    }
+    if (sizeSpec?.zoom_scaling) {
+        return [
+            'interpolate',
+            ['exponential', 2],
+            ['zoom'],
+            12, singleSize,
+            24, singleSize * zoomScalingConstant
+        ]
+    } else return singleSize
+}
+
+function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, any>[]) {
+    const sizeSpec = styleSpec.sizes.find((c) => [groupName, 'all'].includes(c.name))
+    let filters: any[] = []
+    if (sizeSpec?.size_range?.null_size?.transparency && sizeSpec.size_range.size_by) {
+        filters.push(["==", ["get", sizeSpec.size_range.size_by], null])
+        filters.push(0)
+    }
+    styleSpec.filters.forEach((f) => {
+        let filter;
+        if (f.list){
+            filter = ["in", ["get", f.filter_by], ["literal", f.list]]
+        } else if (f.range) {
+            filter = [
+                "all",
+                [">=", ["get", f.filter_by], f.range[0]],
+                ["<=", ["get", f.filter_by], f.range[1]],
+            ]
+        }
+
+        if (filter) {
+            if (f.include) filter = ['!', filter]
+            filters.push(filter)
+            filters.push(0)
+        }
+    })
+    if (filters.length) return [
+        "case",
+        ...filters,
+        groupName === 'polygons' ? 0.5 : 1
+    ]
+}
+
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
     const selectedLayerVectorProperties = ref<Record<string, Record<string, any>>>({});
@@ -208,6 +287,10 @@ export const useStyleStore = defineStore('style', () => {
             } else if (colorSpec?.colormap?.color_by && propsSpec) {
                 map.setPaintProperty(mapLayerId, 'fill-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
             }
+            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'polygons', propsSpec)
+            if(visibility) {
+                map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
+            }
         } else if (mapLayerId.includes("line")) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
             const propsSpec = vectorProperties?.lines
@@ -217,6 +300,10 @@ export const useStyleStore = defineStore('style', () => {
             } else if (colorSpec?.colormap?.color_by && propsSpec) {
                 map.setPaintProperty(mapLayerId, 'line-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
             }
+            const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
+            if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
+            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'lines', propsSpec)
+            if(visibility) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
@@ -230,6 +317,11 @@ export const useStyleStore = defineStore('style', () => {
                 map.setPaintProperty(mapLayerId, 'circle-color', paintProperty);
                 map.setPaintProperty(mapLayerId, 'circle-stroke-color', paintProperty);
             }
+            const size = getVectorSizePaintProperty(styleSpec, 'points', propsSpec)
+            if (size) map.setPaintProperty(mapLayerId, 'circle-radius', size)
+            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'points', propsSpec)
+            if(visibility) map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
+            if(visibility) map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
         } else if (mapLayerId.includes("raster")) {
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
