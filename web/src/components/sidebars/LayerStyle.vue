@@ -67,13 +67,15 @@ const dataRange = computed(() => {
 })
 
 async function init() {
-    if (!showMenu.value) return
-    if (!availableStyles.value) availableStyles.value = await getLayerStyles(props.layer.id)
-    if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
-        currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style));  // deep copy
-        currentStyleSpec.value = {...props.layer.default_style.style_spec}
-    } else currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
-    fetchRasterBands()
+    if (!showMenu.value) cancel()
+    else{
+        if (!availableStyles.value) availableStyles.value = await getLayerStyles(props.layer.id)
+        if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
+            currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style));  // deep copy
+            currentStyleSpec.value = {...props.layer.default_style.style_spec}
+        } else currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
+        fetchRasterBands()
+    }
 }
 
 function selectStyle(style: LayerStyle) {
@@ -193,7 +195,7 @@ function setGroupSizeMode(groupName: string, sizeMode: string) {
         (s) => {
             if (s.name === groupName) {
                 if (sizeMode === 'single_size') {
-                    return {...s, single_size: 2, size_range: undefined}
+                    return {...s, single_size: 5, size_range: undefined}
                 } else if (sizeMode === 'range') {
                     return { ...s, size_range: {
                         minimum: 1,
@@ -1076,7 +1078,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             <td>
                                                 <div class="d-flex" style="align-items: center">
                                                     <v-btn-toggle
-                                                        :model-value="group.size_range.null_size?.transparency ? 'transparent' : 2"
+                                                        :model-value="group.size_range.null_size?.transparency ? 'transparent' : 1"
                                                         density="compact"
                                                         color="primary"
                                                         variant="outlined"
@@ -1084,11 +1086,11 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         mandatory
                                                         @update:model-value="(value: string | number) => {if (group.size_range) {
                                                             if (value === 'transparent') {group.size_range.null_size = {transparency: true, size: 0}}
-                                                            else {group.size_range.null_size = {transparency: true, size: value as number}}
+                                                            else {group.size_range.null_size = {transparency: false, size: value as number}}
                                                         }}"
                                                     >
                                                         <v-btn :value="'transparent'">Transparent</v-btn>
-                                                        <v-btn :value="2">Single Size</v-btn>
+                                                        <v-btn :value="1">Size</v-btn>
                                                     </v-btn-toggle>
                                                     <v-text-field
                                                         v-if="group.size_range.null_size && !group.size_range.null_size.transparency"
@@ -1263,15 +1265,16 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 color="primary"
                                                 density="compact"
                                                 class="mb-1"
+                                                style="max-width: 100%; height: auto !important;"
                                             >
                                                 <template v-slot>
-                                                    <div class="d-flex" style="column-gap: 5px; align-items: center;">
+                                                    <span style="white-space: wrap;">
                                                         {{ filter.filter_by }}
                                                         <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
                                                         {{ filter.list }}
                                                         {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
-                                                        <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
-                                                    </div>
+                                                    </span>
+                                                    <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
                                                 </template>
                                             </v-chip>
                                         </td>
