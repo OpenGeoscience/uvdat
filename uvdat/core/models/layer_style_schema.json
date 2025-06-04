@@ -18,6 +18,9 @@
                     "name": {
                         "type": "string"
                     },
+                    "visible": {
+                        "type": "boolean"
+                    },
                     "single_color": {
                         "type": "string"
                     },
@@ -81,7 +84,8 @@
                     }
                 },
                 "required": [
-                    "name"
+                    "name",
+                    "visible"
                 ]
             },
             "minItems": 1,

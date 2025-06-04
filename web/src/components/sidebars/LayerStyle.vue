@@ -53,14 +53,14 @@ const currentVectorFilterBy = computed(() => currentVectorFilter.value.filter_by
 
 const dataRange = computed(() => {
     let absMin: number | undefined, absMax: number | undefined;
-    props.layer.frames.forEach((frame) => {
-        if (frame.raster) {
-            Object.values(frame.raster.metadata.bands).forEach(({min, max}) => {
-                if (!absMin || min < absMin) absMin = min;
-                if (!absMax || max < absMax) absMax = max;
-            })
-        }
-    })
+    const raster = props.layer.frames[props.layer.current_frame].raster
+    if (raster) {
+        Object.values(raster.metadata.bands).forEach(({min, max}) => {
+            if (!absMin || min < absMin) absMin = min;
+            if (!absMax || max < absMax) absMax = max;
+        })
+
+    }
     if(absMin && absMax){
         return [Math.floor(absMin), Math.ceil(absMax)] as [number, number];
     }
@@ -102,7 +102,7 @@ function setColorGroups(different: boolean | null) {
             const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
             const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
             currentStyleSpec.value.colors = bandNames.map((name) => {
-                return { ...all, name }
+                return { ...all, visible: true, name }
             })
             bandNames.forEach((name) => setGroupColorMode(name, 'colormap'))
             availableGroups.value['color'] = bandNames;
@@ -110,12 +110,14 @@ function setColorGroups(different: boolean | null) {
             const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
             availableGroups.value['color'] = ['polygons', 'lines', 'points']
             currentStyleSpec.value.colors = availableGroups.value['color'].map((name) => {
-                return {  ...all, name }
+                return { ...all, visible: true, name }
             })
         }
         if (availableGroups.value['color']?.length) currentGroups.value['color'] = availableGroups.value['color'][0]
     } else {
-        currentStyleSpec.value.colors = [...styleStore.getDefaultStyleSpec().colors]
+        currentStyleSpec.value.colors = [...styleStore.getDefaultStyleSpec(
+            props.layer.frames[props.layer.current_frame].raster
+        ).colors]
         if (showRasterOptions) setGroupColorMode('all', 'colormap')
         availableGroups.value['color'] = []
         currentGroups.value['color'] = 'all'
@@ -134,7 +136,7 @@ function setGroupColorMode(groupName: string, colorMode: string) {
                         colormap: {
                             ...terrain,
                             discrete: false,
-                            n_colors: 10,
+                            n_colors: 5,
                             range: dataRange.value,
                             null_color: 'transparent',
                             color_by: showRasterOptions.value ? 'value' : undefined
@@ -183,7 +185,9 @@ function setSizeGroups(different: boolean | null) {
             }
         }
     } else {
-        currentStyleSpec.value.sizes = [...styleStore.getDefaultStyleSpec().sizes]
+        currentStyleSpec.value.sizes = [...styleStore.getDefaultStyleSpec(
+            props.layer.frames[props.layer.current_frame].raster
+        ).sizes]
         availableGroups.value['size'] = []
         currentGroups.value['size'] = 'all'
     }
@@ -256,7 +260,9 @@ function cancel() {
     else if (currentLayerStyle.value.style_spec) {
         currentStyleSpec.value = {...currentLayerStyle.value.style_spec}
     } else {
-        currentStyleSpec.value = {...styleStore.getDefaultStyleSpec()}
+        currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
+            props.layer.frames[props.layer.current_frame].raster
+        )}
     }
     showMenu.value = false;
 }
@@ -309,6 +315,11 @@ function deleteStyle() {
             if (newDefault) {
                 currentLayerStyle.value = newDefault;
                 currentStyleSpec.value = newDefault.style_spec;
+            } else {
+                currentLayerStyle.value = {name: 'None', is_default: true};
+                currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
+                    props.layer.frames[props.layer.current_frame].raster
+                )}
             }
             showDeleteConfirmation.value = false;
         })
@@ -374,11 +385,11 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                         hide-details
                         @update:model-value="selectStyle"
                     ></v-select>
-                    <v-menu v-if="currentLayerStyle.id" v-model="showEditOptions" open-on-hover :close-on-content-click="false" location="start">
+                    <v-menu v-model="showEditOptions" open-on-hover :close-on-content-click="false" location="start">
                         <template v-slot:activator="{ props }">
-                            <v-icon v-bind="props" icon="mdi-pencil"/>
+                            <v-icon v-bind="props" :disabled="!currentLayerStyle.id" icon="mdi-pencil"/>
                         </template>
-                        <v-list>
+                        <v-list v-if="currentLayerStyle.id">
                             <v-list-item @click="showEditOptions = false; newNameMode = 'update'">Rename</v-list-item>
                             <v-list-item @click="showEditOptions = false; showDeleteConfirmation = true">Delete</v-list-item>
                         </v-list>
@@ -499,26 +510,31 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             />
                                         </td>
                                     </tr>
-                                    <tr v-if="currentGroups['color'] !== 'all'">
-                                        <td><v-label>Band</v-label></td>
-                                        <td>
-                                            <v-select
-                                                v-model="currentGroups['color']"
-                                                :items="availableGroups['color']"
-                                                density="compact"
-                                                variant="outlined"
-                                                hide-details
-                                            ></v-select>
-                                        </td>
-                                    </tr>
-                                    <tr v-if="currentGroups['color'] !== 'all'">
-                                        <td colspan="2">
-                                            <v-label class="secondary-text py-2">Selected Band Options [{{ currentGroups['color'] }}]</v-label>
-                                        </td>
-                                    </tr>
                                     <template v-for="group in currentStyleSpec.colors.filter((c) => c.name === currentGroups['color'])">
+                                        <tr v-if="currentGroups['color'] !== 'all'">
+                                            <td><v-label>Band</v-label></td>
+                                            <td class="d-flex" style="align-items: center; column-gap: 10px;">
+                                                <v-select
+                                                    v-model="currentGroups['color']"
+                                                    :items="availableGroups['color']"
+                                                    density="compact"
+                                                    variant="outlined"
+                                                    hide-details
+                                                ></v-select>
+                                                <v-icon
+                                                    :icon="group.visible ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+                                                    @click="group.visible = !group.visible"
+                                                    size="large"
+                                                />
+                                            </td>
+                                        </tr>
+                                        <tr v-if="currentGroups['color'] !== 'all'">
+                                            <td colspan="2">
+                                                <v-label class="secondary-text py-2">Selected Band Options [{{ currentGroups['color'] }}]</v-label>
+                                            </td>
+                                        </tr>
                                         <tr>
-                                            <td><v-label>Colormap</v-label></td>
+                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap</v-label></td>
                                             <td>
                                                 <v-select
                                                     v-if="group.colormap"
@@ -529,6 +545,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     variant="outlined"
                                                     hide-details
                                                     return-object
+                                                    :disabled="!group.visible"
                                                     @update:model-value="(v) => setGroupColorMap(group.name, v)"
                                                 >
                                                     <template v-slot:item="{ props, item }">
@@ -554,7 +571,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label>Colormap class</v-label></td>
+                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap class</v-label></td>
                                             <td>
                                                 <v-btn-toggle
                                                     v-if="group.colormap"
@@ -564,6 +581,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     variant="outlined"
                                                     divided
                                                     mandatory
+                                                    :disabled="!group.visible"
                                                     @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                 >
                                                     <v-btn :value="'discrete'">Discrete</v-btn>
@@ -571,11 +589,10 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 </v-btn-toggle>
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <td><v-label>No. of colors</v-label></td>
+                                        <tr v-if="group.colormap?.discrete">
+                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">No. of colors</v-label></td>
                                             <td>
                                                 <v-slider
-                                                    v-if="group.colormap?.discrete"
                                                     v-model="group.colormap.n_colors"
                                                     max="30"
                                                     min="2"
@@ -585,6 +602,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     track-size="8"
                                                     hide-details
                                                     type="number"
+                                                    :disabled="!group.visible"
                                                 >
                                                     <template v-slot:append>
                                                         <v-text-field
@@ -606,7 +624,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label>Range</v-label></td>
+                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Range</v-label></td>
                                             <v-range-slider
                                                 v-if="group.colormap && dataRange"
                                                 v-model="group.colormap.range"
@@ -615,6 +633,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 :max="dataRange[1]"
                                                 step="1"
                                                 strict
+                                                :disabled="!group.visible"
                                             >
                                                 <template v-slot:prepend>
                                                     <v-text-field
@@ -671,26 +690,31 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             />
                                         </td>
                                     </tr>
-                                    <tr v-if="currentGroups['color'] !== 'all'">
-                                        <td><v-label>Feature Type</v-label></td>
-                                        <td>
-                                            <v-select
-                                                v-model="currentGroups['color']"
-                                                :items="availableGroups['color']"
-                                                density="compact"
-                                                variant="outlined"
-                                                hide-details
-                                            ></v-select>
-                                        </td>
-                                    </tr>
-                                    <tr v-if="currentGroups['color'] !== 'all'">
-                                        <td colspan="2">
-                                            <v-label class="secondary-text py-2">Selected Feature Type Options [{{ currentGroups['color'] }}]</v-label>
-                                        </td>
-                                    </tr>
                                     <template v-for="group in currentStyleSpec.colors.filter((c) => c.name === currentGroups['color'])">
+                                        <tr v-if="currentGroups['color'] !== 'all'">
+                                            <td><v-label>Feature Type</v-label></td>
+                                            <td class="d-flex" style="align-items: center; column-gap: 10px;"   >
+                                                <v-select
+                                                    v-model="currentGroups['color']"
+                                                    :items="availableGroups['color']"
+                                                    density="compact"
+                                                    variant="outlined"
+                                                    hide-details
+                                                ></v-select>
+                                                <v-icon
+                                                    :icon="group.visible ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+                                                    @click="group.visible = !group.visible"
+                                                    size="large"
+                                                />
+                                            </td>
+                                        </tr>
+                                        <tr v-if="currentGroups['color'] !== 'all'">
+                                            <td colspan="2">
+                                                <v-label class="secondary-text py-2">Selected Feature Type Options [{{ currentGroups['color'] }}]</v-label>
+                                            </td>
+                                        </tr>
                                         <tr>
-                                            <td><v-label>Color scheme</v-label></td>
+                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Color scheme</v-label></td>
                                             <td>
                                                 <div class="d-flex" style="align-items: center;">
                                                     <v-btn-toggle
@@ -700,6 +724,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         variant="outlined"
                                                         divided
                                                         mandatory
+                                                        :disabled="!group.visible"
                                                         @update:model-value="(value: string) => setGroupColorMode(group.name, value)"
                                                     >
                                                         <v-btn :value="'single_color'">Single Color</v-btn>
@@ -707,6 +732,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                     </v-btn-toggle>
                                                     <v-menu
                                                         v-if="group.single_color"
+                                                        :disabled="!group.visible"
                                                         :close-on-content-click="false"
                                                         open-on-hover
                                                         location="end"
@@ -715,7 +741,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                             <div
                                                                 v-bind="props"
                                                                 class="color-square"
-                                                                :style="{backgroundColor: group.single_color}"
+                                                                :style="{backgroundColor: group.single_color, opacity: group.visible ? 1 : 0.5}"
                                                             ></div>
                                                         </template>
                                                         <v-card>
@@ -730,12 +756,13 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                         </tr>
                                         <template v-if="group.colormap">
                                             <tr>
-                                                <td><v-label>Color by property</v-label></td>
+                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Color by property</v-label></td>
                                                 <td>
                                                     <v-select
                                                         v-if="vectorProperties && vectorProperties[group.name]"
                                                         v-model="group.colormap.color_by"
                                                         :items="vectorProperties[group.name]"
+                                                        :disabled="!group.visible"
                                                         item-title="name"
                                                         item-value="name"
                                                         density="compact"
@@ -753,11 +780,12 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label>Colormap</v-label></td>
+                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap</v-label></td>
                                                 <td>
                                                     <v-select
                                                         :model-value="group.colormap"
                                                         :items="colormaps"
+                                                        :disabled="!group.visible"
                                                         item-title="name"
                                                         density="compact"
                                                         variant="outlined"
@@ -788,7 +816,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label>Colormap class</v-label></td>
+                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap class</v-label></td>
                                                 <td>
                                                     <v-btn-toggle
                                                         :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
@@ -797,6 +825,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         variant="outlined"
                                                         divided
                                                         mandatory
+                                                        :disabled="!group.visible"
                                                         @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                     >
                                                         <v-btn :value="'discrete'">Discrete</v-btn>
@@ -805,7 +834,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 </td>
                                             </tr>
                                             <tr v-if="group.colormap?.discrete">
-                                                <td><v-label>No. of colors</v-label></td>
+                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">No. of colors</v-label></td>
                                                 <td>
                                                     <v-slider
                                                         v-model="group.colormap.n_colors"
@@ -817,6 +846,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         track-size="8"
                                                         hide-details
                                                         type="number"
+                                                        :disabled="!group.visible"
                                                     >
                                                         <template v-slot:append>
                                                             <v-text-field
@@ -838,7 +868,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                 </td>
                                             </tr>
                                             <tr v-if="group.colormap && group.colormap.color_by">
-                                                <td><v-label>Null values</v-label></td>
+                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Null values</v-label></td>
                                                 <td>
                                                     <div
                                                         class="d-flex"
@@ -851,6 +881,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                             variant="outlined"
                                                             divided
                                                             mandatory
+                                                            :disabled="!group.visible"
                                                             @update:model-value="(value: string) => {if (group.colormap) group.colormap.null_color = value}"
                                                         >
                                                             <v-btn :value="'transparent'">Transparent</v-btn>
@@ -860,6 +891,7 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                             v-if="group.colormap.null_color !== 'transparent'"
                                                             :close-on-content-click="false"
                                                             open-on-hover
+                                                            :disabled="!group.visible"
                                                             location="end"
                                                         >
                                                             <template v-slot:activator="{ props }">

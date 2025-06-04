@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
-import { ColorMap, Layer, MapLibreLayerWithMetadata, Network, StyleSpec } from "@/types";
+import { ColorMap, Layer, MapLibreLayerWithMetadata, Network, RasterData, StyleSpec } from "@/types";
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
@@ -24,6 +24,9 @@ const colormaps: ColorMap[] = [
     const colors = getColormap(name, 30)
     return {
         name,
+        null_color: 'transparent',
+        discrete: false,
+        n_colors: 5,
         markers: colors.map((color: string, index: number) => ({
             color,
             value: index / (colors.length - 1)
@@ -55,9 +58,9 @@ function colormapMarkersSubsample(colormap: ColorMap) {
 }
 
 function getRasterTilesQuery(styleSpec: StyleSpec) {
-    let query: Record<string, any> = {}
+    let query: Record<string, any> = {bands: []}
     styleSpec.colors.forEach((colorSpec) => {
-        if (colorSpec.colormap) {
+        if (colorSpec.colormap && colorSpec.visible) {
             const colorQuery: Record<string, any> = {
                 projection: "EPSG:3857",
             }
@@ -71,10 +74,9 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
             colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap).map((marker) => marker.color)
 
             if (colorSpec.name === 'all') {
-                query = {...query, ...colorQuery}
+                query = colorQuery
             } else {
                 colorQuery.band = colorSpec.name.replace('Band ', '')
-                if (!query.bands) query.bands = []
                 query.bands.push(colorQuery)
             }
         }
@@ -167,9 +169,13 @@ function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, pro
     } else return singleSize
 }
 
-function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, any>[]) {
-    const sizeSpec = styleSpec.sizes.find((c) => [groupName, 'all'].includes(c.name))
+function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: string) {
     let filters: any[] = []
+    const colorSpec = styleSpec.colors.find((c) => [groupName, 'all'].includes(c.name))
+    if (colorSpec && !colorSpec.visible) {
+        return 0
+    }
+    const sizeSpec = styleSpec.sizes.find((c) => [groupName, 'all'].includes(c.name))
     if (sizeSpec?.size_range?.null_size?.transparency && sizeSpec.size_range.size_by) {
         filters.push(["==", ["get", sizeSpec.size_range.size_by], null])
         filters.push(0)
@@ -210,14 +216,27 @@ export const useStyleStore = defineStore('style', () => {
         return THEMES.light.colors.primary;
     }
 
-    function getDefaultStyleSpec(): StyleSpec {
+    function getDefaultStyleSpec(raster: RasterData | null): StyleSpec {
+        let range: [number, number] | undefined;
+        let absMin: number | undefined, absMax: number | undefined;
+        if (raster) {
+            Object.values(raster.metadata.bands).forEach(({min, max}) => {
+                if (!absMin || min < absMin) absMin = min;
+                if (!absMax || max < absMax) absMax = max;
+            })
+        }
+        if(absMin && absMax){
+            range = [Math.floor(absMin), Math.ceil(absMax)] as [number, number];
+        }
         return {
             opacity: 1,
             default_frame: 0,
             colors: [
                 {
                     name: 'all',
-                    single_color: getDefaultColor(),
+                    visible: true,
+                    single_color: raster ? undefined : getDefaultColor(),
+                    colormap: raster ? {...colormaps[0], range} : undefined,
                 }
             ],
             sizes: [
@@ -287,8 +306,8 @@ export const useStyleStore = defineStore('style', () => {
             } else if (colorSpec?.colormap?.color_by && propsSpec) {
                 map.setPaintProperty(mapLayerId, 'fill-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
             }
-            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'polygons', propsSpec)
-            if(visibility) {
+            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'polygons')
+            if(visibility !== undefined) {
                 map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
             }
         } else if (mapLayerId.includes("line")) {
@@ -302,8 +321,8 @@ export const useStyleStore = defineStore('style', () => {
             }
             const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
-            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'lines', propsSpec)
-            if(visibility) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
+            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'lines')
+            if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
@@ -319,17 +338,19 @@ export const useStyleStore = defineStore('style', () => {
             }
             const size = getVectorSizePaintProperty(styleSpec, 'points', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'circle-radius', size)
-            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'points', propsSpec)
-            if(visibility) map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
-            if(visibility) map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
+            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'points')
+            if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
+            if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
         } else if (mapLayerId.includes("raster")) {
+            const rasterTilesQuery = getRasterTilesQuery(styleSpec)
+            if (rasterTilesQuery.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
             if (source?.tiles?.length) {
                 const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
                 const newQuery = new URLSearchParams({
                     projection: 'epsg:3857',
-                    style: JSON.stringify(getRasterTilesQuery(styleSpec))
+                    style: JSON.stringify(rasterTilesQuery)
                 })
                 if (newQuery.toString() !== oldQuery.toString()) {
                     source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
