@@ -109,7 +109,9 @@ export const useLayerStore = defineStore('layer', () => {
               layer.current_frame = styleStore.selectedLayerStyles[styleId].default_frame
             }
           } else {
-            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec()}
+            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec(
+              layer.frames[layer.current_frame].raster
+            )}
           }
         }
 

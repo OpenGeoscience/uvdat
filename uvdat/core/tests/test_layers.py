@@ -47,24 +47,38 @@ def test_layer_style_validation(layer: Layer, project: Project):
             ],
         },
         'colors': {
-            'valid': [{'name': 'polygons', 'single_color': '#ffffff'}],
+            'valid': [{'name': 'polygons', 'visible': True, 'single_color': '#ffffff'}],
             'invalid': [
                 ([], 'should be non-empty'),
                 ([{}], r'\'name\' is a required property'),
-                ([{'name': 'polygons', 'single_color': 0}], r'0 is not of type \'string\''),
-                ([{'name': 'polygons', 'colormap': {}}], r'\'name\' is a required property'),
+                ([{'name': 'polygons'}], r'\'visible\' is a required property'),
                 (
-                    [{'name': 'polygons', 'colormap': {'name': 'viridis'}}],
+                    [{'name': 'polygons', 'visible': True, 'single_color': 0}],
+                    r'0 is not of type \'string\'',
+                ),
+                (
+                    [{'name': 'polygons', 'visible': True, 'colormap': {}}],
+                    r'\'name\' is a required property',
+                ),
+                (
+                    [{'name': 'polygons', 'visible': True, 'colormap': {'name': 'viridis'}}],
                     r'\'discrete\' is a required property',
                 ),
                 (
-                    [{'name': 'polygons', 'colormap': {'name': 'viridis', 'discrete': False}}],
+                    [
+                        {
+                            'name': 'polygons',
+                            'visible': True,
+                            'colormap': {'name': 'viridis', 'discrete': False},
+                        }
+                    ],
                     r'\'color_by\' is a required property',
                 ),
                 (
                     [
                         {
                             'name': 'polygons',
+                            'visible': True,
                             'colormap': {'name': 'viridis', 'discrete': False, 'color_by': 'depth'},
                         }
                     ],
@@ -74,6 +88,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
                     [
                         {
                             'name': 'polygons',
+                            'visible': True,
                             'colormap': {
                                 'name': 'viridis',
                                 'discrete': False,
@@ -88,6 +103,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
                     [
                         {
                             'name': 'polygons',
+                            'visible': True,
                             'colormap': {
                                 'name': 'viridis',
                                 'discrete': False,
@@ -103,6 +119,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
                     [
                         {
                             'name': 'polygons',
+                            'visible': True,
                             'colormap': {
                                 'name': 'viridis',
                                 'discrete': False,

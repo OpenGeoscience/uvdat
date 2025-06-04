@@ -66,6 +66,7 @@ export interface StyleSpec {
   opacity: number;
   colors: {
     name: string;
+    visible: boolean;
     single_color?: string;
     colormap?: ColorMap,
   }[],
