@@ -248,13 +248,6 @@ function removeFilter(filter: StyleFilter) {
     )
 }
 
-function getInputWidth(value: number) {
-    // With a minimum of 40 pixels, add 10 pixels for each digit shown in the input
-    let width = 40;
-    width += Math.round(value).toString().length * 10;
-    return width + 'px';
-}
-
 function cancel() {
     const defaultStyle = availableStyles.value?.find((s) => s.is_default)
     if (defaultStyle?.style_spec) {
@@ -632,7 +625,6 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         :step="1"
                                                         density="compact"
                                                         class="number-input"
-                                                        :style="{'width': getInputWidth(group.colormap.range[0])}"
                                                         type="number"
                                                         hide-details
                                                         single-line
@@ -649,7 +641,6 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         :step="1"
                                                         density="compact"
                                                         class="number-input"
-                                                        :style="{'width': getInputWidth(group.colormap.range[1])}"
                                                         type="number"
                                                         hide-details
                                                         single-line
@@ -1024,7 +1015,6 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                             :step="1"
                                                             density="compact"
                                                             class="number-input"
-                                                            :style="{'width': getInputWidth(group.size_range.minimum)}"
                                                             type="number"
                                                             hide-details
                                                             single-line
@@ -1040,7 +1030,6 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                             :step="1"
                                                             density="compact"
                                                             class="number-input"
-                                                            :style="{'width': getInputWidth(group.size_range.maximum)}"
                                                             type="number"
                                                             hide-details
                                                             single-line
@@ -1099,7 +1088,6 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                                         :max="10"
                                                         :step="1"
                                                         density="compact"
-                                                        :style="{'width': getInputWidth(group.size_range.null_size.size)}"
                                                         type="number"
                                                         hide-details
                                                         single-line
@@ -1170,53 +1158,101 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                                             </v-select>
                                         </td>
                                     </tr>
+                                    <tr v-if="currentVectorFilterProperty?.range">
+                                        <td>Value type</td>
+                                        <td>
+                                            <v-btn-toggle
+                                                :model-value="currentVectorFilter.range ? 'range' : 'single'"
+                                                density="compact"
+                                                color="primary"
+                                                variant="outlined"
+                                                divided
+                                                mandatory
+                                                @update:model-value="(value: string) => {
+                                                    if (!currentVectorFilterProperty) return
+                                                    if (value === 'range') {currentVectorFilter.range = currentVectorFilterProperty.range; currentVectorFilter.list = undefined}
+                                                    else {currentVectorFilter.range = undefined; currentVectorFilter.list = [currentVectorFilterProperty.range[0]]}
+                                                }"
+                                            >
+                                                <v-btn :value="'single'">Single</v-btn>
+                                                <v-btn :value="'range'">Range</v-btn>
+                                            </v-btn-toggle>
+                                        </td>
+                                    </tr>
                                     <tr v-if="currentVectorFilterProperty">
                                         <td>Values</td>
                                         <td>
-                                            <v-range-slider
-                                                v-if="currentVectorFilterProperty.range"
-                                                v-model="currentVectorFilter.range"
-                                                color="primary"
-                                                :min="currentVectorFilterProperty.range[0]"
-                                                :max="currentVectorFilterProperty.range[1]"
-                                                step="1"
-                                                strict
-                                            >
-                                                <template v-slot:prepend>
-                                                    <v-text-field
-                                                        v-if="currentVectorFilter.range"
-                                                        :model-value="currentVectorFilter.range[0]"
-                                                        :min="currentVectorFilterProperty.range[0]"
-                                                        :max="currentVectorFilter.range[1]"
-                                                        :step="1"
-                                                        density="compact"
-                                                        class="number-input"
-                                                        :style="{'width': getInputWidth(currentVectorFilter.range[0])}"
-                                                        type="number"
-                                                        hide-details
-                                                        single-line
-                                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[0] = parseInt(v)}"
-                                                    >
-                                                    </v-text-field>
-                                                </template>
-                                                <template v-slot:append>
-                                                    <v-text-field
-                                                        v-if="currentVectorFilter.range"
-                                                        :model-value="currentVectorFilter.range[1]"
-                                                        :min="currentVectorFilter.range[0]"
-                                                        :max="currentVectorFilterProperty.range[1]"
-                                                        :step="1"
-                                                        density="compact"
-                                                        class="number-input"
-                                                        :style="{'width': getInputWidth(currentVectorFilter.range[1])}"
-                                                        type="number"
-                                                        hide-details
-                                                        single-line
-                                                        @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[1] = parseInt(v)}"
-                                                    >
-                                                    </v-text-field>
-                                                </template>
-                                            </v-range-slider>
+                                            <template v-if="currentVectorFilterProperty.range">
+                                                <v-range-slider
+                                                    v-if="currentVectorFilter.range"
+                                                    v-model="currentVectorFilter.range"
+                                                    color="primary"
+                                                    :min="currentVectorFilterProperty.range[0]"
+                                                    :max="currentVectorFilterProperty.range[1]"
+                                                    step="1"
+                                                    strict
+                                                >
+                                                    <template v-slot:prepend>
+                                                        <v-text-field
+                                                            v-if="currentVectorFilter.range"
+                                                            :model-value="currentVectorFilter.range[0]"
+                                                            :min="currentVectorFilterProperty.range[0]"
+                                                            :max="currentVectorFilter.range[1]"
+                                                            :step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[0] = parseInt(v)}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                    <template v-slot:append>
+                                                        <v-text-field
+                                                            v-if="currentVectorFilter.range"
+                                                            :model-value="currentVectorFilter.range[1]"
+                                                            :min="currentVectorFilter.range[0]"
+                                                            :max="currentVectorFilterProperty.range[1]"
+                                                            :step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[1] = parseInt(v)}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                </v-range-slider>
+                                                <v-slider
+                                                    v-else-if="currentVectorFilter.list"
+                                                    :model-value="currentVectorFilter.list[0]"
+                                                    :min="currentVectorFilterProperty.range[0]"
+                                                    :max="currentVectorFilterProperty.range[1]"
+                                                    :step="1"
+                                                    color="primary"
+                                                    hide-details
+                                                    type="number"
+                                                    @update:model-value="(value: number) => {currentVectorFilter.list = [value]}"
+                                                >
+                                                    <template v-slot:append>
+                                                        <v-text-field
+                                                            :model-value="currentVectorFilter.list[0]"
+                                                            :min="currentVectorFilterProperty.range[0]"
+                                                            :max="currentVectorFilterProperty.range[1]"
+                                                            :step="1"
+                                                            density="compact"
+                                                            class="number-input"
+                                                            type="number"
+                                                            hide-details
+                                                            single-line
+                                                            @update:model-value="(value: string) => {currentVectorFilter.list = [parseInt(value)]}"
+                                                        >
+                                                        </v-text-field>
+                                                    </template>
+                                                </v-slider>
+                                            </template>
                                             <v-select
                                                 v-else
                                                 v-model="currentVectorFilter.list"
