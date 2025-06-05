@@ -1,0 +1,57 @@
+[
+    {
+        "name": "Massachusetts Elevation Data",
+        "description": "Low resolution sampling of land elevation in meters above sea level",
+        "category": "test",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
+                "path": "test/easternmass.tif"
+            }
+        ],
+        "layers": [
+            {
+                "name": "Elevation",
+                "frames": [
+                    {
+                        "name": "Band 1",
+                        "data": "easternmass.tif"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Generated Vector Data",
+        "description": "Fake data generated via Python for style testing",
+        "category": "test",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6841cc57dfcff796fee73d11/download",
+                "path": "test/multiframe_vector.geojson"
+            }
+        ],
+        "layers": [
+            {
+                "name": "Vector Test"
+            }
+        ]
+    },
+    {
+        "name": "Multiframe Generated Vector Data",
+        "description": "Fake data generated via Python for style testing",
+        "category": "test",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6841cc57dfcff796fee73d11/download",
+                "path": "test/multiframe_vector.geojson"
+            }
+        ],
+        "layers": [
+            {
+                "name": "Multiframe Vector Test",
+                "frame_property": "frame"
+            }
+        ]
+    }
+]
