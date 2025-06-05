@@ -130,8 +130,8 @@ export const useLayerStore = defineStore('layer', () => {
             }
           }
         });
-        styleStore.updateLayerStyles(layer)
       })
+      styleStore.updateLayerStyles(layer)
     })
     // hide any removed layers
     map.getLayersOrder().forEach((mapLayerId) => {

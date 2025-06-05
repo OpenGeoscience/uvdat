@@ -38,6 +38,7 @@ export interface LayerFrame {
   layer: Layer;
   vector: VectorData | null;
   raster: RasterData | null;
+  source_filters: Record<string, any>;
 }
 
 export interface ColorMap {
