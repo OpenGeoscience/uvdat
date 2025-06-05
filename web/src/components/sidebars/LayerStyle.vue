@@ -46,6 +46,9 @@ const showVectorOptions = computed(() => {
 })
 
 const vectorProperties = computed(() => {
+    if (!styleStore.selectedLayerVectorProperties[styleKey.value]) {
+        styleStore.fetchVectorProperties(props.layer)
+    }
     return styleStore.selectedLayerVectorProperties[styleKey.value]
 })
 

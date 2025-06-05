@@ -6,6 +6,7 @@ import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
 
 import { useLayerStore } from "@/store";
+import _ from "lodash";
 const layerStore = useLayerStore();
 
 const searchText = ref();
@@ -29,12 +30,14 @@ function setVisibility(layers: Layer[], visible=true) {
 
 function updateFrame(layer: Layer, value: number) {
     value = value - 1;  // slider values are 1-indexed
-    layerStore.selectedLayers = layerStore.selectedLayers.map((l: Layer) => {
-        if (l.id === layer.id && l.copy_id === layer.copy_id) {
-            l.current_frame = value;
-        }
-        return l;
-    })
+    _.debounce(() => {
+        layerStore.selectedLayers = layerStore.selectedLayers.map((l: Layer) => {
+            if (l.id === layer.id && l.copy_id === layer.copy_id) {
+                l.current_frame = value;
+            }
+            return l;
+        })
+    }, 10)()
 }
 
 function getLayerMaxFrames(layer: Layer) {

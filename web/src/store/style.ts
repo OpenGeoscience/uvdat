@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
-import { ColorMap, Layer, MapLibreLayerWithMetadata, Network, RasterData, StyleSpec } from "@/types";
+import { ColorMap, Layer, LayerFrame, MapLibreLayerWithMetadata, Network, RasterData, StyleFilter, StyleSpec } from "@/types";
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
@@ -248,34 +248,44 @@ export const useStyleStore = defineStore('style', () => {
 
     function updateLayerStyles(layer: Layer) {
         const map = mapStore.getMap();
+        const currentFrame = layer.frames.find((f) => f.index === layer.current_frame)
+        if (!currentFrame) return
         map.getLayersOrder().forEach((mapLayerId) => {
             if (mapLayerId !== 'base-tiles') {
                 const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
                 if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
-                    const styleKey = `${layer.id}.${layer.copy_id}`
-                    const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
-                    const frame = layer.frames.find((f) => f.id === parseInt(frameId))
-                    let visible = false;
-                    if (frame) {
-                        visible = layer.visible && layer.current_frame === frame.index
+                    if (parseInt(frameId) === currentFrame.id) {
+                        map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
+                        const styleKey = `${layer.id}.${layer.copy_id}`
+                        const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
+                        setMapLayerStyle(mapLayerId, currentStyleSpec, currentFrame);
+                    } else {
+                        map.setLayoutProperty(mapLayerId, 'visibility', 'none');
                     }
-                    if (!selectedLayerVectorProperties.value[styleKey]) {
-                        fetchVectorProperties(layer).then(() => {
-                            setMapLayerStyle(mapLayerId, currentStyleSpec, visible);
-                        })
-                    }
-                    setMapLayerStyle(mapLayerId, currentStyleSpec, visible);
                 }
             }
         });
     }
 
-    function setMapLayerStyle(mapLayerId: string, styleSpec: StyleSpec, visible: boolean) {
+    function setMapLayerStyle(mapLayerId: string, styleSpec: StyleSpec, frame: LayerFrame | undefined) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
         const [layerId, layerCopyId] = sourceId.split('.');
         const styleKey = `${layerId}.${layerCopyId}`
         const { network } = layerStore.getDBObjectsForSourceID(sourceId)
+
+        let filters: StyleFilter[] = styleSpec.filters
+        if (frame?.source_filters) {
+            filters = [
+                ...styleSpec.filters,
+                ...Object.entries(frame.source_filters).map(([k, v]) => ({
+                    filter_by: k,
+                    list: [v],
+                    include: true,
+                    transparency: true,
+                }))
+            ]
+        }
 
         const mapLayer = map.getLayer(mapLayerId) as MapLibreLayerWithMetadata | undefined;
         if (mapLayer === undefined) {
@@ -288,14 +298,6 @@ export const useStyleStore = defineStore('style', () => {
             opacity = 1;
         }
 
-        // MultiFrame uses opacity for visibility (with visibility always set to 'visible'), while single-frame uses 'visibility'
-        const { multiFrame } = mapLayer.metadata;
-        if (!multiFrame) {
-            map.setLayoutProperty(mapLayerId, 'visibility', visible ? 'visible' : 'none');
-        } else if (!visible) {
-            opacity = 0;
-        }
-
         const vectorProperties = selectedLayerVectorProperties.value[styleKey]
         if (mapLayerId.includes("fill")) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
@@ -306,7 +308,7 @@ export const useStyleStore = defineStore('style', () => {
             } else if (colorSpec?.colormap?.color_by && propsSpec) {
                 map.setPaintProperty(mapLayerId, 'fill-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
             }
-            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'polygons')
+            const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'polygons')
             if(visibility !== undefined) {
                 map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
             }
@@ -321,7 +323,7 @@ export const useStyleStore = defineStore('style', () => {
             }
             const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
-            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'lines')
+            const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'lines')
             if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
@@ -338,7 +340,7 @@ export const useStyleStore = defineStore('style', () => {
             }
             const size = getVectorSizePaintProperty(styleSpec, 'points', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'circle-radius', size)
-            const visibility = getVectorVisibilityPaintProperty(styleSpec, 'points')
+            const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'points')
             if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
             if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
         } else if (mapLayerId.includes("raster")) {
@@ -516,5 +518,6 @@ export const useStyleStore = defineStore('style', () => {
         updateLayerStyles,
         setMapLayerStyle,
         styleNetwork,
+        fetchVectorProperties,
     }
 });
