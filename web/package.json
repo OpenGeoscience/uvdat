@@ -14,6 +14,7 @@
     "@turf/turf": "^7.1.0",
     "axios": "^1.4.0",
     "buffer": "^6.0.3",
+    "colormap": "^2.3.2",
     "core-js": "^3.8.3",
     "dayjs": "^1.11.13",
     "git-describe": "^4.1.1",

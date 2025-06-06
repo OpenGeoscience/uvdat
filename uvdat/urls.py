@@ -13,6 +13,7 @@ from uvdat.core.rest import (
     DatasetViewSet,
     FileItemViewSet,
     LayerFrameViewSet,
+    LayerStyleViewSet,
     LayerViewSet,
     NetworkViewSet,
     ProjectViewSet,
@@ -37,6 +38,7 @@ router.register(r'files', FileItemViewSet, basename='files')
 router.register(r'charts', ChartViewSet, basename='charts')
 router.register(r'layers', LayerViewSet, basename='layers')
 router.register(r'layer-frames', LayerFrameViewSet, basename='layer-frames')
+router.register(r'layer-styles', LayerStyleViewSet, basename='layer-styles')
 router.register(r'rasters', RasterDataViewSet, basename='rasters')
 router.register(r'vectors', VectorDataViewSet, basename='vectors')
 router.register(r'source-regions', RegionViewSet, basename='source-regions')

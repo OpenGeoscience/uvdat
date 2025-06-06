@@ -107,7 +107,7 @@ watch(filteredDatasets, expandAllGroups)
   text-transform: capitalize !important;
 }
 .secondary-text {
-  color: rgb(var(--v-theme-secondary-text))
+  color: rgb(var(--v-theme-secondary-text)) !important;
 }
 .item-title {
   display: flex;
