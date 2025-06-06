@@ -27,8 +27,6 @@ const currentStyleSpec = ref<StyleSpec>();
 const availableGroups = ref<Record<string, string[]>>({color: [], size: []});
 const currentGroups = ref<Record<string, string | undefined>>({color: undefined, size: undefined});
 const rasterBands = ref<Record<number, Record<string, number | string>>>();
-const currentVectorFilter = ref<StyleFilter>({include: true, transparency: true});
-const currentVectorFilterProperty = ref<Record<string, any>>();
 
 // for correct typing in template, assign to local var
 const colormaps: ColorMap[] = styleStore.colormaps;
@@ -51,8 +49,6 @@ const vectorProperties = computed(() => {
     }
     return styleStore.selectedLayerVectorProperties[styleKey.value]
 })
-
-const currentVectorFilterBy = computed(() => currentVectorFilter.value.filter_by)
 
 const dataRange = computed(() => {
     let absMin: number | undefined, absMax: number | undefined;
@@ -219,30 +215,6 @@ function setGroupSizeMode(groupName: string, sizeMode: string) {
     )
 }
 
-function updateCurrentFilterProperty() {
-    if (
-        vectorProperties.value &&
-        vectorProperties.value['all'] &&
-        currentVectorFilter.value.filter_by
-    ) {
-        const property = vectorProperties.value['all'].find(
-            (p: Record<string, any>) => p.name === currentVectorFilter.value.filter_by
-        )
-        currentVectorFilter.value.list = undefined
-        currentVectorFilter.value.range = undefined
-        if (property?.range) currentVectorFilter.value.range = property.range
-        currentVectorFilterProperty.value = property
-    }
-}
-
-function applyCurrentFilter() {
-    if (!currentStyleSpec.value) return
-    currentStyleSpec.value.filters = [
-        ...currentStyleSpec.value.filters,
-        {...currentVectorFilter.value}
-    ]
-}
-
 function removeFilter(filter: StyleFilter) {
     if (!currentStyleSpec.value) return
     currentStyleSpec.value.filters = currentStyleSpec.value.filters.filter(
@@ -349,8 +321,6 @@ watch(currentStyleSpec, _.debounce(() => {
 }, 100), {deep: true})
 
 watch(showMenu, init)
-
-watch(currentVectorFilterBy, updateCurrentFilterProperty)
 </script>
 
 <template>
@@ -1167,191 +1137,200 @@ watch(currentVectorFilterBy, updateCurrentFilterProperty)
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mb-2"/>
-                            <table class="aligned-controls">
-                                <tbody>
-                                    <tr>
-                                        <td colspan="2">
-                                            <v-select
-                                                v-if="currentVectorFilter && vectorProperties"
-                                                v-model="currentVectorFilter.filter_by"
-                                                :items="vectorProperties['all']"
-                                                placeholder="Select Property"
-                                                label="Property"
-                                                item-title="name"
-                                                item-value="name"
-                                                density="compact"
-                                                variant="outlined"
-                                                hide-details
-                                            >
-                                                <template v-slot:item="{ props, item }">
-                                                    <v-list-item v-bind="props">
-                                                        <template v-slot:append>
-                                                            <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
-                                                        </template>
-                                                    </v-list-item>
-                                                </template>
-                                            </v-select>
-                                        </td>
-                                    </tr>
-                                    <tr v-if="currentVectorFilterProperty?.range">
-                                        <td>Value type</td>
-                                        <td>
-                                            <v-btn-toggle
-                                                :model-value="currentVectorFilter.range ? 'range' : 'single'"
-                                                density="compact"
-                                                color="primary"
-                                                variant="outlined"
-                                                divided
-                                                mandatory
-                                                @update:model-value="(value: string) => {
-                                                    if (!currentVectorFilterProperty) return
-                                                    if (value === 'range') {currentVectorFilter.range = currentVectorFilterProperty.range; currentVectorFilter.list = undefined}
-                                                    else {currentVectorFilter.range = undefined; currentVectorFilter.list = [currentVectorFilterProperty.range[0]]}
-                                                }"
-                                            >
-                                                <v-btn :value="'single'">Single</v-btn>
-                                                <v-btn :value="'range'">Range</v-btn>
-                                            </v-btn-toggle>
-                                        </td>
-                                    </tr>
-                                    <tr v-if="currentVectorFilterProperty">
-                                        <td>Values</td>
-                                        <td>
-                                            <template v-if="currentVectorFilterProperty.range">
-                                                <v-range-slider
-                                                    v-if="currentVectorFilter.range"
-                                                    v-model="currentVectorFilter.range"
-                                                    color="primary"
-                                                    :min="currentVectorFilterProperty.range[0]"
-                                                    :max="currentVectorFilterProperty.range[1]"
-                                                    step="1"
-                                                    strict
-                                                >
-                                                    <template v-slot:prepend>
-                                                        <v-text-field
-                                                            v-if="currentVectorFilter.range"
-                                                            :model-value="currentVectorFilter.range[0]"
-                                                            :min="currentVectorFilterProperty.range[0]"
-                                                            :max="currentVectorFilter.range[1]"
-                                                            :step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[0] = parseInt(v)}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                    <template v-slot:append>
-                                                        <v-text-field
-                                                            v-if="currentVectorFilter.range"
-                                                            :model-value="currentVectorFilter.range[1]"
-                                                            :min="currentVectorFilter.range[0]"
-                                                            :max="currentVectorFilterProperty.range[1]"
-                                                            :step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(v) => {if (currentVectorFilter?.range) currentVectorFilter.range[1] = parseInt(v)}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                </v-range-slider>
-                                                <v-slider
-                                                    v-else-if="currentVectorFilter.list"
-                                                    :model-value="currentVectorFilter.list[0]"
-                                                    :min="currentVectorFilterProperty.range[0]"
-                                                    :max="currentVectorFilterProperty.range[1]"
-                                                    :step="1"
-                                                    color="primary"
-                                                    hide-details
-                                                    type="number"
-                                                    @update:model-value="(value: number) => {currentVectorFilter.list = [value]}"
-                                                >
-                                                    <template v-slot:append>
-                                                        <v-text-field
-                                                            :model-value="currentVectorFilter.list[0]"
-                                                            :min="currentVectorFilterProperty.range[0]"
-                                                            :max="currentVectorFilterProperty.range[1]"
-                                                            :step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(value: string) => {currentVectorFilter.list = [parseInt(value)]}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                </v-slider>
+                            <v-btn color="primary" @click="currentStyleSpec.filters.push({include: true, transparency: true})" width="100%">
+                                <v-icon icon="mdi-plus"/>
+                                Add Filter
+                            </v-btn>
+                            <v-card-subtitle v-if="currentStyleSpec.filters.length">
+                                Filters ({{ currentStyleSpec.filters.length }}):
+                            </v-card-subtitle>
+                            <v-expansion-panels v-if="currentStyleSpec.filters.length"  variant="accordion" density="compact">
+                                <v-expansion-panel v-for="filter, index in currentStyleSpec.filters" :key="index">
+                                    <v-expansion-panel-title>
+                                        <v-chip
+                                            color="primary"
+                                            density="compact"
+                                            class="mb-1"
+                                            style="max-width: 100%; height: auto !important;"
+                                        >
+                                            <template v-slot>
+                                                <span style="white-space: wrap;" v-if="filter.filter_by">
+                                                    {{ filter.filter_by }}
+                                                    <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
+                                                    {{ filter.list }}
+                                                    {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
+                                                </span>
+                                                <span v-else>New Filter</span>
+                                                <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
                                             </template>
-                                            <v-select
-                                                v-else
-                                                v-model="currentVectorFilter.list"
-                                                :items="currentVectorFilterProperty.values"
-                                                density="compact"
-                                                variant="outlined"
-                                                multiple
-                                                chips
-                                                closable-chips
-                                                hide-details
-                                            />
-                                        </td>
-                                    </tr>
-                                    <tr v-if="currentVectorFilterProperty">
-                                        <td>Filter Mode</td>
-                                        <td>
-                                            <v-btn-toggle
-                                                :model-value="currentVectorFilter.include ? 'include' : 'exclude'"
-                                                density="compact"
-                                                color="primary"
-                                                variant="outlined"
-                                                divided
-                                                mandatory
-                                                @update:model-value="(value: string) => {currentVectorFilter.include = value === 'include'}"
-                                            >
-                                                <v-btn :value="'include'">Include</v-btn>
-                                                <v-btn :value="'exclude'">Exclude</v-btn>
-                                            </v-btn-toggle>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td>
-                                            <v-btn color="primary" @click="applyCurrentFilter">
-                                                <v-icon icon="mdi-plus"/>
-                                                Add Filter
-                                            </v-btn>
-                                        </td>
-                                    </tr>
-                                    <tr v-if="currentStyleSpec && currentStyleSpec.filters.length">
-                                        <td>Filters ({{ currentStyleSpec.filters.length }})</td>
-                                        <td>
-                                            <v-chip
-                                                v-for="filter, index in currentStyleSpec.filters"
-                                                :key="index"
-                                                color="primary"
-                                                density="compact"
-                                                class="mb-1"
-                                                style="max-width: 100%; height: auto !important;"
-                                            >
-                                                <template v-slot>
-                                                    <span style="white-space: wrap;">
-                                                        {{ filter.filter_by }}
-                                                        <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
-                                                        {{ filter.list }}
-                                                        {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
-                                                    </span>
-                                                    <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
+                                        </v-chip>
+                                    </v-expansion-panel-title>
+                                    <v-expansion-panel-text>
+                                        <table class="aligned-controls">
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="2">
+                                                        <v-select
+                                                            v-if="vectorProperties"
+                                                            v-model="filter.filter_by"
+                                                            :items="vectorProperties['all']"
+                                                            placeholder="Select Property"
+                                                            label="Property"
+                                                            item-title="name"
+                                                            item-value="name"
+                                                            density="compact"
+                                                            variant="outlined"
+                                                            hide-details
+                                                            @update:model-value="(v) => {
+                                                                if (!filter.list && !filter.range) {
+                                                                    const property = vectorProperties['all'].find((f: any) => f.name === filter.filter_by)
+                                                                    if (property?.range) filter.range = property.range
+                                                                    else if (property.values) filter.list = []
+                                                                }
+                                                            }"
+                                                        >
+                                                            <template v-slot:item="{ props, item }">
+                                                                <v-list-item v-bind="props">
+                                                                    <template v-slot:append>
+                                                                        <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                                    </template>
+                                                                </v-list-item>
+                                                            </template>
+                                                        </v-select>
+                                                    </td>
+                                                </tr>
+                                                <template v-if="filter.filter_by" v-for="property in [vectorProperties['all'].find((f: any) => f.name === filter.filter_by)]">
+                                                    <tr v-if="property.range">
+                                                        <td>Value type</td>
+                                                        <td>
+                                                            <v-btn-toggle
+                                                                :model-value="filter.range ? 'range' : 'single'"
+                                                                density="compact"
+                                                                color="primary"
+                                                                variant="outlined"
+                                                                divided
+                                                                mandatory
+                                                                @update:model-value="(value: string) => {
+                                                                    if (!property) return
+                                                                    if (value === 'range') {filter.range = property.range; filter.list = undefined}
+                                                                    else {filter.range = undefined; filter.list = [property.range[0]]}
+                                                                }"
+                                                            >
+                                                                <v-btn :value="'single'">Single</v-btn>
+                                                                <v-btn :value="'range'">Range</v-btn>
+                                                            </v-btn-toggle>
+                                                        </td>
+                                                    </tr>
+                                                    <tr v-if="property">
+                                                        <td>Values</td>
+                                                        <td>
+                                                            <template v-if="property.range">
+                                                                <v-range-slider
+                                                                    v-if="filter.range"
+                                                                    v-model="filter.range"
+                                                                    color="primary"
+                                                                    :min="property.range[0]"
+                                                                    :max="property.range[1]"
+                                                                    step="1"
+                                                                    strict
+                                                                >
+                                                                    <template v-slot:prepend>
+                                                                        <v-text-field
+                                                                            v-if="filter.range"
+                                                                            :model-value="filter.range[0]"
+                                                                            :min="property.range[0]"
+                                                                            :max="filter.range[1]"
+                                                                            :step="1"
+                                                                            density="compact"
+                                                                            class="number-input"
+                                                                            type="number"
+                                                                            hide-details
+                                                                            single-line
+                                                                            @update:model-value="(v) => {if (filter?.range) filter.range[0] = parseInt(v)}"
+                                                                        >
+                                                                        </v-text-field>
+                                                                    </template>
+                                                                    <template v-slot:append>
+                                                                        <v-text-field
+                                                                            v-if="filter.range"
+                                                                            :model-value="filter.range[1]"
+                                                                            :min="filter.range[0]"
+                                                                            :max="property.range[1]"
+                                                                            :step="1"
+                                                                            density="compact"
+                                                                            class="number-input"
+                                                                            type="number"
+                                                                            hide-details
+                                                                            single-line
+                                                                            @update:model-value="(v) => {if (filter?.range) filter.range[1] = parseInt(v)}"
+                                                                        >
+                                                                        </v-text-field>
+                                                                    </template>
+                                                                </v-range-slider>
+                                                                <v-slider
+                                                                    v-else-if="filter.list"
+                                                                    :model-value="filter.list[0]"
+                                                                    :min="property.range[0]"
+                                                                    :max="property.range[1]"
+                                                                    :step="1"
+                                                                    color="primary"
+                                                                    hide-details
+                                                                    type="number"
+                                                                    @update:model-value="(value: number) => {filter.list = [value]}"
+                                                                >
+                                                                    <template v-slot:append>
+                                                                        <v-text-field
+                                                                            :model-value="filter.list[0]"
+                                                                            :min="property.range[0]"
+                                                                            :max="property.range[1]"
+                                                                            :step="1"
+                                                                            density="compact"
+                                                                            class="number-input"
+                                                                            type="number"
+                                                                            hide-details
+                                                                            single-line
+                                                                            @update:model-value="(value: string) => {filter.list = [parseInt(value)]}"
+                                                                        >
+                                                                        </v-text-field>
+                                                                    </template>
+                                                                </v-slider>
+                                                            </template>
+                                                            <v-select
+                                                                v-else
+                                                                v-model="filter.list"
+                                                                :items="property.values"
+                                                                density="compact"
+                                                                variant="outlined"
+                                                                multiple
+                                                                chips
+                                                                closable-chips
+                                                                hide-details
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                    <tr v-if="property">
+                                                        <td>Filter Mode</td>
+                                                        <td>
+                                                            <v-btn-toggle
+                                                                :model-value="filter.include ? 'include' : 'exclude'"
+                                                                density="compact"
+                                                                color="primary"
+                                                                variant="outlined"
+                                                                divided
+                                                                mandatory
+                                                                @update:model-value="(value: string) => {filter.include = value === 'include'}"
+                                                            >
+                                                                <v-btn :value="'include'">Include</v-btn>
+                                                                <v-btn :value="'exclude'">Exclude</v-btn>
+                                                            </v-btn-toggle>
+                                                        </td>
+                                                    </tr>
                                                 </template>
-                                            </v-chip>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            </tbody>
+                                        </table>
+                                    </v-expansion-panel-text>
+                                </v-expansion-panel>
+                            </v-expansion-panels>
                         </div>
                     </v-window-item>
                 </v-window>
