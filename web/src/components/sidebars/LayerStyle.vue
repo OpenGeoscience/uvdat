@@ -174,8 +174,8 @@ function setSizeGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
     if (different) {
         if (showVectorOptions.value) {
-            availableGroups.value['size'] = ['polygons', 'lines', 'points']
-            currentGroups.value['size'] = 'polygons'
+            availableGroups.value['size'] = ['lines', 'points']
+            currentGroups.value['size'] = 'points'
             const all = currentStyleSpec.value.sizes.find((group) => group.name === 'all')
             if (all) {
                 currentStyleSpec.value.sizes = availableGroups.value['size'].map((name) => {
@@ -956,7 +956,7 @@ watch(showMenu, init)
                                                     color="primary"
                                                     size="small"
                                                     class="ml-2"
-                                                    v-tooltip="group.name === 'all' ? 'Range: 1 to 10' : group.name === 'polygons' ? 'Border thickness' : group.name === 'lines' ? 'Line thickness' : 'Point radius'"
+                                                    v-tooltip="group.name === 'all' ? 'Range: 1 to 10' : group.name === 'lines' ? 'Line thickness' : 'Point radius'"
                                                 />
                                             </td>
                                             <td>
