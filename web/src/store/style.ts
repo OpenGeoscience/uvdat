@@ -133,9 +133,9 @@ function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, pro
             const sortedValues = sizeByProp.values.sort((a: any, b: any) => a - b)
             if (sortedValues.length > 1) {
                 const sizeSteps = [
-                    'step',
+                    'interpolate',
+                    ['exponential', 2],
                     ['get', sizeSpec.size_range.size_by],
-                    0,
                     sortedValues[0],
                     sizeSpec.size_range.minimum,
                     sortedValues[sortedValues.length - 1],
