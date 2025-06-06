@@ -236,7 +236,7 @@ export const useStyleStore = defineStore('style', () => {
                     name: 'all',
                     visible: true,
                     single_color: raster ? undefined : getDefaultColor(),
-                    colormap: raster ? {...colormaps[0], range} : undefined,
+                    colormap: raster ? {...colormaps[0], range, color_by: 'value'} : undefined,
                 }
             ],
             sizes: [
