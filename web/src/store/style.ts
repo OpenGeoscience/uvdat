@@ -258,6 +258,11 @@ export const useStyleStore = defineStore('style', () => {
                         map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
                         const styleKey = `${layer.id}.${layer.copy_id}`
                         const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
+                        if (!selectedLayerVectorProperties.value[styleKey]) {
+                            fetchVectorProperties(layer).then(() => {
+                                setMapLayerStyle(mapLayerId, currentStyleSpec, currentFrame);
+                            })
+                        }
                         setMapLayerStyle(mapLayerId, currentStyleSpec, currentFrame);
                     } else {
                         map.setLayoutProperty(mapLayerId, 'visibility', 'none');

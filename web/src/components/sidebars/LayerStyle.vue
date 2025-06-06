@@ -44,9 +44,6 @@ const showVectorOptions = computed(() => {
 })
 
 const vectorProperties = computed(() => {
-    if (!styleStore.selectedLayerVectorProperties[styleKey.value]) {
-        styleStore.fetchVectorProperties(props.layer)
-    }
     return styleStore.selectedLayerVectorProperties[styleKey.value]
 })
 
@@ -1182,7 +1179,7 @@ watch(showMenu, init)
                                                             variant="outlined"
                                                             hide-details
                                                             @update:model-value="(v) => {
-                                                                if (!filter.list && !filter.range) {
+                                                                if (!filter.list && !filter.range && vectorProperties) {
                                                                     const property = vectorProperties['all'].find((f: any) => f.name === filter.filter_by)
                                                                     if (property?.range) filter.range = property.range
                                                                     else if (property.values) filter.list = []
@@ -1199,7 +1196,7 @@ watch(showMenu, init)
                                                         </v-select>
                                                     </td>
                                                 </tr>
-                                                <template v-if="filter.filter_by" v-for="property in [vectorProperties['all'].find((f: any) => f.name === filter.filter_by)]">
+                                                <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties['all'].find((f: any) => f.name === filter.filter_by)]">
                                                     <tr v-if="property.range">
                                                         <td>Value type</td>
                                                         <td>
