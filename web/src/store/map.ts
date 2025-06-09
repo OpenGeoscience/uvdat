@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef, watch } from 'vue';
-import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
+import { reactive, ref, shallowRef, watch } from 'vue';
+import { Map as MapLibreMap, MapLayerMouseEvent, Popup, Source, MapSourceDataEvent, MapDataEvent, MapStyleDataEvent } from "maplibre-gl";
 import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
+import { useLayerStore } from './layer';
 
 function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   // Since visibility must be 'visible' for a feature click to even be registered,
@@ -25,12 +26,21 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
 }
 
 export const useMapStore = defineStore('map', () => {
-  const map = shallowRef<Map>();
+  const map = shallowRef<MapLibreMap>();
   const mapSources = ref<Record<string, Source>>({});
+  const sourceLoadedState = reactive(new Map<string, true>());
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
+
+  function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
+    if (obj.dataType !== 'source' || !obj.isSourceLoaded) {
+      return;
+    }
+
+    sourceLoadedState.set(obj.sourceId, true);
+  }
 
   function handleLayerClick(e: MapLayerMouseEvent) {
     const map = getMap();
@@ -304,22 +314,32 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
-    if (!mapSources.value[sourceId]) {
-      if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
-        if (vector) mapSources.value[sourceId] = vector;
-      }
-      if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
-        if (raster) mapSources.value[sourceId] = raster;
-      }
+    if (mapSources.value[sourceId]) {
+      return;
     }
+
+    if (frame.vector) {
+      const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
+      if (vector) mapSources.value[sourceId] = vector;
+    }
+    if (frame.raster) {
+      const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
+      if (raster) mapSources.value[sourceId] = raster;
+    }
+
+    const map = getMap();
+    map.on("data", setSourceLoaded);
+    map.on('idle', () => {
+      map.off('data', setSourceLoaded);
+      sourceLoadedState.clear();
+    });
   }
 
   return {
     // Data
     map,
     mapSources,
+    sourceLoadedState,
     showMapBaseLayer,
     tooltipOverlay,
     clickedFeature,
