@@ -28,18 +28,31 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
 export const useMapStore = defineStore('map', () => {
   const map = shallowRef<MapLibreMap>();
   const mapSources = ref<Record<string, Source>>({});
-  const sourceLoadedState = reactive(new Map<string, true>());
+  const sourceLoadedState = reactive(new Map<string, boolean>());
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
   function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
-    if (obj.dataType !== 'source' || !obj.isSourceLoaded) {
+    if (obj.dataType !== 'source') {
       return;
     }
 
-    sourceLoadedState.set(obj.sourceId, true);
+    // TODO: Handle raster and bounds needing to both be loaded
+    sourceLoadedState.set(obj.sourceId, obj.isSourceLoaded);
+
+    // Sometimes requests are cancelled and a final data event with loaded==true doesn't come through,
+    // so we add this extra polling system to make sure it gets set to true
+    if (!obj.isSourceLoaded) {
+      const intervalId = setInterval(() => {
+        const source = getMap().getSource(obj.sourceId)!;
+        if (source.loaded()) {
+          sourceLoadedState.set(obj.sourceId, true);
+          clearInterval(intervalId);
+        }
+      }, 1000);
+    }
   }
 
   function handleLayerClick(e: MapLayerMouseEvent) {
@@ -329,10 +342,10 @@ export const useMapStore = defineStore('map', () => {
 
     const map = getMap();
     map.on("data", setSourceLoaded);
-    map.on('idle', () => {
-      map.off('data', setSourceLoaded);
-      sourceLoadedState.clear();
-    });
+    // map.on('idle', () => {
+    //   map.off('data', setSourceLoaded);
+    //   sourceLoadedState.clear();
+    // });
   }
 
   return {

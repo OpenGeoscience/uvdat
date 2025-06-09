@@ -17,27 +17,24 @@ const filteredLayers = computed(() => {
     })
 });
 
-const layerIdToNumFrames = computed(() => filteredLayers.value.reduce((acc, cur) => ({...acc, [cur.id]: cur.frames.length}), {} as Record<number, number>));
-const layerLoadingProgress = reactive(new Map<string, number>());
+const layerLoading = reactive(new Map<string, boolean>());
+
+// Convert source loaded state to layer loaded state
 watch(mapStore.sourceLoadedState, (state) => {
     const sourceIds = Array.from(state.keys());
     const uniqueLayersToSourceIds = new Map<string, string[]>();
     sourceIds.forEach((sourceId) => {
         const { layerId, layerCopyId } = layerStore.parseSourceString(sourceId);
         const uniqueId = `${layerId}.${layerCopyId}`;
-        const current = uniqueLayersToSourceIds.get(uniqueId) || [];
 
+        const current = uniqueLayersToSourceIds.get(uniqueId) || [];
         uniqueLayersToSourceIds.set(uniqueId, [...current, sourceId]);
     });
 
     const uniqueLayerIds = uniqueLayersToSourceIds.keys();
     uniqueLayerIds.forEach((uniqueId) => {
-        const [layerId] = uniqueId.split('.');
-        const loaded = uniqueLayersToSourceIds.get(uniqueId)!.length;
-        const total = layerIdToNumFrames.value[parseInt(layerId)];
-
-        const pct = (loaded / total) * 100;
-        layerLoadingProgress.set(uniqueId, pct);
+        const loaded = uniqueLayersToSourceIds.get(uniqueId)!.every((sourceId) => mapStore.sourceLoadedState.get(sourceId));
+        layerLoading.set(uniqueId, !loaded);
     });
 });
 
@@ -164,7 +161,7 @@ function getFrameInputWidth(layer: Layer) {
                                         type="number"
                                         @update:modelValue="(value: number) => updateFrame(element, value)"
                                         />
-                                        <v-progress-linear rounded-bar :model-value="layerLoadingProgress.get(`${element.id}.${element.copy_id}`)"/>
+                                        <v-progress-linear v-if="layerLoading.get(`${element.id}.${element.copy_id}`)" rounded-bar indeterminate />
                                     </v-col>
 
                                     <v-col cols="2">
