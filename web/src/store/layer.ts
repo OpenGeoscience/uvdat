@@ -17,6 +17,25 @@ interface SourceDBObjects {
   network?: Network,
 }
 
+interface SourceDescription {
+  layerId: number;
+  layerCopyId: number;
+  frameId: number;
+  type: 'vector' | 'raster';
+  typeId: number;
+}
+
+function parseSourceString(sourceId: string): SourceDescription {
+  const [layerId, layerCopyId, frameId, type, typeId] = sourceId.split('.');
+  return {
+    layerId: parseInt(layerId),
+    layerCopyId: parseInt(layerCopyId),
+    frameId: parseInt(frameId),
+    type: type as 'vector' | 'raster',
+    typeId: parseInt(typeId),
+  }
+}
+
 
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
@@ -80,13 +99,17 @@ export const useLayerStore = defineStore('layer', () => {
     let name = layer.name;
     let copy_id = 0;
     const existing = Object.keys(mapStore.mapSources).filter((sourceId) => {
-      const [layerId] = sourceId.split('.');
-      return parseInt(layerId) === layer.id
+      const { layerId } = parseSourceString(sourceId);
+      return layerId === layer.id
     });
-    if (existing.length) {
-      copy_id = existing.length;
+
+    // Must divide by number of frames to get the true copy ID, since each frame is added as a map source
+    const numExisting = existing.length / layer.frames.length;
+    if (numExisting) {
+      copy_id = numExisting;
       name = `${layer.name} (${copy_id})`;
     }
+
     selectedLayers.value = [
       { ...layer, name, copy_id, visible: true, current_frame: 0 },
       ...selectedLayers.value,
@@ -112,7 +135,7 @@ export const useLayerStore = defineStore('layer', () => {
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
-        ) && layer.current_frame === frame.index) {
+        )) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
@@ -143,6 +166,8 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   return {
+    parseSourceString,
+    
     selectedLayers,
     updateLayersShown,
     addLayer,
