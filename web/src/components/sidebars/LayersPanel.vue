@@ -17,14 +17,14 @@ const filteredLayers = computed(() => {
     })
 });
 
+// Maps a string (layerId.layerCopyId) to whether it is currently loading or not
 const layerLoading = reactive(new Map<string, boolean>());
 
 // Convert source loaded state to layer loaded state
 watch(mapStore.sourceLoadedState, (state) => {
-    const sourceIds = Array.from(state.keys());
     const uniqueLayersToSourceIds = new Map<string, string[]>();
-    sourceIds.forEach((sourceId) => {
-        const { layerId, layerCopyId } = layerStore.parseSourceString(sourceId);
+    Array.from(state.keys()).forEach((sourceId) => {
+        const { layerId, layerCopyId } = mapStore.parseSourceString(sourceId);
         const uniqueId = `${layerId}.${layerCopyId}`;
 
         const current = uniqueLayersToSourceIds.get(uniqueId) || [];

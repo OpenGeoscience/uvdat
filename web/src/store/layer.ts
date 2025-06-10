@@ -17,26 +17,6 @@ interface SourceDBObjects {
   network?: Network,
 }
 
-interface SourceDescription {
-  layerId: number;
-  layerCopyId: number;
-  frameId: number;
-  type: 'vector' | 'raster';
-  typeId: number;
-}
-
-function parseSourceString(sourceId: string): SourceDescription {
-  const [layerId, layerCopyId, frameId, type, typeId] = sourceId.split('.');
-  return {
-    layerId: parseInt(layerId),
-    layerCopyId: parseInt(layerCopyId),
-    frameId: parseInt(frameId),
-    type: type as 'vector' | 'raster',
-    typeId: parseInt(typeId),
-  }
-}
-
-
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
 
@@ -99,7 +79,7 @@ export const useLayerStore = defineStore('layer', () => {
     let name = layer.name;
     let copy_id = 0;
     const existing = Object.keys(mapStore.mapSources).filter((sourceId) => {
-      const { layerId } = parseSourceString(sourceId);
+      const { layerId } = mapStore.parseSourceString(sourceId);
       return layerId === layer.id
     });
 
@@ -166,8 +146,6 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   return {
-    parseSourceString,
-    
     selectedLayers,
     updateLayersShown,
     addLayer,

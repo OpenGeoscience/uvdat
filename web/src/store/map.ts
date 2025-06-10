@@ -5,7 +5,25 @@ import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, 
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
-import { useLayerStore } from './layer';
+
+interface SourceDescription {
+  layerId: number;
+  layerCopyId: number;
+  frameId: number;
+  type: 'vector' | 'raster';
+  typeId: number;
+}
+
+function parseSourceString(sourceId: string): SourceDescription {
+  const [layerId, layerCopyId, frameId, type, typeId] = sourceId.split('.');
+  return {
+    layerId: parseInt(layerId),
+    layerCopyId: parseInt(layerCopyId),
+    frameId: parseInt(frameId),
+    type: type as 'vector' | 'raster',
+    typeId: parseInt(typeId),
+  }
+}
 
 function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   // Since visibility must be 'visible' for a feature click to even be registered,
@@ -24,6 +42,7 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
 
   return opaque;
 }
+
 
 export const useMapStore = defineStore('map', () => {
   const map = shallowRef<MapLibreMap>();
@@ -358,6 +377,7 @@ export const useMapStore = defineStore('map', () => {
     clickedFeature,
     rasterTooltipDataCache,
     // Functions
+    parseSourceString,
     handleLayerClick,
     toggleBaseLayer,
     getMap,
