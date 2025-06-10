@@ -1,10 +1,29 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef, watch } from 'vue';
-import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
+import { reactive, ref, shallowRef, watch } from 'vue';
+import { Map as MapLibreMap, MapLayerMouseEvent, Popup, Source, MapSourceDataEvent, MapDataEvent, MapStyleDataEvent } from "maplibre-gl";
 import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
+
+interface SourceDescription {
+  layerId: number;
+  layerCopyId: number;
+  frameId: number;
+  type: 'vector' | 'raster';
+  typeId: number;
+}
+
+function parseSourceString(sourceId: string): SourceDescription {
+  const [layerId, layerCopyId, frameId, type, typeId] = sourceId.split('.');
+  return {
+    layerId: parseInt(layerId),
+    layerCopyId: parseInt(layerCopyId),
+    frameId: parseInt(frameId),
+    type: type as 'vector' | 'raster',
+    typeId: parseInt(typeId),
+  }
+}
 
 function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   // Since visibility must be 'visible' for a feature click to even be registered,
@@ -24,13 +43,36 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   return opaque;
 }
 
+
 export const useMapStore = defineStore('map', () => {
-  const map = shallowRef<Map>();
+  const map = shallowRef<MapLibreMap>();
   const mapSources = ref<Record<string, Source>>({});
+  const sourceLoadedState = reactive(new Map<string, boolean>());
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
+
+  function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
+    if (obj.dataType !== 'source') {
+      return;
+    }
+
+    // TODO: Handle raster and bounds needing to both be loaded
+    sourceLoadedState.set(obj.sourceId, obj.isSourceLoaded);
+
+    // Sometimes requests are cancelled and a final data event with loaded==true doesn't come through,
+    // so we add this extra polling system to make sure it gets set to true
+    if (!obj.isSourceLoaded) {
+      const intervalId = setInterval(() => {
+        const source = getMap().getSource(obj.sourceId)!;
+        if (source.loaded()) {
+          sourceLoadedState.set(obj.sourceId, true);
+          clearInterval(intervalId);
+        }
+      }, 1000);
+    }
+  }
 
   function handleLayerClick(e: MapLayerMouseEvent) {
     const map = getMap();
@@ -304,27 +346,38 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
-    if (!mapSources.value[sourceId]) {
-      if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
-        if (vector) mapSources.value[sourceId] = vector;
-      }
-      if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
-        if (raster) mapSources.value[sourceId] = raster;
-      }
+    if (mapSources.value[sourceId]) {
+      return;
     }
+
+    if (frame.vector) {
+      const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
+      if (vector) mapSources.value[sourceId] = vector;
+    }
+    if (frame.raster) {
+      const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
+      if (raster) mapSources.value[sourceId] = raster;
+    }
+
+    const map = getMap();
+    map.on("data", setSourceLoaded);
+    // map.on('idle', () => {
+    //   map.off('data', setSourceLoaded);
+    //   sourceLoadedState.clear();
+    // });
   }
 
   return {
     // Data
     map,
     mapSources,
+    sourceLoadedState,
     showMapBaseLayer,
     tooltipOverlay,
     clickedFeature,
     rasterTooltipDataCache,
     // Functions
+    parseSourceString,
     handleLayerClick,
     toggleBaseLayer,
     getMap,
