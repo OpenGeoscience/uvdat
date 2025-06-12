@@ -32,7 +32,7 @@ jobs:
         ports:
           - 5672:5672
       minio:
-        image: bitnami/minio:latest
+        image: bitnami/minio:2025.4.22
         env:
           MINIO_ROOT_USER: minioAccessKey
           MINIO_ROOT_PASSWORD: minioSecretKey
