@@ -72,6 +72,7 @@ def create_layers_and_frames(dataset, layer_options=None):
                             name=layer_data.name,
                             index=len(frames),
                             data=layer_data.name,
+                            source_filters={},
                         )
                     )
         for i, frame_info in enumerate(frames):
