@@ -232,10 +232,11 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
             filters.push(0)
         }
     })
+    const defaultOpacity = styleSpec.opacity;
     if (filters.length) return [
         "case",
         ...filters,
-        groupName === 'polygons' ? 0.5 : 1
+        groupName === 'polygons' ? defaultOpacity / 2 : defaultOpacity
     ]
 }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import { computed, ref, watch } from 'vue';
-import { ColorMap, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
+import { ColorMap, Dataset, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 import NumericInput from '../NumericInput.vue';
@@ -13,6 +13,7 @@ const panelStore = usePanelStore();
 const layerStore = useLayerStore();
 
 
+const emit = defineEmits(["toggleMenu"]);
 const props = defineProps<{
   layer: Layer;
 }>();
@@ -65,6 +66,7 @@ const dataRange = computed(() => {
 })
 
 async function init() {
+    emit('toggleMenu', showMenu.value)
     if (!showMenu.value) cancel()
     else{
         getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
@@ -307,6 +309,7 @@ function deleteStyle() {
 function refreshLayer() {
     // refresh layer in projectStore.availableDatasets
     // so any new layer copies will have the correct default style
+    if (!projectStore.availableDatasets) return
     Promise.all(projectStore.availableDatasets.map(async (dataset: Dataset) => {
         if (dataset.id === props.layer.dataset.id) {
             dataset.layers = await getDatasetLayers(dataset.id);
@@ -315,7 +318,7 @@ function refreshLayer() {
             // so closing and opening the style menu will have the correct default style
             Promise.all(layerStore.selectedLayers.map(async (layer: Layer) => {
                 if (layer.id === props.layer.id) {
-                    const updated = dataset.layers.find((l) => l.id === props.layer.id)
+                    const updated = dataset.layers?.find((l) => l.id === props.layer.id)
                     if (updated) layer.default_style = updated.default_style
                 }
                 return layer
@@ -355,8 +358,8 @@ watch(showMenu, init)
                 icon="mdi-cog"
             />
         </template>
-        <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="450">
-            <v-card-subtitle class="pr-10 py-3" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
+        <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="500">
+            <div class="px-4 py-2" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
                 Edit Style
                 <span class="secondary-text">(Layer: {{ layer.name }})</span>
 
@@ -365,10 +368,10 @@ watch(showMenu, init)
                     style="position: absolute; top: 10px; right: 5px;"
                     @click="cancel"
                 />
-            </v-card-subtitle>
+            </div>
 
             <v-card-text class="pa-2">
-                <div class="d-flex mb-1" style="align-items: center; column-gap: 5px;">
+                <div class="d-flex mb-1 mt-4" style="align-items: center; column-gap: 5px;">
                     <v-select
                         v-model="currentLayerStyle"
                         :items="availableStyles"
@@ -406,12 +409,12 @@ watch(showMenu, init)
                 <table class="aligned-controls">
                     <tbody>
                         <tr v-if="props.layer.frames.length > 1">
-                            <td><v-label>Default frame</v-label></td>
+                            <td><v-label>Default Frame</v-label></td>
                             <td>
                                 <NumericInput
                                     :model="currentStyleSpec.default_frame + 1"
                                     :max="props.layer.frames.length"
-                                    @update="(v) => currentStyleSpec.default_frame = v - 1"
+                                    @update="(v) => {if (currentStyleSpec) currentStyleSpec.default_frame = v - 1}"
                                 />
                             </td>
                         </tr>
@@ -423,14 +426,14 @@ watch(showMenu, init)
                                     :min="0"
                                     :max="1"
                                     :step="0.1"
-                                    @update="(v) => currentStyleSpec.opacity = v"
+                                    @update="(v) => {if (currentStyleSpec) currentStyleSpec.opacity = v}"
                                 />
                             </td>
                         </tr>
                     </tbody>
                 </table>
 
-                <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact" color="primary">
+                <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact" color="primary" class="mt-2">
                     <v-tab value="color">
                         <v-icon icon="mdi-palette" class="mr-1" :color="tab === 'color' ? 'primary' : 'gray'"/>
                         Color
@@ -451,7 +454,7 @@ watch(showMenu, init)
                     <v-window-item value="color" class="pa-2">
                         <div v-if="showRasterOptions">
                             <v-label class="secondary-text px-3">Raster Options</v-label>
-                            <v-divider class="mb-2"/>
+                            <v-divider class="mt-1 mb-2"/>
                             <table class="aligned-controls">
                                 <tbody>
                                     <tr>
@@ -508,8 +511,8 @@ watch(showMenu, init)
                                                             <template v-slot:append>
                                                                 <colormap-preview
                                                                     :colormap="item.raw"
-                                                                    :discrete="group.colormap.discrete || false"
-                                                                    :nColors="group.colormap.n_colors || -1"
+                                                                    :discrete="group.colormap?.discrete || false"
+                                                                    :nColors="group.colormap?.n_colors || -1"
                                                                 />
                                                             </template>
                                                         </v-list-item>
@@ -522,22 +525,21 @@ watch(showMenu, init)
                                                             :discrete="group.colormap.discrete || false"
                                                             :nColors="group.colormap.n_colors || -1"
                                                         />
-                                                        <span v-else>Select Colormap</span>
+                                                        <span v-else class="secondary-text">Select Colormap</span>
                                                     </template>
                                                 </v-select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Colormap class</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'secondary-text'">Colormap class</v-label></td>
                                             <td>
                                                 <v-btn-toggle
-                                                    :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
+                                                    :model-value="group.colormap?.discrete ? 'discrete' : 'continuous'"
                                                     density="compact"
-                                                    color="primary"
                                                     variant="outlined"
                                                     divided
                                                     mandatory
-                                                    :disabled="!group.visible || !group.colormap.markers"
+                                                    :disabled="!group.visible || !group.colormap?.markers"
                                                     @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                 >
                                                     <v-btn :value="'discrete'">Discrete</v-btn>
@@ -546,26 +548,27 @@ watch(showMenu, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap.markers && group.colormap?.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap?.markers && group.colormap?.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
                                             <td>
                                                 <NumericInput
-                                                    :model="group.colormap.n_colors"
+                                                    :model="group.colormap?.n_colors"
                                                     :min="2"
                                                     :max="30"
-                                                    :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
-                                                    @update="(v) => group.colormap.n_colors = v"
+                                                    :disabled="!group.visible || !group.colormap?.markers || !group.colormap?.discrete"
+                                                    @update="(v) => {if (group.colormap) group.colormap.n_colors = v}"
                                                 />
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Range</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'secondary-text'">Range</v-label></td>
                                             <td>
                                                 <NumericInput
-                                                    :rangeModel="group.colormap.range"
+                                                    v-if="dataRange"
+                                                    :rangeModel="group.colormap?.range"
                                                     :min="dataRange[0]"
                                                     :max="dataRange[1]"
-                                                    :disabled="!group.visible || !group.colormap.markers"
-                                                    @update="(v) => group.colormap.range = v"
+                                                    :disabled="!group.visible || !group.colormap?.markers"
+                                                    @update="(v) => {if (group.colormap) group.colormap.range = v}"
                                                 />
                                             </td>
                                         </tr>
@@ -575,7 +578,7 @@ watch(showMenu, init)
                         </div>
                         <div v-if="showVectorOptions">
                             <v-label class="secondary-text px-3">Vector Options</v-label>
-                            <v-divider class="mb-2"/>
+                            <v-divider class="mt-1 mb-2"/>
                             <table class="aligned-controls">
                                 <tbody>
                                     <tr>
@@ -620,7 +623,6 @@ watch(showMenu, init)
                                                     <v-btn-toggle
                                                         :model-value="group.single_color ? 'single_color' : 'colormap'"
                                                         density="compact"
-                                                        color="primary"
                                                         variant="outlined"
                                                         divided
                                                         mandatory
@@ -713,7 +715,7 @@ watch(showMenu, init)
                                                                 :discrete="group.colormap.discrete || false"
                                                                 :nColors="group.colormap.n_colors || -1"
                                                             />
-                                                            <span v-else>Select Colormap</span>
+                                                            <span v-else class="secondary-text">Select Colormap</span>
                                                         </template>
                                                     </v-select>
                                                 </td>
@@ -724,7 +726,6 @@ watch(showMenu, init)
                                                     <v-btn-toggle
                                                         :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
                                                         density="compact"
-                                                        color="primary"
                                                         variant="outlined"
                                                         divided
                                                         mandatory
@@ -744,7 +745,7 @@ watch(showMenu, init)
                                                         :min="2"
                                                         :max="30"
                                                         :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
-                                                        @update="(v) => group.colormap.n_colors = v"
+                                                        @update="(v) => {if (group.colormap) group.colormap.n_colors = v}"
                                                     />
                                                 </td>
                                             </tr>
@@ -758,7 +759,6 @@ watch(showMenu, init)
                                                         <v-btn-toggle
                                                             :model-value="group.colormap.null_color === 'transparent' ? 'transparent' : '#000000'"
                                                             density="compact"
-                                                            color="primary"
                                                             variant="outlined"
                                                             divided
                                                             mandatory
@@ -801,12 +801,12 @@ watch(showMenu, init)
                     <v-window-item value="size" class="pa-2">
                         <div v-if="showRasterOptions">
                             <v-label class="secondary-text px-3">Raster Options</v-label>
-                            <v-divider class="mb-2"/>
+                            <v-divider class="mt-1 mb-2"/>
                             <v-label class="secondary-text px-3">Size options do not apply to raster data.</v-label>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-label class="secondary-text px-3">Vector Options</v-label>
-                            <v-divider class="mb-2"/>
+                            <v-divider class="mt-1 mb-2"/>
                             <table class="aligned-controls">
                                 <tbody>
                                     <tr>
@@ -840,12 +840,11 @@ watch(showMenu, init)
                                     </tr>
                                     <template v-for="group in currentStyleSpec.sizes.filter((c) => c.name === currentGroups['size'])">
                                         <tr>
-                                            <td><v-label>Size choice</v-label></td>
+                                            <td><v-label>Size Choice</v-label></td>
                                             <td>
                                                 <v-btn-toggle
                                                 :model-value="group.single_size !== undefined ? 'single_size' : 'range'"
                                                 density="compact"
-                                                color="primary"
                                                 variant="outlined"
                                                 divided
                                                 mandatory
@@ -875,7 +874,7 @@ watch(showMenu, init)
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td :class="vectorProperties && vectorProperties[group.name] ? '' : 'secondary-text'"><v-label>Size by property</v-label></td>
+                                            <td :class="vectorProperties && vectorProperties[group.name] ? '' : 'secondary-text'"><v-label>Size by Property</v-label></td>
                                             <td>
                                                 <v-select
                                                     v-model="group.size_range.size_by"
@@ -914,17 +913,16 @@ watch(showMenu, init)
                                                 <NumericInput
                                                     :rangeModel="[group.size_range.minimum, group.size_range.maximum]"
                                                     :disabled="!group.size_range.size_by"
-                                                    @update="([min, max]) => {group.size_range.minimum = min; group.size_range.maximum = max;}"
+                                                    @update="([min, max]) => {if (group.size_range) {group.size_range.minimum = min; group.size_range.maximum = max;}}"
                                                 />
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td :class="group.size_range.size_by ? '' : 'secondary-text'"><v-label>Null values</v-label></td>
+                                            <td :class="group.size_range.size_by ? '' : 'secondary-text'"><v-label>Null Values</v-label></td>
                                             <td>
                                                 <v-btn-toggle
                                                     :model-value="group.size_range.null_size?.transparency ? 'transparent' : 1"
                                                     density="compact"
-                                                    color="primary"
                                                     variant="outlined"
                                                     divided
                                                     mandatory
@@ -940,14 +938,14 @@ watch(showMenu, init)
                                                 <NumericInput
                                                     v-if="group.size_range.null_size && !group.size_range.null_size.transparency"
                                                     :model="group.size_range.null_size.size"
-                                                    @update="(v) => group.size_range.null_size.size = v"
+                                                    @update="(v) => {if (group.size_range?.null_size) group.size_range.null_size.size = v}"
                                                 />
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>
                                                 <v-label>
-                                                    Zoom scaling
+                                                    Zoom Scaling
                                                     <v-icon
                                                         icon="mdi-information-outline"
                                                         color="primary"
@@ -974,12 +972,12 @@ watch(showMenu, init)
                     <v-window-item value="filters" class="pa-2">
                         <div v-if="showRasterOptions">
                             <v-label class="secondary-text px-3">Raster Options</v-label>
-                            <v-divider class="mb-2"/>
+                            <v-divider class="mt-1 mb-2"/>
                             <v-label class="secondary-text px-3">Filter options do not apply to raster data.</v-label>
                         </div>
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
-                            <v-divider class="mb-2"/>
+                            <v-divider class="mt-1 mb-2"/>
                             <v-btn color="primary" @click="currentStyleSpec.filters.push({include: true, transparency: true})" width="100%">
                                 <v-icon icon="mdi-plus"/>
                                 Add Filter
@@ -1018,7 +1016,6 @@ watch(showMenu, init)
                                                             v-model="filter.filter_by"
                                                             :items="vectorProperties['all']"
                                                             placeholder="Select Property"
-                                                            label="Property"
                                                             item-title="name"
                                                             item-value="name"
                                                             density="compact"
@@ -1049,7 +1046,6 @@ watch(showMenu, init)
                                                             <v-btn-toggle
                                                                 :model-value="filter.range ? 'range' : 'single'"
                                                                 density="compact"
-                                                                color="primary"
                                                                 variant="outlined"
                                                                 divided
                                                                 mandatory
@@ -1102,7 +1098,6 @@ watch(showMenu, init)
                                                             <v-btn-toggle
                                                                 :model-value="filter.include ? 'include' : 'exclude'"
                                                                 density="compact"
-                                                                color="primary"
                                                                 variant="outlined"
                                                                 divided
                                                                 mandatory
@@ -1125,7 +1120,7 @@ watch(showMenu, init)
 
             </v-card-text>
 
-            <v-card-actions style="float: right;">
+            <v-card-actions class="my-1" style="float: right;">
                 <v-btn class="secondary-button" @click="cancel">
                     <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                     Cancel
@@ -1237,6 +1232,9 @@ watch(showMenu, init)
     padding: 0px 10px;
     width: 100%;
 }
+.aligned-controls td {
+    padding-bottom: 4px;
+}
 .aligned-controls td:first-child {
     /* minimize width of first column (labels) */
     width: 1%;
@@ -1263,8 +1261,33 @@ watch(showMenu, init)
 .v-label {
     opacity: 1 !important;
 }
-.v-btn-toggle .v-btn {
+.v-btn {
+    padding: 8px 16px !important;
+}
+.v-btn-group, .v-field {
+    border: 1px solid #C9CBCE !important;
+    border-radius: 4px;
+}
+.v-btn-group .v-btn {
     text-transform: none;
-    padding: 5px;
+    border: none;
+    color: rgb(var(--v-theme-secondary-text))
+}
+.v-btn-group:has(.v-btn--disabled) {
+    border: 1px solid #C9CBCE44 !important;
+}
+.v-btn-group .v-btn--active {
+    background-color: rgb(var(--v-theme-background));
+    color: rgb(var(--v-theme-primary-text))
+}
+.v-btn-group .v-btn--active .v-btn__overlay {
+    visibility: hidden;
+}
+.v-field__outline {
+    visibility: hidden;
+}
+.v-window__container {
+    max-height: 400px;
+    overflow-y: auto;
 }
 </style>

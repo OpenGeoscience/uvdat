@@ -17,6 +17,7 @@ const filteredLayers = computed(() => {
         layer.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
 })
+const highlightRows = ref([]);
 
 function removeLayers(layers: Layer[]) {
     layerStore.selectedLayers = layerStore.selectedLayers.filter((layer: Layer) => !layers.includes(layer))
@@ -42,6 +43,11 @@ function updateFrame(layer: Layer, value: number) {
 
 function getLayerMaxFrames(layer: Layer) {
     return [...new Set(layer.frames.map((f) => f.index))].length
+}
+
+function setLayerHighlight(layer: Layer, highlight: boolean) {
+    if (highlight) highlightRows.value.push(layer)
+    else highlightRows.value = highlightRows.value.filter((v) => v != layer)
 }
 </script>
 
@@ -80,7 +86,7 @@ function getLayerMaxFrames(layer: Layer) {
                 >
                     <template #item="{ element }">
                         <div>
-                            <v-list-item class="layer">
+                            <v-list-item class="layer" :active="highlightRows.includes(element)">
                                 <template v-slot:prepend>
                                     <v-icon
                                         color="primary"
@@ -103,7 +109,7 @@ function getLayerMaxFrames(layer: Layer) {
                                         <v-icon icon="mdi-dots-horizontal"/>
                                         <v-icon :icon="element.hideFrameMenu ? 'mdi-menu-down' :'mdi-menu-up'" />
                                     </span>
-                                    <LayerStyle :layer="element" />
+                                    <LayerStyle :layer="element" @toggle-menu="(v) => setLayerHighlight(element, v)"/>
                                     <span class="v-icon material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>
@@ -142,6 +148,9 @@ function getLayerMaxFrames(layer: Layer) {
     padding: 0px 4px !important;
     position: relative;
     min-height: 0 !important;
+}
+.layer.v-list-item--active {
+    background-color: rgba(var(--v-theme-primary), 0.1);
 }
 .layer .v-list-item__prepend .v-list-item__spacer,
 .layer .v-list-item__append .v-list-item__spacer {

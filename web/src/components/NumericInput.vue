@@ -25,7 +25,15 @@ const precision = computed(() => {
 })
 
 function blur() {
-    document.activeElement.blur()
+    const activeElement = document.activeElement as HTMLElement
+    if (activeElement) activeElement.blur()
+}
+
+function getInputWidth(value: number) {
+    let width = 50;
+    width += value.toPrecision(precision.value + 1).length * 8;
+    width += precision.value * 10;
+    return width + 'px';
 }
 
 function updateValue(value: number) {
@@ -67,10 +75,11 @@ function updateRange(lower: number, upper: number) {
                 :max="props.max"
                 :step="props.step"
                 :precision="precision"
+                :style="{width: getInputWidth(props.model)}"
                 variant="outlined"
                 controlVariant="stacked"
                 hide-details
-                @update:model-value="(v: string) => updateValue(parseFloat(v))"
+                @update:model-value="updateValue"
                 @keydown.enter="blur()"
             />
         </template>
@@ -93,10 +102,11 @@ function updateRange(lower: number, upper: number) {
                 :max="props.rangeModel[1]"
                 :step="props.step"
                 :precision="precision"
+                :style="{width: getInputWidth(props.rangeModel[0])}"
                 variant="outlined"
                 controlVariant="stacked"
                 hide-details
-                @update:model-value="(v) => updateRange(v, props.rangeModel[1])"
+                @update:model-value="(v) => {if (props.rangeModel) updateRange(v, props.rangeModel[1])}"
                 @keydown.enter="blur()"
             />
         </template>
@@ -107,10 +117,11 @@ function updateRange(lower: number, upper: number) {
                 :max="props.max"
                 :step="props.step"
                 :precision="precision"
+                :style="{width: getInputWidth(props.rangeModel[1])}"
                 variant="outlined"
                 controlVariant="stacked"
                 hide-details
-                @update:model-value="(v) => updateRange(props.rangeModel[0], v)"
+                @update:model-value="(v) => {if (props.rangeModel) updateRange(props.rangeModel[0], v)}"
                 @keydown.enter="blur()"
             />
         </template>
