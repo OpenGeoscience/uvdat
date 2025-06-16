@@ -2,13 +2,14 @@
 import _ from 'lodash';
 import { computed, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
-import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle } from '@/api/rest';
+import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 
-import { useStyleStore, useProjectStore, usePanelStore } from '@/store';
+import { useStyleStore, useProjectStore, usePanelStore, useLayerStore } from '@/store';
 const styleStore = useStyleStore();
 const projectStore = useProjectStore();
 const panelStore = usePanelStore();
+const layerStore = useLayerStore();
 
 
 const props = defineProps<{
@@ -65,11 +66,14 @@ const dataRange = computed(() => {
 async function init() {
     if (!showMenu.value) cancel()
     else{
-        if (!availableStyles.value) availableStyles.value = await getLayerStyles(props.layer.id)
+        getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
         if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
             currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style));  // deep copy
             currentStyleSpec.value = {...props.layer.default_style.style_spec}
-        } else currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
+        } else {
+            currentLayerStyle.value = {name: 'None', is_default: true};
+            currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
+        }
         fetchRasterBands()
     }
 }
@@ -255,6 +259,7 @@ function save() {
             newNameMode.value = undefined;
             // update other styles in case default overriden
             getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+            refreshLayer()
         }
     })
 }
@@ -274,6 +279,7 @@ function saveAsNew() {
             newNameMode.value = undefined;
             // update other styles in case default overriden
             getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
+            refreshLayer()
         }
     })
 }
@@ -293,9 +299,31 @@ function deleteStyle() {
                     props.layer.frames[props.layer.current_frame].raster
                 )}
             }
+            refreshLayer()
             showDeleteConfirmation.value = false;
         })
     })
+}
+
+function refreshLayer() {
+    // refresh layer in projectStore.availableDatasets
+    // so any new layer copies will have the correct default style
+    Promise.all(projectStore.availableDatasets.map(async (dataset: Dataset) => {
+        if (dataset.id === props.layer.dataset.id) {
+            dataset.layers = await getDatasetLayers(dataset.id);
+
+            // refresh layer in layerStore.selectedLayers
+            // so closing and opening the style menu will have the correct default style
+            Promise.all(layerStore.selectedLayers.map(async (layer: Layer) => {
+                if (layer.id === props.layer.id) {
+                    const updated = dataset.layers.find((l) => l.id === props.layer.id)
+                    if (updated) layer.default_style = updated.default_style
+                }
+                return layer
+            })).then((layers) => layerStore.selectedLayers = layers)
+        }
+        return dataset;
+    })).then((datasets) => projectStore.availableDatasets = datasets);
 }
 
 watch(() => panelStore.draggingPanel, () => {
