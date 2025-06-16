@@ -1403,6 +1403,10 @@ watch(showMenu, init)
                             autofocus
                             :placeholder="newNameMode === 'update' ? currentLayerStyle.name : ''"
                             :rules="[() => !availableStyles?.map((s) => s.name).includes(newName) || `Style ''${newName}'' already exists.`]"
+                            @keydown.enter="() => {if (newName) {
+                                if (newNameMode === 'update') {save()} else {saveAsNew()}
+                            }}"
+                            @keydown.escape="newNameMode = undefined; newName = undefined"
                         />
                     </v-card-text>
 
