@@ -4,6 +4,7 @@ import { computed, ref } from "vue";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
+import NumericInput from '../NumericInput'
 
 import { useLayerStore } from "@/store";
 import _ from "lodash";
@@ -29,7 +30,6 @@ function setVisibility(layers: Layer[], visible=true) {
 }
 
 function updateFrame(layer: Layer, value: number) {
-    value = value - 1;  // slider values are 1-indexed
     _.debounce(() => {
         layerStore.selectedLayers = layerStore.selectedLayers.map((l: Layer) => {
             if (l.id === layer.id && l.copy_id === layer.copy_id) {
@@ -42,14 +42,6 @@ function updateFrame(layer: Layer, value: number) {
 
 function getLayerMaxFrames(layer: Layer) {
     return [...new Set(layer.frames.map((f) => f.index))].length
-}
-
-function getFrameInputWidth(layer: Layer) {
-    // With a minimum of 40 pixels, add 10 pixels for each digit shown in the input
-    let width = 40;
-    width += layer.current_frame.toString().length * 10;
-    width += layer.frames.length.toString().length * 10;
-    return width + 'px';
 }
 </script>
 
@@ -118,39 +110,11 @@ function getFrameInputWidth(layer: Layer) {
                                 </template>
                             </v-list-item>
                             <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">
-                                <v-slider
-                                    :model-value="element.current_frame + 1"
+                                <NumericInput
+                                    :model="element.current_frame + 1"
                                     :max="getLayerMaxFrames(element)"
-                                    min="1"
-                                    color="primary"
-                                    show-ticks="always"
-                                    tick-size="6"
-                                    thumb-size="15"
-                                    track-size="8"
-                                    step="1"
-                                    hide-details
-                                    type="number"
-                                    @update:modelValue="(value: number) => updateFrame(element, value)"
-                                >
-                                <template v-slot:append>
-                                    <v-text-field
-                                        :model-value="element.current_frame + 1"
-                                        :max="getLayerMaxFrames(element)"
-                                        min="1"
-                                        density="compact"
-                                        class="number-input"
-                                        :style="{'width': getFrameInputWidth(element)}"
-                                        type="number"
-                                        hide-details
-                                        single-line
-                                        @update:modelValue="(value: string) => updateFrame(element, parseInt(value))"
-                                    >
-                                        <template v-slot:default>
-                                            {{ element.current_frame + 1 }}/{{ getLayerMaxFrames(element) }}
-                                        </template>
-                                    </v-text-field>
-                                    </template>
-                                </v-slider>
+                                    @update="(v) => updateFrame(element, v - 1)"
+                                />
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>
                                         <i>Frame:</i> {{ element.frames[element.current_frame].name }}
@@ -198,14 +162,6 @@ function getFrameInputWidth(layer: Layer) {
 }
 .frame-menu .v-input__append {
     margin-left: 15px !important;
-}
-.number-input .v-field__input {
-    padding: 0px 5px;
-    min-height: 0;
-}
-.number-input .v-field__input input {
-    /* make default input number transparent */
-    color: rgba(0, 0, 0, 0);
 }
 .v-selection-control--density-default {
   --v-selection-control-size: 20px!important;

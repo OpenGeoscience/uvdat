@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
+import NumericInput from '../NumericInput.vue';
 
 import { useStyleStore, useProjectStore, usePanelStore, useLayerStore } from '@/store';
 const styleStore = useStyleStore();
@@ -407,64 +408,23 @@ watch(showMenu, init)
                         <tr v-if="props.layer.frames.length > 1">
                             <td><v-label>Default frame</v-label></td>
                             <td>
-                                <v-slider
-                                    :model-value="currentStyleSpec.default_frame + 1"
+                                <NumericInput
+                                    :model="currentStyleSpec.default_frame + 1"
                                     :max="props.layer.frames.length"
-                                    min="1"
-                                    step="1"
-                                    color="primary"
-                                    hide-details
-                                    type="number"
-                                    @update:model-value="(value: number) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = value - 1}"
-                                >
-                                    <template v-slot:append>
-                                        <v-text-field
-                                            :model-value="currentStyleSpec.default_frame + 1"
-                                            :max="props.layer.frames.length"
-                                            min="1"
-                                            step="1"
-                                            density="compact"
-                                            class="number-input"
-                                            style="width: 60px"
-                                            type="number"
-                                            hide-details
-                                            single-line
-                                            @update:model-value="(value: string) => {if (!currentStyleSpec) return; currentStyleSpec.default_frame = parseInt(value) - 1}"
-                                        >
-                                        </v-text-field>
-                                    </template>
-                                </v-slider>
+                                    @update="(v) => currentStyleSpec.default_frame = v - 1"
+                                />
                             </td>
                         </tr>
                         <tr>
                             <td><v-label color="primary-text">Opacity</v-label></td>
                             <td>
-                                <v-slider
-                                    v-model="currentStyleSpec.opacity"
-                                    max="1"
-                                    min="0"
-                                    step="0.1"
-                                    color="primary"
-                                    hide-details
-                                    type="number"
-                                >
-                                    <template v-slot:append>
-                                        <v-text-field
-                                            :model-value="currentStyleSpec.opacity"
-                                            max="1"
-                                            min="0"
-                                            step="0.1"
-                                            density="compact"
-                                            class="number-input"
-                                            style="width: 60px"
-                                            type="number"
-                                            hide-details
-                                            single-line
-                                            @update:model-value="(v) => {if (currentStyleSpec) currentStyleSpec.opacity = parseFloat(v)}"
-                                        >
-                                        </v-text-field>
-                                    </template>
-                                </v-slider>
+                                <NumericInput
+                                    :model="currentStyleSpec.opacity"
+                                    :min="0"
+                                    :max="1"
+                                    :step="0.1"
+                                    @update="(v) => currentStyleSpec.opacity = v"
+                                />
                             </td>
                         </tr>
                     </tbody>
@@ -588,82 +548,26 @@ watch(showMenu, init)
                                         <tr>
                                             <td><v-label :class="group.visible && group.colormap.markers && group.colormap?.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
                                             <td>
-                                                <v-slider
-                                                    v-model="group.colormap.n_colors"
-                                                    max="30"
-                                                    min="2"
-                                                    step="1"
-                                                    color="primary"
-                                                    thumb-size="15"
-                                                    track-size="8"
-                                                    hide-details
-                                                    type="number"
+                                                <NumericInput
+                                                    :model="group.colormap.n_colors"
+                                                    :min="2"
+                                                    :max="30"
                                                     :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
-                                                >
-                                                    <template v-slot:append>
-                                                        <v-text-field
-                                                            :model-value="group.colormap.n_colors"
-                                                            max="30"
-                                                            min="2"
-                                                            step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            style="width: 60px"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(v) => {if (group.colormap) group.colormap.n_colors = parseFloat(v)}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                </v-slider>
+                                                    @update="(v) => group.colormap.n_colors = v"
+                                                />
                                             </td>
                                         </tr>
                                         <tr>
                                             <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Range</v-label></td>
-                                            <v-range-slider
-                                                v-if="group.colormap?.range && dataRange"
-                                                v-model="group.colormap.range"
-                                                color="primary"
-                                                :min="dataRange[0]"
-                                                :max="dataRange[1]"
-                                                step="1"
-                                                strict
-                                                :disabled="!group.visible || !group.colormap.markers"
-                                            >
-                                                <template v-slot:prepend>
-                                                    <v-text-field
-                                                        v-if="group.colormap.range"
-                                                        :model-value="group.colormap.range[0]"
-                                                        :min="dataRange[0]"
-                                                        :max="group.colormap.range[1]"
-                                                        :step="1"
-                                                        density="compact"
-                                                        class="number-input"
-                                                        type="number"
-                                                        hide-details
-                                                        single-line
-                                                        @update:model-value="(v) => {if (group.colormap?.range) group.colormap.range[0] = parseInt(v)}"
-                                                    >
-                                                    </v-text-field>
-                                                </template>
-                                                <template v-slot:append>
-                                                    <v-text-field
-                                                        v-if="group.colormap.range"
-                                                        :model-value="group.colormap.range[1]"
-                                                        :min="group.colormap.range[0]"
-                                                        :max="dataRange[1]"
-                                                        :step="1"
-                                                        density="compact"
-                                                        class="number-input"
-                                                        type="number"
-                                                        hide-details
-                                                        single-line
-                                                        @update:model-value="(v) => {if (group.colormap?.range) group.colormap.range[1] = parseInt(v)}"
-                                                    >
-                                                    </v-text-field>
-                                                </template>
-                                            </v-range-slider>
+                                            <td>
+                                                <NumericInput
+                                                    :rangeModel="group.colormap.range"
+                                                    :min="dataRange[0]"
+                                                    :max="dataRange[1]"
+                                                    :disabled="!group.visible || !group.colormap.markers"
+                                                    @update="(v) => group.colormap.range = v"
+                                                />
+                                            </td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -833,37 +737,15 @@ watch(showMenu, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.markers && group.colormap.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
                                                 <td>
-                                                    <v-slider
-                                                        v-model="group.colormap.n_colors"
-                                                        max="30"
-                                                        min="2"
-                                                        step="1"
-                                                        color="primary"
-                                                        thumb-size="15"
-                                                        track-size="8"
-                                                        hide-details
-                                                        type="number"
-                                                        :disabled="!group.visible || !group.colormap.discrete"
-                                                    >
-                                                        <template v-slot:append>
-                                                            <v-text-field
-                                                                :model-value="group.colormap.n_colors"
-                                                                max="30"
-                                                                min="2"
-                                                                step="1"
-                                                                density="compact"
-                                                                class="number-input"
-                                                                style="width: 60px"
-                                                                type="number"
-                                                                hide-details
-                                                                single-line
-                                                                @update:model-value="(v) => {if (group.colormap) group.colormap.n_colors = parseFloat(v)}"
-                                                            >
-                                                            </v-text-field>
-                                                        </template>
-                                                    </v-slider>
+                                                    <NumericInput
+                                                        :model="group.colormap.n_colors"
+                                                        :min="2"
+                                                        :max="30"
+                                                        :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
+                                                        @update="(v) => group.colormap.n_colors = v"
+                                                    />
                                                 </td>
                                             </tr>
                                             <tr>
@@ -961,7 +843,7 @@ watch(showMenu, init)
                                             <td><v-label>Size choice</v-label></td>
                                             <td>
                                                 <v-btn-toggle
-                                                :model-value="group.single_size ? 'single_size' : 'range'"
+                                                :model-value="group.single_size !== undefined ? 'single_size' : 'range'"
                                                 density="compact"
                                                 color="primary"
                                                 variant="outlined"
@@ -974,7 +856,7 @@ watch(showMenu, init)
                                             </v-btn-toggle>
                                             </td>
                                         </tr>
-                                        <tr v-if="group.single_size">
+                                        <tr v-if="group.single_size !== undefined">
                                             <td>
                                                 <v-label>Size</v-label>
                                                 <v-icon
@@ -986,93 +868,14 @@ watch(showMenu, init)
                                                 />
                                             </td>
                                             <td>
-                                                <v-slider
-                                                    :model-value="group.single_size"
-                                                    max="10"
-                                                    min="1"
-                                                    step="1"
-                                                    color="primary"
-                                                    hide-details
-                                                    type="number"
-                                                    @update:model-value="(value: number) => {group.single_size = value}"
-                                                >
-                                                    <template v-slot:append>
-                                                        <v-text-field
-                                                            :model-value="group.single_size"
-                                                            max="10"
-                                                            min="1"
-                                                            step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            style="width: 60px"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(value: string) => {group.single_size = parseInt(value)}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                </v-slider>
+                                                <NumericInput
+                                                    :model="group.single_size"
+                                                    @update="(v) => group.single_size = v"
+                                                />
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td>
-                                                <v-label>Size Range</v-label>
-                                                <v-icon
-                                                    v-if="group.name !== 'all'"
-                                                    icon="mdi-information-outline"
-                                                    color="primary"
-                                                    size="small"
-                                                    class="ml-2"
-                                                    v-tooltip="group.name === 'polygons' ? 'Border thickness' : group.name === 'lines' ? 'Line thickness' : 'Point radius'"
-                                                />
-                                            </td>
-                                            <td>
-                                                <v-range-slider
-                                                    :model-value="[group.size_range.minimum, group.size_range.maximum]"
-                                                    color="primary"
-                                                    :min="1"
-                                                    :max="10"
-                                                    step="1"
-                                                    strict
-                                                    hide-details
-                                                    @update:model-value="([min, max]) => {if (!group.size_range) return; group.size_range.minimum = min; group.size_range.maximum = max;}"
-                                                >
-                                                    <template v-slot:prepend>
-                                                        <v-text-field
-                                                            :model-value="group.size_range.minimum"
-                                                            :min="1"
-                                                            :max="group.size_range.maximum"
-                                                            :step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(v) => {if (group.size_range) group.size_range.minimum = parseInt(v)}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                    <template v-slot:append>
-                                                        <v-text-field
-                                                            :model-value="group.size_range.maximum"
-                                                            :min="group.size_range.minimum"
-                                                            :max="10"
-                                                            :step="1"
-                                                            density="compact"
-                                                            class="number-input"
-                                                            type="number"
-                                                            hide-details
-                                                            single-line
-                                                            @update:model-value="(v) => {if (group.size_range) group.size_range.maximum = parseInt(v)}"
-                                                        >
-                                                        </v-text-field>
-                                                    </template>
-                                                </v-range-slider>
-                                            </td>
-                                        </tr>
-                                        <tr v-if="group.size_range && vectorProperties && vectorProperties[group.name]">
-                                            <td><v-label>Size by property</v-label></td>
+                                            <td :class="vectorProperties && vectorProperties[group.name] ? '' : 'secondary-text'"><v-label>Size by property</v-label></td>
                                             <td>
                                                 <v-select
                                                     v-model="group.size_range.size_by"
@@ -1081,6 +884,7 @@ watch(showMenu, init)
                                                     item-value="name"
                                                     density="compact"
                                                     variant="outlined"
+                                                    :disabled="!group.size_range || !vectorProperties || !vectorProperties[group.name]"
                                                     placeholder="Select property"
                                                     hide-details
                                                 >
@@ -1094,38 +898,50 @@ watch(showMenu, init)
                                                 </v-select>
                                             </td>
                                         </tr>
-                                        <tr v-if="group.size_range && group.size_range.size_by">
-                                            <td><v-label>Null values</v-label></td>
+                                        <tr v-if="group.size_range">
+                                            <td :class="group.size_range.size_by ? '' : 'secondary-text'">
+                                                <v-label>Size Range</v-label>
+                                                <v-icon
+                                                    v-if="group.name !== 'all'"
+                                                    icon="mdi-information-outline"
+                                                    color="primary"
+                                                    size="small"
+                                                    class="ml-2"
+                                                    v-tooltip="group.name === 'lines' ? 'Line thickness' : 'Point radius'"
+                                                />
+                                            </td>
                                             <td>
-                                                <div class="d-flex" style="align-items: center">
-                                                    <v-btn-toggle
-                                                        :model-value="group.size_range.null_size?.transparency ? 'transparent' : 1"
-                                                        density="compact"
-                                                        color="primary"
-                                                        variant="outlined"
-                                                        divided
-                                                        mandatory
-                                                        @update:model-value="(value: string | number) => {if (group.size_range) {
-                                                            if (value === 'transparent') {group.size_range.null_size = {transparency: true, size: 0}}
-                                                            else {group.size_range.null_size = {transparency: false, size: value as number}}
-                                                        }}"
-                                                    >
-                                                        <v-btn :value="'transparent'">Transparent</v-btn>
-                                                        <v-btn :value="1">Size</v-btn>
-                                                    </v-btn-toggle>
-                                                    <v-text-field
-                                                        v-if="group.size_range.null_size && !group.size_range.null_size.transparency"
-                                                        :model-value="group.size_range.null_size.size"
-                                                        :min="1"
-                                                        :max="10"
-                                                        :step="1"
-                                                        density="compact"
-                                                        type="number"
-                                                        hide-details
-                                                        single-line
-                                                        @update:model-value="(v) => {if (group.size_range?.null_size) group.size_range.null_size.size = parseInt(v)}"
-                                                    />
-                                                </div>
+                                                <NumericInput
+                                                    :rangeModel="[group.size_range.minimum, group.size_range.maximum]"
+                                                    :disabled="!group.size_range.size_by"
+                                                    @update="([min, max]) => {group.size_range.minimum = min; group.size_range.maximum = max;}"
+                                                />
+                                            </td>
+                                        </tr>
+                                        <tr v-if="group.size_range">
+                                            <td :class="group.size_range.size_by ? '' : 'secondary-text'"><v-label>Null values</v-label></td>
+                                            <td>
+                                                <v-btn-toggle
+                                                    :model-value="group.size_range.null_size?.transparency ? 'transparent' : 1"
+                                                    density="compact"
+                                                    color="primary"
+                                                    variant="outlined"
+                                                    divided
+                                                    mandatory
+                                                    :disabled="!group.size_range.size_by"
+                                                    @update:model-value="(value: string | number) => {if (group.size_range) {
+                                                        if (value === 'transparent') {group.size_range.null_size = {transparency: true, size: 0}}
+                                                        else {group.size_range.null_size = {transparency: false, size: value as number}}
+                                                    }}"
+                                                >
+                                                    <v-btn :value="'transparent'">Transparent</v-btn>
+                                                    <v-btn :value="1">Size</v-btn>
+                                                </v-btn-toggle>
+                                                <NumericInput
+                                                    v-if="group.size_range.null_size && !group.size_range.null_size.transparency"
+                                                    :model="group.size_range.null_size.size"
+                                                    @update="(v) => group.size_range.null_size.size = v"
+                                                />
                                             </td>
                                         </tr>
                                         <tr>
@@ -1252,75 +1068,20 @@ watch(showMenu, init)
                                                         <td>Values</td>
                                                         <td>
                                                             <template v-if="property.range">
-                                                                <v-range-slider
+                                                                <NumericInput
                                                                     v-if="filter.range"
-                                                                    v-model="filter.range"
-                                                                    color="primary"
+                                                                    :rangeModel="filter.range"
                                                                     :min="property.range[0]"
                                                                     :max="property.range[1]"
-                                                                    step="1"
-                                                                    strict
-                                                                >
-                                                                    <template v-slot:prepend>
-                                                                        <v-text-field
-                                                                            v-if="filter.range"
-                                                                            :model-value="filter.range[0]"
-                                                                            :min="property.range[0]"
-                                                                            :max="filter.range[1]"
-                                                                            :step="1"
-                                                                            density="compact"
-                                                                            class="number-input"
-                                                                            type="number"
-                                                                            hide-details
-                                                                            single-line
-                                                                            @update:model-value="(v) => {if (filter?.range) filter.range[0] = parseInt(v)}"
-                                                                        >
-                                                                        </v-text-field>
-                                                                    </template>
-                                                                    <template v-slot:append>
-                                                                        <v-text-field
-                                                                            v-if="filter.range"
-                                                                            :model-value="filter.range[1]"
-                                                                            :min="filter.range[0]"
-                                                                            :max="property.range[1]"
-                                                                            :step="1"
-                                                                            density="compact"
-                                                                            class="number-input"
-                                                                            type="number"
-                                                                            hide-details
-                                                                            single-line
-                                                                            @update:model-value="(v) => {if (filter?.range) filter.range[1] = parseInt(v)}"
-                                                                        >
-                                                                        </v-text-field>
-                                                                    </template>
-                                                                </v-range-slider>
-                                                                <v-slider
+                                                                    @update="(v) => filter.range = v"
+                                                                />
+                                                                <NumericInput
                                                                     v-else-if="filter.list"
-                                                                    :model-value="filter.list[0]"
+                                                                    :model="filter.list[0]"
                                                                     :min="property.range[0]"
                                                                     :max="property.range[1]"
-                                                                    :step="1"
-                                                                    color="primary"
-                                                                    hide-details
-                                                                    type="number"
-                                                                    @update:model-value="(value: number) => {filter.list = [value]}"
-                                                                >
-                                                                    <template v-slot:append>
-                                                                        <v-text-field
-                                                                            :model-value="filter.list[0]"
-                                                                            :min="property.range[0]"
-                                                                            :max="property.range[1]"
-                                                                            :step="1"
-                                                                            density="compact"
-                                                                            class="number-input"
-                                                                            type="number"
-                                                                            hide-details
-                                                                            single-line
-                                                                            @update:model-value="(value: string) => {filter.list = [parseInt(value)]}"
-                                                                        >
-                                                                        </v-text-field>
-                                                                    </template>
-                                                                </v-slider>
+                                                                    @update="(v) => filter.list = [v]"
+                                                                />
                                                             </template>
                                                             <v-select
                                                                 v-else

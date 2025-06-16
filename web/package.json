@@ -27,7 +27,7 @@
     "vue": "^3.2.13",
     "vue-chartjs": "^5.2.0",
     "vuedraggable": "^4.1.0",
-    "vuetify": "^3.7.2"
+    "vuetify": "^3.8.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",
