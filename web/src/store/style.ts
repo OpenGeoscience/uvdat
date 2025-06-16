@@ -138,7 +138,7 @@ function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, pro
         if (sizeByProp) {
             const sortedValues = sizeByProp.values.sort((a: any, b: any) => a - b)
             if (sortedValues.length > 1) {
-                const sizeSteps = [
+                let sizeSteps = [
                     'interpolate',
                     ['linear'],
                     ['get', sizeSpec.size_range.size_by],
@@ -147,16 +147,44 @@ function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, pro
                     sortedValues[sortedValues.length - 1],
                     sizeSpec.size_range.maximum,
                 ]
+                const nullSize = sizeSpec.size_range.null_size && !sizeSpec.size_range.null_size.transparency ? sizeSpec.size_range.null_size.size : undefined
                 if (sizeSpec.zoom_scaling) {
                     const greaterSizeSteps = [...sizeSteps]
                     greaterSizeSteps[4] *= zoomScalingConstant
                     greaterSizeSteps[6] *= zoomScalingConstant
-                    return [
-                        'interpolate',
-                        ['exponential', 2],
-                        ['zoom'],
-                        12, sizeSteps,
-                        24, greaterSizeSteps,
+                    if (nullSize) {
+                        sizeSteps = [
+                            'interpolate',
+                            ['exponential', 2],
+                            ['zoom'],
+                            12, [
+                                'case',
+                                ['==', ['get', sizeSpec.size_range.size_by], null],
+                                nullSize,
+                                sizeSteps
+                            ],
+                            24, [
+                                'case',
+                                ['==', ['get', sizeSpec.size_range.size_by], null],
+                                nullSize * zoomScalingConstant,
+                                greaterSizeSteps
+                            ],
+                        ]
+                    } else {
+                        sizeSteps = [
+                            'interpolate',
+                            ['exponential', 2],
+                            ['zoom'],
+                            12, sizeSteps,
+                            24, greaterSizeSteps,
+                        ]
+                    }
+                } else if (nullSize) {
+                    sizeSteps = [
+                        'case',
+                        ['==', ['get', sizeSpec.size_range.size_by], null],
+                        nullSize,
+                        sizeSteps
                     ]
                 }
                 return sizeSteps
