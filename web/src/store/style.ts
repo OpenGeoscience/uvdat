@@ -44,7 +44,7 @@ interface NetworkStyle {
 }
 
 function colormapMarkersSubsample(colormap: ColorMap) {
-    if (colormap.discrete && colormap.n_colors) {
+    if (colormap.discrete && colormap.n_colors && colormap.markers) {
         const elements = [colormap.markers[0]];
         const totalItems = colormap.markers.length - 1;
         const interval = Math.floor(totalItems/(colormap.n_colors - 1));
@@ -58,24 +58,24 @@ function colormapMarkersSubsample(colormap: ColorMap) {
 }
 
 function getRasterTilesQuery(styleSpec: StyleSpec) {
-    let query: Record<string, any> = {bands: []}
+    let query: Record<string, any> = {}
     styleSpec.colors.forEach((colorSpec) => {
         if (colorSpec.colormap && colorSpec.visible) {
-            const colorQuery: Record<string, any> = {
-                projection: "EPSG:3857",
+            const colorQuery: Record<string, any> = {}
+            if (colorSpec.colormap.markers) {
+                if (colorSpec.colormap.range) {
+                    colorQuery.min = colorSpec.colormap.range[0];
+                    colorQuery.max = colorSpec.colormap.range[1];
+                }
+                if (colorSpec.colormap.discrete) {
+                    colorQuery.scheme = 'discrete'
+                }
+                colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap)?.map((marker) => marker.color)
             }
-            if (colorSpec.colormap.range) {
-                colorQuery.min = colorSpec.colormap.range[0];
-                colorQuery.max = colorSpec.colormap.range[1];
-            }
-            if (colorSpec.colormap.discrete) {
-                colorQuery.scheme = 'discrete'
-            }
-            colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap).map((marker) => marker.color)
-
             if (colorSpec.name === 'all') {
                 query = colorQuery
             } else {
+                if (!query.bands) query.bands = []
                 colorQuery.band = colorSpec.name.replace('Band ', '')
                 query.bands.push(colorQuery)
             }
@@ -88,32 +88,38 @@ function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<st
     const colorByProp = propsSpec.find((p) => p.name === colormap?.color_by)
     if (!colorByProp) return undefined
     let interpType: any[] = ['match']
-    let fallback = ['#000']
+    let fallback = [colormap.null_color]
+    if (colormap.null_color === 'transparent') fallback = ['#00000000']
     const markers = colormapMarkersSubsample(colormap)
     const sortedValues = colorByProp.values.sort((a: any, b: any) => a - b)
     const valueColorList: any[] = [];
-    if (
-        !colormap.discrete &&
-        sortedValues.every((v: any) => typeof(v) === 'number') &&
-        sortedValues.length > markers.length
-    ) {
-        markers.forEach((marker: Record<string, any>, i: number) => {
-            valueColorList.push(Math.round(
-                sortedValues[Math.floor(i / markers.length * sortedValues.length)]
-            ))
-            valueColorList.push(marker.color)
-        })
-        interpType = ['interpolate', ['linear']]
-        fallback = []
-    } else {
-        sortedValues.forEach((v: any, i: number) => {
-            if (typeof v === 'number') v = Math.round(v)
-            valueColorList.push(v),
-            valueColorList.push(
-                markers[Math.floor(i / sortedValues.length * markers.length)].color
-            )
-        })
+    if (markers) {
+        if (
+            !colormap.discrete &&
+            sortedValues.every((v: any) => typeof(v) === 'number') &&
+            sortedValues.length > markers.length
+        ) {
+            markers.forEach((marker: Record<string, any>, i: number) => {
+                valueColorList.push(Math.round(
+                    sortedValues[Math.floor(i / markers.length * sortedValues.length)]
+                ))
+                valueColorList.push(marker.color)
+            })
+            if (valueColorList.length) {
+                interpType = ['interpolate', ['linear']]
+                fallback = []
+            }
+        } else {
+            sortedValues.forEach((v: any, i: number) => {
+                if (typeof v === 'number') v = Math.round(v)
+                valueColorList.push(v)
+                if (markers) valueColorList.push(
+                    markers[Math.floor(i / sortedValues.length * markers.length)].color
+                )
+            })
+        }
     }
+    if (!valueColorList.length) return fallback[0]
     return [
         ...interpType,
         ['get', colormap.color_by],
@@ -236,7 +242,7 @@ export const useStyleStore = defineStore('style', () => {
                     name: 'all',
                     visible: true,
                     single_color: raster ? undefined : getDefaultColor(),
-                    colormap: raster ? {...colormaps[0], range, color_by: 'value'} : undefined,
+                    colormap: raster ? { range, color_by: 'value'} : undefined,
                 }
             ],
             sizes: [
@@ -310,7 +316,7 @@ export const useStyleStore = defineStore('style', () => {
             const colorSpec = styleSpec.colors.find((c) => ['polygons', 'all'].includes(c.name))
             if (colorSpec?.single_color) {
                 map.setPaintProperty(mapLayerId, 'fill-color', colorSpec?.single_color);
-            } else if (colorSpec?.colormap?.color_by && propsSpec) {
+            } else if (colorSpec?.colormap?.color_by && colorSpec.colormap.markers && propsSpec) {
                 map.setPaintProperty(mapLayerId, 'fill-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
             }
             const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'polygons')
@@ -323,7 +329,7 @@ export const useStyleStore = defineStore('style', () => {
             const colorSpec = styleSpec.colors.find((c) => ['lines', 'all'].includes(c.name))
             if (colorSpec?.single_color) {
                 map.setPaintProperty(mapLayerId, 'line-color', colorSpec?.single_color);
-            } else if (colorSpec?.colormap?.color_by && propsSpec) {
+            } else if (colorSpec?.colormap?.color_by && colorSpec.colormap.markers && propsSpec) {
                 map.setPaintProperty(mapLayerId, 'line-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
             }
             const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
@@ -338,7 +344,7 @@ export const useStyleStore = defineStore('style', () => {
             if (colorSpec?.single_color) {
                 map.setPaintProperty(mapLayerId, 'circle-color', colorSpec?.single_color);
                 map.setPaintProperty(mapLayerId, 'circle-stroke-color', colorSpec?.single_color);
-            } else if (colorSpec?.colormap?.color_by && propsSpec) {
+            } else if (colorSpec?.colormap?.color_by && colorSpec.colormap.markers && propsSpec) {
                 const paintProperty = getVectorColormapPaintProperty(colorSpec.colormap, propsSpec)
                 map.setPaintProperty(mapLayerId, 'circle-color', paintProperty);
                 map.setPaintProperty(mapLayerId, 'circle-stroke-color', paintProperty);

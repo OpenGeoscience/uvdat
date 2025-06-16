@@ -130,11 +130,9 @@ function setGroupColorMode(groupName: string, colorMode: string) {
         (c) => {
             if (c.name === groupName) {
                 if (colorMode === 'colormap') {
-                    const terrain = colormaps.find((colormap: ColorMap) => colormap.name === 'terrain')
-                    if (terrain && !c.colormap) return {
+                    if (!c.colormap) return {
                         ...c,
                         colormap: {
-                            ...terrain,
                             discrete: false,
                             n_colors: 5,
                             range: dataRange.value,
@@ -535,7 +533,6 @@ watch(showMenu, init)
                                             <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap</v-label></td>
                                             <td>
                                                 <v-select
-                                                    v-if="group.colormap"
                                                     :model-value="group.colormap"
                                                     :items="colormaps"
                                                     item-title="name"
@@ -558,28 +555,29 @@ watch(showMenu, init)
                                                         </v-list-item>
                                                     </template>
                                                     <template v-slot:selection="{ item }">
-                                                        <span class="pr-15">{{ item.title }}</span>
+                                                        <span class="pr-15" v-if="group.colormap?.markers">{{ item.title }}</span>
                                                         <colormap-preview
+                                                            v-if="group.colormap?.markers"
                                                             :colormap="item.raw"
                                                             :discrete="group.colormap.discrete || false"
                                                             :nColors="group.colormap.n_colors || -1"
                                                         />
+                                                        <span v-else>Select Colormap</span>
                                                     </template>
                                                 </v-select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap class</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Colormap class</v-label></td>
                                             <td>
                                                 <v-btn-toggle
-                                                    v-if="group.colormap"
                                                     :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
                                                     density="compact"
                                                     color="primary"
                                                     variant="outlined"
                                                     divided
                                                     mandatory
-                                                    :disabled="!group.visible"
+                                                    :disabled="!group.visible || !group.colormap.markers"
                                                     @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                 >
                                                     <v-btn :value="'discrete'">Discrete</v-btn>
@@ -587,8 +585,8 @@ watch(showMenu, init)
                                                 </v-btn-toggle>
                                             </td>
                                         </tr>
-                                        <tr v-if="group.colormap?.discrete">
-                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">No. of colors</v-label></td>
+                                        <tr>
+                                            <td><v-label :class="group.visible && group.colormap.markers && group.colormap?.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
                                             <td>
                                                 <v-slider
                                                     v-model="group.colormap.n_colors"
@@ -600,7 +598,7 @@ watch(showMenu, init)
                                                     track-size="8"
                                                     hide-details
                                                     type="number"
-                                                    :disabled="!group.visible"
+                                                    :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
                                                 >
                                                     <template v-slot:append>
                                                         <v-text-field
@@ -622,16 +620,16 @@ watch(showMenu, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Range</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Range</v-label></td>
                                             <v-range-slider
-                                                v-if="group.colormap && dataRange"
+                                                v-if="group.colormap?.range && dataRange"
                                                 v-model="group.colormap.range"
                                                 color="primary"
                                                 :min="dataRange[0]"
                                                 :max="dataRange[1]"
                                                 step="1"
                                                 strict
-                                                :disabled="!group.visible"
+                                                :disabled="!group.visible || !group.colormap.markers"
                                             >
                                                 <template v-slot:prepend>
                                                     <v-text-field
@@ -765,6 +763,7 @@ watch(showMenu, init)
                                                         item-value="name"
                                                         density="compact"
                                                         variant="outlined"
+                                                        placeholder="Select property"
                                                         hide-details
                                                     >
                                                         <template v-slot:item="{ props, item }">
@@ -778,12 +777,12 @@ watch(showMenu, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.color_by ? '' : 'secondary-text'">Colormap</v-label></td>
                                                 <td>
                                                     <v-select
                                                         :model-value="group.colormap"
                                                         :items="colormaps"
-                                                        :disabled="!group.visible"
+                                                        :disabled="!group.visible || !group.colormap.color_by"
                                                         item-title="name"
                                                         density="compact"
                                                         variant="outlined"
@@ -803,18 +802,20 @@ watch(showMenu, init)
                                                             </v-list-item>
                                                         </template>
                                                         <template v-slot:selection="{ item }">
-                                                            <span class="pr-15">{{ item.title }}</span>
+                                                            <span class="pr-15" v-if="group.colormap?.markers">{{ item.title }}</span>
                                                             <colormap-preview
+                                                                v-if="group.colormap?.markers"
                                                                 :colormap="item.raw"
                                                                 :discrete="group.colormap.discrete || false"
                                                                 :nColors="group.colormap.n_colors || -1"
                                                             />
+                                                            <span v-else>Select Colormap</span>
                                                         </template>
                                                     </v-select>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap class</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Colormap class</v-label></td>
                                                 <td>
                                                     <v-btn-toggle
                                                         :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
@@ -823,7 +824,7 @@ watch(showMenu, init)
                                                         variant="outlined"
                                                         divided
                                                         mandatory
-                                                        :disabled="!group.visible"
+                                                        :disabled="!group.visible || !group.colormap.markers"
                                                         @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                     >
                                                         <v-btn :value="'discrete'">Discrete</v-btn>
@@ -831,8 +832,8 @@ watch(showMenu, init)
                                                     </v-btn-toggle>
                                                 </td>
                                             </tr>
-                                            <tr v-if="group.colormap?.discrete">
-                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">No. of colors</v-label></td>
+                                            <tr>
+                                                <td><v-label :class="group.visible && group.colormap.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
                                                 <td>
                                                     <v-slider
                                                         v-model="group.colormap.n_colors"
@@ -844,7 +845,7 @@ watch(showMenu, init)
                                                         track-size="8"
                                                         hide-details
                                                         type="number"
-                                                        :disabled="!group.visible"
+                                                        :disabled="!group.visible || !group.colormap.discrete"
                                                     >
                                                         <template v-slot:append>
                                                             <v-text-field
@@ -865,8 +866,8 @@ watch(showMenu, init)
                                                     </v-slider>
                                                 </td>
                                             </tr>
-                                            <tr v-if="group.colormap && group.colormap.color_by">
-                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Null values</v-label></td>
+                                            <tr>
+                                                <td><v-label :class="group.visible && group.colormap.color_by && group.colormap.markers ? '' : 'secondary-text'">Null values</v-label></td>
                                                 <td>
                                                     <div
                                                         class="d-flex"
@@ -879,7 +880,7 @@ watch(showMenu, init)
                                                             variant="outlined"
                                                             divided
                                                             mandatory
-                                                            :disabled="!group.visible"
+                                                            :disabled="!group.visible || !group.colormap.color_by || !group.colormap.markers"
                                                             @update:model-value="(value: string) => {if (group.colormap) group.colormap.null_color = value}"
                                                         >
                                                             <v-btn :value="'transparent'">Transparent</v-btn>
@@ -1080,6 +1081,7 @@ watch(showMenu, init)
                                                     item-value="name"
                                                     density="compact"
                                                     variant="outlined"
+                                                    placeholder="Select property"
                                                     hide-details
                                                 >
                                                     <template v-slot:item="{ props, item }">
