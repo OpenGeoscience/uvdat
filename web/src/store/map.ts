@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { reactive, ref, shallowRef, watch } from 'vue';
 import { Map as MapLibreMap, MapLayerMouseEvent, Popup, Source, MapSourceDataEvent, MapDataEvent, MapStyleDataEvent } from "maplibre-gl";
-import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
+import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata, Layer } from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
+import { useLayerStore } from './layer';
 
 interface SourceDescription {
   layerId: number;
@@ -58,6 +59,9 @@ export const useMapStore = defineStore('map', () => {
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
+  const layerStore = useLayerStore();
+  // const sourceIdToFrameMap = reactive(new Map<string, LayerFrame[]>());
+
   function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
     if (obj.dataType !== 'source') {
       return;
@@ -72,6 +76,26 @@ export const useMapStore = defineStore('map', () => {
 
     // TODO: Handle raster and bounds needing to both be loaded
     sourceLoadedState.set(obj.sourceId, obj.isSourceLoaded);
+
+    // TODO: Look at layerStore.layerFrameMap, and get all source IDs for frames at the currently viewed frame index.
+    // If all frames at that index are loaded, add all frames in the next index bucket to the map, and so on.
+
+    // if (obj.isSourceLoaded) {
+    //   const { layerId, layerCopyId, frameId } = parseSourceString(obj.sourceId);
+
+    //   const layer = layerStore.selectedLayers.find((l) => l.id === layerId && l.copy_id === layerCopyId);
+    //   if (layer !== undefined) {
+    //     const frame = layer.frames.find((f) => f.id === frameId);
+    //     if (frame) {
+    //       const nextFrame: LayerFrame | undefined = layer.frames.find((f) => f.index === frame.index + 1);
+    //       if (nextFrame) {
+    //         const sourceId = layerStore.sourceIdFromLayerFrame(layer, nextFrame);
+    //         addLayerFrameToMap(nextFrame, sourceId, true);
+    //         layerStore.updateLayersShown();
+    //       }
+    //     }
+    //   }
+    // }
 
     // Sometimes requests are cancelled and a final data event with loaded==true doesn't come through,
     // so we add this extra polling system to make sure it gets set to true
@@ -363,6 +387,8 @@ export const useMapStore = defineStore('map', () => {
       return;
     }
 
+    console.log("LAYER FRAME ADDED", sourceId);
+
     if (frame.vector) {
       const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
       if (vector) mapSources.value[sourceId] = vector;
@@ -373,11 +399,14 @@ export const useMapStore = defineStore('map', () => {
     }
 
     const map = getMap();
-    map.on("data", setSourceLoaded);
-    // map.on('idle', () => {
-    //   map.off('data', setSourceLoaded);
-    //   sourceLoadedState.clear();
+    // map.on('data', (ev) => {
+    //   console.log(ev);
     // });
+    map.on("data", setSourceLoaded);
+    map.on('idle', () => {
+      map.off('data', setSourceLoaded);
+      // sourceLoadedState.clear();
+    });
   }
 
   return {

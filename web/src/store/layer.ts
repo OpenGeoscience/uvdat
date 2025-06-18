@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { LngLatBoundsLike, Source } from "maplibre-gl";
 import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, VectorData } from '@/types';
 import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
@@ -43,6 +43,28 @@ function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
 
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
+  const layerFrameMap = computed(() => {
+    const frameMap = {} as Record<string, LayerFrame[][]>;
+    selectedLayers.value.forEach((layer) => {
+      const uniqueId = uniqueLayerIdFromLayer(layer);
+      const frameBuckets: LayerFrame[][] = [];
+
+      for (let searchIndex = 0; true; searchIndex++) {
+        const frames = layer.frames.filter((f) => f.index === searchIndex);
+        if (frames.length === 0) {
+          break;
+        }
+
+        frameBuckets.push(Array.from(frames));
+      }
+
+      frameMap[uniqueId] = frameBuckets;
+    });
+
+    return frameMap;
+  });
+
+  const selectedLayerFrames = computed(() => selectedLayers.value.reduce((acc, layer) => [...acc, ...layer.frames], [] as LayerFrame[]));
 
   // Sibling store imports
   const mapStore = useMapStore();
@@ -135,11 +157,15 @@ export const useLayerStore = defineStore('layer', () => {
         const currentStyle = styleStore.selectedLayerStyles[styleId];
         currentStyle.visible = layer.visible
 
+        const currentFrame = layer.current_frame === frame.index;
+        // const currentFrame = true;
+
+
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         const sourceId = sourceIdFromLayerFrame(layer, frame);
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
-        )) {
+        ) && currentFrame) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
@@ -171,6 +197,10 @@ export const useLayerStore = defineStore('layer', () => {
 
   return {
     selectedLayers,
+    layerFrameMap,
+    selectedLayerFrames,
+    uniqueLayerIdFromLayer,
+    sourceIdFromLayerFrame,
     updateLayersShown,
     addLayer,
     getDBObjectsForSourceID,

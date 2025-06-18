@@ -31,6 +31,8 @@ watch(mapStore.sourceLoadedState, (state) => {
         uniqueLayersToSourceIds.set(uniqueId, [...current, sourceId]);
     });
 
+    // console.log('---', uniqueLayersToSourceIds);
+
     const uniqueLayerIds = uniqueLayersToSourceIds.keys();
     uniqueLayerIds.forEach((uniqueId) => {
         const loaded = uniqueLayersToSourceIds.get(uniqueId)!.every((sourceId) => mapStore.sourceLoadedState.get(sourceId));
