@@ -15,7 +15,12 @@ interface SourceDescription {
 }
 
 function parseSourceString(sourceId: string): SourceDescription {
-  const [layerId, layerCopyId, frameId, type, typeId] = sourceId.split('.');
+  const parts = sourceId.split('.');
+  if (parts.length !== 5) {
+    throw new Error(`Source string incompatible: ${sourceId}`);
+  }
+
+  const [layerId, layerCopyId, frameId, type, typeId] = parts;
   return {
     layerId: parseInt(layerId),
     layerCopyId: parseInt(layerCopyId),
@@ -55,6 +60,13 @@ export const useMapStore = defineStore('map', () => {
 
   function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
     if (obj.dataType !== 'source') {
+      return;
+    }
+
+    // Only set source loaded on sources we've created (not background sources/layers)
+    try {
+      parseSourceString(obj.sourceId);
+    } catch {
       return;
     }
 
