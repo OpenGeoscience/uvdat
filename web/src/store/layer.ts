@@ -17,6 +17,30 @@ interface SourceDBObjects {
   network?: Network,
 }
 
+
+function uniqueLayerIdFromLayer(layer: Layer) {
+  return `${layer.id}.${layer.copy_id}`;
+}
+
+function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
+  const parts: (number | string)[] = [
+    uniqueLayerIdFromLayer(layer),
+    frame.id,
+  ]
+
+  if (frame.vector) {
+    parts.push('vector');
+    parts.push(frame.vector.id);
+  } else if (frame.raster) {
+    parts.push('raster');
+    parts.push(frame.raster.id);
+  } else {
+    throw new Error("Layer frame is neither raster nor vector!");
+  }
+
+  return parts.join('.');
+}
+
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
 
@@ -104,8 +128,7 @@ export const useLayerStore = defineStore('layer', () => {
     selectedLayers.value.toReversed().forEach((layer) => {
       const multiFrame = layer.frames.length > 1;
       layer.frames.forEach((frame) => {
-        const styleId = `${layer.id}.${layer.copy_id}`
-        const sourceId = `${styleId}.${frame.id}`
+        const styleId = uniqueLayerIdFromLayer(layer);
         if (!styleStore.selectedLayerStyles[styleId]) {
           styleStore.selectedLayerStyles[styleId] = styleStore.getDefaultStyle();
         }
@@ -113,6 +136,7 @@ export const useLayerStore = defineStore('layer', () => {
         currentStyle.visible = layer.visible
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
+        const sourceId = sourceIdFromLayerFrame(layer, frame);
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         )) {

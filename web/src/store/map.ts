@@ -296,12 +296,11 @@ export const useMapStore = defineStore('map', () => {
 
   function createVectorTileSource(vector: VectorData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
-    const vectorSourceId = sourceId + '.vector.' + vector.id
-    map.addSource(vectorSourceId, {
+    map.addSource(sourceId, {
       type: "vector",
       tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
     });
-    const source = map.getSource(vectorSourceId);
+    const source = map.getSource(sourceId);
     if (source) {
       createVectorFeatureMapLayers(source, multiFrame);
       return source;
@@ -315,18 +314,20 @@ export const useMapStore = defineStore('map', () => {
       projection: 'EPSG:3857'
     }
     const tileParamString = new URLSearchParams(params).toString();
-    const tilesSourceId = sourceId + '.raster.' + raster.id;
-    map.addSource(tilesSourceId, {
+    map.addSource(sourceId, {
       type: "raster",
       tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
     });
-    const tileSource = map.getSource(tilesSourceId);
+    const tileSource = map.getSource(sourceId);
 
+    // Determine bounds
     const bounds = raster.metadata.bounds;
-    const boundsSourceId = sourceId + '.bounds.' + raster.id;
     let { xmin, xmax, ymin, ymax, srs } = bounds;
     [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
     [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+
+    // Create new sourceId for the bounds layer
+    const boundsSourceId = sourceId.replace('raster', 'bounds');
     map.addSource(boundsSourceId, {
       type: "geojson",
       data: {
