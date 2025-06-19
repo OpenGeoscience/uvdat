@@ -17,7 +17,7 @@ const filteredLayers = computed(() => {
         layer.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
 })
-const highlightRows = ref([]);
+const highlightRows = ref<Layer[]>([]);
 
 function removeLayers(layers: Layer[]) {
     layerStore.selectedLayers = layerStore.selectedLayers.filter((layer: Layer) => !layers.includes(layer))
@@ -119,7 +119,7 @@ function setLayerHighlight(layer: Layer, highlight: boolean) {
                                 <NumericInput
                                     :model="element.current_frame + 1"
                                     :max="getLayerMaxFrames(element)"
-                                    @update="(v) => updateFrame(element, v - 1)"
+                                    @update="(v: number) => updateFrame(element, v - 1)"
                                 />
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>

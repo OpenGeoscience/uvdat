@@ -14,11 +14,12 @@ const props = defineProps<{
 
 
 function draw() {
+    let markers = props.colormap.markers
+    if (!markers) return
     const ctx = canvas.value.getContext("2d");
     const rect = [0, 0, canvas.value.width, canvas.value.height]
     ctx.clearRect(...rect)
     if (props.discrete) {
-        let markers = props.colormap.markers
         if (props.nColors > 0 && props.nColors < markers.length) {
             markers = styleStore.colormapMarkersSubsample({
                 name: 'colormap',
@@ -27,15 +28,17 @@ function draw() {
                 n_colors: props.nColors,
             })
         }
-        markers.forEach((marker, index) => {
-            ctx.fillStyle = marker.color;
-            const start = canvas.value.width / markers.length * index
-            const end = canvas.value.width / markers.length * (index + 1)
-            ctx.fillRect(start, 0, end, canvas.value.height)
+        if (markers) markers.forEach((marker, index) => {
+            if (markers) {
+                ctx.fillStyle = marker.color;
+                const start = canvas.value.width / markers.length * index
+                const end = canvas.value.width / markers.length * (index + 1)
+                ctx.fillRect(start, 0, end, canvas.value.height)
+            }
         })
     } else {
         const gradient = ctx.createLinearGradient(0, 0, canvas.value.width, 0);
-        props.colormap.markers.forEach((marker) => {
+        markers.forEach((marker) => {
             gradient.addColorStop(marker.value, marker.color);
         })
         ctx.fillStyle = gradient;
