@@ -1,0 +1,35 @@
+[
+  {
+    "name": "Generated Vector Data",
+    "description": "Fake data generated via Python for style testing",
+    "category": "test",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
+        "path": "test/multiframe_vector.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Vector Test"
+      }
+    ]
+  },
+  {
+    "name": "Multiframe Generated Vector Data",
+    "description": "Fake data generated via Python for style testing",
+    "category": "test",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
+        "path": "test/multiframe_vector.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Multiframe Vector Test",
+        "frame_property": "frame"
+      }
+    ]
+  }
+]
