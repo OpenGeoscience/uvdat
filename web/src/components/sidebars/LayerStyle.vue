@@ -355,7 +355,7 @@ watch(showMenu, init)
 </script>
 
 <template>
-    <v-menu v-model="showMenu" location="end center" :close-on-content-click="false">
+    <v-menu v-model="showMenu" location="end center" :close-on-content-click="false" persistent no-click-animation>
         <template v-slot:activator="{ props }">
             <v-icon
                 v-bind="props"
@@ -439,17 +439,17 @@ watch(showMenu, init)
 
                 <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact" color="primary" class="mt-2">
                     <v-tab value="color">
-                        <v-icon icon="mdi-palette" class="mr-1" :color="tab === 'color' ? 'primary' : 'gray'"/>
+                        <v-icon icon="mdi-palette" class="mr-1" :color="tab === 'color' ? 'primary' : 'secondary-text'"/>
                         Color
                     </v-tab>
                     <v-tab value="size">
-                        <span class="material-symbols-outlined mr-1" :style="tab === 'size' ? 'color: primary' : 'color: gray'">
+                        <span class="material-symbols-outlined mr-1" :class="tab == 'size' ? 'text-primary' : 'text-secondary-text'">
                             straighten
                         </span>
                         Size
                     </v-tab>
                     <v-tab value="filters">
-                        <v-icon icon="mdi-filter" class="mr-1" :color="tab === 'filters' ? 'primary' : 'gray'"/>
+                        <v-icon icon="mdi-filter" class="mr-1" :color="tab === 'filters' ? 'primary' : 'secondary-text'"/>
                         Filters
                     </v-tab>
                 </v-tabs>
@@ -1265,7 +1265,7 @@ watch(showMenu, init)
 .v-label {
     opacity: 1 !important;
 }
-.v-btn {
+.layer-style-card .v-btn:not(.v-btn--icon) {
     padding: 8px 16px !important;
 }
 .v-btn-group, .v-field {
@@ -1281,8 +1281,8 @@ watch(showMenu, init)
     border: 1px solid #C9CBCE44 !important;
 }
 .v-btn-group .v-btn--active {
-    background-color: rgb(var(--v-theme-background));
-    color: rgb(var(--v-theme-primary-text))
+    background-color: rgb(var(--v-theme-primary));
+    color: rgb(var(--v-theme-button-text))
 }
 .v-btn-group .v-btn--active .v-btn__overlay {
     visibility: hidden;
@@ -1291,7 +1291,7 @@ watch(showMenu, init)
     visibility: hidden;
 }
 .v-window__container {
-    max-height: 400px;
+    height: 400px!important;
     overflow-y: auto;
 }
 </style>
