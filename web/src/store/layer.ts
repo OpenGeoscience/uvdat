@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { LngLatBoundsLike, Source } from "maplibre-gl";
 import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, VectorData } from '@/types';
 import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
@@ -18,8 +18,53 @@ interface SourceDBObjects {
 }
 
 
+function uniqueLayerIdFromLayer(layer: Layer) {
+  return `${layer.id}.${layer.copy_id}`;
+}
+
+function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
+  const parts: (number | string)[] = [
+    uniqueLayerIdFromLayer(layer),
+    frame.id,
+  ]
+
+  if (frame.vector) {
+    parts.push('vector');
+    parts.push(frame.vector.id);
+  } else if (frame.raster) {
+    parts.push('raster');
+    parts.push(frame.raster.id);
+  } else {
+    throw new Error("Layer frame is neither raster nor vector!");
+  }
+
+  return parts.join('.');
+}
+
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
+  const layerFrameMap = computed(() => {
+    const frameMap = {} as Record<string, LayerFrame[][]>;
+    selectedLayers.value.forEach((layer) => {
+      const uniqueId = uniqueLayerIdFromLayer(layer);
+      const frameBuckets: LayerFrame[][] = [];
+
+      for (let searchIndex = 0; true; searchIndex++) {
+        const frames = layer.frames.filter((f) => f.index === searchIndex);
+        if (frames.length === 0) {
+          break;
+        }
+
+        frameBuckets.push(Array.from(frames));
+      }
+
+      frameMap[uniqueId] = frameBuckets;
+    });
+
+    return frameMap;
+  });
+
+  const selectedLayerFrames = computed(() => selectedLayers.value.reduce((acc, layer) => [...acc, ...layer.frames], [] as LayerFrame[]));
 
   // Sibling store imports
   const mapStore = useMapStore();
@@ -80,13 +125,17 @@ export const useLayerStore = defineStore('layer', () => {
     let name = layer.name;
     let copy_id = 0;
     const existing = Object.keys(mapStore.mapSources).filter((sourceId) => {
-      const [layerId] = sourceId.split('.');
-      return parseInt(layerId) === layer.id
+      const { layerId } = mapStore.parseSourceString(sourceId);
+      return layerId === layer.id
     });
-    if (existing.length) {
-      copy_id = existing.length;
+
+    // Must divide by number of frames to get the true copy ID, since each frame is added as a map source
+    const numExisting = existing.length / layer.frames.length;
+    if (numExisting) {
+      copy_id = numExisting;
       name = `${layer.name} (${copy_id})`;
     }
+
     selectedLayers.value = [
       { ...layer, name, copy_id, visible: true, current_frame: 0 },
       ...selectedLayers.value,
@@ -101,18 +150,22 @@ export const useLayerStore = defineStore('layer', () => {
     selectedLayers.value.toReversed().forEach((layer) => {
       const multiFrame = layer.frames.length > 1;
       layer.frames.forEach((frame) => {
-        const styleId = `${layer.id}.${layer.copy_id}`
-        const sourceId = `${styleId}.${frame.id}`
+        const styleId = uniqueLayerIdFromLayer(layer);
         if (!styleStore.selectedLayerStyles[styleId]) {
           styleStore.selectedLayerStyles[styleId] = styleStore.getDefaultStyle();
         }
         const currentStyle = styleStore.selectedLayerStyles[styleId];
         currentStyle.visible = layer.visible
 
+        const currentFrame = layer.current_frame === frame.index;
+        // const currentFrame = true;
+
+
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
+        const sourceId = sourceIdFromLayerFrame(layer, frame);
         if (currentStyle.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
-        ) && layer.current_frame === frame.index) {
+        ) && currentFrame) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
@@ -144,6 +197,10 @@ export const useLayerStore = defineStore('layer', () => {
 
   return {
     selectedLayers,
+    layerFrameMap,
+    selectedLayerFrames,
+    uniqueLayerIdFromLayer,
+    sourceIdFromLayerFrame,
     updateLayersShown,
     addLayer,
     getDBObjectsForSourceID,

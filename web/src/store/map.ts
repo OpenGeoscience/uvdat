@@ -1,10 +1,35 @@
 import { defineStore } from 'pinia';
-import { ref, shallowRef, watch } from 'vue';
-import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
-import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
+import { reactive, ref, shallowRef, watch } from 'vue';
+import { Map as MapLibreMap, MapLayerMouseEvent, Popup, Source, MapSourceDataEvent, MapDataEvent, MapStyleDataEvent } from "maplibre-gl";
+import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata, Layer } from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
+import { useLayerStore } from './layer';
+
+interface SourceDescription {
+  layerId: number;
+  layerCopyId: number;
+  frameId: number;
+  type: 'vector' | 'raster';
+  typeId: number;
+}
+
+function parseSourceString(sourceId: string): SourceDescription {
+  const parts = sourceId.split('.');
+  if (parts.length !== 5) {
+    throw new Error(`Source string incompatible: ${sourceId}`);
+  }
+
+  const [layerId, layerCopyId, frameId, type, typeId] = parts;
+  return {
+    layerId: parseInt(layerId),
+    layerCopyId: parseInt(layerCopyId),
+    frameId: parseInt(frameId),
+    type: type as 'vector' | 'raster',
+    typeId: parseInt(typeId),
+  }
+}
 
 function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   // Since visibility must be 'visible' for a feature click to even be registered,
@@ -24,13 +49,66 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   return opaque;
 }
 
+
 export const useMapStore = defineStore('map', () => {
-  const map = shallowRef<Map>();
+  const map = shallowRef<MapLibreMap>();
   const mapSources = ref<Record<string, Source>>({});
+  const sourceLoadedState = reactive(new Map<string, boolean>());
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
+
+  const layerStore = useLayerStore();
+  // const sourceIdToFrameMap = reactive(new Map<string, LayerFrame[]>());
+
+  function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
+    if (obj.dataType !== 'source') {
+      return;
+    }
+
+    // Only set source loaded on sources we've created (not background sources/layers)
+    try {
+      parseSourceString(obj.sourceId);
+    } catch {
+      return;
+    }
+
+    // TODO: Handle raster and bounds needing to both be loaded
+    sourceLoadedState.set(obj.sourceId, obj.isSourceLoaded);
+
+    // TODO: Look at layerStore.layerFrameMap, and get all source IDs for frames at the currently viewed frame index.
+    // If all frames at that index are loaded, add all frames in the next index bucket to the map, and so on.
+
+    // if (obj.isSourceLoaded) {
+    //   const { layerId, layerCopyId, frameId } = parseSourceString(obj.sourceId);
+
+    //   const layer = layerStore.selectedLayers.find((l) => l.id === layerId && l.copy_id === layerCopyId);
+    //   if (layer !== undefined) {
+    //     const frame = layer.frames.find((f) => f.id === frameId);
+    //     if (frame) {
+    //       const nextFrame: LayerFrame | undefined = layer.frames.find((f) => f.index === frame.index + 1);
+    //       if (nextFrame) {
+    //         const sourceId = layerStore.sourceIdFromLayerFrame(layer, nextFrame);
+    //         addLayerFrameToMap(nextFrame, sourceId, true);
+    //         layerStore.updateLayersShown();
+    //       }
+    //     }
+    //   }
+    // }
+
+    // Sometimes requests are cancelled and a final data event with loaded==true doesn't come through,
+    // so we add this extra polling system to make sure it gets set to true
+    if (!obj.isSourceLoaded) {
+      const intervalId = setInterval(() => {
+        const source = getMap().getSource(obj.sourceId)!;
+        if (source.loaded()) {
+          sourceLoadedState.set(obj.sourceId, true);
+          clearInterval(intervalId);
+        }
+      }, 1000);
+    }
+  }
 
   function handleLayerClick(e: MapLayerMouseEvent) {
     const map = getMap();
@@ -254,12 +332,11 @@ export const useMapStore = defineStore('map', () => {
 
   function createVectorTileSource(vector: VectorData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
-    const vectorSourceId = sourceId + '.vector.' + vector.id
-    map.addSource(vectorSourceId, {
+    map.addSource(sourceId, {
       type: "vector",
       tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
     });
-    const source = map.getSource(vectorSourceId);
+    const source = map.getSource(sourceId);
     if (source) {
       createVectorFeatureMapLayers(source, multiFrame);
       return source;
@@ -273,18 +350,20 @@ export const useMapStore = defineStore('map', () => {
       projection: 'EPSG:3857'
     }
     const tileParamString = new URLSearchParams(params).toString();
-    const tilesSourceId = sourceId + '.raster.' + raster.id;
-    map.addSource(tilesSourceId, {
+    map.addSource(sourceId, {
       type: "raster",
       tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${tileParamString}`],
     });
-    const tileSource = map.getSource(tilesSourceId);
+    const tileSource = map.getSource(sourceId);
 
+    // Determine bounds
     const bounds = raster.metadata.bounds;
-    const boundsSourceId = sourceId + '.bounds.' + raster.id;
     let { xmin, xmax, ymin, ymax, srs } = bounds;
     [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
     [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+
+    // Create new sourceId for the bounds layer
+    const boundsSourceId = sourceId.replace('raster', 'bounds');
     map.addSource(boundsSourceId, {
       type: "geojson",
       data: {
@@ -304,27 +383,43 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
-    if (!mapSources.value[sourceId]) {
-      if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
-        if (vector) mapSources.value[sourceId] = vector;
-      }
-      if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
-        if (raster) mapSources.value[sourceId] = raster;
-      }
+    if (mapSources.value[sourceId]) {
+      return;
     }
+
+    console.log("LAYER FRAME ADDED", sourceId);
+
+    if (frame.vector) {
+      const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
+      if (vector) mapSources.value[sourceId] = vector;
+    }
+    if (frame.raster) {
+      const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
+      if (raster) mapSources.value[sourceId] = raster;
+    }
+
+    const map = getMap();
+    // map.on('data', (ev) => {
+    //   console.log(ev);
+    // });
+    map.on("data", setSourceLoaded);
+    map.on('idle', () => {
+      map.off('data', setSourceLoaded);
+      // sourceLoadedState.clear();
+    });
   }
 
   return {
     // Data
     map,
     mapSources,
+    sourceLoadedState,
     showMapBaseLayer,
     tooltipOverlay,
     clickedFeature,
     rasterTooltipDataCache,
     // Functions
+    parseSourceString,
     handleLayerClick,
     toggleBaseLayer,
     getMap,

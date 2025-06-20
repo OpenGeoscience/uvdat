@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Layer } from "@/types";
-import { computed, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
 
-import { useLayerStore } from "@/store";
+import { useLayerStore, useMapStore } from "@/store";
 const layerStore = useLayerStore();
+const mapStore = useMapStore();
 
 const searchText = ref();
 const filteredLayers = computed(() => {
@@ -14,7 +15,31 @@ const filteredLayers = computed(() => {
         return  !searchText.value ||
         layer.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
-})
+});
+
+// Maps a string (layerId.layerCopyId) to whether it is currently loading or not
+const layerLoading = reactive(new Map<string, boolean>());
+
+// Convert source loaded state to layer loaded state
+watch(mapStore.sourceLoadedState, (state) => {
+    const uniqueLayersToSourceIds = new Map<string, string[]>();
+    Array.from(state.keys()).forEach((sourceId) => {
+        const { layerId, layerCopyId } = mapStore.parseSourceString(sourceId);
+        const uniqueId = `${layerId}.${layerCopyId}`;
+
+        const current = uniqueLayersToSourceIds.get(uniqueId) || [];
+        uniqueLayersToSourceIds.set(uniqueId, [...current, sourceId]);
+    });
+
+    // console.log('---', uniqueLayersToSourceIds);
+
+    const uniqueLayerIds = uniqueLayersToSourceIds.keys();
+    uniqueLayerIds.forEach((uniqueId) => {
+        const loaded = uniqueLayersToSourceIds.get(uniqueId)!.every((sourceId) => mapStore.sourceLoadedState.get(sourceId));
+        layerLoading.set(uniqueId, !loaded);
+    });
+});
+
 
 function removeLayers(layers: Layer[]) {
     layerStore.selectedLayers = layerStore.selectedLayers.filter((layer) => !layers.includes(layer))
@@ -121,39 +146,45 @@ function getFrameInputWidth(layer: Layer) {
                                 </template>
                             </v-list-item>
                             <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">
-                                <v-slider
-                                    :model-value="element.current_frame + 1"
-                                    :max="getLayerMaxFrames(element)"
-                                    min="1"
-                                    color="primary"
-                                    show-ticks="always"
-                                    tick-size="6"
-                                    thumb-size="15"
-                                    track-size="8"
-                                    step="1"
-                                    hide-details
-                                    type="number"
-                                    @update:modelValue="(value: number) => updateFrame(element, value)"
-                                >
-                                <template v-slot:append>
-                                    <v-text-field
+                                <v-row no-gutters>
+                                    <v-col cols="10">
+                                        <v-slider
                                         :model-value="element.current_frame + 1"
                                         :max="getLayerMaxFrames(element)"
                                         min="1"
-                                        density="compact"
-                                        class="frame-input"
-                                        :style="{'width': getFrameInputWidth(element)}"
-                                        type="number"
+                                        color="primary"
+                                        show-ticks="always"
+                                        tick-size="6"
+                                        thumb-size="15"
+                                        track-size="8"
+                                        track-fill-color="blue"
+                                        step="1"
                                         hide-details
-                                        single-line
-                                        @update:modelValue="(value: string) => updateFrame(element, parseInt(value))"
-                                    >
-                                        <template v-slot:default>
-                                            {{ element.current_frame + 1 }}/{{ getLayerMaxFrames(element) }}
-                                        </template>
-                                    </v-text-field>
-                                    </template>
-                                </v-slider>
+                                        type="number"
+                                        @update:modelValue="(value: number) => updateFrame(element, value)"
+                                        />
+                                        <v-progress-linear v-if="layerLoading.get(`${element.id}.${element.copy_id}`)" rounded-bar indeterminate />
+                                    </v-col>
+
+                                    <v-col cols="2">
+                                        <v-text-field
+                                                :model-value="element.current_frame + 1"
+                                                :max="getLayerMaxFrames(element)"
+                                                min="1"
+                                                density="compact"
+                                                class="frame-input"
+                                                :style="{'width': getFrameInputWidth(element)}"
+                                                type="number"
+                                                hide-details
+                                                single-line
+                                                @update:modelValue="(value: string) => updateFrame(element, parseInt(value))"
+                                                >
+                                                <template v-slot:default>
+                                                    {{ element.current_frame + 1 }}/{{ getLayerMaxFrames(element) }}
+                                                </template>
+                                                </v-text-field>
+                                    </v-col>
+                                </v-row>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>
                                         <i>Frame:</i> {{ element.frames[element.current_frame].name }}
