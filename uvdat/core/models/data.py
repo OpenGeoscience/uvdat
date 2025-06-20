@@ -55,6 +55,36 @@ class VectorData(models.Model):
         """Read and load the data from geojson_data into a dict."""
         return json.load(self.geojson_data.open())
 
+    def get_summary(self) -> dict:
+        features = VectorFeature.objects.filter(vector_data=self)
+        # TODO: is there a query way to do this?
+        summary = {
+            'feature_count': features.count(),
+            'all': {},
+            'polygons': {},
+            'lines': {},
+            'points': {},
+        }
+        exclude_keys = ['node_id', 'edge_id', 'to_node_id', 'from_node_id']
+        for feature in features:
+            for k, v in feature.properties.items():
+                if k not in exclude_keys:
+                    geom_type = feature.geometry.geom_type
+                    group = (
+                        'points'
+                        if geom_type == 'Point'
+                        else 'lines' if geom_type == 'LineString' else 'polygons'
+                    )
+                    if k not in summary[group]:
+                        summary[group][k] = []
+                    if v not in summary[group][k]:
+                        summary[group][k].append(v)
+                    if k not in summary['all']:
+                        summary['all'][k] = []
+                    if v not in summary['all'][k]:
+                        summary['all'][k].append(v)
+        return summary
+
 
 class VectorFeature(models.Model):
     vector_data = models.ForeignKey(

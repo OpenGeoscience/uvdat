@@ -77,7 +77,7 @@ watch(() => appStore.currentUser, onReady);
   </v-app>
 </template>
 
-<style scoped>
+<style>
 * {
   font-family: "Inter", serif;
   font-optical-sizing: auto;
