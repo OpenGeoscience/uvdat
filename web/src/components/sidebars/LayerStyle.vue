@@ -71,13 +71,20 @@ async function init() {
     else{
         getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
         if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
-            currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style));  // deep copy
-            currentStyleSpec.value = {...props.layer.default_style.style_spec}
+            // deep copies so that changes to current style won't affect default style
+            currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style))
+            currentStyleSpec.value = JSON.parse(JSON.stringify(props.layer.default_style.style_spec))
         } else {
             currentLayerStyle.value = {name: 'None', is_default: true};
             currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
         }
         fetchRasterBands()
+        if (currentStyleSpec.value) {
+            availableGroups.value['color'] = currentStyleSpec.value.colors.map((group) => group.name)
+            if (availableGroups.value['color'].length) currentGroups.value['color'] = availableGroups.value['color'][0]
+            availableGroups.value['size'] = currentStyleSpec.value.sizes.map((group) => group.name)
+            if (availableGroups.value['size'].length) currentGroups.value['size'] = availableGroups.value['size'][0]
+        }
     }
 }
 
@@ -233,9 +240,6 @@ function cancel() {
     const defaultStyle = availableStyles.value?.find((s) => s.is_default)
     if (defaultStyle?.style_spec) {
         currentStyleSpec.value = {...defaultStyle.style_spec}
-    }
-    else if (currentLayerStyle.value.style_spec) {
-        currentStyleSpec.value = {...currentLayerStyle.value.style_spec}
     } else {
         currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
             props.layer.frames[props.layer.current_frame].raster
