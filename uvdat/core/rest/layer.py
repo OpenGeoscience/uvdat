@@ -1,4 +1,5 @@
 import jsonschema
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
@@ -13,6 +14,11 @@ class LayerViewSet(ReadOnlyModelViewSet):
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
+
+    @action(detail=True, methods=['get'])
+    def summary(self, request, **kwargs):
+        instance = self.get_object()
+        return Response(instance.get_summary(), status=200)
 
 
 class LayerFrameViewSet(ReadOnlyModelViewSet):

@@ -130,11 +130,6 @@ class VectorDataViewSet(GenericDataViewSet):
         extent = features.aggregate(Extent('geometry')).get('geometry__extent')
         return Response(extent, status=200)
 
-    @action(detail=True, methods=['get'])
-    def summary(self, request, **kwargs):
-        instance = self.get_object()
-        return Response(instance.get_summary(), status=200)
-
     @action(
         detail=True,
         methods=['get'],

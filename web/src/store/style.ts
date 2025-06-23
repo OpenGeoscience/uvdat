@@ -1,12 +1,22 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
-import { ColorMap, Layer, LayerFrame, MapLibreLayerWithMetadata, Network, RasterData, StyleFilter, StyleSpec } from "@/types";
+import {
+    ColorMap,
+    Layer,
+    LayerFrame,
+    MapLibreLayerWithMetadata,
+    Network,
+    PropertySummary,
+    RasterData,
+    StyleFilter,
+    StyleSpec,
+    LayerSummary,
+} from "@/types";
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
 import { useMapStore, useLayerStore } from '.';
-import { getVectorDataSummary } from '@/api/rest';
 
 
 const getColormap = (name: string, nshades: number) => colormap({
@@ -84,123 +94,104 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
     return query;
 }
 
-function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<string, any>[]) {
-    const colorByProp = propsSpec.find((p) => p.name === colormap?.color_by)
+function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<string, PropertySummary>) {
+    if (!colormap?.color_by) return undefined
+    const colorByProp = propsSpec[colormap.color_by]
     if (!colorByProp) return undefined
-    let interpType: any[] = ['match']
-    let fallback = [colormap.null_color]
-    if (colormap.null_color === 'transparent') fallback = ['#00000000']
     const markers = colormapMarkersSubsample(colormap)
-    const sortedValues = colorByProp.values.sort((a: any, b: any) => a - b)
-    const valueColorList: any[] = [];
-    if (markers) {
-        if (
-            !colormap.discrete &&
-            sortedValues.every((v: any) => typeof(v) === 'number') &&
-            sortedValues.length > markers.length
-        ) {
-            markers.forEach((marker: Record<string, any>, i: number) => {
-                valueColorList.push(Math.round(
-                    sortedValues[Math.floor(i / markers.length * sortedValues.length)]
-                ))
-                valueColorList.push(marker.color)
-            })
-            if (valueColorList.length) {
-                interpType = ['interpolate', ['linear']]
-                fallback = []
-            }
-        } else {
-            sortedValues.forEach((v: any, i: number) => {
-                if (typeof v === 'number') v = Math.round(v)
-                valueColorList.push(v)
-                if (markers) valueColorList.push(
-                    markers[Math.floor(i / sortedValues.length * markers.length)].color
+    if (!markers) return undefined
+    let fallback = colormap.null_color
+    if (colormap.null_color === 'transparent') fallback = '#00000000'
+    if (colorByProp.range) {
+        const [min, max] = colorByProp.range
+        const valueColors = markers.map((marker) => [
+            marker.value * (max - min) + min,
+            marker.color
+        ])
+        if (colormap.discrete) {
+            const cases: any[] = []
+            valueColors.forEach(([v, c]) => {
+                cases.push(
+                    ['<=', ['get', colormap.color_by], v]
                 )
+                cases.push(c)
             })
+            return [
+                'case',
+                ...cases,
+                fallback,
+            ]
+        } else {
+            return [
+                'interpolate', ['linear'],
+                ['get', colormap.color_by],
+                ...valueColors.flat(),
+            ]
         }
+    } else {
+        const sortedValues = colorByProp.value_set.sort((a: any, b: any) => a - b)
+        const valueColors = sortedValues.map((v, i) => [
+            v,
+            markers[Math.round(i / (sortedValues.length - 1) * (markers.length - 1))]?.color
+        ]).flat()
+        return [
+            'match',
+            ['get', colormap.color_by],
+            ...valueColors,
+            fallback,
+        ]
     }
-    if (!valueColorList.length) return fallback[0]
-    return [
-        ...interpType,
-        ['get', colormap.color_by],
-        ...valueColorList,
-        ...fallback,
-    ]
 }
 
-function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, any>[]) {
+function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, PropertySummary>) {
     const zoomScalingConstant = 500;
     const sizeSpec = styleSpec.sizes.find((c) => [groupName, 'all'].includes(c.name))
-    let singleSize = 5;
-    if (sizeSpec?.single_size) singleSize = sizeSpec.single_size
-    else if (sizeSpec?.size_range && propsSpec) {
-        const sizeByProp = propsSpec.find((p) => p.name === sizeSpec.size_range?.size_by)
-        if (sizeByProp) {
-            const sortedValues = sizeByProp.values.sort((a: any, b: any) => a - b)
-            if (sortedValues.length > 1) {
-                let sizeSteps = [
-                    'interpolate',
-                    ['linear'],
-                    ['get', sizeSpec.size_range.size_by],
-                    sortedValues[0],
-                    sizeSpec.size_range.minimum,
-                    sortedValues[sortedValues.length - 1],
-                    sizeSpec.size_range.maximum,
-                ]
-                const nullSize = sizeSpec.size_range.null_size && !sizeSpec.size_range.null_size.transparency ? sizeSpec.size_range.null_size.size : undefined
-                if (sizeSpec.zoom_scaling) {
-                    const greaterSizeSteps = [...sizeSteps]
-                    greaterSizeSteps[4] *= zoomScalingConstant
-                    greaterSizeSteps[6] *= zoomScalingConstant
-                    if (nullSize) {
-                        sizeSteps = [
-                            'interpolate',
-                            ['exponential', 2],
-                            ['zoom'],
-                            12, [
-                                'case',
-                                ['==', ['get', sizeSpec.size_range.size_by], null],
-                                nullSize,
-                                sizeSteps
-                            ],
-                            24, [
-                                'case',
-                                ['==', ['get', sizeSpec.size_range.size_by], null],
-                                nullSize * zoomScalingConstant,
-                                greaterSizeSteps
-                            ],
-                        ]
-                    } else {
-                        sizeSteps = [
-                            'interpolate',
-                            ['exponential', 2],
-                            ['zoom'],
-                            12, sizeSteps,
-                            24, greaterSizeSteps,
-                        ]
-                    }
-                } else if (nullSize) {
-                    sizeSteps = [
-                        'case',
-                        ['==', ['get', sizeSpec.size_range.size_by], null],
-                        nullSize,
-                        sizeSteps
-                    ]
-                }
-                return sizeSteps
-            }
+    let baseSize: any = 5;
+    let zoomedSize: any = undefined;
+    if (sizeSpec?.single_size) {
+        baseSize = sizeSpec.single_size
+        if (sizeSpec.zoom_scaling) zoomedSize = baseSize * zoomScalingConstant
+    } else if (sizeSpec?.size_range?.size_by && propsSpec) {
+        const sizeByProp = propsSpec[sizeSpec.size_range.size_by]
+        if (!sizeByProp?.range) return undefined
+        const [min, max] = sizeByProp.range
+        baseSize = [
+            'interpolate',
+            ['linear'],
+            ['get', sizeSpec.size_range.size_by],
+            min, sizeSpec.size_range.minimum,
+            max, sizeSpec.size_range.maximum,
+        ]
+        if (sizeSpec.zoom_scaling) {
+            zoomedSize = [...baseSize]
+            zoomedSize[4] *= zoomScalingConstant
+            zoomedSize[6] *= zoomScalingConstant
         }
-        singleSize = sizeSpec.size_range.null_size?.size || 1;
+        if (sizeSpec.size_range.null_size && !sizeSpec.size_range.null_size.transparency) {
+            const nullSize = sizeSpec.size_range.null_size.size
+            baseSize = [
+                'case',
+                ['==', ['get', sizeSpec.size_range.size_by], null],
+                nullSize,
+                baseSize,
+            ]
+           zoomedSize = [
+                'case',
+                ['==', ['get', sizeSpec.size_range.size_by], null],
+                nullSize,
+                zoomedSize,
+            ]
+        }
     }
-    if (sizeSpec?.zoom_scaling) {
+    if (zoomedSize) {
         return [
             'interpolate',
             ['exponential', 2],
             ['zoom'],
-            12, singleSize,
-            24, singleSize * zoomScalingConstant
+            12, baseSize,
+            24, zoomedSize,
         ]
-    } else return singleSize
+    } else return baseSize
 }
 
 function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: string) {
@@ -242,7 +233,6 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
-    const selectedLayerVectorProperties = ref<Record<string, Record<string, any>>>({});
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
@@ -293,12 +283,15 @@ export const useStyleStore = defineStore('style', () => {
                         map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
                         const styleKey = `${layer.id}.${layer.copy_id}`
                         const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
-                        if (!selectedLayerVectorProperties.value[styleKey]) {
-                            fetchVectorProperties(layer).then(() => {
-                                setMapLayerStyle(mapLayerId, currentStyleSpec, currentFrame);
-                            })
+                        const summary = layerStore.layerSummaries[layer.id]
+                        if (summary){
+                            setMapLayerStyle(
+                                mapLayerId,
+                                currentStyleSpec,
+                                currentFrame,
+                                summary,
+                            );
                         }
-                        setMapLayerStyle(mapLayerId, currentStyleSpec, currentFrame);
                     } else {
                         map.setLayoutProperty(mapLayerId, 'visibility', 'none');
                     }
@@ -307,7 +300,12 @@ export const useStyleStore = defineStore('style', () => {
         });
     }
 
-    function setMapLayerStyle(mapLayerId: string, styleSpec: StyleSpec, frame: LayerFrame | undefined) {
+    function setMapLayerStyle(
+        mapLayerId: string,
+        styleSpec: StyleSpec,
+        frame: LayerFrame | undefined,
+        layerSummary: LayerSummary,
+    ) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
         const [layerId, layerCopyId] = sourceId.split('.');
@@ -338,10 +336,9 @@ export const useStyleStore = defineStore('style', () => {
             opacity = 1;
         }
 
-        const vectorProperties = selectedLayerVectorProperties.value[styleKey]
+        const propsSpec = layerSummary.properties
         if (mapLayerId.includes("fill")) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
-            const propsSpec = vectorProperties?.polygons
             const colorSpec = styleSpec.colors.find((c) => ['polygons', 'all'].includes(c.name))
             if (colorSpec?.single_color) {
                 map.setPaintProperty(mapLayerId, 'fill-color', colorSpec?.single_color);
@@ -354,7 +351,6 @@ export const useStyleStore = defineStore('style', () => {
             }
         } else if (mapLayerId.includes("line")) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
-            const propsSpec = vectorProperties?.lines
             const colorSpec = styleSpec.colors.find((c) => ['lines', 'all'].includes(c.name))
             if (colorSpec?.single_color) {
                 map.setPaintProperty(mapLayerId, 'line-color', colorSpec?.single_color);
@@ -368,7 +364,6 @@ export const useStyleStore = defineStore('style', () => {
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-            const propsSpec = vectorProperties?.points
             const colorSpec = styleSpec.colors.find((c) => ['points', 'all'].includes(c.name))
             if (colorSpec?.single_color) {
                 map.setPaintProperty(mapLayerId, 'circle-color', colorSpec?.single_color);
@@ -508,49 +503,9 @@ export const useStyleStore = defineStore('style', () => {
         });
     }
 
-    async function fetchVectorProperties(layer: Layer) {
-        const styleKey = `${layer.id}.${layer.copy_id}`
-        if (layer.frames.length) {
-            const currentFrame = layer.frames[layer.current_frame]
-            if (currentFrame.vector) {
-                const summary: Record<string, Record<string, any>> = await getVectorDataSummary(currentFrame.vector.id)
-                selectedLayerVectorProperties.value[styleKey] = Object.fromEntries(
-                    Object.entries(summary).map(([rowName, properties]) => {
-                        return [rowName, Object.entries(properties).map(([name, values]) => {
-                            values = values.filter((v: any) => v)
-                            let sampleLabel;
-                            let range;
-                            if (values.every((v: any) => typeof v === 'number')) {
-                                range = [Math.min(...values), Math.max(...values)]
-                                sampleLabel = `[${range[0].toFixed(1)} - ${range[1].toFixed(1)}]`
-                            } else {
-                                let sample = values.slice(0, 3).map((v: any) => {
-                                    let str = v.toString()
-                                    if (str.length > 10) return str.slice(0,5) + '...'
-                                    return str
-                                })
-                                if (values.length > sample.length) {
-                                    sample.push('...')
-                                }
-                                sampleLabel = `[${sample.join(', ')}]`
-                            }
-                            return {
-                                name,
-                                sampleLabel,
-                                range,
-                                values,
-                            }
-                        })]
-                    })
-                )
-            }
-        }
-    }
-
     return {
         colormaps,
         selectedLayerStyles,
-        selectedLayerVectorProperties,
         getRasterTilesQuery,
         colormapMarkersSubsample,
         getDefaultColor,
@@ -558,6 +513,5 @@ export const useStyleStore = defineStore('style', () => {
         updateLayerStyles,
         setMapLayerStyle,
         styleNetwork,
-        fetchVectorProperties,
     }
 });

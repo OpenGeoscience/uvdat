@@ -41,6 +41,19 @@ export interface LayerFrame {
   source_filters: Record<string, any>;
 }
 
+export interface LayerSummary {
+  feature_types: string[];
+  properties: Record<string, PropertySummary>
+}
+
+export interface PropertySummary {
+  value_set: any[],
+  count: number;
+  types: string[],
+  range?: [number, number],
+  sample_label: string,
+}
+
 export interface ColorMap {
   name?: string;
   discrete?: boolean;

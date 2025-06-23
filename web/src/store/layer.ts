@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { LngLatBoundsLike } from "maplibre-gl";
-import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from '@/types';
-import { getVectorDataBounds } from '@/api/rest';
+import { Dataset, Layer, LayerFrame, Network, RasterData, LayerSummary, VectorData } from '@/types';
+import { getLayerSummary, getVectorDataBounds } from '@/api/rest';
 import proj4 from 'proj4';
 
 import { useMapStore, useStyleStore, useNetworkStore } from '.';
@@ -19,6 +19,7 @@ interface SourceDBObjects {
 
 export const useLayerStore = defineStore('layer', () => {
   const selectedLayers = ref<Layer[]>([]);
+  const layerSummaries = ref<Record<number, LayerSummary>>({});
 
   // Sibling store imports
   const mapStore = useMapStore();
@@ -90,9 +91,15 @@ export const useLayerStore = defineStore('layer', () => {
       { ...layer, name, copy_id, visible: true, current_frame: 0 },
       ...selectedLayers.value,
     ];
+    if (!layerSummaries.value[layer.id]) {
+      getLayerSummary(layer.id).then((summary) => {
+        layerSummaries.value[layer.id] = summary
+      })
+    }
   }
 
   watch(selectedLayers, updateLayersShown);
+  watch(layerSummaries, updateLayersShown, {deep: true});
   function updateLayersShown() {
     const map = mapStore.getMap();
 
@@ -148,6 +155,7 @@ export const useLayerStore = defineStore('layer', () => {
 
   return {
     selectedLayers,
+    layerSummaries,
     updateLayersShown,
     addLayer,
     getDBObjectsForSourceID,

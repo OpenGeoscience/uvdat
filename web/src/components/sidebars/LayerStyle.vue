@@ -47,7 +47,9 @@ const showVectorOptions = computed(() => {
 })
 
 const vectorProperties = computed(() => {
-    return styleStore.selectedLayerVectorProperties[styleKey.value]
+    const summary = layerStore.layerSummaries[props.layer.id]
+    if (!summary) return undefined
+    return Object.entries(summary.properties).map(([k, v]) => ({...v, name: k}))
 })
 
 const dataRange = computed(() => {
@@ -118,7 +120,15 @@ function setColorGroups(different: boolean | null) {
             availableGroups.value['color'] = bandNames;
         } else if (showVectorOptions.value) {
             const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
-            availableGroups.value['color'] = ['polygons', 'lines', 'points']
+            const summary = layerStore.layerSummaries[props.layer.id]
+            if (summary) {
+                availableGroups.value['color'] = []
+                if (summary.feature_types.includes('Point'))  availableGroups.value['color'].push('points')
+                if (summary.feature_types.includes('LineString'))  availableGroups.value['color'].push('lines')
+                if (summary.feature_types.includes('MultiPolygon') || summary.feature_types.includes('Polygon'))  availableGroups.value['color'].push('polygons')
+            } else {
+                availableGroups.value['color'] = ['polygons', 'lines', 'points']
+            }
             currentStyleSpec.value.colors = availableGroups.value['color'].map((name) => {
                 return { ...all, visible: true, name }
             })
@@ -665,9 +675,9 @@ watch(showMenu, init)
                                                 <td><v-label :class="group.visible ? '' : 'secondary-text'">Color by property</v-label></td>
                                                 <td>
                                                     <v-select
-                                                        v-if="vectorProperties && vectorProperties[group.name]"
+                                                        v-if="vectorProperties"
                                                         v-model="group.colormap.color_by"
-                                                        :items="vectorProperties[group.name]"
+                                                        :items="vectorProperties"
                                                         :disabled="!group.visible"
                                                         item-title="name"
                                                         item-value="name"
@@ -679,7 +689,7 @@ watch(showMenu, init)
                                                         <template v-slot:item="{ props, item }">
                                                             <v-list-item v-bind="props">
                                                                 <template v-slot:append>
-                                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sample_label">{{ (item.raw as Record<string, any>).sample_label }}</v-chip>
                                                                 </template>
                                                             </v-list-item>
                                                         </template>
@@ -878,23 +888,23 @@ watch(showMenu, init)
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td :class="vectorProperties && vectorProperties[group.name] ? '' : 'secondary-text'"><v-label>Size by Property</v-label></td>
+                                            <td :class="vectorProperties ? '' : 'secondary-text'"><v-label>Size by Property</v-label></td>
                                             <td>
                                                 <v-select
                                                     v-model="group.size_range.size_by"
-                                                    :items="vectorProperties[group.name]"
+                                                    :items="vectorProperties"
                                                     item-title="name"
                                                     item-value="name"
                                                     density="compact"
                                                     variant="outlined"
-                                                    :disabled="!group.size_range || !vectorProperties || !vectorProperties[group.name]"
+                                                    :disabled="!group.size_range || !vectorProperties"
                                                     placeholder="Select property"
                                                     hide-details
                                                 >
                                                     <template v-slot:item="{ props, item }">
                                                         <v-list-item v-bind="props" :disabled="!(item.raw as Record<string, any>).range">
                                                             <template v-slot:append>
-                                                                <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                                <v-chip size="small" v-if="(item.raw as Record<string, any>).sample_label">{{ (item.raw as Record<string, any>).sample_label }}</v-chip>
                                                             </template>
                                                         </v-list-item>
                                                     </template>
@@ -1018,7 +1028,7 @@ watch(showMenu, init)
                                                         <v-select
                                                             v-if="vectorProperties"
                                                             v-model="filter.filter_by"
-                                                            :items="vectorProperties['all']"
+                                                            :items="vectorProperties"
                                                             placeholder="Select Property"
                                                             item-title="name"
                                                             item-value="name"
@@ -1027,24 +1037,24 @@ watch(showMenu, init)
                                                             hide-details
                                                             @update:model-value="(v) => {
                                                                 if (!filter.list && !filter.range && vectorProperties) {
-                                                                    const property = vectorProperties['all'].find((f: any) => f.name === filter.filter_by)
+                                                                    const property = vectorProperties.find((f: any) => f.name === filter.filter_by)
                                                                     if (property?.range) filter.range = property.range
-                                                                    else if (property.values) filter.list = []
+                                                                    else if (property?.value_set) filter.list = []
                                                                 }
                                                             }"
                                                         >
                                                             <template v-slot:item="{ props, item }">
                                                                 <v-list-item v-bind="props">
                                                                     <template v-slot:append>
-                                                                        <v-chip size="small" v-if="(item.raw as Record<string, any>).sampleLabel">{{ (item.raw as Record<string, any>).sampleLabel }}</v-chip>
+                                                                        <v-chip size="small" v-if="(item.raw as Record<string, any>).sample_label">{{ (item.raw as Record<string, any>).sample_label }}</v-chip>
                                                                     </template>
                                                                 </v-list-item>
                                                             </template>
                                                         </v-select>
                                                     </td>
                                                 </tr>
-                                                <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties['all'].find((f: any) => f.name === filter.filter_by)]">
-                                                    <tr v-if="property.range">
+                                                <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties.find((f: any) => f.name === filter.filter_by)]">
+                                                    <tr v-if="property?.range">
                                                         <td>Value type</td>
                                                         <td>
                                                             <v-btn-toggle
@@ -1054,7 +1064,7 @@ watch(showMenu, init)
                                                                 divided
                                                                 mandatory
                                                                 @update:model-value="(value: string) => {
-                                                                    if (!property) return
+                                                                    if (!property.range) return
                                                                     if (value === 'range') {filter.range = property.range; filter.list = undefined}
                                                                     else {filter.range = undefined; filter.list = [property.range[0]]}
                                                                 }"
@@ -1086,7 +1096,7 @@ watch(showMenu, init)
                                                             <v-select
                                                                 v-else
                                                                 v-model="filter.list"
-                                                                :items="property.values"
+                                                                :items="property.value_set"
                                                                 density="compact"
                                                                 variant="outlined"
                                                                 multiple
