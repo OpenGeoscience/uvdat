@@ -685,7 +685,10 @@ watch(showMenu, init)
                                                         variant="outlined"
                                                         placeholder="Select property"
                                                         hide-details
-                                                        @update:model-value="(v) => {if (group.colormap) group.colormap.discrete = !vectorProperties?.find((p) => p.name === v)?.range}"
+                                                        @update:model-value="(v) => {if (group.colormap) {
+                                                            if (!group.colormap.name) setGroupColorMap(group.name, colormaps[0])
+                                                            group.colormap.discrete = !vectorProperties?.find((p) => p.name === v)?.range;
+                                                        }}"
                                                     >
                                                         <template v-slot:item="{ props, item }">
                                                             <v-list-item v-bind="props">
