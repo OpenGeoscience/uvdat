@@ -685,6 +685,7 @@ watch(showMenu, init)
                                                         variant="outlined"
                                                         placeholder="Select property"
                                                         hide-details
+                                                        @update:model-value="(v) => {if (group.colormap) group.colormap.discrete = !vectorProperties?.find((p) => p.name === v)?.range}"
                                                     >
                                                         <template v-slot:item="{ props, item }">
                                                             <v-list-item v-bind="props">
@@ -735,7 +736,7 @@ watch(showMenu, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.markers ? '' : 'secondary-text'">Colormap class</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.markers && vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range ? '' : 'secondary-text'">Colormap class</v-label></td>
                                                 <td>
                                                     <v-btn-toggle
                                                         :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
@@ -743,7 +744,7 @@ watch(showMenu, init)
                                                         variant="outlined"
                                                         divided
                                                         mandatory
-                                                        :disabled="!group.visible || !group.colormap.markers"
+                                                        :disabled="!group.visible || !group.colormap.markers || !vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range"
                                                         @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                     >
                                                         <v-btn :value="'discrete'">Discrete</v-btn>
