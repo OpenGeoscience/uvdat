@@ -38,22 +38,23 @@ class Layer(models.Model):
                         summary['properties'][k] = dict(value_set=set(), count=0)
                     summary['properties'][k]['value_set'].add(v)
                     summary['properties'][k]['count'] += 1
-        for k, details in summary['properties'].items():
-            types = set(type(v).__name__ for v in details['value_set'])
+        for k in summary['properties']:
+            types = set(type(v).__name__ for v in summary['properties'][k]['value_set'])
             summary['properties'][k]['types'] = types
             if len(types.intersection({'int', 'float'})) == len(types):
                 # numeric values only
                 value_range = [
-                    min(details['value_set']),
-                    max(details['value_set']),
+                    min(summary['properties'][k]['value_set']),
+                    max(summary['properties'][k]['value_set']),
                 ]
+                del summary['properties'][k]['value_set']
                 summary['properties'][k]['range'] = value_range
                 summary['properties'][k]['sample_label'] = f'[{value_range[0]}, {value_range[1]}]'
             else:
                 summary['properties'][k]['sample_label'] = ', '.join(
-                    str(v) for v in list(details['value_set'])[:3]
+                    str(v) for v in list(summary['properties'][k]['value_set'])[:3]
                 )
-                if len(details['value_set']) > 3:
+                if len(summary['properties'][k]['value_set']) > 3:
                     summary['properties'][k]['sample_label'] += '...'
         return summary
 
