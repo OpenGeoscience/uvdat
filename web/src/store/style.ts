@@ -94,53 +94,65 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
     return query;
 }
 
-function getVectorColormapPaintProperty(colormap: ColorMap, propsSpec: Record<string, PropertySummary>) {
-    if (!colormap?.color_by) return undefined
-    const colorByProp = propsSpec[colormap.color_by]
-    if (!colorByProp) return undefined
-    const markers = colormapMarkersSubsample(colormap)
-    if (!markers) return undefined
-    let fallback = colormap.null_color
-    if (colormap.null_color === 'transparent') fallback = '#00000000'
-    if (colorByProp.range) {
-        const [min, max] = colorByProp.range
-        const valueColors = markers.map((marker) => [
-            marker.value * (max - min) + min,
-            marker.color
-        ])
-        if (colormap.discrete) {
-            const cases: any[] = []
-            valueColors.forEach(([v, c]) => {
-                cases.push(
-                    ['<=', ['get', colormap.color_by], v]
-                )
-                cases.push(c)
-            })
-            return [
-                'case',
-                ...cases,
-                fallback,
-            ]
+function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, PropertySummary>) {
+    const colorSpec = styleSpec.colors.find((c) => [groupName, 'all'].includes(c.name))
+    let baseColor: any = '#000'
+    if (colorSpec?.single_color) {
+        baseColor = colorSpec.single_color;
+    } else if (colorSpec?.colormap?.color_by && propsSpec) {
+        const colorByProp = propsSpec[colorSpec.colormap.color_by]
+        if (!colorByProp) return undefined
+        const markers = colormapMarkersSubsample(colorSpec.colormap)
+        if (!markers) return undefined
+        if (colorByProp.range) {
+            const [min, max] = colorByProp.range
+            const valueColors = markers.map((marker) => [
+                marker.value * (max - min) + min,
+                marker.color
+            ])
+            if (colorSpec.colormap.discrete) {
+                const cases: any[] = []
+                valueColors.forEach(([v, c]) => {
+                    cases.push(
+                        ['<=', ['get', colorSpec.colormap?.color_by], v]
+                    )
+                    cases.push(c)
+                })
+                baseColor = [
+                    'case',
+                    ...cases,
+                    baseColor,
+                ]
+            } else {
+                baseColor = [
+                    'interpolate', ['linear'],
+                    ['get', colorSpec.colormap.color_by],
+                    ...valueColors.flat(),
+                ]
+            }
         } else {
-            return [
-                'interpolate', ['linear'],
-                ['get', colormap.color_by],
-                ...valueColors.flat(),
+            const sortedValues = colorByProp.value_set.sort((a: any, b: any) => a - b)
+            const valueColors = sortedValues.map((v, i) => [
+                v,
+                markers[Math.round(i / (sortedValues.length - 1) * (markers.length - 1))]?.color
+            ]).flat()
+            baseColor = [
+                'match',
+                ['get', colorSpec.colormap.color_by],
+                ...valueColors,
+                baseColor,
             ]
         }
-    } else {
-        const sortedValues = colorByProp.value_set.sort((a: any, b: any) => a - b)
-        const valueColors = sortedValues.map((v, i) => [
-            v,
-            markers[Math.round(i / (sortedValues.length - 1) * (markers.length - 1))]?.color
-        ]).flat()
-        return [
-            'match',
-            ['get', colormap.color_by],
-            ...valueColors,
-            fallback,
+        let nullColor = colorSpec.colormap.null_color
+        if (colorSpec.colormap.null_color === 'transparent') nullColor = '#00000000'
+        baseColor = [
+            'case',
+            ['==', ['get', colorSpec.colormap?.color_by], null],
+            nullColor,
+            baseColor,
         ]
     }
+    return baseColor;
 }
 
 function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, PropertySummary>) {
@@ -308,8 +320,6 @@ export const useStyleStore = defineStore('style', () => {
     ) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
-        const [layerId, layerCopyId] = sourceId.split('.');
-        const styleKey = `${layerId}.${layerCopyId}`
         const { network } = layerStore.getDBObjectsForSourceID(sourceId)
 
         let filters: StyleFilter[] = styleSpec.filters
@@ -339,45 +349,33 @@ export const useStyleStore = defineStore('style', () => {
         const propsSpec = layerSummary.properties
         if (mapLayerId.includes("fill")) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
-            const colorSpec = styleSpec.colors.find((c) => ['polygons', 'all'].includes(c.name))
-            if (colorSpec?.single_color) {
-                map.setPaintProperty(mapLayerId, 'fill-color', colorSpec?.single_color);
-            } else if (colorSpec?.colormap?.color_by && colorSpec.colormap.markers && propsSpec) {
-                map.setPaintProperty(mapLayerId, 'fill-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
-            }
+            const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec)
+            if (color) map.setPaintProperty(mapLayerId, 'fill-color', color)
             const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'polygons')
-            if(visibility !== undefined) {
-                map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
-            }
+            if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
         } else if (mapLayerId.includes("line")) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
-            const colorSpec = styleSpec.colors.find((c) => ['lines', 'all'].includes(c.name))
-            if (colorSpec?.single_color) {
-                map.setPaintProperty(mapLayerId, 'line-color', colorSpec?.single_color);
-            } else if (colorSpec?.colormap?.color_by && colorSpec.colormap.markers && propsSpec) {
-                map.setPaintProperty(mapLayerId, 'line-color', getVectorColormapPaintProperty(colorSpec.colormap, propsSpec));
-            }
+            const color = getVectorColorPaintProperty(styleSpec, 'lines', propsSpec)
+            if (color) map.setPaintProperty(mapLayerId, 'line-color', color)
             const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
             const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'lines')
-            if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
+            if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
         } else if (mapLayerId.includes("circle")) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-            const colorSpec = styleSpec.colors.find((c) => ['points', 'all'].includes(c.name))
-            if (colorSpec?.single_color) {
-                map.setPaintProperty(mapLayerId, 'circle-color', colorSpec?.single_color);
-                map.setPaintProperty(mapLayerId, 'circle-stroke-color', colorSpec?.single_color);
-            } else if (colorSpec?.colormap?.color_by && colorSpec.colormap.markers && propsSpec) {
-                const paintProperty = getVectorColormapPaintProperty(colorSpec.colormap, propsSpec)
-                map.setPaintProperty(mapLayerId, 'circle-color', paintProperty);
-                map.setPaintProperty(mapLayerId, 'circle-stroke-color', paintProperty);
+            const color = getVectorColorPaintProperty(styleSpec, 'points', propsSpec)
+            if (color) {
+                map.setPaintProperty(mapLayerId, 'circle-color', color)
+                map.setPaintProperty(mapLayerId, 'circle-stroke-color', color)
             }
             const size = getVectorSizePaintProperty(styleSpec, 'points', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'circle-radius', size)
             const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'points')
-            if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
-            if(visibility !== undefined) map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
+            if (visibility !== undefined) {
+                map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
+                map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
+            }
         } else if (mapLayerId.includes("raster")) {
             const rasterTilesQuery = getRasterTilesQuery(styleSpec)
             if (rasterTilesQuery.bands && !rasterTilesQuery.bands.length) opacity = 0
