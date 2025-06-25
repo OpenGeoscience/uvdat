@@ -29,10 +29,10 @@ function blur() {
     if (activeElement) activeElement.blur()
 }
 
-function getInputWidth(value: number) {
+function getInputWidth() {
     let width = 50;
-    width += value.toPrecision(precision.value + 1).length * 8;
-    width += precision.value * 10;
+    width += props.max.toPrecision(precision.value + 1).length * 6;
+    width += precision.value * 6;
     return width + 'px';
 }
 
@@ -75,7 +75,7 @@ function updateRange(lower: number, upper: number) {
                 :max="props.max"
                 :step="props.step"
                 :precision="precision"
-                :style="{width: getInputWidth(props.model)}"
+                :style="{width: getInputWidth()}"
                 variant="outlined"
                 controlVariant="stacked"
                 hide-details
@@ -102,7 +102,7 @@ function updateRange(lower: number, upper: number) {
                 :max="props.rangeModel[1]"
                 :step="props.step"
                 :precision="precision"
-                :style="{width: getInputWidth(props.rangeModel[0])}"
+                :style="{width: getInputWidth()}"
                 variant="outlined"
                 controlVariant="stacked"
                 hide-details
@@ -117,7 +117,7 @@ function updateRange(lower: number, upper: number) {
                 :max="props.max"
                 :step="props.step"
                 :precision="precision"
-                :style="{width: getInputWidth(props.rangeModel[1])}"
+                :style="{width: getInputWidth()}"
                 variant="outlined"
                 controlVariant="stacked"
                 hide-details
@@ -146,5 +146,8 @@ function updateRange(lower: number, upper: number) {
 }
 .v-number-input__control .v-btn i {
     color: rgb(var(--v-theme-button-text)) !important;
+}
+.v-slider.v-input--horizontal {
+    margin-inline: 0 !important;
 }
 </style>

@@ -390,7 +390,7 @@ watch(() => props.activeLayer, init)
             </div>
 
             <v-card-text class="pa-2">
-                <div class="d-flex mb-1 mt-4" style="align-items: center; column-gap: 5px;">
+                <div class="d-flex mb-1 mt-4 mx-2" style="align-items: center; column-gap: 5px;">
                     <v-select
                         v-model="currentLayerStyle"
                         :items="availableStyles"
@@ -425,7 +425,7 @@ watch(() => props.activeLayer, init)
                     />
                 </div>
 
-                <table class="aligned-controls">
+                <table class="aligned-controls px-2">
                     <tbody>
                         <tr v-if="props.layer.frames.length > 1">
                             <td><v-label>Default Frame</v-label></td>
@@ -452,7 +452,7 @@ watch(() => props.activeLayer, init)
                     </tbody>
                 </table>
 
-                <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact" color="primary" class="mt-2">
+                <v-tabs v-model="tab" align-tabs="center" fixed-tabs density="compact" color="primary" class="mt-2 mx-2">
                     <v-tab value="color">
                         <v-icon icon="mdi-palette" class="mr-1" :color="tab === 'color' ? 'primary' : 'secondary-text'"/>
                         Color
@@ -469,7 +469,7 @@ watch(() => props.activeLayer, init)
                     </v-tab>
                 </v-tabs>
 
-                <v-window v-model="tab" class="tab-contents">
+                <v-window v-model="tab" class="tab-contents mx-2 px-2">
                     <v-window-item value="color" class="pa-2">
                         <div v-if="showRasterOptions">
                             <v-label class="secondary-text px-3">Raster Options</v-label>
@@ -1252,7 +1252,7 @@ watch(() => props.activeLayer, init)
     font-size: 14px;
 }
 .aligned-controls {
-    padding: 0px 10px;
+    padding: 0px;
     width: 100%;
 }
 .aligned-controls td {
@@ -1264,9 +1264,6 @@ watch(() => props.activeLayer, init)
     padding-right: 10px;
     vertical-align: middle;
     align-items: center;
-}
-.aligned-controls .v-select {
-    max-width: calc(100% - 15px);
 }
 .primary-control .v-icon:not(.mdi-checkbox-blank-outline) {
     color: rgb(var(--v-theme-primary)) !important
