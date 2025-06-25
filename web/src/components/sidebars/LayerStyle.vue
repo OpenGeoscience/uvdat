@@ -145,7 +145,7 @@ function setColorGroups(different: boolean | null) {
                 props.layer.frames[props.layer.current_frame].raster
             ).colors]
         }
-        if (showRasterOptions) setGroupColorMode('all', 'colormap')
+        if (showRasterOptions.value) setGroupColorMode('all', 'colormap')
         availableGroups.value['color'] = []
         currentGroups.value['color'] = 'all'
     }
