@@ -128,14 +128,23 @@ function setColorGroups(different: boolean | null) {
                 availableGroups.value['color'] = ['polygons', 'lines', 'points']
             }
             currentStyleSpec.value.colors = availableGroups.value['color'].map((name) => {
-                return { ...all, visible: true, name }
+                return { ...JSON.parse(JSON.stringify(all)), visible: true, name }
             })
         }
         if (availableGroups.value['color']?.length) currentGroups.value['color'] = availableGroups.value['color'][0]
     } else {
-        currentStyleSpec.value.colors = [...styleStore.getDefaultStyleSpec(
-            props.layer.frames[props.layer.current_frame].raster
-        ).colors]
+        if (currentGroups.value['color']) {
+            const currentGroupOptions = currentStyleSpec.value.colors.find((c) => c.name === currentGroups.value['color'])
+            currentStyleSpec.value.colors = [{
+                ...currentGroupOptions,
+                name: 'all',
+                visible: true,
+            }]
+        } else {
+            currentStyleSpec.value.colors = [...styleStore.getDefaultStyleSpec(
+                props.layer.frames[props.layer.current_frame].raster
+            ).colors]
+        }
         if (showRasterOptions) setGroupColorMode('all', 'colormap')
         availableGroups.value['color'] = []
         currentGroups.value['color'] = 'all'
@@ -196,14 +205,23 @@ function setSizeGroups(different: boolean | null) {
             const all = currentStyleSpec.value.sizes.find((group) => group.name === 'all')
             if (all) {
                 currentStyleSpec.value.sizes = availableGroups.value['size'].map((name) => {
-                    return {  ...all, name }
+                    return {  ...JSON.parse(JSON.stringify(all)), name }
                 })
             }
         }
     } else {
-        currentStyleSpec.value.sizes = [...styleStore.getDefaultStyleSpec(
-            props.layer.frames[props.layer.current_frame].raster
-        ).sizes]
+        if (currentGroups.value['size']) {
+            const currentGroupOptions = currentStyleSpec.value.sizes.find((s) => s.name === currentGroups.value['size'])
+            currentStyleSpec.value.sizes = [{
+                zoom_scaling: true,
+                ...currentGroupOptions,
+                name: 'all',
+            }]
+        } else {
+            currentStyleSpec.value.sizes = [...styleStore.getDefaultStyleSpec(
+                props.layer.frames[props.layer.current_frame].raster
+            ).sizes]
+        }
         availableGroups.value['size'] = []
         currentGroups.value['size'] = 'all'
     }
