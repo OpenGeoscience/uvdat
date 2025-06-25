@@ -17,7 +17,7 @@ const filteredLayers = computed(() => {
         layer.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
 })
-const highlightRows = ref<Layer[]>([]);
+const activeLayer = ref<Layer>();
 
 function removeLayers(layers: Layer[]) {
     layerStore.selectedLayers = layerStore.selectedLayers.filter((layer: Layer) => !layers.includes(layer))
@@ -45,9 +45,9 @@ function getLayerMaxFrames(layer: Layer) {
     return [...new Set(layer.frames.map((f) => f.index))].length
 }
 
-function setLayerHighlight(layer: Layer, highlight: boolean) {
-    if (highlight) highlightRows.value.push(layer)
-    else highlightRows.value = highlightRows.value.filter((v) => v != layer)
+function setLayerActive(layer: Layer, active: boolean) {
+    if (active) activeLayer.value = layer
+    else activeLayer.value = undefined
 }
 </script>
 
@@ -86,7 +86,7 @@ function setLayerHighlight(layer: Layer, highlight: boolean) {
                 >
                     <template #item="{ element }">
                         <div>
-                            <v-list-item class="layer" :active="highlightRows.includes(element)">
+                            <v-list-item class="layer" :active="activeLayer == element">
                                 <template v-slot:prepend>
                                     <v-icon
                                         color="primary"
@@ -109,7 +109,7 @@ function setLayerHighlight(layer: Layer, highlight: boolean) {
                                         <v-icon icon="mdi-dots-horizontal"/>
                                         <v-icon :icon="element.hideFrameMenu ? 'mdi-menu-down' :'mdi-menu-up'" />
                                     </span>
-                                    <LayerStyle :layer="element" @toggle-menu="(v) => setLayerHighlight(element, v)"/>
+                                    <LayerStyle :layer="element" :activeLayer="activeLayer" @setLayerActive="(v: boolean) => setLayerActive(element, v)"/>
                                     <span class="v-icon material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>

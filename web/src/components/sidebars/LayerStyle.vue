@@ -13,12 +13,12 @@ const panelStore = usePanelStore();
 const layerStore = useLayerStore();
 
 
-const emit = defineEmits(["toggleMenu"]);
+const emit = defineEmits(["setLayerActive"]);
 const props = defineProps<{
   layer: Layer;
+  activeLayer: Layer | undefined;
 }>();
 
-const showMenu = ref(false);
 const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
 const newNameMode = ref<'create' | 'update' | undefined>();
@@ -68,9 +68,7 @@ const dataRange = computed(() => {
 })
 
 async function init() {
-    emit('toggleMenu', showMenu.value)
-    if (!showMenu.value) cancel()
-    else{
+    if (props.activeLayer === props.layer) {
         getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
         if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
             // deep copies so that changes to current style won't affect default style
@@ -255,7 +253,7 @@ function cancel() {
             props.layer.frames[props.layer.current_frame].raster
         )}
     }
-    showMenu.value = false;
+    emit('setLayerActive', false)
 }
 
 function save() {
@@ -343,7 +341,7 @@ function refreshLayer() {
 }
 
 watch(() => panelStore.draggingPanel, () => {
-    showMenu.value = false;
+    emit('setLayerActive', false)
 })
 
 watch(currentStyleSpec, _.debounce(() => {
@@ -361,11 +359,18 @@ watch(currentStyleSpec, _.debounce(() => {
     }
 }, 100), {deep: true})
 
-watch(showMenu, init)
+watch(() => props.activeLayer, init)
 </script>
 
 <template>
-    <v-menu v-model="showMenu" location="end center" :close-on-content-click="false" persistent no-click-animation>
+    <v-menu
+        :model-value="props.activeLayer === props.layer"
+        location="end center"
+        :close-on-content-click="false"
+        persistent
+        no-click-animation
+        @update:model-value="emit('setLayerActive', props.activeLayer !== props.layer)"
+    >
         <template v-slot:activator="{ props }">
             <v-icon
                 v-bind="props"
