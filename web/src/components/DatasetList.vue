@@ -109,6 +109,9 @@ watch(filteredDatasets, expandAllGroups)
 .secondary-text {
   color: rgb(var(--v-theme-secondary-text)) !important;
 }
+.helper-text {
+  color: rgb(var(--v-theme-helper-text)) !important;
+}
 .item-title {
   display: flex;
   justify-content: space-between;

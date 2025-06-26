@@ -549,7 +549,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Colormap</v-label></td>
+                                            <td><v-label :class="group.visible ? '' : 'helper-text'">Colormap</v-label></td>
                                             <td>
                                                 <v-select
                                                     :model-value="group.colormap"
@@ -587,7 +587,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'secondary-text'">Colormap class</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'helper-text'">Colormap class</v-label></td>
                                             <td>
                                                 <v-btn-toggle
                                                     :model-value="group.colormap?.discrete ? 'discrete' : 'continuous'"
@@ -604,7 +604,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap?.markers && group.colormap?.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap?.markers && group.colormap?.discrete ? '' : 'helper-text'">No. of colors</v-label></td>
                                             <td>
                                                 <NumericInput
                                                     :model="group.colormap?.n_colors"
@@ -616,7 +616,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'secondary-text'">Range</v-label></td>
+                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'helper-text'">Range</v-label></td>
                                             <td>
                                                 <NumericInput
                                                     v-if="dataRange"
@@ -673,7 +673,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible ? '' : 'secondary-text'">Color scheme</v-label></td>
+                                            <td><v-label :class="group.visible ? '' : 'helper-text'">Color scheme</v-label></td>
                                             <td>
                                                 <div class="d-flex" style="align-items: center;">
                                                     <v-btn-toggle
@@ -714,7 +714,7 @@ watch(() => props.activeLayer, init)
                                         </tr>
                                         <template v-if="group.colormap">
                                             <tr>
-                                                <td><v-label :class="group.visible ? '' : 'secondary-text'">Color by property</v-label></td>
+                                                <td><v-label :class="group.visible ? '' : 'helper-text'">Color by property</v-label></td>
                                                 <td>
                                                     <v-select
                                                         v-if="vectorProperties"
@@ -743,7 +743,7 @@ watch(() => props.activeLayer, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.color_by ? '' : 'secondary-text'">Colormap</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.color_by ? '' : 'helper-text'">Colormap</v-label></td>
                                                 <td>
                                                     <v-select
                                                         :model-value="group.colormap"
@@ -781,7 +781,7 @@ watch(() => props.activeLayer, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.markers && vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range ? '' : 'secondary-text'">Colormap class</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.markers && vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range ? '' : 'helper-text'">Colormap class</v-label></td>
                                                 <td>
                                                     <v-btn-toggle
                                                         :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
@@ -798,7 +798,7 @@ watch(() => props.activeLayer, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.markers && group.colormap.discrete ? '' : 'secondary-text'">No. of colors</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.markers && group.colormap.discrete ? '' : 'helper-text'">No. of colors</v-label></td>
                                                 <td>
                                                     <NumericInput
                                                         :model="group.colormap.n_colors"
@@ -810,7 +810,7 @@ watch(() => props.activeLayer, init)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.color_by && group.colormap.markers ? '' : 'secondary-text'">Null values</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.color_by && group.colormap.markers ? '' : 'helper-text'">Null values</v-label></td>
                                                 <td>
                                                     <div
                                                         class="d-flex"
@@ -934,7 +934,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td :class="vectorProperties ? '' : 'secondary-text'"><v-label>Size by Property</v-label></td>
+                                            <td :class="vectorProperties ? '' : 'helper-text'"><v-label>Size by Property</v-label></td>
                                             <td>
                                                 <v-select
                                                     v-model="group.size_range.size_by"
@@ -958,7 +958,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td :class="group.size_range.size_by ? '' : 'secondary-text'">
+                                            <td :class="group.size_range.size_by ? '' : 'helper-text'">
                                                 <v-label>Size Range</v-label>
                                                 <v-icon
                                                     v-if="group.name !== 'all'"
@@ -978,7 +978,7 @@ watch(() => props.activeLayer, init)
                                             </td>
                                         </tr>
                                         <tr v-if="group.size_range">
-                                            <td :class="group.size_range.size_by ? '' : 'secondary-text'"><v-label>Null Values</v-label></td>
+                                            <td :class="group.size_range.size_by ? '' : 'helper-text'"><v-label>Null Values</v-label></td>
                                             <td>
                                                 <v-btn-toggle
                                                     :model-value="group.size_range.null_size?.transparency ? 'transparent' : 1"
@@ -1080,7 +1080,7 @@ watch(() => props.activeLayer, init)
                                             </v-list-item>
                                         </template>
                                     </v-select>
-                                    <span :class="filter.apply ? '' : 'secondary-text'" style="white-space: wrap;" v-else>
+                                    <span :class="filter.apply ? '' : 'helper-text'" style="white-space: wrap;" v-else>
                                         {{ filter.filter_by }}
                                         <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
                                         {{ filter.list }}
@@ -1095,7 +1095,7 @@ watch(() => props.activeLayer, init)
                                     </div>
                                 </div>
                                 <table class="aligned-controls mt-2" v-if="focusedFilterId === filter.id">
-                                    <tbody :class="filter.apply ? '' : 'secondary-text'">
+                                    <tbody :class="filter.apply ? '' : 'helper-text'">
                                         <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties.find((f: any) => f.name === filter.filter_by)]">
                                             <tr v-if="property?.range">
                                                 <td>Value type</td>
@@ -1144,6 +1144,7 @@ watch(() => props.activeLayer, init)
                                                         v-model="filter.list"
                                                         :items="property.value_set"
                                                         :disabled="!filter.apply"
+                                                        placeholder="Select values"
                                                         density="compact"
                                                         variant="outlined"
                                                         multiple
