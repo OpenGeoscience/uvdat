@@ -30,7 +30,7 @@ const currentStyleSpec = ref<StyleSpec>();
 const availableGroups = ref<Record<string, string[]>>({color: [], size: []});
 const currentGroups = ref<Record<string, string | undefined>>({color: undefined, size: undefined});
 const rasterBands = ref<Record<number, Record<string, number | string>>>();
-const maxFilterId = ref<number>(0);
+const maxFilterId = ref<number>(1);
 const focusedFilterId = ref<number | undefined>();
 const highlightFilterId = ref<number | undefined>();
 
@@ -272,6 +272,7 @@ function addFilter() {
 
 function focusFilter(filterId: number | undefined) {
     if (!currentStyleSpec.value || !filterId) return;
+    currentStyleSpec.value.filters = currentStyleSpec.value.filters.filter((f) => f.filter_by)
     focusedFilterId.value = filterId;
 }
 
@@ -1043,7 +1044,7 @@ watch(() => props.activeLayer, init)
                                 </v-card-subtitle>
                                 <v-btn color="primary" @click="addFilter">
                                     <v-icon icon="mdi-plus"/>
-                                    Add Filter
+                                    Add New Filter
                                 </v-btn>
                             </div>
                             <v-card
@@ -1056,6 +1057,7 @@ watch(() => props.activeLayer, init)
                                         v-if="focusedFilterId === filter.id"
                                         v-model="filter.filter_by"
                                         :items="vectorProperties"
+                                        :disabled="!filter.apply"
                                         placeholder="Select Property"
                                         item-title="name"
                                         item-value="name"
@@ -1078,7 +1080,7 @@ watch(() => props.activeLayer, init)
                                             </v-list-item>
                                         </template>
                                     </v-select>
-                                    <span style="white-space: wrap;" v-else>
+                                    <span :class="filter.apply ? '' : 'secondary-text'" style="white-space: wrap;" v-else>
                                         {{ filter.filter_by }}
                                         <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
                                         {{ filter.list }}
@@ -1093,13 +1095,14 @@ watch(() => props.activeLayer, init)
                                     </div>
                                 </div>
                                 <table class="aligned-controls mt-2" v-if="focusedFilterId === filter.id">
-                                    <tbody>
+                                    <tbody :class="filter.apply ? '' : 'secondary-text'">
                                         <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties.find((f: any) => f.name === filter.filter_by)]">
                                             <tr v-if="property?.range">
                                                 <td>Value type</td>
                                                 <td>
                                                     <v-btn-toggle
                                                         :model-value="filter.range ? 'range' : 'single'"
+                                                        :disabled="!filter.apply"
                                                         density="compact"
                                                         variant="outlined"
                                                         divided
@@ -1121,6 +1124,7 @@ watch(() => props.activeLayer, init)
                                                     <template v-if="property.range">
                                                         <NumericInput
                                                             v-if="filter.range"
+                                                            :disabled="!filter.apply"
                                                             :rangeModel="filter.range"
                                                             :min="property.range[0]"
                                                             :max="property.range[1]"
@@ -1128,6 +1132,7 @@ watch(() => props.activeLayer, init)
                                                         />
                                                         <NumericInput
                                                             v-else-if="filter.list"
+                                                            :disabled="!filter.apply"
                                                             :model="filter.list[0]"
                                                             :min="property.range[0]"
                                                             :max="property.range[1]"
@@ -1138,6 +1143,7 @@ watch(() => props.activeLayer, init)
                                                         v-else
                                                         v-model="filter.list"
                                                         :items="property.value_set"
+                                                        :disabled="!filter.apply"
                                                         density="compact"
                                                         variant="outlined"
                                                         multiple
@@ -1153,6 +1159,7 @@ watch(() => props.activeLayer, init)
                                             <td>
                                                 <v-btn-toggle
                                                     :model-value="filter.include ? 'include' : 'exclude'"
+                                                    :disabled="!filter.apply"
                                                     density="compact"
                                                     variant="outlined"
                                                     divided
