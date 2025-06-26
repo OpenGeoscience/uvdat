@@ -93,6 +93,7 @@ function updateRange(lower: number, upper: number) {
         :disabled="props.disabled"
         color="primary"
         strict
+        hide-details
         @update:model-value="([lower, upper]) => updateRange(lower, upper)"
     >
         <template v-slot:prepend>

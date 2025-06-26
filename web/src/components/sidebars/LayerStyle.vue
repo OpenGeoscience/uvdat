@@ -30,6 +30,9 @@ const currentStyleSpec = ref<StyleSpec>();
 const availableGroups = ref<Record<string, string[]>>({color: [], size: []});
 const currentGroups = ref<Record<string, string | undefined>>({color: undefined, size: undefined});
 const rasterBands = ref<Record<number, Record<string, number | string>>>();
+const maxFilterId = ref<number>(0);
+const focusedFilterId = ref<number | undefined>();
+const highlightFilterId = ref<number | undefined>();
 
 // for correct typing in template, assign to local var
 const colormaps: ColorMap[] = styleStore.colormaps;
@@ -250,16 +253,31 @@ function setGroupSizeMode(groupName: string, sizeMode: string) {
     )
 }
 
-function removeFilter(filter: StyleFilter) {
-    if (!currentStyleSpec.value) return
-    currentStyleSpec.value.filters = currentStyleSpec.value.filters.filter(
-        (f) => (
-            !(f.filter_by === filter.filter_by &&
-            f.include === filter.include &&
-            f.list === filter.list &&
-            f.range === filter.range)
-        )
-    )
+function addFilter() {
+    if (!currentStyleSpec.value) return;
+    currentStyleSpec.value.filters = [
+        {
+            id: maxFilterId.value,
+            include: true,
+            transparency: true,
+            apply: true
+        },
+        ...currentStyleSpec.value.filters.filter((f) => f.filter_by),
+    ]
+    focusedFilterId.value = maxFilterId.value
+    highlightFilterId.value = maxFilterId.value
+    maxFilterId.value += 1
+    setTimeout(() => highlightFilterId.value = undefined, 1000)
+}
+
+function focusFilter(filterId: number | undefined) {
+    if (!currentStyleSpec.value || !filterId) return;
+    focusedFilterId.value = filterId;
+}
+
+function removeFilter(filterId: number | undefined) {
+    if (!currentStyleSpec.value || !filterId) return
+    currentStyleSpec.value.filters = currentStyleSpec.value.filters.filter((f) => f.id !== filterId)
 }
 
 function cancel() {
@@ -1019,142 +1037,136 @@ watch(() => props.activeLayer, init)
                         <div v-if="showVectorOptions">
                             <v-card-subtitle>Vector Options</v-card-subtitle>
                             <v-divider class="mt-1 mb-2"/>
-                            <v-btn color="primary" @click="currentStyleSpec.filters.push({include: true, transparency: true})" width="100%">
-                                <v-icon icon="mdi-plus"/>
-                                Add Filter
-                            </v-btn>
-                            <v-card-subtitle v-if="currentStyleSpec.filters.length">
-                                Filters ({{ currentStyleSpec.filters.length }}):
-                            </v-card-subtitle>
-                            <v-expansion-panels v-if="currentStyleSpec.filters.length"  variant="accordion" density="compact">
-                                <v-expansion-panel v-for="filter, index in currentStyleSpec.filters" :key="index">
-                                    <v-expansion-panel-title>
-                                        <v-chip
-                                            color="primary"
-                                            density="compact"
-                                            class="mb-1"
-                                            style="max-width: 100%; height: auto !important;"
-                                        >
-                                            <template v-slot>
-                                                <span style="white-space: wrap;" v-if="filter.filter_by">
-                                                    {{ filter.filter_by }}
-                                                    <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
-                                                    {{ filter.list }}
-                                                    {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
-                                                </span>
-                                                <span v-else>New Filter</span>
-                                                <v-icon icon="mdi-close-circle" class="text-primary" @click="removeFilter(filter)"/>
-                                            </template>
-                                        </v-chip>
-                                    </v-expansion-panel-title>
-                                    <v-expansion-panel-text>
-                                        <table class="aligned-controls">
-                                            <tbody>
-                                                <tr>
-                                                    <td colspan="2">
-                                                        <v-select
-                                                            v-if="vectorProperties"
-                                                            v-model="filter.filter_by"
-                                                            :items="vectorProperties"
-                                                            placeholder="Select Property"
-                                                            item-title="name"
-                                                            item-value="name"
-                                                            density="compact"
-                                                            variant="outlined"
-                                                            hide-details
-                                                            @update:model-value="(v) => {
-                                                                if (!filter.list && !filter.range && vectorProperties) {
-                                                                    const property = vectorProperties.find((f: any) => f.name === filter.filter_by)
-                                                                    if (property?.range) filter.range = property.range
-                                                                    else if (property?.value_set) filter.list = []
-                                                                }
-                                                            }"
-                                                        >
-                                                            <template v-slot:item="{ props, item }">
-                                                                <v-list-item v-bind="props">
-                                                                    <template v-slot:append>
-                                                                        <v-chip size="small" v-if="(item.raw as Record<string, any>).sample_label">{{ (item.raw as Record<string, any>).sample_label }}</v-chip>
-                                                                    </template>
-                                                                </v-list-item>
-                                                            </template>
-                                                        </v-select>
-                                                    </td>
-                                                </tr>
-                                                <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties.find((f: any) => f.name === filter.filter_by)]">
-                                                    <tr v-if="property?.range">
-                                                        <td>Value type</td>
-                                                        <td>
-                                                            <v-btn-toggle
-                                                                :model-value="filter.range ? 'range' : 'single'"
-                                                                density="compact"
-                                                                variant="outlined"
-                                                                divided
-                                                                mandatory
-                                                                @update:model-value="(value: string) => {
-                                                                    if (!property.range) return
-                                                                    if (value === 'range') {filter.range = property.range; filter.list = undefined}
-                                                                    else {filter.range = undefined; filter.list = [property.range[0]]}
-                                                                }"
-                                                            >
-                                                                <v-btn :value="'single'">Single</v-btn>
-                                                                <v-btn :value="'range'">Range</v-btn>
-                                                            </v-btn-toggle>
-                                                        </td>
-                                                    </tr>
-                                                    <tr v-if="property">
-                                                        <td>Values</td>
-                                                        <td>
-                                                            <template v-if="property.range">
-                                                                <NumericInput
-                                                                    v-if="filter.range"
-                                                                    :rangeModel="filter.range"
-                                                                    :min="property.range[0]"
-                                                                    :max="property.range[1]"
-                                                                    @update="(v) => filter.range = v"
-                                                                />
-                                                                <NumericInput
-                                                                    v-else-if="filter.list"
-                                                                    :model="filter.list[0]"
-                                                                    :min="property.range[0]"
-                                                                    :max="property.range[1]"
-                                                                    @update="(v) => filter.list = [v]"
-                                                                />
-                                                            </template>
-                                                            <v-select
-                                                                v-else
-                                                                v-model="filter.list"
-                                                                :items="property.value_set"
-                                                                density="compact"
-                                                                variant="outlined"
-                                                                multiple
-                                                                chips
-                                                                closable-chips
-                                                                hide-details
-                                                            />
-                                                        </td>
-                                                    </tr>
-                                                    <tr v-if="property">
-                                                        <td>Filter Mode</td>
-                                                        <td>
-                                                            <v-btn-toggle
-                                                                :model-value="filter.include ? 'include' : 'exclude'"
-                                                                density="compact"
-                                                                variant="outlined"
-                                                                divided
-                                                                mandatory
-                                                                @update:model-value="(value: string) => {filter.include = value === 'include'}"
-                                                            >
-                                                                <v-btn :value="'include'">Include</v-btn>
-                                                                <v-btn :value="'exclude'">Exclude</v-btn>
-                                                            </v-btn-toggle>
-                                                        </td>
-                                                    </tr>
+                            <div class="d-flex" style="justify-content: space-between; align-items: center;">
+                                <v-card-subtitle>
+                                    Filters ({{ currentStyleSpec.filters.length }})
+                                </v-card-subtitle>
+                                <v-btn color="primary" @click="addFilter">
+                                    <v-icon icon="mdi-plus"/>
+                                    Add Filter
+                                </v-btn>
+                            </div>
+                            <v-card
+                                v-for="filter in currentStyleSpec.filters"
+                                :class="highlightFilterId === filter.id ? 'filter-card highlight' : 'filter-card'"
+                                :key="filter.id"
+                            >
+                                <div class="d-flex" style="justify-content: space-between; align-items: center;">
+                                    <v-select
+                                        v-if="focusedFilterId === filter.id"
+                                        v-model="filter.filter_by"
+                                        :items="vectorProperties"
+                                        placeholder="Select Property"
+                                        item-title="name"
+                                        item-value="name"
+                                        density="compact"
+                                        variant="outlined"
+                                        hide-details
+                                        @update:model-value="(v) => {
+                                            if (vectorProperties) {
+                                                const property = vectorProperties.find((f: any) => f.name === filter.filter_by)
+                                                if (property?.range) filter.range = property.range
+                                                else if (property?.value_set) filter.list = []
+                                            }
+                                        }"
+                                    >
+                                        <template v-slot:item="{ props, item }">
+                                            <v-list-item v-bind="props">
+                                                <template v-slot:append>
+                                                    <v-chip size="small" v-if="(item.raw as Record<string, any>).sample_label">{{ (item.raw as Record<string, any>).sample_label }}</v-chip>
                                                 </template>
-                                            </tbody>
-                                        </table>
-                                    </v-expansion-panel-text>
-                                </v-expansion-panel>
-                            </v-expansion-panels>
+                                            </v-list-item>
+                                        </template>
+                                    </v-select>
+                                    <span style="white-space: wrap;" v-else>
+                                        {{ filter.filter_by }}
+                                        <span class="font-weight-bold">{{ filter.include ? ' [is] ' : ' [is not] ' }}</span>
+                                        {{ filter.list }}
+                                        {{ filter.range ? filter.range[0] + ' - ' + filter.range[1] : '' }}
+                                    </span>
+                                    <div>
+                                        <v-icon v-if="focusedFilterId !== filter.id" @click="focusFilter(filter.id)" class="ml-2">mdi-pencil-outline</v-icon>
+                                        <v-icon @click="filter.apply = !filter.apply" class="ml-2">
+                                            {{ filter.apply ? 'mdi-eye' : 'mdi-eye-off' }}
+                                        </v-icon>
+                                        <v-icon @click="removeFilter(filter.id)" class="ml-2">mdi-delete-outline</v-icon>
+                                    </div>
+                                </div>
+                                <table class="aligned-controls mt-2" v-if="focusedFilterId === filter.id">
+                                    <tbody>
+                                        <template v-if="filter.filter_by && vectorProperties" v-for="property in [vectorProperties.find((f: any) => f.name === filter.filter_by)]">
+                                            <tr v-if="property?.range">
+                                                <td>Value type</td>
+                                                <td>
+                                                    <v-btn-toggle
+                                                        :model-value="filter.range ? 'range' : 'single'"
+                                                        density="compact"
+                                                        variant="outlined"
+                                                        divided
+                                                        mandatory
+                                                        @update:model-value="(value: string) => {
+                                                            if (!property.range) return
+                                                            if (value === 'range') {filter.range = property.range; filter.list = undefined}
+                                                            else {filter.range = undefined; filter.list = [property.range[0]]}
+                                                        }"
+                                                    >
+                                                        <v-btn :value="'single'">Single</v-btn>
+                                                        <v-btn :value="'range'">Range</v-btn>
+                                                    </v-btn-toggle>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="property">
+                                                <td>Values</td>
+                                                <td>
+                                                    <template v-if="property.range">
+                                                        <NumericInput
+                                                            v-if="filter.range"
+                                                            :rangeModel="filter.range"
+                                                            :min="property.range[0]"
+                                                            :max="property.range[1]"
+                                                            @update="(v) => filter.range = v"
+                                                        />
+                                                        <NumericInput
+                                                            v-else-if="filter.list"
+                                                            :model="filter.list[0]"
+                                                            :min="property.range[0]"
+                                                            :max="property.range[1]"
+                                                            @update="(v) => filter.list = [v]"
+                                                        />
+                                                    </template>
+                                                    <v-select
+                                                        v-else
+                                                        v-model="filter.list"
+                                                        :items="property.value_set"
+                                                        density="compact"
+                                                        variant="outlined"
+                                                        multiple
+                                                        chips
+                                                        closable-chips
+                                                        hide-details
+                                                    />
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <tr>
+                                            <td>Filter Mode</td>
+                                            <td>
+                                                <v-btn-toggle
+                                                    :model-value="filter.include ? 'include' : 'exclude'"
+                                                    density="compact"
+                                                    variant="outlined"
+                                                    divided
+                                                    mandatory
+                                                    @update:model-value="(value: string) => {filter.include = value === 'include'}"
+                                                >
+                                                    <v-btn :value="'include'">Include values</v-btn>
+                                                    <v-btn :value="'exclude'">Exclude values</v-btn>
+                                                </v-btn-toggle>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </v-card>
                         </div>
                     </v-window-item>
                 </v-window>
@@ -1327,5 +1339,16 @@ watch(() => props.activeLayer, init)
 .v-window__container {
     height: 400px!important;
     overflow-y: auto;
+    overflow-x: hidden;
+}
+.filter-card {
+    padding: 8px !important;
+    margin-top: 8px;
+    background-color: rgb(var(--v-theme-background)) !important;
+    border: 1px solid rgb(var(--v-theme-border)) !important;
+    box-shadow: none !important;
+}
+.filter-card.highlight {
+    box-shadow: 0 0 1px 2px rgb(var(--v-theme-primary)) !important;
 }
 </style>

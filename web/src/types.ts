@@ -68,9 +68,11 @@ export interface ColorMap {
 }
 
 export interface StyleFilter {
+  id?: number;
   filter_by?: string;
   include: boolean;
   transparency: boolean;
+  apply?: boolean;
   list?: any[];
   range?: number[];
 }

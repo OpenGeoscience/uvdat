@@ -218,21 +218,23 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
         filters.push(0)
     }
     styleSpec.filters.forEach((f) => {
-        let filter;
-        if (f.list){
-            filter = ["in", ["get", f.filter_by], ["literal", f.list]]
-        } else if (f.range) {
-            filter = [
-                "all",
-                [">=", ["get", f.filter_by], f.range[0]],
-                ["<=", ["get", f.filter_by], f.range[1]],
-            ]
-        }
+        if (f.apply) {
+            let filter;
+            if (f.list){
+                filter = ["in", ["get", f.filter_by], ["literal", f.list]]
+            } else if (f.range) {
+                filter = [
+                    "all",
+                    [">=", ["get", f.filter_by], f.range[0]],
+                    ["<=", ["get", f.filter_by], f.range[1]],
+                ]
+            }
 
-        if (filter) {
-            if (f.include) filter = ['!', filter]
-            filters.push(filter)
-            filters.push(0)
+            if (filter) {
+                if (f.include) filter = ['!', filter]
+                filters.push(filter)
+                filters.push(0)
+            }
         }
     })
     const defaultOpacity = styleSpec.opacity;
