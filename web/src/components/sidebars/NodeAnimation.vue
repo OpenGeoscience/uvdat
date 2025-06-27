@@ -61,13 +61,10 @@ watch(currentTick, async () => {
     if (props.network) networkStore.setNetworkDeactivatedNodes(props.network, deactivated || [], true);
     if (props.additionalAnimationLayers) {
       props.additionalAnimationLayers.forEach((layer) => {
-        const currentStyle = styleStore.selectedLayerStyles[`${layer.id}.${layer.copy_id || 0}`];
-        if (currentStyle.visible) {
-          layerStore.selectedLayers = layerStore.selectedLayers.map((l) => {
-            if (l.id === layer.id) l.current_frame = currentTick.value
-            return l;
-          })
-        }
+        layerStore.selectedLayers = layerStore.selectedLayers.map((l) => {
+          if (l.id === layer.id && l.visible) l.current_frame = currentTick.value
+          return l;
+        })
       })
     }
   }

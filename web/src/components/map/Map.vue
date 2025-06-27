@@ -114,6 +114,10 @@ function createMap() {
   newMap.on("load", () => {
     mapContainer.classList.remove("spinner");
   });
+  newMap.on('error', (response) => {
+    // AbortErrors are raised when updating style of raster layers; ignore these
+    if (response.error.message !== 'AbortError') console.error(response.error)
+});
 
   /**
    * This is called on every click, and technically hides the tooltip on every click.

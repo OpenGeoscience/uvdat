@@ -77,7 +77,7 @@ watch(() => appStore.currentUser, onReady);
   </v-app>
 </template>
 
-<style scoped>
+<style>
 * {
   font-family: "Inter", serif;
   font-optical-sizing: auto;
@@ -94,5 +94,17 @@ watch(() => appStore.currentUser, onReady);
   -webkit-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+/* Chrome - Hides track and width/height set for vertical/horizontal scrollbars */
+::-webkit-scrollbar {
+  background-color: transparent;
+  width: 4px;
+}
+
+/* Chrome - Changes thumb color and rounds scrollbar edges, in Chrome any
+scrollbar changes disables default styling and rounding so corners appear squared */
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--v-theme-border));
+  border-radius: 4px;
 }
 </style>
