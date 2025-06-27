@@ -53,12 +53,15 @@ interface NetworkStyle {
     default: number | string,
 }
 
-function colormapMarkersSubsample(colormap: ColorMap) {
-    if (colormap.discrete && colormap.n_colors && colormap.markers) {
+function colormapMarkersSubsample(
+    colormap: ColorMap, n: number | undefined = undefined
+) {
+    if (!n && colormap.discrete && colormap.n_colors && colormap.markers) n = colormap.n_colors
+    if (n && colormap.markers) {
         const elements = [colormap.markers[0]];
         const totalItems = colormap.markers.length - 1;
-        const interval = Math.floor(totalItems/(colormap.n_colors - 1));
-        for (let i = 1; i < colormap.n_colors - 1; i++) {
+        const interval = Math.floor(totalItems/(n - 1));
+        for (let i = 1; i < n - 1; i++) {
             elements.push(colormap.markers[i * interval]);
         }
         elements.push(colormap.markers[colormap.markers.length - 1]);
@@ -102,12 +105,16 @@ function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, pr
     } else if (colorSpec?.colormap?.color_by && propsSpec) {
         const colorByProp = propsSpec[colorSpec.colormap.color_by]
         if (!colorByProp) return undefined
-        const markers = colormapMarkersSubsample(colorSpec.colormap)
+        const range = colorByProp.range
+        let nColors = colorSpec.colormap.n_colors
+        if (!nColors) return undefined
+        if (range && range[1] - range[0] < nColors) nColors = range[1] - range[0];
+        const markers = colormapMarkersSubsample(colorSpec.colormap, nColors)
         if (!markers) return undefined
-        if (colorByProp.range) {
-            const [min, max] = colorByProp.range
+        if (range) {
+            const [min, max] = range
             const valueColors = markers.map((marker) => [
-                marker.value * (max - min) + min,
+                Math.round(marker.value * (max - min) + min),
                 marker.color
             ])
             if (colorSpec.colormap.discrete) {
@@ -131,11 +138,16 @@ function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, pr
                 ]
             }
         } else {
-            const sortedValues = colorByProp.value_set.sort((a: any, b: any) => a - b)
-            const valueColors = sortedValues.map((v, i) => [
-                v,
-                markers[Math.round(i / (sortedValues.length - 1) * (markers.length - 1))]?.color
-            ]).flat()
+            const valueSet = Array.from(new Set(colorByProp.value_set.filter((v) => v)))
+            const sortedValues = valueSet.sort((a: any, b: any) => a - b)
+            const valueColors = sortedValues.map((v, i) => {
+                if (markers) {
+                    return [
+                        v,
+                        markers[Math.ceil((i + 1) / sortedValues.length * markers.length) - 1]?.color
+                    ]
+                }
+        }).flat()
             baseColor = [
                 'match',
                 ['get', colorSpec.colormap.color_by],
@@ -148,6 +160,8 @@ function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, pr
         baseColor = [
             'case',
             ['==', ['get', colorSpec.colormap?.color_by], null],
+            nullColor,
+            ['==', ['get', colorSpec.colormap?.color_by], ''],
             nullColor,
             baseColor,
         ]
@@ -187,11 +201,11 @@ function getVectorSizePaintProperty(styleSpec: StyleSpec, groupName: string, pro
                 nullSize,
                 baseSize,
             ]
-           zoomedSize = [
+            zoomedSize = [
                 'case',
                 ['==', ['get', sizeSpec.size_range.size_by], null],
                 nullSize,
-                zoomedSize,
+                baseSize * zoomScalingConstant,
             ]
         }
     }

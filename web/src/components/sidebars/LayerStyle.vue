@@ -414,7 +414,7 @@ watch(() => props.activeLayer, init)
                 icon="mdi-cog"
             />
         </template>
-        <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="500">
+        <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="510">
             <div class="px-4 py-2" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
                 Edit Style
                 <span class="secondary-text">(Layer: {{ layer.name }})</span>

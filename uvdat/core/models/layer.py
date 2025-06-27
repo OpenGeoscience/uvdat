@@ -33,7 +33,7 @@ class Layer(models.Model):
             if feature_type not in summary['feature_types']:
                 summary['feature_types'].append(feature_type)
             for k, v in feature.properties.items():
-                if k not in exclude_keys and v is not None:
+                if k not in exclude_keys and v is not None and v != '':
                     if k not in summary['properties']:
                         summary['properties'][k] = dict(value_set=set(), count=0)
                     summary['properties'][k]['value_set'].add(v)
@@ -47,10 +47,13 @@ class Layer(models.Model):
                     min(summary['properties'][k]['value_set']),
                     max(summary['properties'][k]['value_set']),
                 ]
-                del summary['properties'][k]['value_set']
-                summary['properties'][k]['range'] = value_range
-                summary['properties'][k]['sample_label'] = f'[{value_range[0]}, {value_range[1]}]'
-            else:
+                if value_range[0] < value_range[1]:
+                    del summary['properties'][k]['value_set']
+                    summary['properties'][k]['range'] = value_range
+                    summary['properties'][k][
+                        'sample_label'
+                    ] = f'[{value_range[0]}, {value_range[1]}]'
+            if summary['properties'][k].get('range') is None:
                 summary['properties'][k]['sample_label'] = ', '.join(
                     str(v) for v in list(summary['properties'][k]['value_set'])[:3]
                 )
