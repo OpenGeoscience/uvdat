@@ -93,6 +93,7 @@ async function init() {
 
 function selectStyle(style: LayerStyle) {
     currentStyleSpec.value = style.style_spec
+    currentGroups.value = {color: undefined, size: undefined}
 }
 
 function fetchRasterBands() {
