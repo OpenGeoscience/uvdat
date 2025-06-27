@@ -281,6 +281,23 @@ function removeFilter(filterId: number | undefined) {
     currentStyleSpec.value.filters = currentStyleSpec.value.filters.filter((f) => f.id !== filterId)
 }
 
+function updateFilterBy(filterId: number | undefined, propertyName: string) {
+    if (!currentStyleSpec.value || !filterId || !vectorProperties.value) return
+    const property = vectorProperties.value.find((p) => p.name === propertyName)
+    currentStyleSpec.value.filters = currentStyleSpec.value.filters.map((f) => {
+        if (f.id === filterId) {
+            if (property?.range) {
+                f.range = property.range
+                f.list = undefined
+            } else if (property?.value_set) {
+                f.list = []
+                f.range = undefined
+            }
+        }
+        return f
+    })
+}
+
 function cancel() {
     const defaultStyle = availableStyles.value?.find((s) => s.is_default)
     if (defaultStyle?.style_spec) {
@@ -1064,13 +1081,7 @@ watch(() => props.activeLayer, init)
                                         density="compact"
                                         variant="outlined"
                                         hide-details
-                                        @update:model-value="(v) => {
-                                            if (vectorProperties) {
-                                                const property = vectorProperties.find((f: any) => f.name === filter.filter_by)
-                                                if (property?.range) filter.range = property.range
-                                                else if (property?.value_set) filter.list = []
-                                            }
-                                        }"
+                                        @update:model-value="(v) => updateFilterBy(filter.id, v)"
                                     >
                                         <template v-slot:item="{ props, item }">
                                             <v-list-item v-bind="props">
