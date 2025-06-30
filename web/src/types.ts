@@ -60,6 +60,7 @@ export interface ColorMap {
   n_colors?: number;
   color_by?: string;
   range?: [number, number],
+  clamp?: boolean,
   null_color?: string;
   markers?: {
     color: string;

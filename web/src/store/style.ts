@@ -83,6 +83,9 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
                 if (colorSpec.colormap.discrete) {
                     colorQuery.scheme = 'discrete'
                 }
+                if (colorSpec.colormap.clamp === false) {
+                    colorQuery.clamp = false
+                }
                 colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap)?.map((marker) => marker.color)
             }
             if (colorSpec.name === 'all') {

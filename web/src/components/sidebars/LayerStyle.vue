@@ -648,6 +648,32 @@ watch(() => props.activeLayer, init)
                                                 />
                                             </td>
                                         </tr>
+                                        <tr>
+                                            <td>
+                                                <v-label :class="group.visible && group.colormap?.markers ? '' : 'helper-text'">Clamping</v-label>
+                                                <v-icon
+                                                    icon="mdi-information-outline"
+                                                    color="primary"
+                                                    size="small"
+                                                    :class="group.visible && group.colormap?.markers ? 'ml-2' : 'helper-text ml-2'"
+                                                    v-tooltip="'When enabled, values outside the selected range will be clamped to the ends of the colormap. When disabled, those values will appear transparent.'"
+                                                />
+                                            </td>
+                                            <td>
+                                                <v-btn-toggle
+                                                    :model-value="group.colormap?.clamp === false ? 'disable' : 'enable'"
+                                                    density="compact"
+                                                    variant="outlined"
+                                                    divided
+                                                    mandatory
+                                                    :disabled="!group.visible || !group.colormap?.markers"
+                                                    @update:model-value="(value: string) => {if (group.colormap) group.colormap.clamp = value === 'enable'}"
+                                                >
+                                                    <v-btn :value="'disable'">Disable</v-btn>
+                                                    <v-btn :value="'enable'">Enable</v-btn>
+                                                </v-btn-toggle>
+                                            </td>
+                                        </tr>
                                     </template>
                                 </tbody>
                             </table>
