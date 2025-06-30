@@ -27,7 +27,7 @@ const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
 const currentLayerStyle = ref<LayerStyle>({name: 'None', is_default: true});
 const currentStyleSpec = ref<StyleSpec>();
-const availableGroups = ref<Record<string, string[]>>({color: [], size: []});
+const availableGroups = ref<string[]>([]);
 const currentGroups = ref<Record<string, string | undefined>>({color: undefined, size: undefined});
 const rasterBands = ref<Record<number, Record<string, number | string>>>();
 const maxFilterId = ref<number>(1);
@@ -84,10 +84,7 @@ async function init() {
         }
         fetchRasterBands()
         if (currentStyleSpec.value) {
-            availableGroups.value['color'] = currentStyleSpec.value.colors.map((group) => group.name)
-            if (availableGroups.value['color'].length) currentGroups.value['color'] = availableGroups.value['color'][0]
-            availableGroups.value['size'] = currentStyleSpec.value.sizes.map((group) => group.name)
-            if (availableGroups.value['size'].length) currentGroups.value['size'] = availableGroups.value['size'][0]
+            setAvailableGroups()
         }
     }
 }
@@ -110,33 +107,52 @@ function fetchRasterBands() {
     }
 }
 
-function setColorGroups(different: boolean | null) {
+function setAvailableGroups() {
+    if (showRasterOptions.value && rasterBands.value) {
+        const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
+        availableGroups.value = bandNames;
+    } else if (showVectorOptions.value) {
+        const summary = layerStore.layerSummaries[props.layer.id]
+        if (summary) {
+            availableGroups.value = []
+            if (summary.feature_types.includes('Point'))  availableGroups.value.push('points')
+            if (summary.feature_types.includes('LineString'))  availableGroups.value.push('lines')
+            if (summary.feature_types.includes('MultiPolygon') || summary.feature_types.includes('Polygon'))  availableGroups.value.push('polygons')
+        } else {
+            availableGroups.value = ['polygons', 'lines', 'points']
+        }
+    }
+    if (availableGroups.value?.length) {
+        const firstGroup = availableGroups.value[0]
+        if (!currentGroups.value['color']) {
+            const currentSpecGroups = currentStyleSpec.value?.colors.map((c) => c.name)
+            currentGroups.value['color'] = currentSpecGroups?.length ? currentSpecGroups[0] : firstGroup
+        }
+        if (!currentGroups.value['size']) {
+            const currentSpecGroups = currentStyleSpec.value?.sizes.map((c) => c.name)
+            currentGroups.value['size'] = currentSpecGroups?.length ? currentSpecGroups[0] : firstGroup
+        }
+    }
+}
+
+
+function setCurrentColorGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
+    const defaultStyle = styleStore.getDefaultStyleSpec(props.layer.frames[props.layer.current_frame].raster)
+    let all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
+    if (!all) all = defaultStyle.colors.find((group) => group.name === 'all')
     if (different) {
         if (showRasterOptions.value && rasterBands.value) {
-            const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
-            const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
-            currentStyleSpec.value.colors = bandNames.map((name) => {
+            currentStyleSpec.value.colors = availableGroups.value.map((name) => {
                 return { ...all, visible: true, name }
             })
-            bandNames.forEach((name) => setGroupColorMode(name, 'colormap'))
-            availableGroups.value['color'] = bandNames;
+            availableGroups.value.forEach((name) => setGroupColorMode(name, 'colormap'))
         } else if (showVectorOptions.value) {
-            const all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
-            const summary = layerStore.layerSummaries[props.layer.id]
-            if (summary) {
-                availableGroups.value['color'] = []
-                if (summary.feature_types.includes('Point'))  availableGroups.value['color'].push('points')
-                if (summary.feature_types.includes('LineString'))  availableGroups.value['color'].push('lines')
-                if (summary.feature_types.includes('MultiPolygon') || summary.feature_types.includes('Polygon'))  availableGroups.value['color'].push('polygons')
-            } else {
-                availableGroups.value['color'] = ['polygons', 'lines', 'points']
-            }
-            currentStyleSpec.value.colors = availableGroups.value['color'].map((name) => {
+            currentStyleSpec.value.colors = availableGroups.value.map((name) => {
                 return { ...JSON.parse(JSON.stringify(all)), visible: true, name }
             })
         }
-        if (availableGroups.value['color']?.length) currentGroups.value['color'] = availableGroups.value['color'][0]
+        if (availableGroups.value?.length) currentGroups.value['color'] = availableGroups.value[0]
     } else {
         if (currentGroups.value['color']) {
             const currentGroupOptions = currentStyleSpec.value.colors.find((c) => c.name === currentGroups.value['color'])
@@ -146,12 +162,9 @@ function setColorGroups(different: boolean | null) {
                 visible: true,
             }]
         } else {
-            currentStyleSpec.value.colors = [...styleStore.getDefaultStyleSpec(
-                props.layer.frames[props.layer.current_frame].raster
-            ).colors]
+            currentStyleSpec.value.colors = [...defaultStyle.colors]
         }
         if (showRasterOptions.value) setGroupColorMode('all', 'colormap')
-        availableGroups.value['color'] = []
         currentGroups.value['color'] = 'all'
     }
 }
@@ -205,11 +218,10 @@ function setSizeGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
     if (different) {
         if (showVectorOptions.value) {
-            availableGroups.value['size'] = ['lines', 'points']
             currentGroups.value['size'] = 'points'
             const all = currentStyleSpec.value.sizes.find((group) => group.name === 'all')
             if (all) {
-                currentStyleSpec.value.sizes = availableGroups.value['size'].map((name) => {
+                currentStyleSpec.value.sizes = availableGroups.value.map((name) => {
                     return {  ...JSON.parse(JSON.stringify(all)), name }
                 })
             }
@@ -227,7 +239,6 @@ function setSizeGroups(different: boolean | null) {
                 props.layer.frames[props.layer.current_frame].raster
             ).sizes]
         }
-        availableGroups.value['size'] = []
         currentGroups.value['size'] = 'all'
     }
 }
@@ -404,14 +415,7 @@ const debouncedStyleSpecUpdated = debounce(() => {
     if (currentStyleSpec.value) {
         styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
         styleStore.updateLayerStyles(props.layer)
-        availableGroups.value['color'] = currentStyleSpec.value.colors.map((c) => c.name)
-        availableGroups.value['size'] = currentStyleSpec.value.sizes.map((c) => c.name)
-        if (availableGroups.value['color'].length && !currentGroups.value['color']) {
-            currentGroups.value['color'] = availableGroups.value['color'][0]
-        }
-        if (availableGroups.value['size'].length && !currentGroups.value['size']) {
-            currentGroups.value['size'] = availableGroups.value['size'][0]
-        }
+        setAvailableGroups()
     }
 }, 100)
 watch(currentStyleSpec, debouncedStyleSpecUpdated, {deep: true})
@@ -536,12 +540,13 @@ watch(() => props.activeLayer, init)
                                     <tr>
                                         <td colspan="2">
                                             <v-checkbox
+                                                v-if="availableGroups.length > 1"
                                                 label="Different color per band (multi-band images)"
                                                 :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
                                                 density="compact"
                                                 class="primary-control"
                                                 hide-details
-                                                @update:model-value="setColorGroups"
+                                                @update:model-value="setCurrentColorGroups"
                                             />
                                         </td>
                                     </tr>
@@ -551,7 +556,7 @@ watch(() => props.activeLayer, init)
                                             <td class="d-flex" style="align-items: center; column-gap: 10px;">
                                                 <v-select
                                                     v-model="currentGroups['color']"
-                                                    :items="availableGroups['color']"
+                                                    :items="availableGroups"
                                                     density="compact"
                                                     variant="outlined"
                                                     hide-details
@@ -686,12 +691,13 @@ watch(() => props.activeLayer, init)
                                     <tr>
                                         <td colspan="2">
                                             <v-checkbox
+                                                v-if="availableGroups.length > 1"
                                                 label="Different color per feature type"
                                                 :model-value="Array.from(currentStyleSpec.colors.keys()).length > 1"
                                                 density="compact"
                                                 class="primary-control"
                                                 hide-details
-                                                @update:model-value="setColorGroups"
+                                                @update:model-value="setCurrentColorGroups"
                                             />
                                         </td>
                                     </tr>
@@ -701,7 +707,7 @@ watch(() => props.activeLayer, init)
                                             <td class="d-flex" style="align-items: center; column-gap: 10px;"   >
                                                 <v-select
                                                     v-model="currentGroups['color']"
-                                                    :items="availableGroups['color']"
+                                                    :items="availableGroups"
                                                     density="compact"
                                                     variant="outlined"
                                                     hide-details
@@ -918,6 +924,7 @@ watch(() => props.activeLayer, init)
                                     <tr>
                                         <td colspan="2">
                                             <v-checkbox
+                                                v-if="availableGroups.length > 1"
                                                 label="Different size per feature type"
                                                 :model-value="Array.from(currentStyleSpec.sizes.keys()).length > 1"
                                                 density="compact"
@@ -932,7 +939,7 @@ watch(() => props.activeLayer, init)
                                         <td>
                                             <v-select
                                                 v-model="currentGroups['size']"
-                                                :items="availableGroups['size']"
+                                                :items="availableGroups"
                                                 density="compact"
                                                 variant="outlined"
                                                 hide-details
