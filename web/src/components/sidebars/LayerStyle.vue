@@ -645,7 +645,7 @@ watch(() => props.activeLayer, init)
                                             <td>
                                                 <SliderNumericInput
                                                     v-if="dataRange"
-                                                    :rangeModel="group.colormap?.range"
+                                                    :rangeModel="group.colormap?.range || dataRange"
                                                     :min="dataRange[0]"
                                                     :max="dataRange[1]"
                                                     :disabled="!group.visible || !group.colormap?.markers"
