@@ -17,6 +17,7 @@ const filteredLayers = computed(() => {
         layer.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
 })
+const allLayersVisible = computed(() => layerStore.selectedLayers.every((l: Layer) => l.visible))
 const activeLayer = ref<Layer>();
 
 function removeLayers(layers: Layer[]) {
@@ -70,7 +71,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                 />
                 <v-checkbox-btn
                     :model-value="layerStore.selectedLayers.every((l: Layer) => l.visible)"
-                    @click="() => setVisibility(layerStore.selectedLayers, !layerStore.selectedLayers.every((l: Layer) => l.visible))"
+                    @click="setVisibility(layerStore.selectedLayers, !allLayersVisible)"
                     style="display: inline"
                 />
             </div>
