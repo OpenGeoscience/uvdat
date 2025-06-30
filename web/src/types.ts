@@ -47,7 +47,7 @@ export interface LayerSummary {
 }
 
 export interface PropertySummary {
-  value_set: any[],
+  value_set: (number | string | null)[],
   count: number;
   types: string[],
   range?: [number, number],

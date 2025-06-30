@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import _ from 'lodash';
 import { computed, ref, watch } from 'vue';
-import { ColorMap, Dataset, Layer, LayerStyle, StyleFilter, StyleSpec } from '@/types';
+import { ColorMap, Dataset, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
@@ -65,9 +65,10 @@ const dataRange = computed(() => {
         })
 
     }
-    if(absMin && absMax){
+    if (absMin !== undefined && absMax !== undefined){
         return [Math.floor(absMin), Math.ceil(absMax)] as [number, number];
     }
+    return undefined;
 })
 
 async function init() {
@@ -488,7 +489,7 @@ watch(() => props.activeLayer, init)
                                 <SliderNumericInput
                                     :model="currentStyleSpec.default_frame + 1"
                                     :max="props.layer.frames.length"
-                                    @update="(v) => {if (currentStyleSpec) currentStyleSpec.default_frame = v - 1}"
+                                    @update="(v: number) => {if (currentStyleSpec) currentStyleSpec.default_frame = v - 1}"
                                 />
                             </td>
                         </tr>
@@ -500,7 +501,7 @@ watch(() => props.activeLayer, init)
                                     :min="0"
                                     :max="1"
                                     :step="0.1"
-                                    @update="(v) => {if (currentStyleSpec) currentStyleSpec.opacity = v}"
+                                    @update="(v: number) => {if (currentStyleSpec) currentStyleSpec.opacity = v}"
                                 />
                             </td>
                         </tr>
@@ -629,7 +630,7 @@ watch(() => props.activeLayer, init)
                                                     :min="2"
                                                     :max="30"
                                                     :disabled="!group.visible || !group.colormap?.markers || !group.colormap?.discrete"
-                                                    @update="(v) => {if (group.colormap) group.colormap.n_colors = v}"
+                                                    @update="(v: number) => {if (group.colormap) group.colormap.n_colors = v}"
                                                 />
                                             </td>
                                         </tr>
@@ -642,7 +643,7 @@ watch(() => props.activeLayer, init)
                                                     :min="dataRange[0]"
                                                     :max="dataRange[1]"
                                                     :disabled="!group.visible || !group.colormap?.markers"
-                                                    @update="(v) => {if (group.colormap) group.colormap.range = v}"
+                                                    @update="(v: [number, number]) => {if (group.colormap) group.colormap.range = v}"
                                                 />
                                             </td>
                                         </tr>
@@ -823,7 +824,7 @@ watch(() => props.activeLayer, init)
                                                         :min="2"
                                                         :max="30"
                                                         :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
-                                                        @update="(v) => {if (group.colormap) group.colormap.n_colors = v}"
+                                                        @update="(v: number) => {if (group.colormap) group.colormap.n_colors = v}"
                                                     />
                                                 </td>
                                             </tr>
@@ -947,7 +948,7 @@ watch(() => props.activeLayer, init)
                                             <td>
                                                 <SliderNumericInput
                                                     :model="group.single_size"
-                                                    @update="(v) => group.single_size = v"
+                                                    @update="(v: number) => group.single_size = v"
                                                 />
                                             </td>
                                         </tr>
@@ -991,7 +992,7 @@ watch(() => props.activeLayer, init)
                                                 <SliderNumericInput
                                                     :rangeModel="[group.size_range.minimum, group.size_range.maximum]"
                                                     :disabled="!group.size_range.size_by"
-                                                    @update="([min, max]) => {if (group.size_range) {group.size_range.minimum = min; group.size_range.maximum = max;}}"
+                                                    @update="(v: [number, number]) => {if (group.size_range) {group.size_range.minimum = v[0]; group.size_range.maximum = v[1];}}"
                                                 />
                                             </td>
                                         </tr>
@@ -1016,7 +1017,7 @@ watch(() => props.activeLayer, init)
                                                 <SliderNumericInput
                                                     v-if="group.size_range.null_size && !group.size_range.null_size.transparency"
                                                     :model="group.size_range.null_size.size"
-                                                    @update="(v) => {if (group.size_range?.null_size) group.size_range.null_size.size = v}"
+                                                    @update="(v: number) => {if (group.size_range?.null_size) group.size_range.null_size.size = v}"
                                                 />
                                             </td>
                                         </tr>
@@ -1140,7 +1141,7 @@ watch(() => props.activeLayer, init)
                                                             :rangeModel="filter.range"
                                                             :min="property.range[0]"
                                                             :max="property.range[1]"
-                                                            @update="(v) => filter.range = v"
+                                                            @update="(v: [number, number]) => filter.range = v"
                                                         />
                                                         <SliderNumericInput
                                                             v-else-if="filter.list"
@@ -1148,7 +1149,7 @@ watch(() => props.activeLayer, init)
                                                             :model="filter.list[0]"
                                                             :min="property.range[0]"
                                                             :max="property.range[1]"
-                                                            @update="(v) => filter.list = [v]"
+                                                            @update="(v: number) => filter.list = [v]"
                                                         />
                                                     </template>
                                                     <v-select

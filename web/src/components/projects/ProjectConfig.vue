@@ -18,7 +18,7 @@ const appStore = useAppStore();
 const mapStore = useMapStore();
 
 const currentTab = ref();
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredProjects = computed(() => {
   return projectStore.availableProjects.filter((proj) => {
     return (

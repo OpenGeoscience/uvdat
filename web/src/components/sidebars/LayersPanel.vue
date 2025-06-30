@@ -10,7 +10,7 @@ import { useLayerStore } from "@/store";
 import _ from "lodash";
 const layerStore = useLayerStore();
 
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredLayers = computed(() => {
     return layerStore.selectedLayers?.filter((layer: Layer) => {
         return  !searchText.value ||

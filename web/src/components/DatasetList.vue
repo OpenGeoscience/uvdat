@@ -9,7 +9,7 @@ const props = defineProps<{
     datasets: Dataset[] | undefined;
 }>();
 
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredDatasets = computed(() => {
   return props.datasets?.filter((dataset: any) => {
     return  !searchText.value ||

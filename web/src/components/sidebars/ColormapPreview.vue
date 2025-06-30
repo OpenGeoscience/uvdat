@@ -46,7 +46,7 @@ function draw() {
     }
 }
 onMounted(draw)
-watch([props.colormap, props.discrete], draw, {deep: true})
+watch([props.colormap, () => props.discrete], draw, {deep: true})
 </script>
 
 <template>

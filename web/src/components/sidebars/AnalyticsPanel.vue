@@ -22,10 +22,10 @@ import {
 const panelStore = usePanelStore();
 const analysisStore = useAnalysisStore();
 const projectStore = useProjectStore();
-const networkStore = useNetworkStore(); 
+const networkStore = useNetworkStore();
 const layerStore = useLayerStore();
 
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredAnalysisTypes = computed(() => {
   return analysisStore.availableAnalysisTypes?.filter((analysis_type) => {
     return  !searchText.value ||
@@ -219,7 +219,7 @@ watch(
   [
     currentResult,
     () => layerStore.selectedLayers,
-    () => analysisStore.currentChart, 
+    () => analysisStore.currentChart,
     () => panelStore.panelArrangement
   ],
   fillInputsAndOutputs,
