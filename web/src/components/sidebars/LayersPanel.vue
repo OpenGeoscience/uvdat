@@ -4,7 +4,7 @@ import { computed, ref } from "vue";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
-import NumericInput from '../NumericInput'
+import SliderNumericInput from '../SliderNumericInput'
 
 import { useLayerStore } from "@/store";
 import _ from "lodash";
@@ -116,7 +116,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                                 </template>
                             </v-list-item>
                             <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">
-                                <NumericInput
+                                <SliderNumericInput
                                     :model="element.current_frame + 1"
                                     :max="getLayerMaxFrames(element)"
                                     @update="(v: number) => updateFrame(element, v - 1)"
