@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import _ from 'lodash';
+import { debounce } from 'lodash'
 import { computed, ref, watch } from 'vue';
 import { ColorMap, Dataset, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers } from '@/api/rest';
@@ -400,7 +400,7 @@ watch(() => panelStore.draggingPanel, () => {
     emit('setLayerActive', false)
 })
 
-watch(currentStyleSpec, _.debounce(() => {
+const debouncedStyleSpecUpdated = debounce(() => {
     if (currentStyleSpec.value) {
         styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
         styleStore.updateLayerStyles(props.layer)
@@ -413,7 +413,8 @@ watch(currentStyleSpec, _.debounce(() => {
             currentGroups.value['size'] = availableGroups.value['size'][0]
         }
     }
-}, 100), {deep: true})
+}, 100)
+watch(currentStyleSpec, debouncedStyleSpecUpdated, {deep: true})
 
 watch(() => props.activeLayer, init)
 </script>

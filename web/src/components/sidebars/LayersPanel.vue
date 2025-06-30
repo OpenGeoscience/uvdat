@@ -7,7 +7,7 @@ import DetailView from "../DetailView.vue";
 import SliderNumericInput from '../SliderNumericInput'
 
 import { useLayerStore } from "@/store";
-import _ from "lodash";
+import { debounce } from "lodash"
 const layerStore = useLayerStore();
 
 const searchText = ref<string | undefined>();
@@ -30,16 +30,14 @@ function setVisibility(layers: Layer[], visible=true) {
     })
 }
 
-function updateFrame(layer: Layer, value: number) {
-    _.debounce(() => {
-        layerStore.selectedLayers = layerStore.selectedLayers.map((l: Layer) => {
-            if (l.id === layer.id && l.copy_id === layer.copy_id) {
-                l.current_frame = value;
-            }
-            return l;
-        })
-    }, 10)()
-}
+const debouncedUpdateFrame = debounce((layer: Layer, value: number) => {
+    layerStore.selectedLayers = layerStore.selectedLayers.map((l: Layer) => {
+        if (l.id === layer.id && l.copy_id === layer.copy_id) {
+            l.current_frame = value;
+        }
+        return l;
+    })
+}, 10)
 
 function getLayerMaxFrames(layer: Layer) {
     return [...new Set(layer.frames.map((f) => f.index))].length
@@ -119,7 +117,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                                 <SliderNumericInput
                                     :model="element.current_frame + 1"
                                     :max="getLayerMaxFrames(element)"
-                                    @update="(v: number) => updateFrame(element, v - 1)"
+                                    @update="(v: number) => debouncedUpdateFrame(element, v - 1)"
                                 />
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>
