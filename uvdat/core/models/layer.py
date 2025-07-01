@@ -8,7 +8,6 @@ from .data import RasterData, VectorData, VectorFeature
 from .dataset import Dataset
 from .project import Project
 
-# TODO: Where is the best place for this file?
 SCHEMA_FILE = Path(__file__).parent / 'layer_style_schema.json'
 with open(SCHEMA_FILE) as f:
     LAYER_STYLE_SCHEMA = dict(json.load(f))
