@@ -1,3 +1,4 @@
+import jsonschema
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -44,3 +45,22 @@ class LayerStyleViewSet(ModelViewSet):
         if layer_id > -1:
             qs = qs.filter(layer=int(layer_id))
         return qs
+
+    def create(self, request, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.save()
+        except jsonschema.exceptions.ValidationError as e:
+            return Response(e.message, status=400)
+        return Response(serializer.data, status=200)
+
+    def partial_update(self, request, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.save()
+        except jsonschema.exceptions.ValidationError as e:
+            return Response(e.message, status=400)
+        return Response(serializer.data, status=200)
