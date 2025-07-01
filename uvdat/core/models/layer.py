@@ -21,6 +21,9 @@ class Layer(models.Model):
     name = models.CharField(max_length=255, default='Layer')
     dataset = models.ForeignKey(Dataset, related_name='layers', on_delete=models.CASCADE)
     metadata = models.JSONField(blank=True, null=True)
+    default_style = models.ForeignKey(
+        'LayerStyle', null=True, related_name='default_layer', on_delete=models.SET_NULL
+    )
 
     def get_summary(self):
         summary = dict(feature_types=[], properties={})
@@ -89,32 +92,23 @@ class LayerStyle(models.Model):
     name = models.CharField(max_length=255, default='Layer Style')
     layer = models.ForeignKey(Layer, related_name='styles', on_delete=models.CASCADE)
     project = models.ForeignKey(Project, related_name='styles', on_delete=models.CASCADE)
-    is_default = models.BooleanField(default=False)
     style_spec = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'layer', 'project'], name='unique_name_layer_project'
+            )
+        ]
 
     @property
     def schema(self):
         return LAYER_STYLE_SCHEMA
 
     def clean(self):
-        if self.is_default:
-            for style in LayerStyle.objects.filter(layer=self.layer, is_default=True).exclude(
-                id=self.id
-            ):
-                style.is_default = False
-                style.save()
         if len(self.style_spec):
             validate(instance=self.style_spec, schema=self.schema)
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def delete(self):
-        if self.is_default:
-            # pick a new default
-            new_default = LayerStyle.objects.filter(layer=self.layer).exclude(id=self.id).first()
-            if new_default is not None:
-                new_default.is_default = True
-                new_default.save()
-        super(LayerStyle, self).delete()

@@ -103,22 +103,6 @@ class ChartSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LayerSerializer(serializers.ModelSerializer):
-    default_style = serializers.SerializerMethodField('get_default_style')
-
-    def get_default_style(self, obj):
-        try:
-            default_style = LayerStyle.objects.filter(layer=obj, is_default=True).first()
-            return LayerStyleSerializer(default_style).data
-        except LayerStyle.DoesNotExist:
-            return None
-
-    class Meta:
-        model = Layer
-        depth = 2
-        fields = ['id', 'name', 'frames', 'metadata', 'dataset', 'default_style']
-
-
 class LayerFrameSerializer(serializers.ModelSerializer):
     class Meta:
         model = LayerFrame
@@ -126,9 +110,25 @@ class LayerFrameSerializer(serializers.ModelSerializer):
 
 
 class LayerStyleSerializer(serializers.ModelSerializer):
+    is_default = serializers.SerializerMethodField('get_is_default')
+
+    def get_is_default(self, obj):
+        if obj.layer.default_style is None:
+            return False
+        return obj.layer.default_style.id == obj.id
+
     class Meta:
         model = LayerStyle
         fields = '__all__'
+
+
+class LayerSerializer(serializers.ModelSerializer):
+    default_style = LayerStyleSerializer()
+
+    class Meta:
+        model = Layer
+        depth = 2
+        fields = ['id', 'name', 'frames', 'metadata', 'dataset', 'default_style']
 
 
 class VectorDataSerializer(serializers.ModelSerializer):
