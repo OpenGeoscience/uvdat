@@ -281,7 +281,7 @@ export const useStyleStore = defineStore('style', () => {
                 if (!absMax || max < absMax) absMax = max;
             })
         }
-        if(absMin && absMax){
+        if (absMin !== undefined && absMax !== undefined){
             range = [Math.floor(absMin), Math.ceil(absMax)] as [number, number];
         }
         return {
