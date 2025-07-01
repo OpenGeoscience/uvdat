@@ -5,31 +5,6 @@ from uvdat.core.models import Layer, LayerStyle, Project
 
 
 @pytest.mark.django_db
-def test_layer_style_multiple_defaults(layer: Layer, project: Project):
-    style_1 = LayerStyle.objects.create(
-        project=project, layer=layer, name='Style 1', is_default=True, style_spec={}
-    )
-    LayerStyle.objects.create(
-        project=project, layer=layer, name='Style 2', is_default=True, style_spec={}
-    )
-    style_1.refresh_from_db()
-    assert not style_1.is_default
-
-
-@pytest.mark.django_db
-def test_layer_style_delete_default(layer: Layer, project: Project):
-    style_1 = LayerStyle.objects.create(
-        project=project, layer=layer, name='Style 1', is_default=True, style_spec={}
-    )
-    style_2 = LayerStyle.objects.create(
-        project=project, layer=layer, name='Style 2', is_default=False, style_spec={}
-    )
-    style_1.delete()
-    style_2.refresh_from_db()
-    assert style_2.is_default
-
-
-@pytest.mark.django_db
 def test_layer_style_validation(layer: Layer, project: Project):
     test_values = {
         'default_frame': {
@@ -204,7 +179,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
         msg = rf'\'{key}\' is a required property'
         with pytest.raises(ValidationError, match=msg):
             LayerStyle.objects.create(
-                project=project, layer=layer, name='Style 1', is_default=True, style_spec=style
+                project=project, layer=layer, name='Style 1', style_spec=style
             )
 
         # test invalid values
@@ -212,11 +187,9 @@ def test_layer_style_validation(layer: Layer, project: Project):
             style = {k: v['valid'] if k != key else invalid for k, v in test_values.items()}
             with pytest.raises(ValidationError, match=msg):
                 LayerStyle.objects.create(
-                    project=project, layer=layer, name='Style 1', is_default=True, style_spec=style
+                    project=project, layer=layer, name='Style 1', style_spec=style
                 )
 
     style = {k: v['valid'] for k, v in test_values.items()}
     # test all valid
-    LayerStyle.objects.create(
-        project=project, layer=layer, name='Style 1', is_default=True, style_spec=style
-    )
+    LayerStyle.objects.create(project=project, layer=layer, name='Style 1', style_spec=style)
