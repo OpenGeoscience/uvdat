@@ -16,7 +16,7 @@ import {
   NetworkNode,
   NetworkEdge,
   LayerStyle,
-  LayerSummary,
+  VectorSummary,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -135,8 +135,8 @@ export async function getNetworkGCC(
   ).data;
 }
 
-export async function getLayerSummary(layerId: number): Promise<LayerSummary> {
-  return (await apiClient.get(`layers/${layerId}/summary`)).data;
+export async function getVectorSummary(vectorId: number): Promise<VectorSummary> {
+  return (await apiClient.get(`vectors/${vectorId}/summary`)).data;
 }
 
 export async function getRasterDataValues(rasterId: number): Promise<RasterDataValues> {

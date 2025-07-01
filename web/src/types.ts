@@ -41,7 +41,7 @@ export interface LayerFrame {
   source_filters: Record<string, any>;
 }
 
-export interface LayerSummary {
+export interface VectorSummary {
   feature_types: string[];
   properties: Record<string, PropertySummary>
 }
@@ -120,7 +120,9 @@ export interface VectorData {
   geojson_data: string | null;
   source_file: null | number;
   file_size: number;
-  metadata: Record<string, any>;
+  metadata: {
+    summary?: VectorSummary,
+  };
 }
 
 export interface RasterData {

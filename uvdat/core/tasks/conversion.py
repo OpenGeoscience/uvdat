@@ -103,14 +103,6 @@ def convert_files(*files, file_item=None, combine=False):
             gdf = gdf.set_crs(source_projection, allow_override=True)
             gdf = gdf.to_crs(4326)
             data = json.loads(gdf.to_json())
-        properties = {}
-        for feature in data.get('features'):
-            for name, value in feature.get('properties', {}).items():
-                if name not in properties:
-                    properties[name] = []
-                if value not in properties[name]:
-                    properties[name].append(value)
-        metadata['properties'] = properties
         vector_data = VectorData.objects.create(
             name=geodata.get('name'),
             dataset=file_item.dataset,

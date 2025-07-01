@@ -11,7 +11,7 @@ import {
     RasterData,
     StyleFilter,
     StyleSpec,
-    LayerSummary,
+    VectorData,
 } from "@/types";
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
@@ -314,15 +314,12 @@ export const useStyleStore = defineStore('style', () => {
                         map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
                         const styleKey = `${layer.id}.${layer.copy_id}`
                         const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
-                        const summary = layerStore.layerSummaries[layer.id]
-                        if (summary){
-                            setMapLayerStyle(
-                                mapLayerId,
-                                currentStyleSpec,
-                                currentFrame,
-                                summary,
-                            );
-                        }
+                        setMapLayerStyle(
+                            mapLayerId,
+                            currentStyleSpec,
+                            currentFrame,
+                            currentFrame.vector,
+                        );
                     } else {
                         map.setLayoutProperty(mapLayerId, 'visibility', 'none');
                     }
@@ -335,7 +332,7 @@ export const useStyleStore = defineStore('style', () => {
         mapLayerId: string,
         styleSpec: StyleSpec,
         frame: LayerFrame | undefined,
-        layerSummary: LayerSummary,
+        vector: VectorData | null
     ) {
         const map = mapStore.getMap();
         const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
@@ -365,14 +362,14 @@ export const useStyleStore = defineStore('style', () => {
             opacity = 1;
         }
 
-        const propsSpec = layerSummary.properties
-        if (mapLayerId.includes("fill")) {
+        const propsSpec = vector?.metadata?.summary?.properties
+        if (mapLayerId.includes("fill") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
             const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec)
             if (color) map.setPaintProperty(mapLayerId, 'fill-color', color)
             const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'polygons')
             if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
-        } else if (mapLayerId.includes("line")) {
+        } else if (mapLayerId.includes("line") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
             const color = getVectorColorPaintProperty(styleSpec, 'lines', propsSpec)
             if (color) map.setPaintProperty(mapLayerId, 'line-color', color)
@@ -380,7 +377,7 @@ export const useStyleStore = defineStore('style', () => {
             if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
             const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'lines')
             if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
-        } else if (mapLayerId.includes("circle")) {
+        } else if (mapLayerId.includes("circle") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
             const color = getVectorColorPaintProperty(styleSpec, 'points', propsSpec)

@@ -4,7 +4,7 @@ from pathlib import Path
 from django.db import models
 from jsonschema import validate
 
-from .data import RasterData, VectorData, VectorFeature
+from .data import RasterData, VectorData
 from .dataset import Dataset
 from .project import Project
 
@@ -24,44 +24,6 @@ class Layer(models.Model):
     default_style = models.ForeignKey(
         'LayerStyle', null=True, related_name='default_layer', on_delete=models.SET_NULL
     )
-
-    def get_summary(self):
-        summary = dict(feature_types=[], properties={})
-        exclude_keys = ['node_id', 'edge_id', 'to_node_id', 'from_node_id']
-        for feature in VectorFeature.objects.filter(
-            vector_data__layerframe__in=self.frames.all()
-        ).all():
-            feature_type = feature.geometry.geom_type
-            if feature_type not in summary['feature_types']:
-                summary['feature_types'].append(feature_type)
-            for k, v in feature.properties.items():
-                if k not in exclude_keys and v is not None and v != '':
-                    if k not in summary['properties']:
-                        summary['properties'][k] = dict(value_set=set(), count=0)
-                    summary['properties'][k]['value_set'].add(v)
-                    summary['properties'][k]['count'] += 1
-        for k in summary['properties']:
-            types = set(type(v).__name__ for v in summary['properties'][k]['value_set'])
-            summary['properties'][k]['types'] = types
-            if len(types.intersection({'int', 'float'})) == len(types):
-                # numeric values only
-                value_range = [
-                    min(summary['properties'][k]['value_set']),
-                    max(summary['properties'][k]['value_set']),
-                ]
-                if value_range[0] < value_range[1]:
-                    del summary['properties'][k]['value_set']
-                    summary['properties'][k]['range'] = value_range
-                    summary['properties'][k][
-                        'sample_label'
-                    ] = f'[{value_range[0]}, {value_range[1]}]'
-            if summary['properties'][k].get('range') is None:
-                summary['properties'][k]['sample_label'] = ', '.join(
-                    str(v) for v in list(summary['properties'][k]['value_set'])[:3]
-                )
-                if len(summary['properties'][k]['value_set']) > 3:
-                    summary['properties'][k]['sample_label'] += '...'
-        return summary
 
 
 class LayerFrame(models.Model):

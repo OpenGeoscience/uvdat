@@ -2,7 +2,7 @@
 import { debounce } from 'lodash'
 import { computed, ref, watch } from 'vue';
 import { ColorMap, Dataset, Layer, LayerStyle, StyleSpec } from '@/types';
-import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers } from '@/api/rest';
+import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers, getVectorSummary } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
 
@@ -50,9 +50,14 @@ const showVectorOptions = computed(() => {
 })
 
 const vectorProperties = computed(() => {
-    const summary = layerStore.layerSummaries[props.layer.id]
-    if (!summary) return undefined
-    return Object.entries(summary.properties).map(([k, v]) => ({...v, name: k}))
+    const vector = props.layer.frames[props.layer.current_frame].vector
+    if (!vector) return undefined
+    const summary = vector.metadata.summary
+    if (!summary) {
+        getVectorSummary(vector.id).then((result) => {
+            vector.metadata.summary = result
+        })
+    } else return Object.entries(summary.properties).map(([k, v]) => ({...v, name: k}))
 })
 
 const dataRange = computed(() => {
@@ -112,7 +117,9 @@ function setAvailableGroups() {
         const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
         availableGroups.value = bandNames;
     } else if (showVectorOptions.value) {
-        const summary = layerStore.layerSummaries[props.layer.id]
+        const vector = props.layer.frames[props.layer.current_frame].vector
+        if (!vector) return undefined
+        const summary = vector.metadata.summary
         if (summary) {
             availableGroups.value = []
             if (summary.feature_types.includes('Point'))  availableGroups.value.push('points')
