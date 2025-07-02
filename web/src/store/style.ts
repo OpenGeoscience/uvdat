@@ -73,30 +73,29 @@ function colormapMarkersSubsample(
 function getRasterTilesQuery(styleSpec: StyleSpec) {
     let query: Record<string, any> = {}
     styleSpec.colors.forEach((colorSpec) => {
-        if (colorSpec.colormap && colorSpec.visible) {
-            const colorQuery: Record<string, any> = {}
-            if (colorSpec.colormap.markers) {
-                if (colorSpec.colormap.range) {
-                    colorQuery.min = colorSpec.colormap.range[0];
-                    colorQuery.max = colorSpec.colormap.range[1];
-                }
-                if (colorSpec.colormap.discrete) {
-                    colorQuery.scheme = 'discrete'
-                }
-                if (colorSpec.colormap.clamp === false) {
-                    colorQuery.clamp = false
-                }
-                colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap)?.map((marker) => marker.color)
+        const colorQuery: Record<string, any> = {}
+        if (colorSpec.colormap?.markers) {
+            if (colorSpec.colormap.range) {
+                colorQuery.min = colorSpec.colormap.range[0];
+                colorQuery.max = colorSpec.colormap.range[1];
             }
-            if (colorSpec.name === 'all') {
-                query = colorQuery
-            } else {
-                if (!query.bands) query.bands = []
-                colorQuery.band = colorSpec.name.replace('Band ', '')
-                query.bands.push(colorQuery)
+            if (colorSpec.colormap.discrete) {
+                colorQuery.scheme = 'discrete'
             }
+            if (colorSpec.colormap.clamp === false) {
+                colorQuery.clamp = false
+            }
+            colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap)?.map((marker) => marker.color)
+        }
+        if (colorSpec.name === 'all') {
+            if (colorSpec.colormap && colorSpec.visible) query = colorQuery
+        } else {
+            if (!query.bands) query.bands = []
+            colorQuery.band = colorSpec.name.replace('Band ', '')
+            if (colorSpec.colormap && colorSpec.visible) query.bands.push(colorQuery)
         }
     })
+    if (!Object.keys(query).length) return undefined
     return query;
 }
 
@@ -394,15 +393,14 @@ export const useStyleStore = defineStore('style', () => {
             }
         } else if (mapLayerId.includes("raster")) {
             const rasterTilesQuery = getRasterTilesQuery(styleSpec)
-            if (rasterTilesQuery.bands && !rasterTilesQuery.bands.length) opacity = 0
+            if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
             if (source?.tiles?.length) {
                 const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
-                const newQuery = new URLSearchParams({
-                    projection: 'epsg:3857',
-                    style: JSON.stringify(rasterTilesQuery)
-                })
+                const newQueryParams: {projection: string, style?: string} = { projection: 'epsg:3857' }
+                if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
+                const newQuery = new URLSearchParams(newQueryParams)
                 if (newQuery.toString() !== oldQuery.toString()) {
                     source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
                 }

@@ -268,10 +268,10 @@ export const useMapStore = defineStore('map', () => {
     const tilesSourceId = sourceId + '.raster.' + raster.id;
     const [layerId, layerCopyId] = sourceId.split('.');
     const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`];
-    const query = new URLSearchParams({
-      projection: 'epsg:3857',
-      style: JSON.stringify(styleStore.getRasterTilesQuery(styleSpec))
-    })
+    const queryParams: {projection: string, style?: string} = { projection: 'epsg:3857' }
+    const styleParams = styleStore.getRasterTilesQuery(styleSpec)
+    if (styleParams) queryParams.style = JSON.stringify(styleParams)
+    const query = new URLSearchParams(queryParams)
     map.addSource(tilesSourceId, {
       type: "raster",
       tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${query}`],
