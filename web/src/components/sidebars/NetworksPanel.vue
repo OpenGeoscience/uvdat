@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import { getNetworkNodes, getNetworkEdges } from '@/api/rest';
 import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
@@ -9,7 +8,7 @@ const networkStore = useNetworkStore();
 const panelStore = usePanelStore();
 const styleStore = useStyleStore();
 
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredNetworks = computed(() => {
     return networkStore.availableNetworks?.filter((network) => {
         return !searchText.value ||

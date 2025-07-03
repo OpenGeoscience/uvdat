@@ -55,6 +55,50 @@ class VectorData(models.Model):
         """Read and load the data from geojson_data into a dict."""
         return json.load(self.geojson_data.open())
 
+    def get_summary(self, cache=True):
+        if cache and self.metadata.get('summary'):
+            return self.metadata.get('summary')
+        value_set_max_length = 1000
+        summary = dict(feature_types=[], properties={})
+        exclude_keys = ['node_id', 'edge_id', 'to_node_id', 'from_node_id']
+        for feature in self.features.all():
+            feature_type = feature.geometry.geom_type
+            if feature_type not in summary['feature_types']:
+                summary['feature_types'].append(feature_type)
+            for k, v in feature.properties.items():
+                if k not in exclude_keys and v is not None and v != '':
+                    if k not in summary['properties']:
+                        summary['properties'][k] = dict(value_set=set(), count=0)
+                    summary['properties'][k]['value_set'].add(v)
+                    summary['properties'][k]['count'] += 1
+        for k in summary['properties']:
+            types = set(type(v).__name__ for v in summary['properties'][k]['value_set'])
+            summary['properties'][k]['types'] = list(types)
+            if len(types.intersection({'int', 'float'})) == len(types):
+                # numeric values only
+                value_range = [
+                    min(summary['properties'][k]['value_set']),
+                    max(summary['properties'][k]['value_set']),
+                ]
+                if value_range[0] < value_range[1]:
+                    del summary['properties'][k]['value_set']
+                    summary['properties'][k]['range'] = value_range
+                    summary['properties'][k][
+                        'sample_label'
+                    ] = f'[{value_range[0]}, {value_range[1]}]'
+            if summary['properties'][k].get('range') is None:
+                summary['properties'][k]['value_set'] = list(summary['properties'][k]['value_set'])[
+                    :value_set_max_length
+                ]
+                summary['properties'][k]['sample_label'] = ', '.join(
+                    str(v) for v in summary['properties'][k]['value_set'][:3]
+                )
+                if len(summary['properties'][k]['value_set']) > 3:
+                    summary['properties'][k]['sample_label'] += '...'
+        self.metadata['summary'] = summary
+        self.save()
+        return summary
+
 
 class VectorFeature(models.Model):
     vector_data = models.ForeignKey(

@@ -27,7 +27,7 @@ ChartJS.register(
   Legend
 );
 
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredCharts = computed(() => {
   return analysisStore.availableCharts?.filter((chart) => {
     return  !searchText.value ||
