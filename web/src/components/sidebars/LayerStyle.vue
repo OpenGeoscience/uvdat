@@ -510,7 +510,7 @@ watch(() => props.activeLayer, init)
                             <td>
                                 <SliderNumericInput
                                     :model="currentStyleSpec.opacity"
-                                    :min="0"
+                                    :min="0.1"
                                     :max="1"
                                     :step="0.1"
                                     @update="(v: number) => {if (currentStyleSpec) currentStyleSpec.opacity = v}"
