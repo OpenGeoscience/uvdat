@@ -120,9 +120,9 @@ export interface VectorData {
   geojson_data: string | null;
   source_file: null | number;
   file_size: number;
-  metadata: {
-    summary?: VectorSummary,
-  };
+  summary?: VectorSummary,
+  metadata?: Record<string, any>;
+
 }
 
 export interface RasterData {

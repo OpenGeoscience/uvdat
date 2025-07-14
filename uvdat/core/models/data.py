@@ -39,6 +39,7 @@ class VectorData(models.Model):
     dataset = models.ForeignKey(Dataset, related_name='vectors', on_delete=models.CASCADE)
     source_file = models.ForeignKey(FileItem, null=True, on_delete=models.CASCADE)
     geojson_data = S3FileField(null=True)
+    summary = models.JSONField(blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
 
     def write_geojson_data(self, content: str | dict):
@@ -56,11 +57,14 @@ class VectorData(models.Model):
         return json.load(self.geojson_data.open())
 
     def get_summary(self, cache=True):
-        if cache and self.metadata.get('summary'):
-            return self.metadata.get('summary')
+        if cache and self.summary:
+            return self.summary
+        # Limit number of unique values to return for non-numeric fields
         value_set_max_length = 1000
         summary = dict(feature_types=[], properties={})
         exclude_keys = ['node_id', 'edge_id', 'to_node_id', 'from_node_id']
+        # Create sets of all values for all properties (except excluded)
+        # and a list of the feature types that exist (point, line, polygon)
         for feature in self.features.all():
             feature_type = feature.geometry.geom_type
             if feature_type not in summary['feature_types']:
@@ -71,11 +75,12 @@ class VectorData(models.Model):
                         summary['properties'][k] = dict(value_set=set(), count=0)
                     summary['properties'][k]['value_set'].add(v)
                     summary['properties'][k]['count'] += 1
+        # Once sets are complete, reevaluate each set and create a `sample_label` for each property
         for k in summary['properties']:
             types = set(type(v).__name__ for v in summary['properties'][k]['value_set'])
             summary['properties'][k]['types'] = list(types)
+            # If a property has only numeric values, return the range instead of a set of values
             if len(types.intersection({'int', 'float'})) == len(types):
-                # numeric values only
                 value_range = [
                     min(summary['properties'][k]['value_set']),
                     max(summary['properties'][k]['value_set']),
@@ -86,6 +91,7 @@ class VectorData(models.Model):
                     summary['properties'][k][
                         'sample_label'
                     ] = f'[{value_range[0]}, {value_range[1]}]'
+            # Otherwise, limit the value set to the maximum length
             if summary['properties'][k].get('range') is None:
                 summary['properties'][k]['value_set'] = list(summary['properties'][k]['value_set'])[
                     :value_set_max_length
@@ -95,7 +101,7 @@ class VectorData(models.Model):
                 )
                 if len(summary['properties'][k]['value_set']) > 3:
                     summary['properties'][k]['sample_label'] += '...'
-        self.metadata['summary'] = summary
+        self.summary = summary
         self.save()
         return summary
 

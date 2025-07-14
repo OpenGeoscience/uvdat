@@ -361,7 +361,7 @@ export const useStyleStore = defineStore('style', () => {
             opacity = 1;
         }
 
-        const propsSpec = vector?.metadata?.summary?.properties
+        const propsSpec = vector?.summary?.properties
         if (mapLayerId.includes("fill") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
             const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec)

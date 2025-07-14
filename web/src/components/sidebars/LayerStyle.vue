@@ -52,10 +52,10 @@ const showVectorOptions = computed(() => {
 const vectorProperties = computed(() => {
     const vector = props.layer.frames[props.layer.current_frame].vector
     if (!vector) return undefined
-    const summary = vector.metadata.summary
+    const summary = vector.summary
     if (!summary) {
         getVectorSummary(vector.id).then((result) => {
-            vector.metadata.summary = result
+            vector.summary = result
         })
     } else return Object.entries(summary.properties).map(([k, v]) => ({...v, name: k}))
 })
@@ -119,7 +119,7 @@ function setAvailableGroups() {
     } else if (showVectorOptions.value) {
         const vector = props.layer.frames[props.layer.current_frame].vector
         if (!vector) return undefined
-        const summary = vector.metadata.summary
+        const summary = vector.summary
         if (summary) {
             availableGroups.value = []
             if (summary.feature_types.includes('Point'))  availableGroups.value.push('points')
