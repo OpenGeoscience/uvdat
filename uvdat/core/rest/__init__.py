@@ -3,7 +3,7 @@ from .chart import ChartViewSet
 from .data import RasterDataViewSet, VectorDataViewSet
 from .dataset import DatasetViewSet
 from .file_item import FileItemViewSet
-from .layer import LayerFrameViewSet, LayerViewSet
+from .layer import LayerFrameViewSet, LayerStyleViewSet, LayerViewSet
 from .networks import NetworkViewSet
 from .project import ProjectViewSet
 from .regions import RegionViewSet
@@ -14,6 +14,7 @@ __all__ = [
     ChartViewSet,
     LayerViewSet,
     LayerFrameViewSet,
+    LayerStyleViewSet,
     RasterDataViewSet,
     VectorDataViewSet,
     DatasetViewSet,

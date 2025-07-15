@@ -15,6 +15,8 @@ import {
   VectorData,
   NetworkNode,
   NetworkEdge,
+  LayerStyle,
+  VectorSummary,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -133,6 +135,10 @@ export async function getNetworkGCC(
   ).data;
 }
 
+export async function getVectorSummary(vectorId: number): Promise<VectorSummary> {
+  return (await apiClient.get(`vectors/${vectorId}/summary`)).data;
+}
+
 export async function getRasterDataValues(rasterId: number): Promise<RasterDataValues> {
   const resolution = 0.1;
   const data = (
@@ -172,4 +178,20 @@ export async function getAnalysisResults(
 
 export async function getVectorDataBounds(vectorId: number): Promise<number[]> {
   return (await apiClient.get(`vectors/${vectorId}/bounds`)).data;
+}
+
+export async function getLayerStyles(layerId: number): Promise<LayerStyle[]> {
+  return (await apiClient.get(`layer-styles/?layer=${layerId}`)).data.results;
+}
+
+export async function createLayerStyle(data: LayerStyle): Promise<LayerStyle> {
+  return (await apiClient.post('layer-styles/', data)).data;
+}
+
+export async function updateLayerStyle(styleId: number, data: LayerStyle): Promise<LayerStyle> {
+  return (await apiClient.patch(`layer-styles/${styleId}/`, data)).data;
+}
+
+export async function deleteLayerStyle(styleId: number): Promise<LayerStyle> {
+  return (await apiClient.delete(`layer-styles/${styleId}/`)).data;
 }

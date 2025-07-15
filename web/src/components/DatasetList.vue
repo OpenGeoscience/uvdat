@@ -9,7 +9,7 @@ const props = defineProps<{
     datasets: Dataset[] | undefined;
 }>();
 
-const searchText = ref();
+const searchText = ref<string | undefined>();
 const filteredDatasets = computed(() => {
   return props.datasets?.filter((dataset: any) => {
     return  !searchText.value ||
@@ -107,7 +107,10 @@ watch(filteredDatasets, expandAllGroups)
   text-transform: capitalize !important;
 }
 .secondary-text {
-  color: rgb(var(--v-theme-secondary-text))
+  color: rgb(var(--v-theme-secondary-text)) !important;
+}
+.helper-text {
+  color: rgb(var(--v-theme-helper-text)) !important;
 }
 .item-title {
   display: flex;

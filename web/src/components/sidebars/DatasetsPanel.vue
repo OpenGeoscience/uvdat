@@ -30,7 +30,7 @@ function toggleSelected(items: Layer[]) {
             <div style="display: flex; justify-content: space-between; width: 100%;">
               <div class="item-title" style="margin-left: 12px">
                 {{ dataset.name }}
-                <div style="min-width: 75px; text-align: right">
+                <div style="min-width: 75px; text-align: right" v-if="dataset.layers">
                   <v-icon
                     icon="mdi-layers-outline"
                     size="small"
@@ -62,7 +62,7 @@ function toggleSelected(items: Layer[]) {
                   <v-icon
                     icon="mdi-plus"
                     color="primary"
-                    class="layer-select-button"
+                    class="secondary-button"
                   >
                   </v-icon>
                   <v-tooltip activator="parent" location="bottom">

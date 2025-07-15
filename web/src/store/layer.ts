@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
-import { LngLatBoundsLike, Source } from "maplibre-gl";
-import { Dataset, Layer, LayerFrame, Network, RasterData, RasterDataValues, VectorData } from '@/types';
-import { getRasterDataValues, getVectorDataBounds } from '@/api/rest';
-import { baseURL } from '@/api/auth';
+import { LngLatBoundsLike } from "maplibre-gl";
+import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from '@/types';
+import { getVectorDataBounds } from '@/api/rest';
 import proj4 from 'proj4';
 
 import { useMapStore, useStyleStore, useNetworkStore } from '.';
@@ -104,13 +103,21 @@ export const useLayerStore = defineStore('layer', () => {
         const styleId = `${layer.id}.${layer.copy_id}`
         const sourceId = `${styleId}.${frame.id}`
         if (!styleStore.selectedLayerStyles[styleId]) {
-          styleStore.selectedLayerStyles[styleId] = styleStore.getDefaultStyle();
+          if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
+            styleStore.selectedLayerStyles[styleId] = {...layer.default_style?.style_spec}
+            if (styleStore.selectedLayerStyles[styleId]?.default_frame !== layer.current_frame) {
+              layer.current_frame = styleStore.selectedLayerStyles[styleId].default_frame
+            }
+          } else {
+            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec(
+              layer.frames[layer.current_frame].raster
+            )}
+          }
         }
-        const currentStyle = styleStore.selectedLayerStyles[styleId];
-        currentStyle.visible = layer.visible
+
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
-        if (currentStyle.visible && !map.getLayersOrder().some(
+        if (layer.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame === frame.index) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
@@ -120,14 +127,11 @@ export const useLayerStore = defineStore('layer', () => {
           if (mapLayerId !== 'base-tiles') {
             if (mapLayerId.includes(sourceId)) {
               map.moveLayer(mapLayerId);  // handles reordering
-              styleStore.setMapLayerStyle(mapLayerId, {
-                ...currentStyle,
-                visible: layer.visible && layer.current_frame === frame.index
-              })
             }
           }
         });
       })
+      styleStore.updateLayerStyles(layer)
     })
     // hide any removed layers
     map.getLayersOrder().forEach((mapLayerId) => {

@@ -14,6 +14,7 @@
     "@turf/turf": "^7.1.0",
     "axios": "^1.4.0",
     "buffer": "^6.0.3",
+    "colormap": "^2.3.2",
     "core-js": "^3.8.3",
     "dayjs": "^1.11.13",
     "git-describe": "^4.1.1",
@@ -26,7 +27,7 @@
     "vue": "^3.2.13",
     "vue-chartjs": "^5.2.0",
     "vuedraggable": "^4.1.0",
-    "vuetify": "^3.7.2"
+    "vuetify": "^3.8.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.7",

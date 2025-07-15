@@ -204,10 +204,16 @@ function panelUpdated() {
 .help-text {
   color: rgb(var(--v-theme-helper-text))
 }
-.layer-select-button {
+.primary-button {
   vertical-align: inherit;
-  background-color: rgb(var(--v-theme-secondary));
-  color: rgb(var(--v-theme-primary));
+  background-color: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-button-text)) !important;
+  border-radius: 5px;
+}
+.secondary-button {
+  vertical-align: inherit;
+  background-color: rgb(var(--v-theme-secondary)) !important;
+  color: rgb(var(--v-theme-primary)) !important;
   border-radius: 5px;
 }
 </style>

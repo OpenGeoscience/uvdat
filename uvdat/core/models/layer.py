@@ -1,7 +1,16 @@
+import json
+from pathlib import Path
+
 from django.db import models
+from jsonschema import validate
 
 from .data import RasterData, VectorData
 from .dataset import Dataset
+from .project import Project
+
+SCHEMA_FILE = Path(__file__).parent / 'layer_style_schema.json'
+with open(SCHEMA_FILE) as f:
+    LAYER_STYLE_SCHEMA = dict(json.load(f))
 
 
 def default_source_filters():
@@ -12,6 +21,9 @@ class Layer(models.Model):
     name = models.CharField(max_length=255, default='Layer')
     dataset = models.ForeignKey(Dataset, related_name='layers', on_delete=models.CASCADE)
     metadata = models.JSONField(blank=True, null=True)
+    default_style = models.ForeignKey(
+        'LayerStyle', null=True, related_name='default_layer', on_delete=models.SET_NULL
+    )
 
 
 class LayerFrame(models.Model):
@@ -36,3 +48,29 @@ class LayerFrame(models.Model):
         if self.raster is not None:
             return self.raster
         return self.vector
+
+
+class LayerStyle(models.Model):
+    name = models.CharField(max_length=255, default='Layer Style')
+    layer = models.ForeignKey(Layer, related_name='styles', on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name='styles', on_delete=models.CASCADE)
+    style_spec = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'layer', 'project'], name='unique_name_layer_project'
+            )
+        ]
+
+    @property
+    def schema(self):
+        return LAYER_STYLE_SCHEMA
+
+    def clean(self):
+        if len(self.style_spec):
+            validate(instance=self.style_spec, schema=self.schema)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

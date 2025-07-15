@@ -28,6 +28,7 @@ export interface Layer {
   metadata: Record<string, any>;
   visible: boolean;
   current_frame: number;
+  default_style: LayerStyle | null;
 }
 
 export interface LayerFrame {
@@ -37,14 +38,79 @@ export interface LayerFrame {
   layer: Layer;
   vector: VectorData | null;
   raster: RasterData | null;
+  source_filters: Record<string, any>;
 }
 
-export interface Style {
-  visible?: boolean;
-  opacity?: number;
-  color?: string;
-  colormap?: string;
-  colormap_range?: number[];
+export interface VectorSummary {
+  feature_types: string[];
+  properties: Record<string, PropertySummary>
+}
+
+export interface PropertySummary {
+  value_set: (number | string | null)[],
+  count: number;
+  types: string[],
+  range?: [number, number],
+  sample_label: string,
+}
+
+export interface ColorMap {
+  name?: string;
+  discrete?: boolean;
+  n_colors?: number;
+  color_by?: string;
+  range?: [number, number],
+  clamp?: boolean,
+  null_color?: string;
+  markers?: {
+    color: string;
+    value: number;
+  }[]
+}
+
+export interface StyleFilter {
+  id?: number;
+  filter_by?: string;
+  include: boolean;
+  transparency: boolean;
+  apply?: boolean;
+  list?: any[];
+  range?: number[];
+}
+
+export interface StyleSpec {
+  default_frame: number;
+  opacity: number;
+  colors: {
+    name: string;
+    visible: boolean;
+    single_color?: string;
+    colormap?: ColorMap,
+  }[],
+  sizes: {
+    name: string;
+    zoom_scaling: boolean;
+    single_size?: number;
+    size_range?: {
+      size_by?: string;
+      null_size?: {
+        transparency: boolean,
+        size: number,
+      };
+      minimum: number;
+      maximum: number;
+    }
+  }[],
+  filters: StyleFilter[]
+}
+
+export interface LayerStyle {
+  id?: number;
+  name: string;
+  layer?: number;
+  project?: number;
+  is_default: boolean;
+  style_spec?: StyleSpec;
 }
 
 export interface VectorData {
@@ -54,7 +120,9 @@ export interface VectorData {
   geojson_data: string | null;
   source_file: null | number;
   file_size: number;
-  metadata: Record<string, any>;
+  summary?: VectorSummary,
+  metadata?: Record<string, any>;
+
 }
 
 export interface RasterData {
