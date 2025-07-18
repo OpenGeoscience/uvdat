@@ -271,7 +271,7 @@ export const useStyleStore = defineStore('style', () => {
         return THEMES.light.colors.primary;
     }
 
-    function getDefaultStyleSpec(raster: RasterData | null): StyleSpec {
+    function getDefaultStyleSpec(raster: RasterData | null | undefined): StyleSpec {
         let range: [number, number] | undefined;
         let absMin: number | undefined, absMax: number | undefined;
         if (raster) {
@@ -303,7 +303,8 @@ export const useStyleStore = defineStore('style', () => {
 
     function updateLayerStyles(layer: Layer) {
         const map = mapStore.getMap();
-        const currentFrame = layer.frames.find((f) => f.index === layer.current_frame)
+        const frames = layerStore.layerFrames(layer)
+        const currentFrame = frames.find((f) => f.index === layer.current_frame_index)
         if (!currentFrame) return
         map.getLayersOrder().forEach((mapLayerId) => {
             if (mapLayerId !== 'base-tiles') {

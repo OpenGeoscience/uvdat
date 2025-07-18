@@ -34,14 +34,20 @@ function setVisibility(layers: Layer[], visible=true) {
 const debouncedUpdateFrame = debounce((layer: Layer, value: number) => {
     layerStore.selectedLayers = layerStore.selectedLayers.map((l: Layer) => {
         if (l.id === layer.id && l.copy_id === layer.copy_id) {
-            l.current_frame = value;
+            l.current_frame_index = value;
         }
         return l;
     })
 }, 10)
 
 function getLayerMaxFrames(layer: Layer) {
-    return [...new Set(layer.frames.map((f) => f.index))].length
+    return [...new Set(
+        layerStore.layerFrames(layer).map((f) => f.index)
+    )].length
+}
+
+function getLayerCurrentFrames(layer: Layer) {
+    return layerStore.layerFrames(layer).filter((frame) => frame.index === layer.current_frame_index)
 }
 
 function setLayerActive(layer: Layer, active: boolean) {
@@ -116,15 +122,18 @@ function setLayerActive(layer: Layer, active: boolean) {
                             </v-list-item>
                             <div v-if="getLayerMaxFrames(element) > 1 && !element.hideFrameMenu" class="frame-menu">
                                 <SliderNumericInput
-                                    :model="element.current_frame + 1"
+                                    :model="element.current_frame_index + 1"
                                     :max="getLayerMaxFrames(element)"
                                     @update="(v: number) => debouncedUpdateFrame(element, v - 1)"
                                 />
-                                <div style="display: flex; justify-content: space-between;">
+                                <div
+                                    v-for="frame in getLayerCurrentFrames(element)"
+                                    style="display: flex; justify-content: space-between;"
+                                >
                                     <span>
-                                        <i>Frame:</i> {{ element.frames[element.current_frame].name }}
+                                        <i>Frame:</i> {{ frame.name }}
                                     </span>
-                                    <DetailView :details="{...element.frames[element.current_frame], type: 'frame'}"/>
+                                    <DetailView :details="{...frame, type: 'frame'}"/>
                                 </div>
                             </div>
                         </div>

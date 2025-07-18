@@ -62,7 +62,7 @@ watch(currentTick, async () => {
     if (props.additionalAnimationLayers) {
       props.additionalAnimationLayers.forEach((layer) => {
         layerStore.selectedLayers = layerStore.selectedLayers.map((l) => {
-          if (l.id === layer.id && l.visible) l.current_frame = currentTick.value
+          if (l.id === layer.id && l.visible) l.current_frame_index = currentTick.value
           return l;
         })
       })

@@ -1,5 +1,6 @@
 from django.db import transaction
 import jsonschema
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
@@ -14,6 +15,13 @@ class LayerViewSet(ReadOnlyModelViewSet):
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
+
+    @action(detail=True, methods=['get'])
+    def frames(self, request, **kwargs):
+        layer: Layer = self.get_object()
+        frames = list(layer.frames.all())
+        serializer = LayerFrameSerializer(frames, many=True)
+        return Response(serializer.data, status=200)
 
 
 class LayerFrameViewSet(ReadOnlyModelViewSet):

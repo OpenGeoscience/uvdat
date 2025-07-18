@@ -2,7 +2,6 @@ import { FloatingPanelConfig, AnalysisResult, Chart, Dataset, Layer, Network, Ra
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getDataset } from '@/api/rest';
-import { getDatasetLayers } from '@/api/rest';
 
 import { useAppStore, useLayerStore, useAnalysisStore } from '.';
 
@@ -67,7 +66,7 @@ export const usePanelStore = defineStore('panel', () => {
     const analysisStore = useAnalysisStore();
     const layerStore = useLayerStore();
     const appStore = useAppStore();
-    
+
     const panelArrangement = ref<FloatingPanelConfig[]>([]);
     const draggingPanel = ref<string | undefined>();
     const draggingFrom = ref<{ x: number; y: number } | undefined>();
@@ -187,7 +186,7 @@ export const usePanelStore = defineStore('panel', () => {
             return analysisStore.currentChart?.id == showable.chart.id && chartPanel.visible
         } else if (showable.dataset) {
             return layerStore.selectedLayers.some((layer) => {
-                return layer.dataset.id === showable.dataset?.id && layer.visible
+                return layer.dataset === showable.dataset?.id && layer.visible
             })
         } else if (showable.layer) {
             return layerStore.selectedLayers.some((layer) => {
@@ -231,16 +230,21 @@ export const usePanelStore = defineStore('panel', () => {
         }
         return false;
     }
-    
-    
+
+
     function show(showable: Showable) {
         if (showable.chart) {
             const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
             if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
             analysisStore.currentChart = showable.chart
         } else if (showable.dataset) {
-            getDatasetLayers(showable.dataset.id).then((layers) => {
-                layers.forEach((layer) => {show({layer})})
+            const id = showable.dataset.id
+            layerStore.fetchAvailableLayersForDataset(id).then(() => {
+                layerStore.availableLayers.filter(
+                    (layer: Layer) => layer.dataset === id
+                ).forEach((layer: Layer) => {
+                    show({layer})
+                })
             })
         } else if (showable.layer) {
             let add = true

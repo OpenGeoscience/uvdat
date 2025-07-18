@@ -2,10 +2,10 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { LngLatBoundsLike } from "maplibre-gl";
 import { Dataset, Layer, LayerFrame, Network, RasterData, VectorData } from '@/types';
-import { getVectorDataBounds } from '@/api/rest';
+import { getDatasetLayers, getLayer, getLayerFrames, getVectorDataBounds } from '@/api/rest';
 import proj4 from 'proj4';
 
-import { useMapStore, useStyleStore, useNetworkStore } from '.';
+import { useMapStore, useStyleStore, useNetworkStore, useProjectStore } from '.';
 
 interface SourceDBObjects {
   dataset?: Dataset,
@@ -18,12 +18,53 @@ interface SourceDBObjects {
 
 
 export const useLayerStore = defineStore('layer', () => {
+  const availableLayers = ref<Layer[]>([]);
   const selectedLayers = ref<Layer[]>([]);
+  const framesByLayerId = ref<Record<number, LayerFrame[]>>({});
 
   // Sibling store imports
   const mapStore = useMapStore();
   const networkStore = useNetworkStore();
   const styleStore = useStyleStore();
+  const projectStore = useProjectStore();
+
+  async function fetchAvailableLayer(layerId: number) {
+    const layer = await getLayer(layerId)
+    if (!availableLayers.value.map((l: Layer) => l.id).includes(layer.id)) {
+      availableLayers.value = [
+        ...availableLayers.value,
+        layer
+      ]
+    } else {
+      availableLayers.value = availableLayers.value.map((l: Layer) => {
+        return l.id === layer.id ? layer : l
+      })
+    }
+    return layer
+  }
+
+  async function fetchAvailableLayersForDataset(datasetId: number) {
+    const layers = await getDatasetLayers(datasetId)
+    availableLayers.value = [
+      ...availableLayers.value.map((layer: Layer) => {
+        return layers.find((l: Layer) => l.id == layer.id) || layer
+      }),
+      ...layers.filter((layer: Layer) => {
+        return !availableLayers.value.map((l: Layer) => l.id).includes(layer.id)
+      })
+    ]
+    return layers
+  }
+
+  async function fetchFramesForLayer(layerId: number) {
+    const frames = await getLayerFrames(layerId)
+    framesByLayerId.value[layerId] = frames
+    return frames
+  }
+
+  function layerFrames(layer: Layer) {
+    return framesByLayerId.value[layer.id] || []
+  }
 
   function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects: SourceDBObjects = {}
@@ -32,9 +73,9 @@ export const useLayerStore = defineStore('layer', () => {
     ] = sourceId.split('.');
     selectedLayers.value.forEach((layer) => {
       if (layer.id === parseInt(layerId) && layer.copy_id === parseInt(layerCopyId)) {
-        DBObjects.dataset = layer.dataset;
+        DBObjects.dataset = projectStore.availableDatasets?.find((d: Dataset) => d.id === layer.dataset);
         DBObjects.layer = layer;
-        layer.frames.forEach((frame) => {
+        framesByLayerId.value[layer.id].forEach((frame) => {
           if (frame.id === parseInt(frameId)) {
             DBObjects.frame = frame;
             if (frame.vector) DBObjects.vector = frame.vector;
@@ -52,21 +93,26 @@ export const useLayerStore = defineStore('layer', () => {
     for (let index = 0; index < selectedLayers.value.length; index++) {
       const layer = selectedLayers.value[index];
       if (layer.visible) {
-        const currentFrame = layer.frames[layer.current_frame]
-        let xmin, xmax, ymin, ymax, srs = undefined;
-        if (currentFrame.raster) {
-          const bounds = currentFrame.raster.metadata.bounds;
-          ({ xmin, xmax, ymin, ymax, srs } = bounds);
-          [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
-          [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
-        } else if (currentFrame.vector) {
-          const bounds = await getVectorDataBounds(currentFrame.vector.id);
-          [xmin, ymin, xmax, ymax] = bounds;
+        const currentFrames = framesByLayerId.value[layer.id].filter(
+          (frame: LayerFrame) => frame.index === layer.current_frame_index
+        )
+        for (let i = 0; i < currentFrames.length; i++) {
+          const currentFrame = currentFrames[i];
+          let xmin, xmax, ymin, ymax, srs = undefined;
+          if (currentFrame.raster) {
+            const bounds = currentFrame.raster.metadata.bounds;
+            ({ xmin, xmax, ymin, ymax, srs } = bounds);
+            [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
+            [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
+          } else if (currentFrame.vector) {
+            const bounds = await getVectorDataBounds(currentFrame.vector.id);
+            [xmin, ymin, xmax, ymax] = bounds;
+          }
+          if (!xMinGlobal || xMinGlobal > xmin) xMinGlobal = xmin;
+          if (!yMinGlobal || yMinGlobal > ymin) yMinGlobal = ymin;
+          if (!xMaxGlobal || xMaxGlobal < xmax) xMaxGlobal = xmax;
+          if (!yMaxGlobal || yMaxGlobal < ymax) yMaxGlobal = ymax;
         }
-        if (!xMinGlobal || xMinGlobal > xmin) xMinGlobal = xmin;
-        if (!yMinGlobal || yMinGlobal > ymin) yMinGlobal = ymin;
-        if (!xMaxGlobal || xMaxGlobal < xmax) xMaxGlobal = xmax;
-        if (!yMaxGlobal || yMaxGlobal < ymax) yMaxGlobal = ymax;
       }
     }
     if (xMinGlobal && xMaxGlobal && yMinGlobal && yMaxGlobal) {
@@ -86,40 +132,44 @@ export const useLayerStore = defineStore('layer', () => {
       copy_id = existing.length;
       name = `${layer.name} (${copy_id})`;
     }
-    selectedLayers.value = [
-      { ...layer, name, copy_id, visible: true, current_frame: 0 },
-      ...selectedLayers.value,
-    ];
+    const updateSelectedLayers = () => {
+      selectedLayers.value = [
+        { ...layer, name, copy_id, visible: true, current_frame_index: 0 },
+        ...selectedLayers.value,
+      ];
+    }
+    if (!layerFrames(layer).length) fetchFramesForLayer(layer.id).then(updateSelectedLayers)
+    else updateSelectedLayers()
   }
 
   watch(selectedLayers, updateLayersShown);
+  watch(framesByLayerId, updateLayersShown);
   function updateLayersShown() {
     const map = mapStore.getMap();
 
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
-      const multiFrame = layer.frames.length > 1;
-      layer.frames.forEach((frame) => {
+      const frames = layerFrames(layer)
+      const multiFrame = frames.length > 1;
+      frames.forEach((frame) => {
         const styleId = `${layer.id}.${layer.copy_id}`
         const sourceId = `${styleId}.${frame.id}`
         if (!styleStore.selectedLayerStyles[styleId]) {
           if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
             styleStore.selectedLayerStyles[styleId] = {...layer.default_style?.style_spec}
-            if (styleStore.selectedLayerStyles[styleId]?.default_frame !== layer.current_frame) {
-              layer.current_frame = styleStore.selectedLayerStyles[styleId].default_frame
+            if (styleStore.selectedLayerStyles[styleId]?.default_frame !== layer.current_frame_index) {
+              layer.current_frame_index = styleStore.selectedLayerStyles[styleId].default_frame
             }
           } else {
-            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec(
-              layer.frames[layer.current_frame].raster
-            )}
+            const firstCurrentRaster = frames.find((f) => f.index == layer.current_frame_index && f.raster)?.raster
+            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec(firstCurrentRaster)}
           }
         }
-
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         if (layer.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
-        ) && layer.current_frame === frame.index) {
+        ) && layer.current_frame_index === frame.index) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
@@ -147,7 +197,12 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   return {
+    availableLayers,
     selectedLayers,
+    fetchAvailableLayer,
+    fetchAvailableLayersForDataset,
+    fetchFramesForLayer,
+    layerFrames,
     updateLayersShown,
     addLayer,
     getDBObjectsForSourceID,

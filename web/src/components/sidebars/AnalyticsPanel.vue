@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import {
-  getDatasetLayers,
   getAnalysisResults,
   runAnalysis,
   getDataset,
@@ -137,9 +136,9 @@ async function fillInputsAndOutputs() {
         id: fullInputs.value?.flood_simulation.outputs.flood as number
       }
       if (panelStore.isVisible({dataset: floodDataset})) {
-        getDatasetLayers(floodDataset.id).then((layers) => {
-          additionalAnimationLayers.value = layers;
-        })
+        additionalAnimationLayers.value = layerStore.availableLayers.find((l) => {
+          l.dataset === floodDataset.id
+        });
       }
     }
   }

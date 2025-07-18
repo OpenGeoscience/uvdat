@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { debounce } from 'lodash'
 import { computed, ref, watch } from 'vue';
-import { ColorMap, Dataset, Layer, LayerStyle, StyleSpec } from '@/types';
-import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getDatasetLayers, getVectorSummary } from '@/api/rest';
+import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
+import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
 
@@ -41,16 +41,26 @@ const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
 })
 
+const frames = computed(() => {
+    return layerStore.layerFrames(props.layer)
+})
+
+const currentFrame = computed(() => {
+    return frames.value.find(
+        (f) => f.index === props.layer.current_frame_index
+    )
+})
+
 const showRasterOptions = computed(() => {
-    return props.layer.frames.some((frame) => frame.raster)
+    return frames.value.some((frame) => frame.raster)
 })
 
 const showVectorOptions = computed(() => {
-    return props.layer.frames.some((frame) => frame.vector)
+    return frames.value.some((frame) => frame.vector)
 })
 
 const vectorProperties = computed(() => {
-    const vector = props.layer.frames[props.layer.current_frame].vector
+    const vector = currentFrame.value?.vector
     if (!vector) return undefined
     const summary = vector.summary
     if (!summary) {
@@ -62,7 +72,7 @@ const vectorProperties = computed(() => {
 
 const dataRange = computed(() => {
     let absMin: number | undefined, absMax: number | undefined;
-    const raster = props.layer.frames[props.layer.current_frame].raster
+    const raster = currentFrame.value?.raster
     if (raster) {
         Object.values(raster.metadata.bands).forEach(({min, max}) => {
             if (!absMin || min < absMin) absMin = min;
@@ -103,10 +113,9 @@ function fetchRasterBands() {
     if (!currentStyleSpec.value) return
     if (showRasterOptions.value) {
         setGroupColorMode('all', 'colormap')
-        if (props.layer.frames.length) {
-            const currentFrame = props.layer.frames[currentStyleSpec.value.default_frame]
-            if (currentFrame.raster) {
-                rasterBands.value = currentFrame.raster.metadata.bands;
+        if (frames.value.length) {
+            if (currentFrame.value?.raster) {
+                rasterBands.value = currentFrame.value.raster.metadata.bands;
             }
         }
     }
@@ -117,7 +126,7 @@ function setAvailableGroups() {
         const bandNames = Object.keys(rasterBands.value).map((name) => `Band ${name}`)
         availableGroups.value = bandNames;
     } else if (showVectorOptions.value) {
-        const vector = props.layer.frames[props.layer.current_frame].vector
+        const vector = currentFrame.value?.vector
         if (!vector) return undefined
         const summary = vector.summary
         if (summary) {
@@ -145,7 +154,7 @@ function setAvailableGroups() {
 
 function setCurrentColorGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
-    const defaultStyle = styleStore.getDefaultStyleSpec(props.layer.frames[props.layer.current_frame].raster)
+    const defaultStyle = styleStore.getDefaultStyleSpec(currentFrame.value?.raster)
     let all = currentStyleSpec.value.colors.find((group) => group.name === 'all')
     if (!all) all = defaultStyle.colors.find((group) => group.name === 'all')
     if (different) {
@@ -243,7 +252,7 @@ function setSizeGroups(different: boolean | null) {
             }]
         } else {
             currentStyleSpec.value.sizes = [...styleStore.getDefaultStyleSpec(
-                props.layer.frames[props.layer.current_frame].raster
+                currentFrame.value?.raster
             ).sizes]
         }
         currentGroups.value['size'] = 'all'
@@ -324,7 +333,7 @@ function cancel() {
         currentStyleSpec.value = {...defaultStyle.style_spec}
     } else {
         currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
-            props.layer.frames[props.layer.current_frame].raster
+            currentFrame.value?.raster
         )}
     }
     emit('setLayerActive', false)
@@ -383,7 +392,7 @@ function deleteStyle() {
             } else {
                 currentLayerStyle.value = {name: 'None', is_default: true};
                 currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
-                    props.layer.frames[props.layer.current_frame].raster
+                    currentFrame.value?.raster
                 )}
             }
             refreshLayer()
@@ -393,25 +402,7 @@ function deleteStyle() {
 }
 
 function refreshLayer() {
-    // refresh layer in projectStore.availableDatasets
-    // so any new layer copies will have the correct default style
-    if (!projectStore.availableDatasets) return
-    Promise.all(projectStore.availableDatasets.map(async (dataset: Dataset) => {
-        if (dataset.id === props.layer.dataset.id) {
-            dataset.layers = await getDatasetLayers(dataset.id);
-
-            // refresh layer in layerStore.selectedLayers
-            // so closing and opening the style menu will have the correct default style
-            Promise.all(layerStore.selectedLayers.map(async (layer: Layer) => {
-                if (layer.id === props.layer.id) {
-                    const updated = dataset.layers?.find((l) => l.id === props.layer.id)
-                    if (updated) layer.default_style = updated.default_style
-                }
-                return layer
-            })).then((layers) => layerStore.selectedLayers = layers)
-        }
-        return dataset;
-    })).then((datasets) => projectStore.availableDatasets = datasets);
+    layerStore.fetchAvailableLayer(props.layer.id)
 }
 
 watch(() => panelStore.draggingPanel, () => {
@@ -495,12 +486,12 @@ watch(() => props.activeLayer, init)
 
                 <table class="aligned-controls px-2">
                     <tbody>
-                        <tr v-if="props.layer.frames.length > 1">
+                        <tr v-if="frames.length > 1">
                             <td><v-label>Default Frame</v-label></td>
                             <td>
                                 <SliderNumericInput
                                     :model="currentStyleSpec.default_frame + 1"
-                                    :max="props.layer.frames.length"
+                                    :max="frames.length"
                                     @update="(v: number) => {if (currentStyleSpec) currentStyleSpec.default_frame = v - 1}"
                                 />
                             </td>
