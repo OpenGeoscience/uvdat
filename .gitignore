@@ -6,7 +6,7 @@ rabbitmq/*
 staticfiles/
 sample_data/downloads/*
 jupyter/.ipynb_checkpoints
-dev/.env.web.docker-compose
+dev/.env.web
 
 # osmnx data cache folder
 cache

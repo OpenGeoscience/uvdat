@@ -62,7 +62,7 @@ services:
     working_dir: /web
     env_file:
       # git ignored file for VUE_APP_MAPTILER_API_KEY
-      - path: ./dev/.env.web.docker-compose
+      - path: ./dev/.env.web
         required: false
     volumes:
       - ./web:/web
