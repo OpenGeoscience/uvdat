@@ -55,6 +55,7 @@ setup(
         'osmnx==1.9.4',
         'geopandas==0.14.4',
         'networkx==3.3',
+        'pooch==1.8.2',
         'pyshp==2.3.1',
         'rasterio==1.3.10',
         'urllib3==1.26.15',
