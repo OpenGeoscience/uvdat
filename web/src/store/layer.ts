@@ -130,7 +130,19 @@ export const useLayerStore = defineStore('layer', () => {
     });
     if (existing.length) {
       copy_id = existing.length;
-      name = `${layer.name} (${copy_id})`;
+      // find an existing map source that is not associated with a selected layer
+      const unmatchedExisting = existing.find((sourceId) => {
+        const [layerId, copyId] = sourceId.split('.');
+        return !selectedLayers.value.some(
+          (l) => l.id === parseInt(layerId) && l.copy_id === parseInt(copyId)
+        )
+      })
+      if (unmatchedExisting) {
+        copy_id = parseInt(unmatchedExisting.split('.')[1]);
+      }
+      if (copy_id > 0) {
+        name = `${layer.name} (${copy_id})`;
+      }
     }
     const updateSelectedLayers = () => {
       selectedLayers.value = [
