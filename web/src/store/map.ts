@@ -1,16 +1,19 @@
 import { defineStore } from 'pinia';
 import { reactive, ref, shallowRef, watch } from 'vue';
 import { Map as MapLibreMap, MapLayerMouseEvent, Popup, Source, MapSourceDataEvent, MapDataEvent, MapStyleDataEvent } from "maplibre-gl";
-import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
+import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata, Layer } from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
+import { useLayerStore } from './layer';
 
+
+type SourceType = 'vector' | 'raster' | 'bounds';
 interface SourceDescription {
   layerId: number;
   layerCopyId: number;
   frameId: number;
-  type: 'vector' | 'raster';
+  type: SourceType;
   typeId: number;
 }
 
@@ -25,7 +28,7 @@ function parseSourceString(sourceId: string): SourceDescription {
     layerId: parseInt(layerId),
     layerCopyId: parseInt(layerCopyId),
     frameId: parseInt(frameId),
-    type: type as 'vector' | 'raster',
+    type: type as SourceType,
     typeId: parseInt(typeId),
   }
 }
@@ -58,29 +61,62 @@ export const useMapStore = defineStore('map', () => {
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
+  const layerStore = useLayerStore();
+  // const sourceIdToFrameMap = reactive(new Map<string, LayerFrame[]>());
+
+
+  function loadNextFrameInLayer(lastSourceId: string) {
+    const { layerId, layerCopyId, frameId } = parseSourceString(lastSourceId);
+    const layer = layerStore.selectedLayers.find((l) => l.id === layerId && l.copy_id === layerCopyId);
+    if (layer === undefined) {
+      throw new Error('Layer not found from source ID');
+    }
+
+    const frames = layer.frames.toSorted((a, b) => a.index - b.index);
+    const frameIndex = frames.findIndex((f) => f.id === frameId);
+    if (frameIndex === -1) {
+      throw new Error('Frame not found in layer frames');
+    }
+
+    // Last frame in the layer was just loaded, we're done
+    if (frameIndex + 1 >= frames.length) {
+      return;
+    }
+
+    const nextFrame = frames[frameIndex + 1];
+    const sourceId = layerStore.sourceIdFromLayerFrame(layer, nextFrame);
+    addLayerFrameToMap(nextFrame, sourceId, true);
+    layerStore.updateLayersShown();
+  }
+
   function setSourceLoaded(obj: MapSourceDataEvent | MapStyleDataEvent) {
     if (obj.dataType !== 'source') {
       return;
     }
 
     // Only set source loaded on sources we've created (not background sources/layers)
+    // Don't include raster bounds either
     try {
-      parseSourceString(obj.sourceId);
+      const sourceDesc = parseSourceString(obj.sourceId);
+      if (sourceDesc.type === 'bounds') {
+        return;
+      }
     } catch {
       return;
     }
 
-    // TODO: Handle raster and bounds needing to both be loaded
     sourceLoadedState.set(obj.sourceId, obj.isSourceLoaded);
-
-    // Sometimes requests are cancelled and a final data event with loaded==true doesn't come through,
-    // so we add this extra polling system to make sure it gets set to true
-    if (!obj.isSourceLoaded) {
+    if (obj.isSourceLoaded) {
+      loadNextFrameInLayer(obj.sourceId);
+    } else {
+      // Sometimes requests are cancelled and a final data event with loaded==true doesn't come through,
+      // so we add this extra polling system to make sure it gets set to true
       const intervalId = setInterval(() => {
         const source = getMap().getSource(obj.sourceId)!;
         if (source.loaded()) {
           sourceLoadedState.set(obj.sourceId, true);
           clearInterval(intervalId);
+          loadNextFrameInLayer(obj.sourceId);
         }
       }, 1000);
     }
@@ -93,16 +129,16 @@ export const useMapStore = defineStore('map', () => {
     );
 
     if (!clickedFeatures.length) {
-        return;
+      return;
     }
 
     // Sort features that were clicked on by their reverse layer ordering,
     // since the last element in the list (the top one) should be the first one clicked.
     const featQuery = clickedFeatures.toSorted(
-        (feat1, feat2) => {
-            const order = map.getLayersOrder();
-            return order.indexOf(feat2.layer.id) - order.indexOf(feat1.layer.id);
-        }
+      (feat1, feat2) => {
+        const order = map.getLayersOrder();
+        return order.indexOf(feat2.layer.id) - order.indexOf(feat1.layer.id);
+      }
     );
 
     // Select the first feature in this ordering, since this is the one that should be clicked on
@@ -110,10 +146,10 @@ export const useMapStore = defineStore('map', () => {
 
     // Perform this check to prevent unnecessary repeated assignment
     if (feature !== clickedFeature.value?.feature) {
-        clickedFeature.value = {
-            feature,
-            pos: e.lngLat,
-        };
+      clickedFeature.value = {
+        feature,
+        pos: e.lngLat,
+      };
     }
   }
 
@@ -363,6 +399,8 @@ export const useMapStore = defineStore('map', () => {
       return;
     }
 
+    console.log("LAYER FRAME ADDED", sourceId);
+
     if (frame.vector) {
       const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
       if (vector) mapSources.value[sourceId] = vector;
@@ -372,12 +410,19 @@ export const useMapStore = defineStore('map', () => {
       if (raster) mapSources.value[sourceId] = raster;
     }
 
+    // Right now, we just do this pre-loading for vectors
+    // if (frame.vector) {
+    // }
+
     const map = getMap();
-    map.on("data", setSourceLoaded);
-    // map.on('idle', () => {
-    //   map.off('data', setSourceLoaded);
-    //   sourceLoadedState.clear();
+    // map.on('data', (ev) => {
+    //   console.log(ev);
     // });
+    map.on("data", setSourceLoaded);
+    map.on('idle', () => {
+      map.off('data', setSourceLoaded);
+      // sourceLoadedState.clear();
+    });
   }
 
   return {
