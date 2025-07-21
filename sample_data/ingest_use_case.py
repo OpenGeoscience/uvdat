@@ -2,6 +2,7 @@ from datetime import datetime
 import importlib
 import json
 import os
+import pooch
 from pathlib import Path
 
 from django.contrib.auth.models import User
@@ -21,26 +22,34 @@ USE_CASE_FOLDER = Path('sample_data/use_cases')
 DOWNLOADS_FOLDER = Path('sample_data/downloads')
 
 
-def ingest_file(file_info, index=0, dataset=None, chart=None):
+def ingest_file(file_info, index=0, dataset=None, chart=None, no_cache=False):
     file_path = file_info.get('path')
     file_name = file_info.get('name', file_path.split('/')[-1])
     file_url = file_info.get('url')
+    file_hash = file_info.get('hash')
     file_metadata = file_info.get('metadata', {})
 
     file_location = Path(DOWNLOADS_FOLDER, file_path)
     file_type = file_path.split('.')[-1]
-    if not file_location.exists():
-        print(f'\t\t Downloading data file {file_name}.')
-        file_location.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_location, 'wb') as f:
-            r = requests.get(file_url)
-            r.raise_for_status()
-            f.write(r.content)
+    file_location.parent.mkdir(parents=True, exist_ok=True)
+    pooch.retrieve(
+        url=file_url,
+        fname=file_location.name,
+        path=file_location.parent,
+        known_hash=file_hash,
+        progressbar=True,
+    )
 
+    create_new = True
     existing = FileItem.objects.filter(dataset=dataset, name=file_name)
     if existing.count():
-        print('\t\t', f'FileItem {file_name} already exists.')
-    else:
+        if no_cache:
+            existing.delete()
+        else:
+            create_new = False
+            print('\t\t', f'FileItem {file_name} already exists.')
+
+    if create_new:
         new_file_item = FileItem.objects.create(
             name=file_name,
             dataset=dataset,
@@ -122,7 +131,7 @@ def ingest_charts(use_case):
                 )
 
 
-def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
+def ingest_datasets(use_case, include_large=False, no_cache=False, dataset_indexes=None):
     dataset_file_path = USE_CASE_FOLDER / use_case / 'datasets.json'
     if dataset_file_path.exists():
         print('Creating Dataset objects...')
@@ -131,10 +140,16 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
             for index, dataset in enumerate(data):
                 if dataset_indexes is None or index in dataset_indexes:
                     print('\t- ', dataset['name'])
+                    create_new = True
                     existing = Dataset.objects.filter(name=dataset['name'])
                     if existing.count():
-                        dataset_for_conversion = existing.first()
-                    else:
+                        if no_cache:
+                            existing.delete()
+                        else:
+                            dataset_for_conversion = existing.first()
+                            create_new = False
+
+                    if create_new:
                         # Create dataset
                         new_dataset = Dataset.objects.create(
                             name=dataset['name'],
@@ -147,6 +162,7 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
                                 file_info,
                                 index=index,
                                 dataset=new_dataset,
+                                no_cache=no_cache,
                             )
                         dataset_for_conversion = new_dataset
 
@@ -168,11 +184,12 @@ def ingest_datasets(use_case, include_large=False, dataset_indexes=None):
 
 
 
-def ingest_use_case(use_case_name, include_large=False, dataset_indexes=None):
+def ingest_use_case(use_case_name, include_large=False, no_cache=False, dataset_indexes=None):
     print(f'Populating server with data for use case {use_case_name}...')
     ingest_datasets(
         use_case=use_case_name,
         include_large=include_large,
+        no_cache=no_cache,
         dataset_indexes=dataset_indexes,
     )
     ingest_projects(use_case=use_case_name)
