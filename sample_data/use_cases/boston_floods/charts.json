@@ -6,6 +6,7 @@
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
+                "hash": "299afb2e6726024cc943c0267507cae7b635282db358fea688be81b569f0b9db",
                 "path": "boston/tide_level_data.csv"
             }
         ],
@@ -62,6 +63,7 @@
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
+                "hash": "0af8013362c94a3d043c88a277abcbf8e2c44999812f7b8da33dd18e4b22686e",
                 "path": "boston/parabolic_hyetograph.csv"
             }
         ],
@@ -90,6 +92,7 @@
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c2/download",
+                "hash": "aa83acf52af4dcc8e384fda18bcbba5d85d84ffdd30314950e8aacce772111e7",
                 "path": "boston/ncrs_type_2_hyetograph.csv"
             }
         ],

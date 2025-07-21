@@ -95,7 +95,7 @@ def ingest_projects(use_case):
             project_for_setting.set_permissions(owner=superuser)
 
 
-def ingest_charts(use_case):
+def ingest_charts(use_case, no_cache=False):
     chart_file_path = USE_CASE_FOLDER / use_case / 'charts.json'
     if chart_file_path.exists():
         print('Creating Chart objects...')
@@ -104,9 +104,15 @@ def ingest_charts(use_case):
             for chart in data:
                 print('\t- ', chart['name'])
                 existing = Chart.objects.filter(name=chart['name'])
+                create_new = True
                 if existing.count():
-                    chart_for_conversion = existing.first()
-                else:
+                    if no_cache:
+                        existing.delete()
+                    else:
+                        chart_for_conversion = existing.first()
+                        create_new = False
+
+                if create_new:
                     new_chart = Chart.objects.create(
                         name=chart['name'],
                         description=chart['description'],
@@ -193,4 +199,4 @@ def ingest_use_case(use_case_name, include_large=False, no_cache=False, dataset_
         dataset_indexes=dataset_indexes,
     )
     ingest_projects(use_case=use_case_name)
-    ingest_charts(use_case=use_case_name)
+    ingest_charts(use_case=use_case_name, no_cache=no_cache)
