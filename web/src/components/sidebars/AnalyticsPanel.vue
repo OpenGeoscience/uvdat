@@ -136,9 +136,9 @@ async function fillInputsAndOutputs() {
         id: fullInputs.value?.flood_simulation.outputs.flood as number
       }
       if (panelStore.isVisible({dataset: floodDataset})) {
-        additionalAnimationLayers.value = layerStore.availableLayers.find((l) => {
-          l.dataset === floodDataset.id
-        });
+        layerStore.fetchAvailableLayersForDataset(floodDataset.id).then((layers) => {
+          additionalAnimationLayers.value = layers
+        })
       }
     }
   }
