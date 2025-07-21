@@ -145,6 +145,12 @@ function selectProject(project: Project) {
   if (selectedProject.value?.id !== project.id) {
     selectedProject.value = project;
     projectStore.loadingDatasets = true;
+    getDatasets().then(async (datasets) => {
+      allDatasets.value = datasets
+      allDatasets.value.forEach((dataset: Dataset) => {
+        layerStore.fetchAvailableLayersForDataset(dataset.id)
+      })
+    })
     refreshProjectDatasets(null);
   }
 }
