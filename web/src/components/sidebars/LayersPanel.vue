@@ -23,7 +23,9 @@ const activeLayer = ref<Layer>();
 
 function removeLayers(layers: Layer[]) {
     layerStore.selectedLayers = layerStore.selectedLayers.filter((layer: Layer) => !layers.includes(layer))
-    mapStore.removeLayers(layers)
+
+    const layerIds = layers.map((layer) => layerStore.getMapLayersFromLayerObject(layer)).flat();
+    mapStore.removeLayers(layerIds);
 }
 
 function setVisibility(layers: Layer[], visible=true) {

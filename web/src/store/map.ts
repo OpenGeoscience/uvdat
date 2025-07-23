@@ -137,38 +137,33 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function clearMapLayers() {
-    const map = getMap();
-    map.getLayersOrder().forEach((id) => {
-      if (id !== 'base-tiles') {
-        map.removeLayer(id)
-      }
-    });
+    const userLayers = getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
+    removeLayers(userLayers);
   }
 
-  function removeLayers(layers: Layer[]) {
+  function removeLayers(layerIds: string[]) {
     const map = getMap();
-    let sourceIdsToRemove: string[] = [];
-    map.getLayersOrder().forEach((id) => {
-      const [layerId, copyId] = id.split('.')
-      if (layers.find((l) => l.id === parseInt(layerId) && l.copy_id === parseInt(copyId))) {
-        map.removeLayer(id)
-        sourceIdsToRemove = [
-          ...sourceIdsToRemove,
-          ...Object.keys(map.getStyle().sources).filter((sourceId) => sourceId.startsWith(`${layerId}.${copyId}`)),
-        ]
-      }
-    });
-    removeSources(sourceIdsToRemove)
-  }
 
-  function removeSources(sourceIds: string[]) {
-    const map = getMap();
-    (new Set(sourceIds)).forEach((sourceId) => map.removeSource(sourceId))
+    // Must collect all source Ids so they can be removed after all layers
+    // have been removed, since multple layers may use the same source
+    let sourceIdsToRemove = new Set<string>();
+    const layersToRemove = map.getLayersOrder().filter((id) => layerIds.includes(id));
+    layersToRemove.forEach((id) => {
+      sourceIdsToRemove.add(map.getLayer(id)!.source);
+      map.removeLayer(id);
+    });
+
+    // Now remove the sources
+    sourceIdsToRemove.forEach((id) => {
+      map.removeSource(id);
+    });
+
+    // Ensure store is kept up to date
     mapSources.value = Object.fromEntries(
-      Object.entries(mapSources.value).filter(([k, source]) => {
-        return !sourceIds.includes(source.id)
-      })
-    )
+      Object.entries(mapSources.value).filter(
+        ([k, source]) => !sourceIdsToRemove.has(source.id)
+      )
+    );
   }
 
   function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
@@ -374,7 +369,6 @@ export const useMapStore = defineStore('map', () => {
     setMapCenter,
     clearMapLayers,
     removeLayers,
-    removeSources,
     createVectorFeatureMapLayers,
     createRasterFeatureMapLayers,
     createVectorTileSource,
