@@ -1,7 +1,17 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef, watch } from 'vue';
 import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
-import { ClickedFeatureData, Project, RasterData, RasterDataValues, VectorData, LayerFrame, MapLibreLayerWithMetadata, MapLibreLayerMetadata } from '@/types';
+import {
+  ClickedFeatureData,
+  Project,
+  RasterData,
+  RasterDataValues,
+  VectorData,
+  LayerFrame,
+  MapLibreLayerWithMetadata,
+  MapLibreLayerMetadata,
+  Layer
+} from '@/types';
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
@@ -130,9 +140,35 @@ export const useMapStore = defineStore('map', () => {
     const map = getMap();
     map.getLayersOrder().forEach((id) => {
       if (id !== 'base-tiles') {
-        map.setLayoutProperty(id, "visibility", "none");
+        map.removeLayer(id)
       }
     });
+  }
+
+  function removeLayers(layers: Layer[]) {
+    const map = getMap();
+    let sourceIdsToRemove: string[] = [];
+    map.getLayersOrder().forEach((id) => {
+      const [layerId, copyId] = id.split('.')
+      if (layers.find((l) => l.id === parseInt(layerId) && l.copy_id === parseInt(copyId))) {
+        map.removeLayer(id)
+        sourceIdsToRemove = [
+          ...sourceIdsToRemove,
+          ...Object.keys(map.getStyle().sources).filter((sourceId) => sourceId.startsWith(`${layerId}.${copyId}`)),
+        ]
+      }
+    });
+    removeSources(sourceIdsToRemove)
+  }
+
+  function removeSources(sourceIds: string[]) {
+    const map = getMap();
+    (new Set(sourceIds)).forEach((sourceId) => map.removeSource(sourceId))
+    mapSources.value = Object.fromEntries(
+      Object.entries(mapSources.value).filter(([k, source]) => {
+        return !sourceIds.includes(source.id)
+      })
+    )
   }
 
   function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
@@ -337,6 +373,8 @@ export const useMapStore = defineStore('map', () => {
     getTooltip,
     setMapCenter,
     clearMapLayers,
+    removeLayers,
+    removeSources,
     createVectorFeatureMapLayers,
     createRasterFeatureMapLayers,
     createVectorTileSource,
