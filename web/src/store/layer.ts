@@ -57,6 +57,7 @@ export const useLayerStore = defineStore('layer', () => {
       ...updatedExistingLayers,
       ...remainingExistingLayers,
     ]
+    return datasetLayers
   }
 
   async function fetchFramesForLayer(layerId: number) {
