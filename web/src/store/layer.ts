@@ -44,16 +44,19 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   async function fetchAvailableLayersForDataset(datasetId: number) {
-    const layers = await getDatasetLayers(datasetId)
+    // fetch all layers on a dataset and update availableLayers
+    // such that any existing layers are overwritten and new ones are added
+    const datasetLayers = await getDatasetLayers(datasetId)
+    const datasetLayerIds = new Set(datasetLayers.map((l: Layer) => l.id))
+    const existingLayerIds = new Set(availableLayers.value.map((l: Layer) => l.id))
+    const newLayers = datasetLayers.filter((l: Layer) => !existingLayerIds.has(l.id))
+    const updatedExistingLayers = datasetLayers.filter((l: Layer) => existingLayerIds.has(l.id))
+    const remainingExistingLayers = availableLayers.value.filter((l: Layer) => !datasetLayerIds.has(l.id))
     availableLayers.value = [
-      ...availableLayers.value.map((layer: Layer) => {
-        return layers.find((l: Layer) => l.id == layer.id) || layer
-      }),
-      ...layers.filter((layer: Layer) => {
-        return !availableLayers.value.map((l: Layer) => l.id).includes(layer.id)
-      })
+      ...newLayers,
+      ...updatedExistingLayers,
+      ...remainingExistingLayers,
     ]
-    return layers
   }
 
   async function fetchFramesForLayer(layerId: number) {
@@ -156,13 +159,13 @@ export const useLayerStore = defineStore('layer', () => {
         const sourceId = `${styleId}.${frame.id}`
         if (!styleStore.selectedLayerStyles[styleId]) {
           if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
-            styleStore.selectedLayerStyles[styleId] = {...layer.default_style?.style_spec}
+            styleStore.selectedLayerStyles[styleId] = { ...layer.default_style?.style_spec }
             if (styleStore.selectedLayerStyles[styleId]?.default_frame !== layer.current_frame_index) {
               layer.current_frame_index = styleStore.selectedLayerStyles[styleId].default_frame
             }
           } else {
             const firstCurrentRaster = frames.find((f) => f.index == layer.current_frame_index && f.raster)?.raster
-            styleStore.selectedLayerStyles[styleId] = {...styleStore.getDefaultStyleSpec(firstCurrentRaster)}
+            styleStore.selectedLayerStyles[styleId] = { ...styleStore.getDefaultStyleSpec(firstCurrentRaster) }
           }
         }
 
