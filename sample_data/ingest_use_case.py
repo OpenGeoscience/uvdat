@@ -32,13 +32,17 @@ def ingest_file(file_info, index=0, dataset=None, chart=None, no_cache=False):
     file_location = Path(DOWNLOADS_FOLDER, file_path)
     file_type = file_path.split('.')[-1]
     file_location.parent.mkdir(parents=True, exist_ok=True)
-    pooch.retrieve(
-        url=file_url,
-        fname=file_location.name,
-        path=file_location.parent,
-        known_hash=file_hash,
-        progressbar=True,
-    )
+
+    if file_url is not None:
+        pooch.retrieve(
+            url=file_url,
+            fname=file_location.name,
+            path=file_location.parent,
+            known_hash=file_hash,
+            progressbar=True,
+        )
+    elif not file_location.exists():
+        raise Exception('File path does not exist and no download URL was specified.')
 
     create_new = True
     existing = FileItem.objects.filter(dataset=dataset, name=file_name)
