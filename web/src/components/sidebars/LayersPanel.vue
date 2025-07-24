@@ -41,9 +41,9 @@ const debouncedUpdateFrame = debounce((layer: Layer, value: number) => {
 }, 10)
 
 function getLayerMaxFrames(layer: Layer) {
-    return [...new Set(
+    return new Set(
         layerStore.layerFrames(layer).map((f) => f.index)
-    )].length
+    ).size
 }
 
 function getLayerCurrentFrames(layer: Layer) {
