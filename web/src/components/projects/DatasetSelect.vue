@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import DatasetList from '@/components/DatasetList.vue'
 import DetailView from '@/components/DetailView.vue'
 import { Dataset } from '@/types';
+import { useLayerStore } from '@/store';
+
+const layerStore = useLayerStore();
 
 const props = defineProps<{
   datasets: Dataset[] | undefined;
@@ -9,6 +13,14 @@ const props = defineProps<{
 }>();
 const emit = defineEmits(["toggleDatasets"]);
 
+const datasetsWithLayers = computed(() => {
+  return props.datasets?.map((dataset) => {
+    return {
+      ...dataset,
+      layers: layerStore.availableLayers.filter((l) => l.dataset === dataset.id)
+    }
+  })
+})
 
 function toggleSelected(items: Dataset[]) {
     emit("toggleDatasets", items);
@@ -16,7 +28,7 @@ function toggleSelected(items: Dataset[]) {
 </script>
 
 <template>
-  <DatasetList :datasets="props.datasets">
+  <DatasetList :datasets="datasetsWithLayers">
     <template v-slot:list="{ data }">
       <v-expansion-panels multiple variant="accordion" elevation="0" bg-color="transparent">
         <v-expansion-panel

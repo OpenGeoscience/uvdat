@@ -1,10 +1,6 @@
 import {
     getProjects,
-    getProjectCharts,
-    getProjectAnalysisTypes,
     getProjectDatasets,
-    getDatasetLayers,
-    getProjectNetworks,
 } from '@/api/rest';
 import { Dataset, Project } from '@/types';
 import { defineStore } from 'pinia';
@@ -42,10 +38,10 @@ export const useProjectStore = defineStore('project', () => {
 
         loadingDatasets.value = true;
         getProjectDatasets(currentProject.value.id).then(async (datasets) => {
-            availableDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
-                dataset.layers = await getDatasetLayers(dataset.id);
-                return dataset;
-            }));
+            availableDatasets.value = datasets;
+            await Promise.all(availableDatasets.value.map((dataset: Dataset) =>
+                layerStore.fetchAvailableLayersForDataset(dataset.id)
+            ));
             loadingDatasets.value = false;
         });
     }

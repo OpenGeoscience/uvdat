@@ -84,7 +84,6 @@ def test_rest_project_retrieve(authenticated_api_client, user, project: Project)
     assert len(followers) == 1
     assert followers[0]['id'] == user.id
 
-    assert resp.json()['datasets'] == []
     assert resp.json()['item_counts'] == {
         'datasets': 0,
         'charts': 0,

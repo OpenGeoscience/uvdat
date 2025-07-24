@@ -17,6 +17,7 @@ import {
   NetworkEdge,
   LayerStyle,
   VectorSummary,
+  LayerFrame,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -94,6 +95,14 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
 
 export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
   return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
+}
+
+export async function getLayer(layerId: number): Promise<Layer> {
+  return (await apiClient.get(`layers/${layerId}`)).data;
+}
+
+export async function getLayerFrames(layerId: number): Promise<LayerFrame[]> {
+  return (await apiClient.get(`layers/${layerId}/frames`)).data;
 }
 
 export async function getDatasetFiles(datasetId: number): Promise<FileItem[]> {

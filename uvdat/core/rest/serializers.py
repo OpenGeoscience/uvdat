@@ -82,7 +82,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = '__all__'
+        exclude = ['datasets']
 
 
 class DatasetSerializer(serializers.ModelSerializer):
@@ -100,12 +100,6 @@ class FileItemSerializer(serializers.ModelSerializer):
 class ChartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chart
-        fields = '__all__'
-
-
-class LayerFrameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LayerFrame
         fields = '__all__'
 
 
@@ -127,8 +121,7 @@ class LayerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Layer
-        depth = 2
-        fields = ['id', 'name', 'frames', 'metadata', 'dataset', 'default_style']
+        fields = ['id', 'name', 'metadata', 'dataset', 'default_style']
 
 
 class VectorDataSerializer(serializers.ModelSerializer):
@@ -154,6 +147,15 @@ class RasterDataSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RasterData
+        fields = '__all__'
+
+
+class LayerFrameSerializer(serializers.ModelSerializer):
+    vector = VectorDataSerializer()
+    raster = RasterDataSerializer()
+
+    class Meta:
+        model = LayerFrame
         fields = '__all__'
 
 

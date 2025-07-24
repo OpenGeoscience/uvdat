@@ -23,11 +23,11 @@ export interface Layer {
   id: number;
   copy_id: number;
   name: string;
-  dataset: Dataset;
-  frames: LayerFrame[];
+  dataset: number;
+  frames?: LayerFrame[];
   metadata: Record<string, any>;
   visible: boolean;
-  current_frame: number;
+  current_frame_index: number;
   default_style: LayerStyle | null;
 }
 

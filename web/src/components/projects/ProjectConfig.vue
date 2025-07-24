@@ -8,14 +8,14 @@ import {
   createProject,
   deleteProject,
   patchProject,
-  getDatasetLayers,
 } from "@/api/rest";
 import { Project, Dataset } from "@/types";
 
-import { useMapStore, useAppStore, useProjectStore } from "@/store";
+import { useMapStore, useAppStore, useProjectStore, useLayerStore } from "@/store";
 const projectStore = useProjectStore();
 const appStore = useAppStore();
 const mapStore = useMapStore();
+const layerStore = useLayerStore()
 
 const currentTab = ref();
 const searchText = ref<string | undefined>();
@@ -146,11 +146,11 @@ function selectProject(project: Project) {
     selectedProject.value = project;
     projectStore.loadingDatasets = true;
     getDatasets().then(async (datasets) => {
-      allDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
-        dataset.layers = await getDatasetLayers(dataset.id);
-        return dataset;
-      }));
-    });
+      allDatasets.value = datasets
+      allDatasets.value.forEach((dataset: Dataset) => {
+        layerStore.fetchAvailableLayersForDataset(dataset.id)
+      })
+    })
     refreshProjectDatasets(null);
   }
 }
@@ -229,10 +229,10 @@ function updateSelectedProject(newProjectData: Project) {
 function refreshProjectDatasets(callback: Function | null) {
   if (selectedProject.value) {
     getProjectDatasets(selectedProject.value.id).then(async (datasets) => {
-      projDatasets.value = await Promise.all(datasets.map(async (dataset: Dataset) => {
-        dataset.layers = await getDatasetLayers(dataset.id);
-        return dataset;
-      }));
+      projDatasets.value = datasets
+      projDatasets.value.forEach((dataset: Dataset) => {
+        layerStore.fetchAvailableLayersForDataset(dataset.id)
+      })
       if (callback) callback();
     });
   }
