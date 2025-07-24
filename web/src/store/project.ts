@@ -39,11 +39,9 @@ export const useProjectStore = defineStore('project', () => {
         loadingDatasets.value = true;
         getProjectDatasets(currentProject.value.id).then(async (datasets) => {
             availableDatasets.value = datasets;
-            await Promise.all(availableDatasets.value.map(
-                async (dataset: Dataset) => {
-                    return await layerStore.fetchAvailableLayersForDataset(dataset.id)
-                })
-            );
+            await Promise.all(availableDatasets.value.map((dataset: Dataset) =>
+                layerStore.fetchAvailableLayersForDataset(dataset.id)
+            ));
             loadingDatasets.value = false;
         });
     }
