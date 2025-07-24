@@ -17,6 +17,10 @@ interface SourceDBObjects {
 }
 
 
+function uniqueLayerIdFromLayer(layer: Layer) {
+  return `${layer.id}.${layer.copy_id}`;
+}
+
 export const useLayerStore = defineStore('layer', () => {
   const availableLayers = ref<Layer[]>([]);
   const selectedLayers = ref<Layer[]>([]);
@@ -27,6 +31,17 @@ export const useLayerStore = defineStore('layer', () => {
   const networkStore = useNetworkStore();
   const styleStore = useStyleStore();
   const projectStore = useProjectStore();
+
+  /**
+   * Return the maplibre layers associated with a Layer DB object
+   *
+   * @param layer The Layer DB object
+   */
+  function getMapLayersFromLayerObject(layer: Layer) {
+    // Map layer format is <layerId>.<layerCopyId>.<frameId>.<type>.<typeId>,
+    // where type is vector, raster, or 'bounds' (used for raster bounds)
+    return mapStore.getMap().getLayersOrder().filter((layerId) => layerId.startsWith(uniqueLayerIdFromLayer(layer)));
+  }
 
   async function fetchAvailableLayer(layerId: number) {
     const layer = await getLayer(layerId)
@@ -211,5 +226,7 @@ export const useLayerStore = defineStore('layer', () => {
     addLayer,
     getDBObjectsForSourceID,
     getBoundsOfVisibleLayers,
+    uniqueLayerIdFromLayer,
+    getMapLayersFromLayerObject,
   }
 });

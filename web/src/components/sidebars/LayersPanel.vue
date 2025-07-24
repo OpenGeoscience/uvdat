@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { debounce } from "lodash"
 import { Layer } from "@/types";
 import { computed, ref } from "vue";
 import draggable from "vuedraggable";
@@ -6,9 +7,9 @@ import LayerStyle from "./LayerStyle.vue";
 import DetailView from "../DetailView.vue";
 import SliderNumericInput from '../SliderNumericInput'
 
-import { useLayerStore } from "@/store";
-import { debounce } from "lodash"
+import { useLayerStore, useMapStore } from "@/store";
 const layerStore = useLayerStore();
+const mapStore = useMapStore()
 
 const searchText = ref<string | undefined>();
 const filteredLayers = computed(() => {
@@ -22,6 +23,9 @@ const activeLayer = ref<Layer>();
 
 function removeLayers(layers: Layer[]) {
     layerStore.selectedLayers = layerStore.selectedLayers.filter((layer: Layer) => !layers.includes(layer))
+
+    const layerIds = layers.map((layer) => layerStore.getMapLayersFromLayerObject(layer)).flat();
+    mapStore.removeLayers(layerIds);
 }
 
 function setVisibility(layers: Layer[], visible=true) {
