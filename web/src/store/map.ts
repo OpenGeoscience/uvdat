@@ -115,7 +115,6 @@ function parseLayerString(layerId: string): LayerDescription {
 
 export const useMapStore = defineStore('map', () => {
   const map = shallowRef<Map>();
-  const mapSources = ref<Record<string, Source>>({});
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
@@ -179,6 +178,11 @@ export const useMapStore = defineStore('map', () => {
     return map.value;
   }
 
+  function getMapSources() {
+    const map = getMap();
+    return map.getLayersOrder().map((layerId) => map.getLayer(layerId)!.source);
+  }
+
   function getCurrentMapPosition() {
     const map = getMap();
     const { lat, lng } = map.getCenter();
@@ -235,13 +239,6 @@ export const useMapStore = defineStore('map', () => {
     sourceIdsToRemove.forEach((id) => {
       map.removeSource(id);
     });
-
-    // Ensure store is kept up to date
-    mapSources.value = Object.fromEntries(
-      Object.entries(mapSources.value).filter(
-        ([k, source]) => !sourceIdsToRemove.has(source.id)
-      )
-    );
   }
 
   function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
@@ -416,14 +413,13 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
-    if (!mapSources.value[sourceId]) {
+    if (!getMapSources().includes(sourceId)) {
       if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
-        if (vector) mapSources.value[sourceId] = vector;
-      }
-      if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
-        if (raster) mapSources.value[sourceId] = raster;
+        createVectorTileSource(frame.vector, sourceId, multiFrame);
+      } else if (frame.raster) {
+        createRasterTileSource(frame.raster, sourceId, multiFrame);
+      } else {
+        throw new Error('Layer Frame is neither raster nor vector!');
       }
     }
   }
@@ -431,7 +427,6 @@ export const useMapStore = defineStore('map', () => {
   return {
     // Data
     map,
-    mapSources,
     showMapBaseLayer,
     tooltipOverlay,
     clickedFeature,
@@ -440,6 +435,7 @@ export const useMapStore = defineStore('map', () => {
     handleLayerClick,
     toggleBaseLayer,
     getMap,
+    getMapSources,
     getCurrentMapPosition,
     getTooltip,
     setMapCenter,

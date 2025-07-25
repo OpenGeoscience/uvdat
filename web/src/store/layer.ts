@@ -136,7 +136,7 @@ export const useLayerStore = defineStore('layer', () => {
   function addLayer(layer: Layer) {
     let name = layer.name;
     let copy_id = 0;
-    const existing = Object.keys(mapStore.mapSources).filter((sourceId) => {
+    const existing = mapStore.getMapSources().filter((sourceId) => {
       const { layerId } = mapStore.parseSourceString(sourceId);
       return layerId === layer.id
     });
