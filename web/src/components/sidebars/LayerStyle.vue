@@ -89,17 +89,28 @@ const dataRange = computed(() => {
 async function init() {
     if (props.activeLayer === props.layer) {
         getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
-        if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
-            // deep copies so that changes to current style won't affect default style
+        resetCurrentStyle()
+        fetchRasterBands()
+        if (currentStyleSpec.value) setAvailableGroups()
+    }
+}
+
+function resetCurrentStyle() {
+    // When copying styles, use deep copies via JSON.parse(JSON.stringify())
+    // so that changes to the current style do not affect the original copy
+    if (currentLayerStyle.value?.id) {
+        // keep current style selected but discard any unsaved changes
+        currentStyleSpec.value = JSON.parse(JSON.stringify(currentLayerStyle.value.style_spec))
+    } else {
+        // no current style selected, set one
+        if (props.layer.default_style) {
+            // apply layer's default style
             currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style))
             currentStyleSpec.value = JSON.parse(JSON.stringify(props.layer.default_style.style_spec))
         } else {
+            // layer has no default style; apply None style
             currentLayerStyle.value = {name: 'None', is_default: true};
-            currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
-        }
-        fetchRasterBands()
-        if (currentStyleSpec.value) {
-            setAvailableGroups()
+            currentStyleSpec.value = styleStore.getDefaultStyleSpec(currentFrame.value?.raster);
         }
     }
 }
@@ -150,7 +161,6 @@ function setAvailableGroups() {
         }
     }
 }
-
 
 function setCurrentColorGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
@@ -328,14 +338,7 @@ function updateFilterBy(filterId: number | undefined, propertyName: string) {
 }
 
 function cancel() {
-    const defaultStyle = availableStyles.value?.find((s) => s.is_default)
-    if (defaultStyle?.style_spec) {
-        currentStyleSpec.value = {...defaultStyle.style_spec}
-    } else {
-        currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
-            currentFrame.value?.raster
-        )}
-    }
+    resetCurrentStyle()
     emit('setLayerActive', false)
 }
 
@@ -444,6 +447,7 @@ watch(() => props.activeLayer, init)
                 <v-icon
                     icon="mdi-close"
                     style="position: absolute; top: 10px; right: 5px;"
+                    v-tooltip="'Warning: unsaved changes will be discarded'"
                     @click="cancel"
                 />
             </div>
@@ -1227,7 +1231,7 @@ watch(() => props.activeLayer, init)
             </v-card-text>
 
             <v-card-actions class="my-1" style="float: right;">
-                <v-btn class="secondary-button" @click="cancel">
+                <v-btn class="secondary-button" @click="cancel" v-tooltip="'Warning: unsaved changes will be discarded'">
                     <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                     Cancel
                 </v-btn>
