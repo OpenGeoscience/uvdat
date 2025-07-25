@@ -17,11 +17,17 @@ class Command(BaseCommand):
             action='store_true',
             help='Include conversion step for large datasets',
         )
+        parser.add_argument(
+            '--no_cache',
+            action='store_true',
+            help='Do not reuse existing files and datasets',
+        )
         parser.add_argument('--dataset_indexes', nargs='*', type=int)
 
     def handle(self, *args, **kwargs):
         use_case_name = kwargs['use_case']
         include_large = kwargs['include_large']
+        no_cache = kwargs['no_cache']
         dataset_indexes = kwargs['dataset_indexes']
         if dataset_indexes is None or len(dataset_indexes) == 0:
             dataset_indexes = None
@@ -29,5 +35,6 @@ class Command(BaseCommand):
         ingest_use_case(
             use_case_name,
             include_large=include_large,
+            no_cache=no_cache,
             dataset_indexes=dataset_indexes,
         )

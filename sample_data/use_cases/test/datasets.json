@@ -6,6 +6,7 @@
     "files": [
       {
         "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
+        "hash": "9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee",
         "path": "test/multiframe_vector.geojson"
       }
     ],
@@ -22,6 +23,7 @@
     "files": [
       {
         "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
+        "hash": "9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee",
         "path": "test/multiframe_vector.geojson"
       }
     ],

@@ -100,8 +100,9 @@ def convert_files(*files, file_item=None, combine=False):
         data, features = geodata.get('data'), geodata.get('features')
         if data is None and len(features):
             gdf = geopandas.GeoDataFrame.from_features(features)
-            gdf = gdf.set_crs(source_projection, allow_override=True)
-            gdf = gdf.to_crs(4326)
+            if source_projection is not None:
+                gdf = gdf.set_crs(source_projection, allow_override=True)
+                gdf = gdf.to_crs(4326)
             data = json.loads(gdf.to_json())
         vector_data = VectorData.objects.create(
             name=geodata.get('name'),
