@@ -426,14 +426,16 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
-    if (!getMapSources().includes(sourceId)) {
-      if (frame.vector) {
-        createVectorTileSource(frame.vector, sourceId, multiFrame);
-      } else if (frame.raster) {
-        createRasterTileSource(frame.raster, sourceId, multiFrame);
-      } else {
-        throw new Error('Layer Frame is neither raster nor vector!');
-      }
+    if (getMapSources().includes(sourceId)) {
+      return;
+    }
+
+    if (frame.vector) {
+      createVectorTileSource(frame.vector, sourceId, multiFrame);
+    } else if (frame.raster) {
+      createRasterTileSource(frame.raster, sourceId, multiFrame);
+    } else {
+      throw new Error('Layer Frame is neither raster nor vector!');
     }
   }
 
