@@ -241,6 +241,19 @@ export const useMapStore = defineStore('map', () => {
     });
   }
 
+  /**
+ * Returns the description of the most recently added instance of a
+ * layer to the map, or undefined if it's not on the map.
+ */
+  function getLatestLayerInstance(layer: Layer): LayerDescription | undefined {
+    const matchingLayers = getMap().getLayersOrder()
+      .map((layerId) => parseLayerString(layerId))
+      .filter((layerDesc) => layerDesc.layerId === layer.id);
+
+    // Sort reverse, so the latest instance is first in the list;
+    return matchingLayers.toSorted((a, b) => b.layerCopyId - a.layerCopyId)[0];
+  }
+
   function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
     const map = getMap();
     const { layerId, layerCopyId, frameId } = parseSourceString(source.id);
@@ -452,5 +465,6 @@ export const useMapStore = defineStore('map', () => {
     parseLayerString,
     sourceIdFromLayerFrame,
     uniqueLayerIdFromLayer,
+    getLatestLayerInstance,
   }
 });

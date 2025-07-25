@@ -133,25 +133,21 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   // Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
-  function addLayer(layer: Layer) {
-    let name = layer.name;
-    let copy_id = 0;
-    const existing = mapStore.getMapSources().filter((sourceId) => {
-      const { layerId } = mapStore.parseSourceString(sourceId);
-      return layerId === layer.id
-    });
-    if (existing.length) {
-      copy_id = existing.length;
-      name = `${layer.name} (${copy_id})`;
+  async function addLayer(layer: Layer) {
+    const existing = mapStore.getLatestLayerInstance(layer);
+    const copy_id = existing === undefined ? 0 : existing.layerCopyId + 1;
+    const name = copy_id > 0 ? `${layer.name} (${copy_id})` : layer.name;
+    const newLayer = { ...layer, name, copy_id, visible: true, current_frame_index: 0 };
+
+    // Need to fetch the frames for this layer, if not present
+    if (!layerFrames(layer).length) {
+      await fetchFramesForLayer(layer.id);
     }
-    const updateSelectedLayers = () => {
-      selectedLayers.value = [
-        { ...layer, name, copy_id, visible: true, current_frame_index: 0 },
-        ...selectedLayers.value,
-      ];
-    }
-    if (!layerFrames(layer).length) fetchFramesForLayer(layer.id).then(updateSelectedLayers)
-    else updateSelectedLayers()
+
+    selectedLayers.value = [
+      newLayer,
+      ...selectedLayers.value,
+    ];
   }
 
   watch(selectedLayers, updateLayersShown);
