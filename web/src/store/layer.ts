@@ -163,13 +163,17 @@ export const useLayerStore = defineStore('layer', () => {
         const styleId = mapStore.uniqueLayerIdFromLayer(layer);
         if (!styleStore.selectedLayerStyles[styleId]) {
           if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
-            styleStore.selectedLayerStyles[styleId] = { ...layer.default_style?.style_spec }
-            if (styleStore.selectedLayerStyles[styleId]?.default_frame !== layer.current_frame_index) {
-              layer.current_frame_index = styleStore.selectedLayerStyles[styleId].default_frame
+            styleStore.selectedLayerStyles[styleId] = { ...layer.default_style }
+            if (styleStore.selectedLayerStyles[styleId]?.style_spec?.default_frame !== layer.current_frame_index) {
+              layer.current_frame_index = styleStore.selectedLayerStyles[styleId].style_spec?.default_frame || 0
             }
           } else {
             const firstCurrentRaster = frames.find((f) => f.index == layer.current_frame_index && f.raster)?.raster
-            styleStore.selectedLayerStyles[styleId] = { ...styleStore.getDefaultStyleSpec(firstCurrentRaster) }
+            styleStore.selectedLayerStyles[styleId] = {
+              name: 'None',
+              is_default: true,
+              style_spec: styleStore.getDefaultStyleSpec(firstCurrentRaster)
+            }
           }
         }
 
