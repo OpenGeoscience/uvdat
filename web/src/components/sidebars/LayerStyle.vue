@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { debounce } from 'lodash'
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
@@ -39,6 +39,11 @@ const colormaps: ColorMap[] = styleStore.colormaps;
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
+})
+
+const appliedStyleName = computed(() => {
+    if (currentLayerStyle.value.id) return currentLayerStyle.value.name
+    else return undefined
 })
 
 const frames = computed(() => {
@@ -422,6 +427,7 @@ const debouncedStyleSpecUpdated = debounce(() => {
 watch(currentStyleSpec, debouncedStyleSpecUpdated, {deep: true})
 
 watch(() => props.activeLayer, init)
+onMounted(resetCurrentStyle)
 </script>
 
 <template>
@@ -437,6 +443,7 @@ watch(() => props.activeLayer, init)
             <v-icon
                 v-bind="props"
                 icon="mdi-cog"
+                v-tooltip="appliedStyleName ? 'Style: ' + appliedStyleName : 'Configure styling'"
             />
         </template>
         <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="510">
