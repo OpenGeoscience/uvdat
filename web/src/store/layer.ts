@@ -16,35 +16,6 @@ interface SourceDBObjects {
   network?: Network,
 }
 
-
-function uniqueLayerIdFromLayer(layer: Layer) {
-  return `${layer.id}.${layer.copy_id}`;
-}
-
-/**
- * Note: Rasters also have an extra `bounds` source, which allows for
- * interaction with the raster layer. This is not considered in this
- * function, as it's rarely accessed directly.
- */
-function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
-  const parts: (number | string)[] = [
-    uniqueLayerIdFromLayer(layer),
-    frame.id,
-  ]
-
-  if (frame.vector) {
-    parts.push('vector');
-    parts.push(frame.vector.id);
-  } else if (frame.raster) {
-    parts.push('raster');
-    parts.push(frame.raster.id);
-  } else {
-    throw new Error("Layer frame is neither raster nor vector!");
-  }
-
-  return parts.join('.');
-}
-
 export const useLayerStore = defineStore('layer', () => {
   const availableLayers = ref<Layer[]>([]);
   const selectedLayers = ref<Layer[]>([]);
@@ -64,7 +35,7 @@ export const useLayerStore = defineStore('layer', () => {
   function getMapLayersFromLayerObject(layer: Layer) {
     // Map layer format is <layerId>.<layerCopyId>.<frameId>.<type>.<typeId>,
     // where type is vector, raster, or 'bounds' (used for raster bounds)
-    return mapStore.getMap().getLayersOrder().filter((layerId) => layerId.startsWith(uniqueLayerIdFromLayer(layer)));
+    return mapStore.getMap().getLayersOrder().filter((layerId) => layerId.startsWith(mapStore.uniqueLayerIdFromLayer(layer)));
   }
 
   async function fetchAvailableLayer(layerId: number) {
@@ -193,7 +164,7 @@ export const useLayerStore = defineStore('layer', () => {
       const frames = layerFrames(layer)
       const multiFrame = frames.length > 1;
       frames.forEach((frame) => {
-        const styleId = uniqueLayerIdFromLayer(layer);
+        const styleId = mapStore.uniqueLayerIdFromLayer(layer);
         if (!styleStore.selectedLayerStyles[styleId]) {
           if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
             styleStore.selectedLayerStyles[styleId] = { ...layer.default_style?.style_spec }
@@ -207,7 +178,7 @@ export const useLayerStore = defineStore('layer', () => {
         }
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
-        const sourceId = sourceIdFromLayerFrame(layer, frame);
+        const sourceId = mapStore.sourceIdFromLayerFrame(layer, frame);
         if (layer.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame_index === frame.index) {
@@ -248,8 +219,6 @@ export const useLayerStore = defineStore('layer', () => {
     addLayer,
     getDBObjectsForSourceID,
     getBoundsOfVisibleLayers,
-    sourceIdFromLayerFrame,
-    uniqueLayerIdFromLayer,
     getMapLayersFromLayerObject,
   }
 });

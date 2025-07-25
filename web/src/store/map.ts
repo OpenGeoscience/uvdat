@@ -9,6 +9,7 @@ import {
   LayerFrame,
   MapLibreLayerWithMetadata,
   MapLibreLayerMetadata,
+  Layer,
 } from '@/types';
 import { Map, MapLayerMouseEvent, Popup, Source, LayerSpecification } from "maplibre-gl";
 import { getRasterDataValues } from '@/api/rest';
@@ -37,6 +38,34 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
 
 function sourceIdFromMapLayerId(mapLayerId: string) {
   return mapLayerId.split('.').slice(0, -1).join('.');
+}
+
+function uniqueLayerIdFromLayer(layer: Layer) {
+  return `${layer.id}.${layer.copy_id}`;
+}
+
+/**
+ * Note: Rasters also have an extra `bounds` source, which allows for
+ * interaction with the raster layer. This is not considered in this
+ * function, as it's rarely accessed directly.
+ */
+function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
+  const parts: (number | string)[] = [
+    uniqueLayerIdFromLayer(layer),
+    frame.id,
+  ]
+
+  if (frame.vector) {
+    parts.push('vector');
+    parts.push(frame.vector.id);
+  } else if (frame.raster) {
+    parts.push('raster');
+    parts.push(frame.raster.id);
+  } else {
+    throw new Error("Layer frame is neither raster nor vector!");
+  }
+
+  return parts.join('.');
 }
 
 
@@ -425,5 +454,7 @@ export const useMapStore = defineStore('map', () => {
     sourceIdFromMapLayerId,
     parseSourceString,
     parseLayerString,
+    sourceIdFromLayerFrame,
+    uniqueLayerIdFromLayer,
   }
 });
