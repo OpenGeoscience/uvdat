@@ -115,7 +115,6 @@ function parseLayerString(layerId: string): LayerDescription {
 
 export const useMapStore = defineStore('map', () => {
   const map = shallowRef<Map>();
-  const mapSources = ref<Record<string, Source>>({});
   const showMapBaseLayer = ref(true);
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
@@ -157,14 +156,12 @@ export const useMapStore = defineStore('map', () => {
   // Update the base layer visibility
   watch(showMapBaseLayer, () => {
     const map = getMap();
-    map.getLayersOrder().forEach((id) => {
-      if (id === 'base-tiles') {
-        map.setLayoutProperty(
-          id,
-          "visibility",
-          showMapBaseLayer.value ? "visible" : "none"
-        );
-      }
+    getUserMapLayers().forEach((id) => {
+      map.setLayoutProperty(
+        id,
+        "visibility",
+        showMapBaseLayer.value ? "visible" : "none"
+      );
     });
   });
 
@@ -177,6 +174,15 @@ export const useMapStore = defineStore('map', () => {
       throw new Error("Map not yet initialized!");
     }
     return map.value;
+  }
+
+  function getMapSources() {
+    const map = getMap();
+    return map.getLayersOrder().map((layerId) => map.getLayer(layerId)!.source);
+  }
+
+  function getUserMapLayers() {
+    return getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
   }
 
   function getCurrentMapPosition() {
@@ -215,8 +221,7 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function clearMapLayers() {
-    const userLayers = getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
-    removeLayers(userLayers);
+    removeLayers(getUserMapLayers());
   }
 
   function removeLayers(layerIds: string[]) {
@@ -225,7 +230,7 @@ export const useMapStore = defineStore('map', () => {
     // Must collect all source Ids so they can be removed after all layers
     // have been removed, since multple layers may use the same source
     let sourceIdsToRemove = new Set<string>();
-    const layersToRemove = map.getLayersOrder().filter((id) => layerIds.includes(id));
+    const layersToRemove = getUserMapLayers().filter((id) => layerIds.includes(id));
     layersToRemove.forEach((id) => {
       sourceIdsToRemove.add(map.getLayer(id)!.source);
       map.removeLayer(id);
@@ -235,13 +240,19 @@ export const useMapStore = defineStore('map', () => {
     sourceIdsToRemove.forEach((id) => {
       map.removeSource(id);
     });
+  }
 
-    // Ensure store is kept up to date
-    mapSources.value = Object.fromEntries(
-      Object.entries(mapSources.value).filter(
-        ([k, source]) => !sourceIdsToRemove.has(source.id)
-      )
-    );
+  /**
+ * Returns the description of the most recently added instance of a
+ * layer to the map, or undefined if it's not on the map.
+ */
+  function getLatestLayerInstance(layer: Layer): LayerDescription | undefined {
+    const matchingLayers = getUserMapLayers()
+      .map((layerId) => parseLayerString(layerId))
+      .filter((layerDesc) => layerDesc.layerId === layer.id);
+
+    // Sort reverse, so the latest instance is first in the list;
+    return matchingLayers.toSorted((a, b) => b.layerCopyId - a.layerCopyId)[0];
   }
 
   function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
@@ -416,22 +427,22 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function addLayerFrameToMap(frame: LayerFrame, sourceId: string, multiFrame: boolean) {
-    if (!mapSources.value[sourceId]) {
-      if (frame.vector) {
-        const vector = createVectorTileSource(frame.vector, sourceId, multiFrame);
-        if (vector) mapSources.value[sourceId] = vector;
-      }
-      if (frame.raster) {
-        const raster = createRasterTileSource(frame.raster, sourceId, multiFrame);
-        if (raster) mapSources.value[sourceId] = raster;
-      }
+    if (getMapSources().includes(sourceId)) {
+      return;
+    }
+
+    if (frame.vector) {
+      createVectorTileSource(frame.vector, sourceId, multiFrame);
+    } else if (frame.raster) {
+      createRasterTileSource(frame.raster, sourceId, multiFrame);
+    } else {
+      throw new Error('Layer Frame is neither raster nor vector!');
     }
   }
 
   return {
     // Data
     map,
-    mapSources,
     showMapBaseLayer,
     tooltipOverlay,
     clickedFeature,
@@ -440,6 +451,7 @@ export const useMapStore = defineStore('map', () => {
     handleLayerClick,
     toggleBaseLayer,
     getMap,
+    getMapSources,
     getCurrentMapPosition,
     getTooltip,
     setMapCenter,
@@ -456,5 +468,7 @@ export const useMapStore = defineStore('map', () => {
     parseLayerString,
     sourceIdFromLayerFrame,
     uniqueLayerIdFromLayer,
+    getLatestLayerInstance,
+    getUserMapLayers,
   }
 });
