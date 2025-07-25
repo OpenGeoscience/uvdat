@@ -156,14 +156,12 @@ export const useMapStore = defineStore('map', () => {
   // Update the base layer visibility
   watch(showMapBaseLayer, () => {
     const map = getMap();
-    map.getLayersOrder().forEach((id) => {
-      if (id === 'base-tiles') {
-        map.setLayoutProperty(
-          id,
-          "visibility",
-          showMapBaseLayer.value ? "visible" : "none"
-        );
-      }
+    getUserMapLayers().forEach((id) => {
+      map.setLayoutProperty(
+        id,
+        "visibility",
+        showMapBaseLayer.value ? "visible" : "none"
+      );
     });
   });
 
@@ -181,6 +179,10 @@ export const useMapStore = defineStore('map', () => {
   function getMapSources() {
     const map = getMap();
     return map.getLayersOrder().map((layerId) => map.getLayer(layerId)!.source);
+  }
+
+  function getUserMapLayers() {
+    return getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
   }
 
   function getCurrentMapPosition() {
@@ -219,8 +221,7 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function clearMapLayers() {
-    const userLayers = getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
-    removeLayers(userLayers);
+    removeLayers(getUserMapLayers());
   }
 
   function removeLayers(layerIds: string[]) {
@@ -229,7 +230,7 @@ export const useMapStore = defineStore('map', () => {
     // Must collect all source Ids so they can be removed after all layers
     // have been removed, since multple layers may use the same source
     let sourceIdsToRemove = new Set<string>();
-    const layersToRemove = map.getLayersOrder().filter((id) => layerIds.includes(id));
+    const layersToRemove = getUserMapLayers().filter((id) => layerIds.includes(id));
     layersToRemove.forEach((id) => {
       sourceIdsToRemove.add(map.getLayer(id)!.source);
       map.removeLayer(id);
@@ -246,7 +247,7 @@ export const useMapStore = defineStore('map', () => {
  * layer to the map, or undefined if it's not on the map.
  */
   function getLatestLayerInstance(layer: Layer): LayerDescription | undefined {
-    const matchingLayers = getMap().getLayersOrder()
+    const matchingLayers = getUserMapLayers()
       .map((layerId) => parseLayerString(layerId))
       .filter((layerDesc) => layerDesc.layerId === layer.id);
 
@@ -468,5 +469,6 @@ export const useMapStore = defineStore('map', () => {
     sourceIdFromLayerFrame,
     uniqueLayerIdFromLayer,
     getLatestLayerInstance,
+    getUserMapLayers,
   }
 });
