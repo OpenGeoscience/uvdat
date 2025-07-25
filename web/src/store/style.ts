@@ -308,9 +308,9 @@ export const useStyleStore = defineStore('style', () => {
         if (!currentFrame) return
         map.getLayersOrder().forEach((mapLayerId) => {
             if (mapLayerId !== 'base-tiles') {
-                const [layerId, layerCopyId, frameId] = mapLayerId.split('.');
-                if (parseInt(layerId) === layer.id && parseInt(layerCopyId) === layer.copy_id) {
-                    if (parseInt(frameId) === currentFrame.id) {
+                const { layerId, layerCopyId, frameId } = mapStore.parseLayerString(mapLayerId);
+                if (layerId === layer.id && layerCopyId === layer.copy_id) {
+                    if (frameId === currentFrame.id) {
                         map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
                         const styleKey = `${layer.id}.${layer.copy_id}`
                         const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
@@ -335,7 +335,7 @@ export const useStyleStore = defineStore('style', () => {
         vector: VectorData | null
     ) {
         const map = mapStore.getMap();
-        const sourceId = mapLayerId.split('.').slice(0, -1).join('.')
+        const sourceId = mapStore.sourceIdFromMapLayerId(mapLayerId);
         const { network } = layerStore.getDBObjectsForSourceID(sourceId)
 
         let filters: StyleFilter[] = styleSpec.filters
@@ -420,7 +420,7 @@ export const useStyleStore = defineStore('style', () => {
         const map = mapStore.getMap();
         map.getLayersOrder().forEach((mapLayerId) => {
             if (mapLayerId.includes(".vector." + vectorId)) {
-                const [layerId, layerCopyId] = mapLayerId.split('.');
+                const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
                 const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
                 // TODO: put this back when types are consistent
                 // let defaultColor = currentStyle.color || 'black'

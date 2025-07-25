@@ -250,9 +250,9 @@ export interface ClickedFeatureData {
 }
 
 export interface MapLibreLayerMetadata {
-  layer_id: string;
-  layer_copy_id: string;
-  frame_id: string;
+  layer_id: number;
+  layer_copy_id: number;
+  frame_id: number;
   multiFrame: boolean;
 }
 

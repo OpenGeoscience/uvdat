@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref, shallowRef, watch } from 'vue';
-import { Map, MapLayerMouseEvent, Popup, Source } from "maplibre-gl";
 import {
   ClickedFeatureData,
   Project,
@@ -10,8 +9,9 @@ import {
   LayerFrame,
   MapLibreLayerWithMetadata,
   MapLibreLayerMetadata,
-  Layer
+  Layer,
 } from '@/types';
+import { Map, MapLayerMouseEvent, Popup, Source, LayerSpecification } from "maplibre-gl";
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
@@ -33,6 +33,84 @@ function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   const opaque = opacityKeys.every((key) => layer.paint![key as keyof MapLibreLayerWithMetadata["paint"]] > 0);
 
   return opaque;
+}
+
+
+function sourceIdFromMapLayerId(mapLayerId: string) {
+  return mapLayerId.split('.').slice(0, -1).join('.');
+}
+
+function uniqueLayerIdFromLayer(layer: Layer) {
+  return `${layer.id}.${layer.copy_id}`;
+}
+
+/**
+ * Note: Rasters also have an extra `bounds` source, which allows for
+ * interaction with the raster layer. This is not considered in this
+ * function, as it's rarely accessed directly.
+ */
+function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
+  const parts: (number | string)[] = [
+    uniqueLayerIdFromLayer(layer),
+    frame.id,
+  ]
+
+  if (frame.vector) {
+    parts.push('vector');
+    parts.push(frame.vector.id);
+  } else if (frame.raster) {
+    parts.push('raster');
+    parts.push(frame.raster.id);
+  } else {
+    throw new Error("Layer frame is neither raster nor vector!");
+  }
+
+  return parts.join('.');
+}
+
+
+type SourceType = 'vector' | 'raster' | 'bounds';
+interface SourceDescription {
+  layerId: number;
+  layerCopyId: number;
+  frameId: number;
+  type: SourceType;
+  typeId: number;
+}
+
+function parseSourceString(sourceId: string): SourceDescription {
+  const parts = sourceId.split('.');
+  if (parts.length !== 5) {
+    throw new Error(`Source string incompatible: ${sourceId}`);
+  }
+
+  const [layerId, layerCopyId, frameId, type, typeId] = parts;
+  return {
+    layerId: parseInt(layerId),
+    layerCopyId: parseInt(layerCopyId),
+    frameId: parseInt(frameId),
+    type: type as SourceType,
+    typeId: parseInt(typeId),
+  }
+}
+
+
+interface LayerDescription extends SourceDescription {
+  layerType: LayerSpecification['type']
+}
+
+function parseLayerString(layerId: string): LayerDescription {
+  const parts = layerId.split('.');
+  if (parts.length !== 6) {
+    throw new Error(`Layer string incompatible: ${layerId}`);
+  }
+
+  const layerType = parts[parts.length - 1] as LayerDescription['layerType'];
+  const sourceDesc = parseSourceString(sourceIdFromMapLayerId(layerId));
+  return {
+    ...sourceDesc,
+    layerType,
+  }
 }
 
 export const useMapStore = defineStore('map', () => {
@@ -168,11 +246,11 @@ export const useMapStore = defineStore('map', () => {
 
   function createVectorFeatureMapLayers(source: Source, multiFrame: boolean) {
     const map = getMap();
-    const sourceIdentifiers = source.id.split('.');
+    const { layerId, layerCopyId, frameId } = parseSourceString(source.id);
     const metadata: MapLibreLayerMetadata = {
-      layer_id: sourceIdentifiers[0],
-      layer_copy_id: sourceIdentifiers[1],
-      frame_id: sourceIdentifiers[2],
+      layer_id: layerId,
+      layer_copy_id: layerCopyId,
+      frame_id: frameId,
       multiFrame,
     }
 
@@ -246,11 +324,11 @@ export const useMapStore = defineStore('map', () => {
 
   function createRasterFeatureMapLayers(tileSource: Source, boundsSource: Source, multiFrame: boolean) {
     const map = getMap();
-    const sourceIdentifiers = tileSource.id.split('.');
+    const { layerId, layerCopyId, frameId } = parseSourceString(tileSource.id);
     const metadata: MapLibreLayerMetadata = {
-      layer_id: sourceIdentifiers[0],
-      layer_copy_id: sourceIdentifiers[1],
-      frame_id: sourceIdentifiers[2],
+      layer_id: layerId,
+      layer_copy_id: layerCopyId,
+      frame_id: frameId,
       multiFrame,
     }
 
@@ -288,12 +366,11 @@ export const useMapStore = defineStore('map', () => {
 
   function createVectorTileSource(vector: VectorData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
-    const vectorSourceId = sourceId + '.vector.' + vector.id
-    map.addSource(vectorSourceId, {
+    map.addSource(sourceId, {
       type: "vector",
       tiles: [`${baseURL}vectors/${vector.id}/tiles/{z}/{x}/{y}/`],
     });
-    const source = map.getSource(vectorSourceId);
+    const source = map.getSource(sourceId);
     if (source) {
       createVectorFeatureMapLayers(source, multiFrame);
       return source;
@@ -303,18 +380,17 @@ export const useMapStore = defineStore('map', () => {
   function createRasterTileSource(raster: RasterData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
 
-    const tilesSourceId = sourceId + '.raster.' + raster.id;
-    const [layerId, layerCopyId] = sourceId.split('.');
+    const { layerId, layerCopyId } = parseSourceString(sourceId);
     const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`];
     const queryParams: {projection: string, style?: string} = { projection: 'epsg:3857' }
     const styleParams = styleStore.getRasterTilesQuery(styleSpec)
     if (styleParams) queryParams.style = JSON.stringify(styleParams)
     const query = new URLSearchParams(queryParams)
-    map.addSource(tilesSourceId, {
+    map.addSource(sourceId, {
       type: "raster",
       tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${query}`],
     });
-    const tileSource = map.getSource(tilesSourceId);
+    const tileSource = map.getSource(sourceId);
 
     const bounds = raster.metadata.bounds;
     const boundsSourceId = sourceId + '.bounds.' + raster.id;
@@ -375,5 +451,10 @@ export const useMapStore = defineStore('map', () => {
     createRasterTileSource,
     addLayerFrameToMap,
     cacheRasterData,
+    sourceIdFromMapLayerId,
+    parseSourceString,
+    parseLayerString,
+    sourceIdFromLayerFrame,
+    uniqueLayerIdFromLayer,
   }
 });
