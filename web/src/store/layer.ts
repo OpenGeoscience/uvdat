@@ -21,6 +21,30 @@ function uniqueLayerIdFromLayer(layer: Layer) {
   return `${layer.id}.${layer.copy_id}`;
 }
 
+/**
+ * Note: Rasters also have an extra `bounds` source, which allows for
+ * interaction with the raster layer. This is not considered in this
+ * function, as it's rarely accessed directly.
+ */
+function sourceIdFromLayerFrame(layer: Layer, frame: LayerFrame) {
+  const parts: (number | string)[] = [
+    uniqueLayerIdFromLayer(layer),
+    frame.id,
+  ]
+
+  if (frame.vector) {
+    parts.push('vector');
+    parts.push(frame.vector.id);
+  } else if (frame.raster) {
+    parts.push('raster');
+    parts.push(frame.raster.id);
+  } else {
+    throw new Error("Layer frame is neither raster nor vector!");
+  }
+
+  return parts.join('.');
+}
+
 export const useLayerStore = defineStore('layer', () => {
   const availableLayers = ref<Layer[]>([]);
   const selectedLayers = ref<Layer[]>([]);
@@ -87,15 +111,13 @@ export const useLayerStore = defineStore('layer', () => {
 
   function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects: SourceDBObjects = {}
-    const [
-      layerId, layerCopyId, frameId
-    ] = sourceId.split('.');
+    const {layerId, layerCopyId, frameId } = mapStore.parseSourceString(sourceId)
     selectedLayers.value.forEach((layer) => {
-      if (layer.id === parseInt(layerId) && layer.copy_id === parseInt(layerCopyId)) {
+      if (layer.id === layerId && layer.copy_id === layerCopyId) {
         DBObjects.dataset = projectStore.availableDatasets?.find((d: Dataset) => d.id === layer.dataset);
         DBObjects.layer = layer;
         framesByLayerId.value[layer.id].forEach((frame) => {
-          if (frame.id === parseInt(frameId)) {
+          if (frame.id === frameId) {
             DBObjects.frame = frame;
             if (frame.vector) DBObjects.vector = frame.vector;
             else if (frame.raster) DBObjects.raster = frame.raster;
@@ -144,8 +166,8 @@ export const useLayerStore = defineStore('layer', () => {
     let name = layer.name;
     let copy_id = 0;
     const existing = Object.keys(mapStore.mapSources).filter((sourceId) => {
-      const [layerId] = sourceId.split('.');
-      return parseInt(layerId) === layer.id
+      const { layerId } = mapStore.parseSourceString(sourceId);
+      return layerId === layer.id
     });
     if (existing.length) {
       copy_id = existing.length;
@@ -171,8 +193,7 @@ export const useLayerStore = defineStore('layer', () => {
       const frames = layerFrames(layer)
       const multiFrame = frames.length > 1;
       frames.forEach((frame) => {
-        const styleId = `${layer.id}.${layer.copy_id}`
-        const sourceId = `${styleId}.${frame.id}`
+        const styleId = uniqueLayerIdFromLayer(layer);
         if (!styleStore.selectedLayerStyles[styleId]) {
           if (layer.default_style?.style_spec && Object.keys(layer.default_style.style_spec).length) {
             styleStore.selectedLayerStyles[styleId] = { ...layer.default_style?.style_spec }
@@ -186,6 +207,7 @@ export const useLayerStore = defineStore('layer', () => {
         }
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
+        const sourceId = sourceIdFromLayerFrame(layer, frame);
         if (layer.visible && !map.getLayersOrder().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame_index === frame.index) {
@@ -205,9 +227,9 @@ export const useLayerStore = defineStore('layer', () => {
     // hide any removed layers
     map.getLayersOrder().forEach((mapLayerId) => {
       if (mapLayerId !== 'base-tiles') {
-        const [layerId, layerCopyId] = mapLayerId.split('.');
+        const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
         if (!selectedLayers.value.some((l) => {
-          return l.id == parseInt(layerId) && l.copy_id == parseInt(layerCopyId)
+          return l.id == layerId && l.copy_id == layerCopyId
         })) {
           map.setLayoutProperty(mapLayerId, "visibility", "none");
         }
@@ -226,6 +248,7 @@ export const useLayerStore = defineStore('layer', () => {
     addLayer,
     getDBObjectsForSourceID,
     getBoundsOfVisibleLayers,
+    sourceIdFromLayerFrame,
     uniqueLayerIdFromLayer,
     getMapLayersFromLayerObject,
   }
