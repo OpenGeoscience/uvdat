@@ -306,23 +306,21 @@ export const useStyleStore = defineStore('style', () => {
         const frames = layerStore.layerFrames(layer)
         const currentFrame = frames.find((f) => f.index === layer.current_frame_index)
         if (!currentFrame) return
-        map.getLayersOrder().forEach((mapLayerId) => {
-            if (mapLayerId !== 'base-tiles') {
-                const { layerId, layerCopyId, frameId } = mapStore.parseLayerString(mapLayerId);
-                if (layerId === layer.id && layerCopyId === layer.copy_id) {
-                    if (frameId === currentFrame.id) {
-                        map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
-                        const styleKey = `${layer.id}.${layer.copy_id}`
-                        const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
-                        setMapLayerStyle(
-                            mapLayerId,
-                            currentStyleSpec,
-                            currentFrame,
-                            currentFrame.vector,
-                        );
-                    } else {
-                        map.setLayoutProperty(mapLayerId, 'visibility', 'none');
-                    }
+        mapStore.getUserMapLayers().forEach((mapLayerId) => {
+            const { layerId, layerCopyId, frameId } = mapStore.parseLayerString(mapLayerId);
+            if (layerId === layer.id && layerCopyId === layer.copy_id) {
+                if (frameId === currentFrame.id) {
+                    map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
+                    const styleKey = `${layer.id}.${layer.copy_id}`
+                    const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
+                    setMapLayerStyle(
+                        mapLayerId,
+                        currentStyleSpec,
+                        currentFrame,
+                        currentFrame.vector,
+                    );
+                } else {
+                    map.setLayoutProperty(mapLayerId, 'visibility', 'none');
                 }
             }
         });
@@ -418,7 +416,7 @@ export const useStyleStore = defineStore('style', () => {
         const activateColor = "#008837";
 
         const map = mapStore.getMap();
-        map.getLayersOrder().forEach((mapLayerId) => {
+        mapStore.getUserMapLayers().forEach((mapLayerId) => {
             if (mapLayerId.includes(".vector." + vectorId)) {
                 const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
                 const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];

@@ -35,7 +35,7 @@ export const useLayerStore = defineStore('layer', () => {
   function getMapLayersFromLayerObject(layer: Layer) {
     // Map layer format is <layerId>.<layerCopyId>.<frameId>.<type>.<typeId>,
     // where type is vector, raster, or 'bounds' (used for raster bounds)
-    return mapStore.getMap().getLayersOrder().filter((layerId) => layerId.startsWith(mapStore.uniqueLayerIdFromLayer(layer)));
+    return mapStore.getUserMapLayers().filter((layerId) => layerId.startsWith(mapStore.uniqueLayerIdFromLayer(layer)));
   }
 
   async function fetchAvailableLayer(layerId: number) {
@@ -133,25 +133,21 @@ export const useLayerStore = defineStore('layer', () => {
   }
 
   // Add this layer to selectedLayers, which will then trigger updateLayersShown to add it to the map
-  function addLayer(layer: Layer) {
-    let name = layer.name;
-    let copy_id = 0;
-    const existing = Object.keys(mapStore.mapSources).filter((sourceId) => {
-      const { layerId } = mapStore.parseSourceString(sourceId);
-      return layerId === layer.id
-    });
-    if (existing.length) {
-      copy_id = existing.length;
-      name = `${layer.name} (${copy_id})`;
+  async function addLayer(layer: Layer) {
+    const existing = mapStore.getLatestLayerInstance(layer);
+    const copy_id = existing === undefined ? 0 : existing.layerCopyId + 1;
+    const name = copy_id > 0 ? `${layer.name} (${copy_id})` : layer.name;
+    const newLayer = { ...layer, name, copy_id, visible: true, current_frame_index: 0 };
+
+    // Need to fetch the frames for this layer, if not present
+    if (!layerFrames(layer).length) {
+      await fetchFramesForLayer(layer.id);
     }
-    const updateSelectedLayers = () => {
-      selectedLayers.value = [
-        { ...layer, name, copy_id, visible: true, current_frame_index: 0 },
-        ...selectedLayers.value,
-      ];
-    }
-    if (!layerFrames(layer).length) fetchFramesForLayer(layer.id).then(updateSelectedLayers)
-    else updateSelectedLayers()
+
+    selectedLayers.value = [
+      newLayer,
+      ...selectedLayers.value,
+    ];
   }
 
   watch(selectedLayers, updateLayersShown);
@@ -179,31 +175,27 @@ export const useLayerStore = defineStore('layer', () => {
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         const sourceId = mapStore.sourceIdFromLayerFrame(layer, frame);
-        if (layer.visible && !map.getLayersOrder().some(
+        if (layer.visible && !mapStore.getUserMapLayers().some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame_index === frame.index) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
-        map.getLayersOrder().forEach((mapLayerId) => {
-          if (mapLayerId !== 'base-tiles') {
-            if (mapLayerId.includes(sourceId)) {
-              map.moveLayer(mapLayerId);  // handles reordering
-            }
+        mapStore.getUserMapLayers().forEach((mapLayerId) => {
+          if (mapLayerId.includes(sourceId)) {
+            map.moveLayer(mapLayerId);  // handles reordering
           }
         });
       })
       styleStore.updateLayerStyles(layer)
     })
     // hide any removed layers
-    map.getLayersOrder().forEach((mapLayerId) => {
-      if (mapLayerId !== 'base-tiles') {
-        const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
-        if (!selectedLayers.value.some((l) => {
-          return l.id == layerId && l.copy_id == layerCopyId
-        })) {
-          map.setLayoutProperty(mapLayerId, "visibility", "none");
-        }
+    mapStore.getUserMapLayers().forEach((mapLayerId) => {
+      const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
+      if (!selectedLayers.value.some((l) => {
+        return l.id == layerId && l.copy_id == layerCopyId
+      })) {
+        map.setLayoutProperty(mapLayerId, "visibility", "none");
       }
     });
   }
