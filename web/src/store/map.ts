@@ -78,6 +78,9 @@ interface SourceDescription {
   typeId: number;
 }
 
+/**
+ * Source format is <layerId>.<layerCopyId>.<frameId>.<type>.<typeId>
+ */
 function parseSourceString(sourceId: string): SourceDescription {
   const parts = sourceId.split('.');
   if (parts.length !== 5) {
@@ -99,6 +102,11 @@ interface LayerDescription extends SourceDescription {
   layerType: LayerSpecification['type']
 }
 
+/**
+ * Map layer format is <layerId>.<layerCopyId>.<frameId>.<type>.<typeId>.<mapLayerType>
+ *
+ * "mapLayerType" is the maplibre layer type, e.g. raster, fill, etc.
+ */
 function parseLayerString(layerId: string): LayerDescription {
   const parts = layerId.split('.');
   if (parts.length !== 6) {
@@ -345,14 +353,14 @@ export const useMapStore = defineStore('map', () => {
 
     // Tile Layer
     map.addLayer({
-      id: tileSource.id + '.tile',
+      id: tileSource.id + '.raster',
       type: "raster",
       source: tileSource.id,
       metadata,
     });
 
     map.addLayer({
-      id: boundsSource.id + '.mask',
+      id: boundsSource.id + '.fill',
       type: "fill",
       source: boundsSource.id,
       paint: {
@@ -364,7 +372,7 @@ export const useMapStore = defineStore('map', () => {
       metadata: { ...metadata, multiFrame: false },
     });
 
-    map.on("click", boundsSource.id + '.mask', handleLayerClick);
+    map.on("click", boundsSource.id, handleLayerClick);
   }
 
   async function cacheRasterData(raster: RasterData) {
@@ -404,7 +412,7 @@ export const useMapStore = defineStore('map', () => {
     const tileSource = map.getSource(sourceId);
 
     const bounds = raster.metadata.bounds;
-    const boundsSourceId = sourceId + '.bounds.' + raster.id;
+    const boundsSourceId = sourceId.replace('raster', 'bounds');
     let { xmin, xmax, ymin, ymax, srs } = bounds;
     [xmin, ymin] = proj4(srs, "EPSG:4326", [xmin, ymin]);
     [xmax, ymax] = proj4(srs, "EPSG:4326", [xmax, ymax]);
