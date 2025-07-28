@@ -18,8 +18,8 @@ const panelStore = usePanelStore();
 const projectStore = useProjectStore();
 
 
-const version = process.env.VUE_APP_VERSION;
-const hash = process.env.VUE_APP_HASH;
+const version = import.meta.env.VITE_APP_VERSION;
+const hash = import.meta.env.VITE_APP_HASH;
 const copied: Ref<string | undefined> = ref();
 
 const themeManager = useTheme();
