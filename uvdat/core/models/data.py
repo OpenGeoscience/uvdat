@@ -73,8 +73,13 @@ class VectorData(models.Model):
                 if k not in exclude_keys and v is not None and v != '':
                     if k not in summary['properties']:
                         summary['properties'][k] = dict(value_set=set(), count=0)
-                    summary['properties'][k]['value_set'].add(v)
-                    summary['properties'][k]['count'] += 1
+                    if isinstance(v, list):
+                        for item in v:
+                            summary['properties'][k]['value_set'].add(item)
+                            summary['properties'][k]['count'] += 1
+                    else:
+                        summary['properties'][k]['value_set'].add(v)
+                        summary['properties'][k]['count'] += 1
         # Once sets are complete, reevaluate each set and create a `sample_label` for each property
         for k in summary['properties']:
             types = set(type(v).__name__ for v in summary['properties'][k]['value_set'])
