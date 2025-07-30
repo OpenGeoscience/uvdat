@@ -2,7 +2,7 @@
 
 1. Prepare the web client with the following steps:
 
-   1. Run `cp web/.env.development web/.env`.
+   1. Run `cp web/.env.example web/.env`.
    1. Edit `web/.env` and supply a valid MapTiler API key. To sign up for a free MapTiler API key, visit https://docs.maptiler.com/cloud/api/authentication-key/.
    1. Install client dependencies by running `cd web && npm i`.
 
