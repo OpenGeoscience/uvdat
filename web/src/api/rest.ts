@@ -57,7 +57,7 @@ export async function updateProjectPermissions(
 }
 
 export async function deleteProject(projectId: number): Promise<Project> {
-  return await apiClient.delete(`projects/${projectId}/`).data;
+  return (await apiClient.delete(`projects/${projectId}/`)).data;
 }
 
 export async function getProjectDatasets(
