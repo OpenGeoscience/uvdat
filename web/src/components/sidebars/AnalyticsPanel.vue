@@ -173,7 +173,7 @@ async function fillInputsAndOutputs() {
 function createWebSocket() {
   if (ws.value) ws.value.close()
   if (projectStore.currentProject) {
-    const urlBase = `${process.env.VUE_APP_API_ROOT}ws/`
+    const urlBase = `${import.meta.env.VITE_APP_API_ROOT}ws/`
     const url = `${urlBase}analytics/project/${projectStore.currentProject.id}/results/`
     ws.value = new WebSocket(url);
     ws.value.onmessage = (event: any) => {
