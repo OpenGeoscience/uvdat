@@ -137,16 +137,16 @@ export const useMapStore = defineStore('map', () => {
     );
 
     if (!clickedFeatures.length) {
-        return;
+      return;
     }
 
     // Sort features that were clicked on by their reverse layer ordering,
     // since the last element in the list (the top one) should be the first one clicked.
     const featQuery = clickedFeatures.toSorted(
-        (feat1, feat2) => {
-            const order = map.getLayersOrder();
-            return order.indexOf(feat2.layer.id) - order.indexOf(feat1.layer.id);
-        }
+      (feat1, feat2) => {
+        const order = map.getLayersOrder();
+        return order.indexOf(feat2.layer.id) - order.indexOf(feat1.layer.id);
+      }
     );
 
     // Select the first feature in this ordering, since this is the one that should be clicked on
@@ -154,10 +154,10 @@ export const useMapStore = defineStore('map', () => {
 
     // Perform this check to prevent unnecessary repeated assignment
     if (feature !== clickedFeature.value?.feature) {
-        clickedFeature.value = {
-            feature,
-            pos: e.lngLat,
-        };
+      clickedFeature.value = {
+        feature,
+        pos: e.lngLat,
+      };
     }
   }
 
@@ -399,11 +399,13 @@ export const useMapStore = defineStore('map', () => {
   function createRasterTileSource(raster: RasterData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
 
+    const queryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
     const { layerId, layerCopyId } = parseSourceString(sourceId);
-    const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`];
-    const queryParams: {projection: string, style?: string} = { projection: 'epsg:3857' }
-    const styleParams = styleStore.getRasterTilesQuery(styleSpec)
-    if (styleParams) queryParams.style = JSON.stringify(styleParams)
+    const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`].style_spec;
+    if (styleSpec) {
+      const styleParams = styleStore.getRasterTilesQuery(styleSpec)
+      if (styleParams) queryParams.style = JSON.stringify(styleParams)
+    }
     const query = new URLSearchParams(queryParams)
     map.addSource(sourceId, {
       type: "raster",

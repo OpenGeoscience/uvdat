@@ -5,6 +5,7 @@ import {
     ColorMap,
     Layer,
     LayerFrame,
+    LayerStyle,
     MapLibreLayerWithMetadata,
     Network,
     PropertySummary,
@@ -60,7 +61,7 @@ function colormapMarkersSubsample(
     if (n && colormap.markers) {
         const elements = [colormap.markers[0]];
         const totalItems = colormap.markers.length - 1;
-        const interval = Math.floor(totalItems/(n - 1));
+        const interval = Math.floor(totalItems / (n - 1));
         for (let i = 1; i < n - 1; i++) {
             elements.push(colormap.markers[i * interval]);
         }
@@ -149,7 +150,7 @@ function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, pr
                         markers[Math.ceil((i + 1) / sortedValues.length * markers.length) - 1]?.color
                     ]
                 }
-        }).flat()
+            }).flat()
             baseColor = [
                 'match',
                 ['get', colorSpec.colormap.color_by],
@@ -236,7 +237,7 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
     styleSpec.filters.forEach((f) => {
         if (f.apply) {
             let filter;
-            if (f.list){
+            if (f.list) {
                 filter = ["in", ["get", f.filter_by], ["literal", f.list]]
             } else if (f.range) {
                 filter = [
@@ -262,7 +263,7 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 }
 
 export const useStyleStore = defineStore('style', () => {
-    const selectedLayerStyles = ref<Record<string, StyleSpec>>({});
+    const selectedLayerStyles = ref<Record<string, LayerStyle>>({});
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
@@ -275,12 +276,12 @@ export const useStyleStore = defineStore('style', () => {
         let range: [number, number] | undefined;
         let absMin: number | undefined, absMax: number | undefined;
         if (raster) {
-            Object.values(raster.metadata.bands).forEach(({min, max}) => {
+            Object.values(raster.metadata.bands).forEach(({ min, max }) => {
                 if (!absMin || min < absMin) absMin = min;
                 if (!absMax || max < absMax) absMax = max;
             })
         }
-        if (absMin !== undefined && absMax !== undefined){
+        if (absMin !== undefined && absMax !== undefined) {
             range = [Math.floor(absMin), Math.ceil(absMax)] as [number, number];
         }
         return {
@@ -291,11 +292,11 @@ export const useStyleStore = defineStore('style', () => {
                     name: 'all',
                     visible: true,
                     single_color: raster ? undefined : getDefaultColor(),
-                    colormap: raster ? { range, color_by: 'value'} : undefined,
+                    colormap: raster ? { range, color_by: 'value' } : undefined,
                 }
             ],
             sizes: [
-                {name: 'all', zoom_scaling: true, single_size: 5}
+                { name: 'all', zoom_scaling: true, single_size: 5 }
             ],
             filters: [],
         }
@@ -312,13 +313,15 @@ export const useStyleStore = defineStore('style', () => {
                 if (frameId === currentFrame.id) {
                     map.setLayoutProperty(mapLayerId, 'visibility', layer.visible ? 'visible' : 'none');
                     const styleKey = `${layer.id}.${layer.copy_id}`
-                    const currentStyleSpec: StyleSpec = selectedLayerStyles.value[styleKey];
-                    setMapLayerStyle(
-                        mapLayerId,
-                        currentStyleSpec,
-                        currentFrame,
-                        currentFrame.vector,
-                    );
+                    const currentStyleSpec: StyleSpec | undefined = selectedLayerStyles.value[styleKey].style_spec;
+                    if (currentStyleSpec) {
+                        setMapLayerStyle(
+                            mapLayerId,
+                            currentStyleSpec,
+                            currentFrame,
+                            currentFrame.vector,
+                        );
+                    }
                 } else {
                     map.setLayoutProperty(mapLayerId, 'visibility', 'none');
                 }
@@ -365,7 +368,7 @@ export const useStyleStore = defineStore('style', () => {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
             const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec)
             if (color) map.setPaintProperty(mapLayerId, 'fill-color', color)
-            const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'polygons')
+            const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'polygons')
             if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
         } else if (mapLayerId.includes("line") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
@@ -373,7 +376,7 @@ export const useStyleStore = defineStore('style', () => {
             if (color) map.setPaintProperty(mapLayerId, 'line-color', color)
             const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
-            const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'lines')
+            const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'lines')
             if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'line-opacity', visibility)
         } else if (mapLayerId.includes("circle") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
@@ -385,7 +388,7 @@ export const useStyleStore = defineStore('style', () => {
             }
             const size = getVectorSizePaintProperty(styleSpec, 'points', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'circle-radius', size)
-            const visibility = getVectorVisibilityPaintProperty({...styleSpec, filters}, 'points')
+            const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'points')
             if (visibility !== undefined) {
                 map.setPaintProperty(mapLayerId, 'circle-opacity', visibility)
                 map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
@@ -397,7 +400,7 @@ export const useStyleStore = defineStore('style', () => {
             let source = map.getSource(mapLayer.source) as RasterTileSource;
             if (source?.tiles?.length) {
                 const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
-                const newQueryParams: {projection: string, style?: string} = { projection: 'epsg:3857' }
+                const newQueryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
                 if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
                 const newQuery = new URLSearchParams(newQueryParams)
                 if (newQuery.toString() !== oldQuery.toString()) {

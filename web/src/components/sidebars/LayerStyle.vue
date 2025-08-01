@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { debounce } from 'lodash'
-import { computed, ref, watch } from 'vue';
+import { debounce, cloneDeep } from 'lodash'
+import { computed, onMounted, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
@@ -25,7 +25,6 @@ const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
 const availableStyles = ref<LayerStyle[]>();
-const currentLayerStyle = ref<LayerStyle>({name: 'None', is_default: true});
 const currentStyleSpec = ref<StyleSpec>();
 const availableGroups = ref<string[]>([]);
 const currentGroups = ref<Record<string, string | undefined>>({color: undefined, size: undefined});
@@ -39,6 +38,19 @@ const colormaps: ColorMap[] = styleStore.colormaps;
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
+})
+
+const currentLayerStyle = computed(() => {
+    return styleStore.selectedLayerStyles[styleKey.value]
+})
+
+const setCurrentLayerStyle = (style: LayerStyle) => {
+    styleStore.selectedLayerStyles[styleKey.value] = style
+}
+
+const appliedStyleName = computed(() => {
+    if (currentLayerStyle.value.id) return currentLayerStyle.value.name
+    else return undefined
 })
 
 const frames = computed(() => {
@@ -89,22 +101,34 @@ const dataRange = computed(() => {
 async function init() {
     if (props.activeLayer === props.layer) {
         getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
-        if (props.layer.default_style?.style_spec && Object.keys(props.layer.default_style.style_spec).length) {
-            // deep copies so that changes to current style won't affect default style
-            currentLayerStyle.value = JSON.parse(JSON.stringify(props.layer.default_style))
-            currentStyleSpec.value = JSON.parse(JSON.stringify(props.layer.default_style.style_spec))
-        } else {
-            currentLayerStyle.value = {name: 'None', is_default: true};
-            currentStyleSpec.value = {...styleStore.selectedLayerStyles[styleKey.value]};
-        }
+        resetCurrentStyle()
         fetchRasterBands()
-        if (currentStyleSpec.value) {
-            setAvailableGroups()
+        if (currentStyleSpec.value) setAvailableGroups()
+    }
+}
+
+function resetCurrentStyle() {
+    // When copying styles, use deep copies via cloneDeep
+    // so that changes to the current style do not affect the original copy
+    if (currentLayerStyle.value?.id) {
+        // keep current style selected but discard any unsaved changes
+        currentStyleSpec.value = cloneDeep(currentLayerStyle.value.style_spec)
+    } else {
+        // no current style selected, set one
+        if (props.layer.default_style) {
+            // apply layer's default style
+            setCurrentLayerStyle(cloneDeep(props.layer.default_style))
+            currentStyleSpec.value = cloneDeep(props.layer.default_style.style_spec)
+        } else {
+            // layer has no default style; apply None style
+            setCurrentLayerStyle({name: 'None', is_default: true})
+            currentStyleSpec.value = styleStore.getDefaultStyleSpec(currentFrame.value?.raster);
         }
     }
 }
 
 function selectStyle(style: LayerStyle) {
+    setCurrentLayerStyle(style)
     currentStyleSpec.value = style.style_spec
     currentGroups.value = {color: undefined, size: undefined}
 }
@@ -150,7 +174,6 @@ function setAvailableGroups() {
         }
     }
 }
-
 
 function setCurrentColorGroups(different: boolean | null) {
     if (!currentStyleSpec.value) return
@@ -328,14 +351,7 @@ function updateFilterBy(filterId: number | undefined, propertyName: string) {
 }
 
 function cancel() {
-    const defaultStyle = availableStyles.value?.find((s) => s.is_default)
-    if (defaultStyle?.style_spec) {
-        currentStyleSpec.value = {...defaultStyle.style_spec}
-    } else {
-        currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
-            currentFrame.value?.raster
-        )}
-    }
+    resetCurrentStyle()
     emit('setLayerActive', false)
 }
 
@@ -350,7 +366,7 @@ function save() {
         }
     ).then((style) => {
         if (style) {
-            currentLayerStyle.value = style;
+            setCurrentLayerStyle(style);
             newName.value = undefined;
             newNameMode.value = undefined;
             // update other styles in case default overriden
@@ -370,7 +386,7 @@ function saveAsNew() {
         style_spec: currentStyleSpec.value,
     }).then((style: LayerStyle) => {
         if (style) {
-            currentLayerStyle.value = style;
+            setCurrentLayerStyle(style);
             newName.value = undefined;
             newNameMode.value = undefined;
             // update other styles in case default overriden
@@ -387,10 +403,10 @@ function deleteStyle() {
             availableStyles.value = styles;
             const newDefault = styles.find((style) => style.is_default)
             if (newDefault) {
-                currentLayerStyle.value = newDefault;
+                setCurrentLayerStyle(newDefault);
                 currentStyleSpec.value = newDefault.style_spec;
             } else {
-                currentLayerStyle.value = {name: 'None', is_default: true};
+                setCurrentLayerStyle({name: 'None', is_default: true});
                 currentStyleSpec.value = {...styleStore.getDefaultStyleSpec(
                     currentFrame.value?.raster
                 )}
@@ -411,7 +427,10 @@ watch(() => panelStore.draggingPanel, () => {
 
 const debouncedStyleSpecUpdated = debounce(() => {
     if (currentStyleSpec.value) {
-        styleStore.selectedLayerStyles[styleKey.value] = currentStyleSpec.value
+        styleStore.selectedLayerStyles[styleKey.value] = {
+            ...currentLayerStyle.value,
+            style_spec: currentStyleSpec.value
+        }
         styleStore.updateLayerStyles(props.layer)
         setAvailableGroups()
     }
@@ -419,6 +438,7 @@ const debouncedStyleSpecUpdated = debounce(() => {
 watch(currentStyleSpec, debouncedStyleSpecUpdated, {deep: true})
 
 watch(() => props.activeLayer, init)
+onMounted(resetCurrentStyle)
 </script>
 
 <template>
@@ -434,6 +454,7 @@ watch(() => props.activeLayer, init)
             <v-icon
                 v-bind="props"
                 icon="mdi-cog"
+                v-tooltip="appliedStyleName ? 'Style: ' + appliedStyleName : 'Configure styling'"
             />
         </template>
         <v-card v-if="currentStyleSpec" class="layer-style-card mt-5" color="background" width="510">
@@ -444,6 +465,7 @@ watch(() => props.activeLayer, init)
                 <v-icon
                     icon="mdi-close"
                     style="position: absolute; top: 10px; right: 5px;"
+                    v-tooltip="'Warning: unsaved changes will be discarded'"
                     @click="cancel"
                 />
             </div>
@@ -451,7 +473,7 @@ watch(() => props.activeLayer, init)
             <v-card-text class="pa-2">
                 <div class="d-flex mb-1 mt-4 mx-2" style="align-items: center; column-gap: 5px;">
                     <v-select
-                        v-model="currentLayerStyle"
+                        :model-value="currentLayerStyle"
                         :items="availableStyles"
                         item-value="id"
                         :item-props="(item) => ({title: item.is_default ? item.name + ' (default)' : item.name})"
@@ -1227,7 +1249,7 @@ watch(() => props.activeLayer, init)
             </v-card-text>
 
             <v-card-actions class="my-1" style="float: right;">
-                <v-btn class="secondary-button" @click="cancel">
+                <v-btn class="secondary-button" @click="cancel" v-tooltip="'Warning: unsaved changes will be discarded'">
                     <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                     Cancel
                 </v-btn>
