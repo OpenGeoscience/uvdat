@@ -2,14 +2,14 @@ import axios from "axios";
 import OauthClient from "@resonant/oauth-client";
 import { useAppStore, useMapStore, useProjectStore } from "@/store";
 
-export const baseURL = `${process.env.VUE_APP_API_ROOT}api/v1/`;
+export const baseURL = `${import.meta.env.VITE_APP_API_ROOT}api/v1/`;
 
 export const apiClient = axios.create({
   baseURL,
 });
 export const oauthClient = new OauthClient(
-  new URL(process.env.VUE_APP_OAUTH_API_ROOT),
-  process.env.VUE_APP_OAUTH_CLIENT_ID,
+  new URL(import.meta.env.VITE_APP_OAUTH_API_ROOT),
+  import.meta.env.VITE_APP_OAUTH_CLIENT_ID,
   { redirectUrl: window.location.origin }
 );
 
@@ -63,6 +63,6 @@ export const logout = async () => {
 
   useProjectStore().currentProject = undefined;
   useProjectStore().clearState();
-  
+
   useMapStore().setMapCenter();
 };

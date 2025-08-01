@@ -33,8 +33,6 @@ export const useLayerStore = defineStore('layer', () => {
    * @param layer The Layer DB object
    */
   function getMapLayersFromLayerObject(layer: Layer) {
-    // Map layer format is <layerId>.<layerCopyId>.<frameId>.<type>.<typeId>,
-    // where type is vector, raster, or 'bounds' (used for raster bounds)
     return mapStore.getUserMapLayers().filter((layerId) => layerId.startsWith(mapStore.uniqueLayerIdFromLayer(layer)));
   }
 

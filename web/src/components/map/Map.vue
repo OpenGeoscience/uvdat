@@ -22,10 +22,10 @@ const ATTRIBUTION = [
 
 const BASE_MAPS = {
   light: [
-    `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${process.env.VUE_APP_MAPTILER_API_KEY}`,
+    `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${import.meta.env.VITE_APP_MAPTILER_API_KEY}`,
   ],
   dark: [
-    `https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${process.env.VUE_APP_MAPTILER_API_KEY}`,
+    `https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${import.meta.env.VITE_APP_MAPTILER_API_KEY}`,
   ],
 };
 
