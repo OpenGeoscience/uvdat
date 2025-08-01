@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { debounce } from 'lodash'
+import { debounce, cloneDeep } from 'lodash'
 import { computed, onMounted, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
@@ -108,17 +108,17 @@ async function init() {
 }
 
 function resetCurrentStyle() {
-    // When copying styles, use deep copies via JSON.parse(JSON.stringify())
+    // When copying styles, use deep copies via cloneDeep
     // so that changes to the current style do not affect the original copy
     if (currentLayerStyle.value?.id) {
         // keep current style selected but discard any unsaved changes
-        currentStyleSpec.value = JSON.parse(JSON.stringify(currentLayerStyle.value.style_spec))
+        currentStyleSpec.value = cloneDeep(currentLayerStyle.value.style_spec)
     } else {
         // no current style selected, set one
         if (props.layer.default_style) {
             // apply layer's default style
-            setCurrentLayerStyle(JSON.parse(JSON.stringify(props.layer.default_style)))
-            currentStyleSpec.value = JSON.parse(JSON.stringify(props.layer.default_style.style_spec))
+            setCurrentLayerStyle(cloneDeep(props.layer.default_style))
+            currentStyleSpec.value = cloneDeep(props.layer.default_style.style_spec)
         } else {
             // layer has no default style; apply None style
             setCurrentLayerStyle({name: 'None', is_default: true})
