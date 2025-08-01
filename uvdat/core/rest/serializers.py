@@ -82,7 +82,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        exclude = ['datasets']
+        fields = '__all__'
 
 
 class DatasetSerializer(serializers.ModelSerializer):
