@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { Map, Popup, AttributionControl } from "maplibre-gl";
+import { Map, Popup, AttributionControl, addProtocol } from "maplibre-gl";
+import { Protocol } from "pmtiles";
 import { onMounted, ref, watch } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -20,14 +21,8 @@ const ATTRIBUTION = [
   "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>",
 ];
 
-const BASE_MAPS = {
-  light: [
-    `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${import.meta.env.VITE_APP_MAPTILER_API_KEY}`,
-  ],
-  dark: [
-    `https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${import.meta.env.VITE_APP_MAPTILER_API_KEY}`,
-  ],
-};
+const BASE_MAP = "https://demo.kitware.com/vector-maps/styles/openstreetmap-openmaptiles-bright.json"
+addProtocol("pmtiles", new Protocol().tile);
 
 // MapLibre refs
 const tooltip = ref<HTMLElement>();
@@ -76,33 +71,9 @@ function createMap() {
         headers,
       };
     },
-    style: {
-      version: 8,
-      sources: {
-        light: {
-          type: "raster",
-          tiles: BASE_MAPS.light,
-          tileSize: 512,
-        },
-        dark: {
-          type: "raster",
-          tiles: BASE_MAPS.dark,
-          tileSize: 512,
-        },
-      },
-      layers: [
-        {
-          id: "base-tiles",
-          type: "raster",
-          source: appStore.theme,
-          minzoom: 0,
-          // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
-          maxzoom: 22 + 1,
-        },
-      ],
-    },
-    center: [-75.5, 43.0], // Coordinates for the center of New York State
-    zoom: 7, // Initial zoom level
+    style: BASE_MAP,
+    center: [0, 0],
+    zoom: 1, // Initial zoom level
   });
 
   newMap.addControl(attributionControl);
