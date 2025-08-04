@@ -75,7 +75,7 @@ function zoomToFeature() {
   if (bbox.length !== 4) {
     throw new Error("Returned bbox should have 4 elements!");
   }
-  map.fitBounds(bbox);
+  map.fitBounds(bbox, {maxZoom: map.getZoom()});
 }
 
 // Check if the layer associated with the clicked feature is still selected and visible
