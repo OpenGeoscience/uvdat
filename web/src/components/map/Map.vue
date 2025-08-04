@@ -16,9 +16,7 @@ const layerStore = useLayerStore();
 const ATTRIBUTION = [
   "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
   "<span> | </span>",
-  "<a target='_blank' href='https://www.maptiler.com/copyright'>© MapTiler</a>",
-  "<span> | </span>",
-  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>",
+  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap</a>",
 ];
 
 const BASE_MAP = "https://demo.kitware.com/vector-maps/styles/openstreetmap-openmaptiles-bright.json"
