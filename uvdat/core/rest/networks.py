@@ -13,8 +13,8 @@ from uvdat.core.rest.serializers import (
 )
 
 
-class GCCQueryParamSerializer(serializers.Serializer):
-    exclude_nodes = serializers.RegexField(r'^\d+(,\s?\d+)*$')
+class ExcludeNodesSerializer(serializers.Serializer):
+    exclude_nodes = serializers.ListField(child=serializers.IntegerField())
 
 
 class GCCResultSerializer(serializers.Serializer):
@@ -44,15 +44,15 @@ class NetworkViewSet(ModelViewSet):
             status=200,
         )
 
-    @swagger_auto_schema(query_serializer=GCCQueryParamSerializer)
-    @action(detail=True, methods=['get'])
+    @swagger_auto_schema(request_body=ExcludeNodesSerializer)
+    @action(detail=True, methods=['post'])
     def gcc(self, request, **kwargs):
         network = self.get_object()
 
-        # Validate and de-serialize query params
-        serializer = GCCQueryParamSerializer(data=request.query_params)
+        # Validate and de-serialize request data
+        serializer = ExcludeNodesSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        exclude_nodes = [int(n) for n in serializer.validated_data['exclude_nodes'].split(',')]
+        exclude_nodes = serializer.validated_data['exclude_nodes']
 
         gcc = network.get_gcc(excluded_nodes=exclude_nodes)
         result = GCCResultSerializer(data=dict(gcc=gcc))
