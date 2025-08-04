@@ -102,7 +102,9 @@ watch(
       return;
     }
     // Set tooltip position. Give feature clicks priority
-    tooltip.setLngLat(mapStore.clickedFeature.pos);
+    const centroid = turf.centroid(mapStore.clickedFeature.feature)
+    const center = centroid.geometry.coordinates as [number, number]
+    tooltip.setLngLat(center);
     // This makes the tooltip visible
     tooltip.addTo(mapStore.getMap());
     zoomToFeature()
