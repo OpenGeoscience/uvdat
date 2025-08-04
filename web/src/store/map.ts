@@ -190,7 +190,7 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function getUserMapLayers() {
-    return getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
+    return getMap().getLayersOrder().filter((id) => id.includes('.'));
   }
 
   function getCurrentMapPosition() {
