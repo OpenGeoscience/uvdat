@@ -58,15 +58,11 @@ function createMap() {
     container: "mapContainer",
     attributionControl: false,
     preserveDrawingBuffer: true, // allows screenshots
-    // transformRequest adds auth headers to tile requests (excluding MapTiler requests)
+    // transformRequest adds auth headers to tile requests
     transformRequest: (url) => {
-      let headers = {};
-      if (!url.includes("maptiler")) {
-        headers = oauthClient?.authHeaders;
-      }
       return {
         url,
-        headers,
+        headers: oauthClient?.authHeaders,
       };
     },
     style: BASE_MAP,
