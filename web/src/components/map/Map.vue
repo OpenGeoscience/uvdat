@@ -7,6 +7,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
+import { THEMES } from "@/themes";
 
 import { useAppStore, useMapStore, useLayerStore } from "@/store";
 const appStore = useAppStore();
@@ -19,7 +20,6 @@ const ATTRIBUTION = [
   "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap</a>",
 ];
 
-const BASE_MAP = "https://demo.kitware.com/vector-maps/styles/openstreetmap-openmaptiles-bright.json"
 addProtocol("pmtiles", new Protocol().tile);
 
 // MapLibre refs
@@ -53,6 +53,11 @@ function setAttributionControlStyle() {
   });
 }
 
+function setMapStyle() {
+  const map = mapStore.getMap();
+  map.setStyle(THEMES[appStore.theme].mapStyle)
+}
+
 function createMap() {
   const newMap = new Map({
     container: "mapContainer",
@@ -65,7 +70,7 @@ function createMap() {
         headers: oauthClient?.authHeaders,
       };
     },
-    style: BASE_MAP,
+    style: THEMES[appStore.theme].mapStyle,
     center: [0, 0],
     zoom: 1, // Initial zoom level
   });
@@ -123,19 +128,8 @@ onMounted(() => {
   mapStore.setMapCenter(undefined, true);
 });
 
-watch(() => appStore.theme, (value) => {
-  const map = mapStore.getMap();
-  map.removeLayer("base-tiles");
-  map.addLayer({
-    id: "base-tiles",
-    type: "raster",
-    source: value,
-    minzoom: 0,
-    maxzoom: 22 + 1,
-    layout: {
-      visibility: mapStore.showMapBaseLayer ? "visible" : "none",
-    },
-  });
+watch(() => appStore.theme, () => {
+  setMapStyle()
   setAttributionControlStyle();
   layerStore.updateLayersShown();
 });

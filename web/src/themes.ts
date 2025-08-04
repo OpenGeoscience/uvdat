@@ -20,6 +20,7 @@ export const THEMES = {
             info: "#2196F3",
             warning: "#FFC107",
         },
+        mapStyle: 'map_light.json'
     },
     dark: {
         dark: true,
@@ -43,5 +44,6 @@ export const THEMES = {
             info: "#42A5F5",
             warning: "#FFB74D",
         },
+        mapStyle: 'map_dark.json'
     },
 };
