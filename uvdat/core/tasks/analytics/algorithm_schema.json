@@ -1,0 +1,178 @@
+{
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "tasks"
+    ],
+    "properties": {
+        "tasks": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "attribution",
+                    "mode",
+                    "entry_point",
+                    "inputs",
+                    "outputs"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "attribution": {
+                        "type": "string"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": [
+                            "python",
+                            "docker",
+                            "huggingface"
+                        ]
+                    },
+                    "entry_point": {
+                        "type": "string"
+                    },
+                    "inputs": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "label",
+                                "choices"
+                            ],
+                            "properties": {
+                                "label": {
+                                    "type": "string"
+                                },
+                                "choices": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": [],
+                                    "properties": {
+                                        "query": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                                "model"
+                                            ],
+                                            "properties": {
+                                                "model": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "FileItem",
+                                                        "Chart",
+                                                        "VectorFeature",
+                                                        "VectorData",
+                                                        "RasterData",
+                                                        "Network",
+                                                        "Region",
+                                                        "AnalysisResult",
+                                                        "LayerFrame",
+                                                        "LayerStyle",
+                                                        "Layer"
+                                                    ]
+                                                },
+                                                "filters": {
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "range": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "required": [
+                                                "min",
+                                                "max",
+                                                "step"
+                                            ],
+                                            "properties": {
+                                                "min": {
+                                                    "type": "number"
+                                                },
+                                                "max": {
+                                                    "type": "number"
+                                                },
+                                                "step": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        },
+                                        "list": {
+                                            "type": "array",
+                                            "minItems": 1,
+                                            "items": {
+                                                "type": "object",
+                                                "additionalProperties": false,
+                                                "required": [
+                                                    "label",
+                                                    "value"
+                                                ],
+                                                "properties": {
+                                                    "label": {
+                                                        "type": "string"
+                                                    },
+                                                    "value": {
+                                                        "type": [
+                                                            "string",
+                                                            "number",
+                                                            "integer",
+                                                            "object",
+                                                            "array",
+                                                            "boolean",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "label",
+                                "type"
+                            ],
+                            "properties": {
+                                "label": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "string",
+                                        "number",
+                                        "network_animation",
+                                        "Dataset",
+                                        "Chart"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
