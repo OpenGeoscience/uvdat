@@ -1,0 +1,35 @@
+{
+    "tasks": [
+        {
+            "id": "segment_curbs",
+            "name": "Segment Curbs",
+            "description": "Leverage tile2net to detect roads, sidewalks, footpaths, and crosswalks in aerial imagery.",
+            "attribution": "VIDA NYU & Kitware Inc.",
+            "mode": "python",
+            "entry_point": "uvdat.core.tasks.analytics.segment_curbs.task.main",
+            "inputs": [
+                {
+                    "label": "aerial_imagery",
+                    "choices": {
+                        "query": {
+                            "model": "RasterData",
+                            "filters": {
+                                "dataset__category": "imagery"
+                            }
+                        }
+                    }
+                }
+            ],
+            "outputs": [
+                {
+                    "label": "polygons",
+                    "type": "Dataset"
+                },
+                {
+                    "label": "network",
+                    "type": "Dataset"
+                }
+            ]
+        }
+    ]
+}

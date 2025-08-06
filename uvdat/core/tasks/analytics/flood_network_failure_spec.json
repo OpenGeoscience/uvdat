@@ -1,0 +1,60 @@
+{
+    "tasks": [
+        {
+            "id": "flood_network_failure",
+            "name": "Flood Network Failure",
+            "description": "Select an urban network and flood simulation result to determine network failures during the flood event.",
+            "attribution": "Northeastern University & Kitware, Inc.",
+            "mode": "python",
+            "entry_point": "uvdat.core.tasks.analytics.flood_network_failure.task.main",
+            "inputs": [
+                {
+                    "label": "network",
+                    "choices": {
+                        "query": {
+                            "model": "Network",
+                            "filters": {}
+                        }
+                    }
+                },
+                {
+                    "label": "flood_simulation",
+                    "choices": {
+                        "query": {
+                            "model": "AnalysisResult",
+                            "filters": {
+                                "analysis_type": "flood_simulation"
+                            }
+                        }
+                    }
+                },
+                {
+                    "label": "depth_tolerance_meters",
+                    "choices": {
+                        "range": {
+                            "min": 0.1,
+                            "max": 3,
+                            "step": 0.1
+                        }
+                    }
+                },
+                {
+                    "label": "station_radius_meters",
+                    "choices": {
+                        "range": {
+                            "min": 10,
+                            "max": 50,
+                            "step": 5
+                        }
+                    }
+                }
+            ],
+            "outputs": [
+                {
+                    "label": "failures",
+                    "type": "network_animation"
+                }
+            ]
+        }
+    ]
+}

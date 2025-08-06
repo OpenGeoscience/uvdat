@@ -1,0 +1,67 @@
+{
+    "tasks": [
+        {
+            "id": "flood_simulation",
+            "name": "Flood Simulation",
+            "description": "Select a precipitation model, likelihood, and time period to simulate a flood event.",
+            "attribution": "Northeastern University",
+            "mode": "python",
+            "entry_point": "uvdat.core.tasks.analytics.flood_simulation.task.main",
+            "inputs": [
+                {
+                    "label": "precipitation",
+                    "choices": {
+                        "query": {
+                            "model": "Chart",
+                            "filters": {
+                                "name__icontains": "hyetograph"
+                            }
+                        }
+                    }
+                },
+                {
+                    "label": "likelihood",
+                    "choices": {
+                        "list": [
+                            {
+                                "label": "1 in 25 year (4% chance)",
+                                "value": 0.04
+                            },
+                            {
+                                "label": "1 in 100 year (1% chance)",
+                                "value": 0.01
+                            }
+                        ]
+                    }
+                },
+                {
+                    "label": "time_period",
+                    "choices": {
+                        "list": [
+                            {
+                                "label": "2030-2050",
+                                "value": [
+                                    2030,
+                                    2050
+                                ]
+                            },
+                            {
+                                "label": "2080-2100",
+                                "value": [
+                                    2080,
+                                    2100
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ],
+            "outputs": [
+                {
+                    "label": "flood",
+                    "type": "Dataset"
+                }
+            ]
+        }
+    ]
+}

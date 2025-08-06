@@ -1,0 +1,78 @@
+{
+    "tasks": [
+        {
+            "id": "network_recovery",
+            "name": "Network Recovery",
+            "description": "Provide a network failure state and select a recovery mode to view network recovery priority.",
+            "attribution": "Jack Watson, Northeastern University",
+            "mode": "python",
+            "entry_point": "uvdat.core.tasks.analytics.network_recovery.task.main",
+            "inputs": [
+                {
+                    "label": "network_failure",
+                    "choices": {
+                        "query": {
+                            "model": "AnalysisResult",
+                            "filters": {
+                                "analysis_type": "flood_network_failure"
+                            }
+                        }
+                    }
+                },
+                {
+                    "label": "recovery_mode",
+                    "choices": {
+                        "list": [
+                            {
+                                "label": "random",
+                                "value": "random"
+                            },
+                            {
+                                "label": "betweenness",
+                                "value": "betweenness"
+                            },
+                            {
+                                "label": "degree",
+                                "value": "degree"
+                            },
+                            {
+                                "label": "information",
+                                "value": "information"
+                            },
+                            {
+                                "label": "eigenvector",
+                                "value": "eigenvector"
+                            },
+                            {
+                                "label": "load",
+                                "value": "load"
+                            },
+                            {
+                                "label": "closeness",
+                                "value": "closeness"
+                            },
+                            {
+                                "label": "second order",
+                                "value": "second order"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "outputs": [
+                {
+                    "label": "recoveries",
+                    "type": "network_animation"
+                },
+                {
+                    "label": "gcc_chart",
+                    "type": "Chart"
+                },
+                {
+                    "label": "resiliency_score",
+                    "type": "number"
+                }
+            ]
+        }
+    ]
+}
