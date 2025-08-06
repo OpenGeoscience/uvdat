@@ -2,9 +2,13 @@
     "type": "object",
     "additionalProperties": false,
     "required": [
+        "version",
         "tasks"
     ],
     "properties": {
+        "version": {
+            "type": "number"
+        },
         "tasks": {
             "type": "array",
             "minItems": 1,
