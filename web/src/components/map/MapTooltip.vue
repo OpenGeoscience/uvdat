@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import type { SourceRegion } from "@/types";
 import * as turf from "@turf/turf";
 import proj4 from "proj4";
 
@@ -58,35 +57,25 @@ const rasterValue = computed(() => {
   }
 })
 
-const clickedRegion = computed(() => {
-  const props = mapStore.clickedFeature?.feature?.properties;
-  const regionId = props?.region_id;
-  const regionName = props?.region_name;
-  const regionDatasetId = props?.dataset_id;
-  if (regionId) {
-    const sourceRegion: SourceRegion = {
-      id: regionId,
-      name: regionName,
-      dataset_id: regionDatasetId,
-    };
-    return sourceRegion;
-  }
-  return undefined;
-});
 
-function zoomToRegion() {
+function zoomToFeature() {
   if (mapStore.clickedFeature === undefined) {
     return;
   }
 
   // Set map zoom to match bounding box of region
   const map = mapStore.getMap();
-  const bbox = turf.bbox(mapStore.clickedFeature.feature.geometry);
+  const buffered = turf.buffer(
+    mapStore.clickedFeature.feature,
+    0.5, {units: 'kilometers'}
+  )
+  if (!buffered)  return;
+
+  const bbox = turf.bbox(buffered);
   if (bbox.length !== 4) {
     throw new Error("Returned bbox should have 4 elements!");
   }
-
-  map.fitBounds(bbox);
+  map.fitBounds(bbox, {maxZoom: map.getZoom()});
 }
 
 // Check if the layer associated with the clicked feature is still selected and visible
@@ -113,9 +102,12 @@ watch(
       return;
     }
     // Set tooltip position. Give feature clicks priority
-    tooltip.setLngLat(mapStore.clickedFeature.pos);
+    const centroid = turf.centroid(mapStore.clickedFeature.feature)
+    const center = centroid.geometry.coordinates as [number, number]
+    tooltip.setLngLat(center);
     // This makes the tooltip visible
     tooltip.addTo(mapStore.getMap());
+    zoomToFeature()
   }
 );
 
@@ -144,23 +136,14 @@ function toggleNodeHandler() {
 </script>
 
 <template>
-  <div v-if="mapStore.clickedFeature && clickedFeatureSourceType === 'vector'" style="max-height: 50vh; overflow: auto">
+  <div v-if="mapStore.clickedFeature && clickedFeatureSourceType === 'vector'" style="max-height: 40vh; overflow: auto">
     <RecursiveTable :data="clickedFeatureProperties" />
 
-    <!-- Render for Source Regions -->
-    <v-btn
-      v-if="clickedRegion"
-      block
-      variant="outlined"
-      prepend-icon="mdi-vector-square"
-      @click="zoomToRegion"
-      text="Zoom To Region"
-    />
 
     <!-- Render for Network Nodes -->
     <!-- TODO: Eventually allow deactivating Network Edges -->
     <v-btn
-      v-else-if="mapStore.clickedFeature.feature.properties.node_id"
+      v-if="mapStore.clickedFeature.feature.properties.node_id"
       block
       variant="outlined"
       @click="toggleNodeHandler"
