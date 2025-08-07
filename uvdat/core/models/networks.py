@@ -3,7 +3,60 @@ from django.db import connection, models
 
 from .data import VectorData, VectorFeature
 
+TEMP_TABLE_QUERY = """
+CREATE TEMP TABLE IF NOT EXISTS excluded_nodes(id INT);
+CREATE UNIQUE INDEX IF NOT EXISTS excluded_nodes_id_idx ON excluded_nodes (id);
+INSERT INTO excluded_nodes(id) VALUES (unnest(%(excluded_nodes)s::int[])) ON CONFLICT DO NOTHING;
+
+CREATE TEMP TABLE IF NOT EXISTS excluded_edges(id INT);
+CREATE UNIQUE INDEX IF NOT EXISTS excluded_edges_id_idx ON excluded_edges (id);
+INSERT INTO excluded_edges(id) (
+    SELECT cne.id
+    FROM core_networkedge cne
+    INNER JOIN excluded_nodes en on
+        cne.from_node_id = en.id OR cne.to_node_id = en.id
+) ON CONFLICT DO NOTHING;
+"""
+
 GCC_QUERY = """
+WITH RECURSIVE n as (
+    -- starting node
+    SELECT id FROM (
+        SELECT cnn.id
+        FROM core_networknode cnn
+        LEFT JOIN excluded_nodes en ON cnn.id = en.id
+        WHERE
+            cnn.network_id = %(network_id)s
+            AND en.id IS NULL
+        ORDER BY random()
+        LIMIT 1
+    ) nn
+    UNION
+    -- Select the *other* node in the edge
+    SELECT CASE
+        WHEN e.to_node_id = n.id
+        THEN e.from_node_id
+        ELSE e.to_node_id
+    END
+    FROM n
+    JOIN (
+        SELECT *
+        FROM core_networkedge ne
+        LEFT JOIN excluded_edges ee ON
+            ne.id = ee.id
+        WHERE
+            ne.network_id = %(network_id)s
+            AND ee.id IS NULL
+    ) e
+    ON
+        e.from_node_id = n.id OR
+        e.to_node_id = n.id
+)
+SELECT id FROM n ORDER BY id
+;
+"""
+
+OLD_GCC_QUERY = """
 WITH RECURSIVE n as (
     -- starting node
     SELECT id FROM (
@@ -63,17 +116,41 @@ class Network(models.Model):
             # find a larger one. If we've exhausted all nodes, also stop searching.
             while not (len(gcc) > (total_nodes // 2) or len(cur_excluded_nodes) >= total_nodes):
                 cursor.execute(
-                    GCC_QUERY,
+                    TEMP_TABLE_QUERY,
                     {
                         'excluded_nodes': cur_excluded_nodes,
-                        'network_id': self.pk,
                     },
+                )
+
+                # cursor.execute(
+                #     'explain analyze ' + GCC_QUERY,
+                #     # GCC_QUERY,
+                #     {
+                #         'excluded_nodes': cur_excluded_nodes,
+                #         'network_id': self.pk,
+                #     },
+                # )
+                # print('\n'.join([x[0] for x in cursor.fetchall()]))
+
+                # cursor.execute(
+                #     'explain analyze ' + OLD_GCC_QUERY,
+                #     {
+                #         'excluded_nodes': cur_excluded_nodes,
+                #         'network_id': self.pk,
+                #     },
+                # )
+                # print('\n'.join([x[0] for x in cursor.fetchall()]))
+
+                cursor.execute(
+                    GCC_QUERY,
+                    {'network_id': self.pk},
                 )
                 nodes = [x[0] for x in cursor.fetchall()]
                 if not nodes:
                     raise Exception('Expected to find nodes but found none')
 
                 cur_excluded_nodes.extend(nodes)
+                # print('-------------', len(nodes), len(gcc), len(cur_excluded_nodes), total_nodes)
                 if len(nodes) > len(gcc):
                     gcc = nodes
 
