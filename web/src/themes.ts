@@ -20,7 +20,7 @@ export const THEMES = {
             info: "#2196F3",
             warning: "#FFC107",
         },
-        mapStyle: 'map_light.json'
+        mapStyle: 'https://demo.kitware.com/vector-maps/tiles/style/openstreetmap-openmaptiles-openfreemap-positron.json'
     },
     dark: {
         dark: true,
@@ -44,6 +44,6 @@ export const THEMES = {
             info: "#42A5F5",
             warning: "#FFB74D",
         },
-        mapStyle: 'map_dark.json'
+        mapStyle: 'https://demo.kitware.com/vector-maps/tiles/style/openstreetmap-openmaptiles-openmaptiles-dark-matter.json'
     },
 };
