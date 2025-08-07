@@ -402,11 +402,13 @@ export const useMapStore = defineStore('map', () => {
   function createRasterTileSource(raster: RasterData, sourceId: string, multiFrame: boolean): Source | undefined {
     const map = getMap();
 
-    const { layerId, layerCopyId } = parseSourceString(sourceId);
-    const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`];
     const queryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
-    const styleParams = styleStore.getRasterTilesQuery(styleSpec)
-    if (styleParams) queryParams.style = JSON.stringify(styleParams)
+    const { layerId, layerCopyId } = parseSourceString(sourceId);
+    const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`].style_spec;
+    if (styleSpec) {
+      const styleParams = styleStore.getRasterTilesQuery(styleSpec)
+      if (styleParams) queryParams.style = JSON.stringify(styleParams)
+    }
     const query = new URLSearchParams(queryParams)
     map.addSource(sourceId, {
       type: "raster",
