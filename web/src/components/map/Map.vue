@@ -53,11 +53,6 @@ function setAttributionControlStyle() {
   });
 }
 
-function setMapStyle() {
-  const map = mapStore.getMap();
-  map.setStyle(THEMES[appStore.theme].mapStyle)
-}
-
 function createMap() {
   const newMap = new Map({
     container: "mapContainer",
@@ -132,7 +127,8 @@ onMounted(() => {
 });
 
 watch(() => appStore.theme, () => {
-  setMapStyle()
+  const map = mapStore.getMap();
+  map.setStyle(THEMES[appStore.theme].mapStyle);
   setAttributionControlStyle();
   layerStore.updateLayersShown();
 });
