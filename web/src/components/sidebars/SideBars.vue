@@ -48,7 +48,7 @@ function togglePanelVisibility(id: string) {
 
 watch(darkMode, () => {
   appStore.theme = darkMode.value ? "dark" : "light";
-  themeManager.global.name.value = appStore.theme;
+  themeManager.change(appStore.theme);
 });
 </script>
 

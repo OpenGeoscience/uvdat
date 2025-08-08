@@ -3,8 +3,7 @@
 1. Prepare the web client with the following steps:
 
    1. Run `cp web/.env.example web/.env`.
-   1. Edit `web/.env` and supply a valid MapTiler API key. To sign up for a free MapTiler API key, visit https://docs.maptiler.com/cloud/api/authentication-key/.
-   1. Install client dependencies by running `cd web && npm i`.
+   2. Install client dependencies by running `cd web && npm i`.
 
 2. Run the docker containers with `docker compose up`. Be sure to check that all containers were able to start and stay running successfully before continuing.
 3. While the containers are up, run the following commands in a separate terminal to prepare the database:

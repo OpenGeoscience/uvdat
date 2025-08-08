@@ -1,11 +1,13 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { Map, Popup, AttributionControl } from "maplibre-gl";
+import { Map, Popup, AttributionControl, addProtocol } from "maplibre-gl";
+import { Protocol } from "pmtiles";
 import { onMounted, ref, watch } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
 import { oauthClient } from "@/api/auth";
+import { THEMES } from "@/themes";
 
 import { useAppStore, useMapStore, useLayerStore } from "@/store";
 const appStore = useAppStore();
@@ -15,19 +17,10 @@ const layerStore = useLayerStore();
 const ATTRIBUTION = [
   "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
   "<span> | </span>",
-  "<a target='_blank' href='https://www.maptiler.com/copyright'>© MapTiler</a>",
-  "<span> | </span>",
-  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap contributors</a>",
+  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap</a>",
 ];
 
-const BASE_MAPS = {
-  light: [
-    `https://api.maptiler.com/maps/basic-v2/{z}/{x}/{y}.png?key=${import.meta.env.VITE_APP_MAPTILER_API_KEY}`,
-  ],
-  dark: [
-    `https://api.maptiler.com/maps/basic-v2-dark/{z}/{x}/{y}.png?key=${import.meta.env.VITE_APP_MAPTILER_API_KEY}`,
-  ],
-};
+addProtocol("pmtiles", new Protocol().tile);
 
 // MapLibre refs
 const tooltip = ref<HTMLElement>();
@@ -65,44 +58,16 @@ function createMap() {
     container: "mapContainer",
     attributionControl: false,
     preserveDrawingBuffer: true, // allows screenshots
-    // transformRequest adds auth headers to tile requests (excluding MapTiler requests)
+    // transformRequest adds auth headers to tile requests
     transformRequest: (url) => {
-      let headers = {};
-      if (!url.includes("maptiler")) {
-        headers = oauthClient?.authHeaders;
-      }
       return {
         url,
-        headers,
+        headers: oauthClient?.authHeaders,
       };
     },
-    style: {
-      version: 8,
-      sources: {
-        light: {
-          type: "raster",
-          tiles: BASE_MAPS.light,
-          tileSize: 512,
-        },
-        dark: {
-          type: "raster",
-          tiles: BASE_MAPS.dark,
-          tileSize: 512,
-        },
-      },
-      layers: [
-        {
-          id: "base-tiles",
-          type: "raster",
-          source: appStore.theme,
-          minzoom: 0,
-          // 22 is the max zoom, but setting it to just that makes the map go white at full zoom
-          maxzoom: 22 + 1,
-        },
-      ],
-    },
-    center: [-75.5, 43.0], // Coordinates for the center of New York State
-    zoom: 7, // Initial zoom level
+    style: THEMES[appStore.theme].mapStyle,
+    center: [0, 0],
+    zoom: 1, // Initial zoom level
   });
 
   newMap.addControl(attributionControl);
@@ -117,7 +82,7 @@ function createMap() {
   newMap.on('error', (response) => {
     // AbortErrors are raised when updating style of raster layers; ignore these
     if (response.error.message !== 'AbortError') console.error(response.error)
-});
+  });
 
   /**
    * This is called on every click, and technically hides the tooltip on every click.
@@ -158,19 +123,12 @@ onMounted(() => {
   mapStore.setMapCenter(undefined, true);
 });
 
-watch(() => appStore.theme, (value) => {
+watch(() => appStore.theme, () => {
   const map = mapStore.getMap();
-  map.removeLayer("base-tiles");
-  map.addLayer({
-    id: "base-tiles",
-    type: "raster",
-    source: value,
-    minzoom: 0,
-    maxzoom: 22 + 1,
-    layout: {
-      visibility: mapStore.showMapBaseLayer ? "visible" : "none",
-    },
+  map.once('idle', () => {
+    layerStore.updateLayersShown();
   });
+  map.setStyle(THEMES[appStore.theme].mapStyle);
   setAttributionControlStyle();
   layerStore.updateLayersShown();
 });

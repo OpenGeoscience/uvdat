@@ -11,7 +11,11 @@ import {
   MapLibreLayerMetadata,
   Layer,
 } from '@/types';
-import { Map, MapLayerMouseEvent, Popup, Source, LayerSpecification } from "maplibre-gl";
+import {
+  Map, MapLayerMouseEvent,
+  Popup, Source,
+  LayerSpecification, VectorSourceSpecification,
+} from "maplibre-gl";
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
@@ -164,12 +168,16 @@ export const useMapStore = defineStore('map', () => {
   // Update the base layer visibility
   watch(showMapBaseLayer, () => {
     const map = getMap();
-    getUserMapLayers().forEach((id) => {
-      map.setLayoutProperty(
-        id,
-        "visibility",
-        showMapBaseLayer.value ? "visible" : "none"
-      );
+    const baseLayerSourceIds = getBaseLayerSourceIds();
+    map.getLayersOrder().forEach((id) => {
+      const layer = map.getLayer(id);
+      if (layer && baseLayerSourceIds.includes(layer.source)) {
+        map.setLayoutProperty(
+          id,
+          "visibility",
+          showMapBaseLayer.value ? "visible" : "none"
+        );
+      }
     });
   });
 
@@ -186,11 +194,31 @@ export const useMapStore = defineStore('map', () => {
 
   function getMapSources() {
     const map = getMap();
-    return map.getLayersOrder().map((layerId) => map.getLayer(layerId)!.source);
+    return [...new Set(map.getLayersOrder().map((layerId) => map.getLayer(layerId)!.source))];
+  }
+
+  function getBaseLayerSourceIds() {
+    const map = getMap();
+    return getMapSources()
+      .map((sourceId) => map.getSource(sourceId))
+      .filter((source) => {
+        if (source === undefined) return false;
+        const vectorSource = source as VectorSourceSpecification;
+        if (vectorSource?.url) {
+          return vectorSource.url.includes('demo.kitware.com');
+        }
+        return false;
+      }).map((source) => source?.id);
   }
 
   function getUserMapLayers() {
-    return getMap().getLayersOrder().filter((id) => id !== 'base-tiles');
+    const map = getMap();
+    const baseLayerSourceIds = getBaseLayerSourceIds();
+    return map.getLayersOrder().filter((id) => {
+      if (id === 'background') return false;
+      const layer = map.getLayer(id);
+      return layer && !baseLayerSourceIds.includes(layer.source);
+    });
   }
 
   function getCurrentMapPosition() {
