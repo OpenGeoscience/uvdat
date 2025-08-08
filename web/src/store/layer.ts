@@ -80,7 +80,7 @@ export const useLayerStore = defineStore('layer', () => {
 
   function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects: SourceDBObjects = {}
-    const {layerId, layerCopyId, frameId } = mapStore.parseSourceString(sourceId)
+    const { layerId, layerCopyId, frameId } = mapStore.parseSourceString(sourceId)
     selectedLayers.value.forEach((layer) => {
       if (layer.id === layerId && layer.copy_id === layerCopyId) {
         DBObjects.dataset = projectStore.availableDatasets?.find((d: Dataset) => d.id === layer.dataset);
@@ -152,6 +152,7 @@ export const useLayerStore = defineStore('layer', () => {
   watch(framesByLayerId, updateLayersShown);
   function updateLayersShown() {
     const map = mapStore.getMap();
+    const userMapLayers = mapStore.getUserMapLayers()
 
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {
@@ -177,13 +178,13 @@ export const useLayerStore = defineStore('layer', () => {
 
         // TODO: Move this conditional functionality into `addLayer`, and directly call addLayerFrameToMap there
         const sourceId = mapStore.sourceIdFromLayerFrame(layer, frame);
-        if (layer.visible && !mapStore.getUserMapLayers().some(
+        if (layer.visible && !userMapLayers.some(
           (mapLayerId) => mapLayerId.includes(sourceId)
         ) && layer.current_frame_index === frame.index) {
           mapStore.addLayerFrameToMap(frame, sourceId, multiFrame);
         }
 
-        mapStore.getUserMapLayers().forEach((mapLayerId) => {
+        userMapLayers.forEach((mapLayerId) => {
           if (mapLayerId.includes(sourceId)) {
             map.moveLayer(mapLayerId);  // handles reordering
           }
@@ -192,7 +193,7 @@ export const useLayerStore = defineStore('layer', () => {
       styleStore.updateLayerStyles(layer)
     })
     // hide any removed layers
-    mapStore.getUserMapLayers().forEach((mapLayerId) => {
+    userMapLayers.forEach((mapLayerId) => {
       const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
       if (!selectedLayers.value.some((l) => {
         return l.id == layerId && l.copy_id == layerCopyId

@@ -193,7 +193,12 @@ export const useMapStore = defineStore('map', () => {
   }
 
   function getUserMapLayers() {
-    return getMap().getLayersOrder().filter((id) => id.includes('.'));
+    const map = getMap()
+    return map.getLayersOrder().filter((id) => {
+      if (id === 'background') return false
+      const layer = map.getLayer(id)
+      return layer && layer.source !== 'openstreetmap-openmaptiles'
+    });
   }
 
   function getCurrentMapPosition() {
