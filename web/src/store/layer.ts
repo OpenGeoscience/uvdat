@@ -80,7 +80,7 @@ export const useLayerStore = defineStore('layer', () => {
 
   function getDBObjectsForSourceID(sourceId: string) {
     const DBObjects: SourceDBObjects = {}
-    const { layerId, layerCopyId, frameId } = mapStore.parseSourceString(sourceId)
+    const { layerId, layerCopyId, frameId } = mapStore.parseSourceString(sourceId);
     selectedLayers.value.forEach((layer) => {
       if (layer.id === layerId && layer.copy_id === layerCopyId) {
         DBObjects.dataset = projectStore.availableDatasets?.find((d: Dataset) => d.id === layer.dataset);
@@ -152,7 +152,7 @@ export const useLayerStore = defineStore('layer', () => {
   watch(framesByLayerId, updateLayersShown);
   function updateLayersShown() {
     const map = mapStore.getMap();
-    const userMapLayers = mapStore.getUserMapLayers()
+    const userMapLayers = mapStore.getUserMapLayers();
 
     // reverse selected layers list for first on top
     selectedLayers.value.toReversed().forEach((layer) => {

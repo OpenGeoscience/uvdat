@@ -170,7 +170,7 @@ export const useMapStore = defineStore('map', () => {
     const map = getMap();
     const baseLayerSourceIds = getBaseLayerSourceIds();
     map.getLayersOrder().forEach((id) => {
-      const layer = map.getLayer(id)
+      const layer = map.getLayer(id);
       if (layer && baseLayerSourceIds.includes(layer.source)) {
         map.setLayoutProperty(
           id,
@@ -202,12 +202,12 @@ export const useMapStore = defineStore('map', () => {
     return getMapSources()
       .map((sourceId) => map.getSource(sourceId))
       .filter((source) => {
-        if (source === undefined) return false
-        const vectorSource = source as VectorSourceSpecification
+        if (source === undefined) return false;
+        const vectorSource = source as VectorSourceSpecification;
         if (vectorSource?.url) {
-          return vectorSource.url.includes('demo.kitware.com')
+          return vectorSource.url.includes('demo.kitware.com');
         }
-        return false
+        return false;
       }).map((source) => source?.id);
   }
 
