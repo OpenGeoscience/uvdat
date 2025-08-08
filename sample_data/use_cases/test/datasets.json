@@ -33,5 +33,87 @@
         "frame_property": "frame"
       }
     ]
+  },
+  {
+    "name": "NY County Data",
+    "description": "NY County Data for display",
+    "category": "test",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/672cd701ca1110761bd32ff1/download",
+        "path": "ny/county_population.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "NY County Information"
+      }
+    ]
+  },
+  {
+    "name": "Large Sample Data",
+    "description": "Large Sample Data",
+    "category": "test",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/6862d0874263e86bc81ba30a/download",
+        "path": "test/sample.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Large Sample Data Layer"
+      }
+    ]
+  },
+  {
+    "name": "Raster Data",
+    "description": "Raster Data",
+    "category": "test",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/66dce4c5560e6127967911d1/download",
+        "path": "test/losangeles.tiff"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Los Angeles Raster"
+      }
+    ]
+  },
+    {
+    "name": "LA Color",
+    "description": "LA Data",
+    "category": "test",
+    "files": [
+      {
+        "path": "test/rgba_geotff.tiff",
+        "url": "https://data.kitware.com/api/v1/item/66e1ec61560e612796791292/download"
+      }
+    ],
+    "layers": [
+      {
+        "name": "LA Color Layer"
+      }
+    ]
+  },
+      {
+    "name": "Boston Image",
+    "description": "Boston Image",
+    "category": "test",
+    "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6744df3c22f196cb5d931161/download",
+                "path": "boston/boston_orthoimagery.tiff"
+            }
+    ],
+    "layers": [
+      {
+        "name": "Boston image"
+      }
+    ]
   }
+
+
 ]

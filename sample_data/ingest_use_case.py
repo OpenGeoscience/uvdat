@@ -16,6 +16,7 @@ from .use_cases.boston_floods import ingest as boston_floods_ingest
 from .use_cases.new_york_energy import ingest as new_york_energy_ingest
 from .use_cases.la_wildfires import ingest as la_wildfires_ingest
 from .use_cases.test import ingest as test_ingest
+from .use_cases.sequentialTestRasters import ingest as sequential_test_rasters_ingest
 
 
 USE_CASE_FOLDER = Path('sample_data/use_cases')
@@ -186,6 +187,8 @@ def ingest_datasets(use_case, include_large=False, no_cache=False, dataset_index
                             la_wildfires_ingest.convert_dataset(dataset_for_conversion, dataset)
                         elif use_case == 'test':
                             test_ingest.convert_dataset(dataset_for_conversion, dataset)
+                        elif use_case == 'sequentialTestRasters':
+                            sequential_test_rasters_ingest.convert_dataset(dataset_for_conversion, dataset)
                     else:
                         print(
                             '\t', f'Dataset too large ({dataset_size_mb} MB); skipping conversion step.'

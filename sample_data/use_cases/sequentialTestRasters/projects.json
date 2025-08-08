@@ -1,0 +1,8 @@
+[
+  {
+    "name": "SequentialTestRasters",
+    "default_map_center": [42.4, -71.1],
+    "default_map_zoom": 11,
+    "datasets": ["Sequential Test Rasters"]
+  }
+]

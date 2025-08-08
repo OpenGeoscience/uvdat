@@ -4,5 +4,35 @@
     "default_map_center": [42.4, -71.1],
     "default_map_zoom": 11,
     "datasets": ["Generated Vector Data", "Multiframe Generated Vector Data"]
+  },
+  {
+    "name": "NY Data",
+    "default_map_center": [43.0, -75.5],
+    "default_map_zoom": 6.5,
+    "datasets": ["NY County Data"]
+  },
+  {
+    "name": "Sample",
+    "default_map_center": [39.8283, -98.5795],
+    "default_map_zoom": 4,
+    "datasets": ["Large Sample Data"]
+  },
+  {
+    "name": "LA Raster",
+    "default_map_center": [33.804272, -117.474364],
+    "default_map_zoom": 12,
+    "datasets": ["Raster Data"]
+  },
+  {
+    "name": "LA Color",
+    "default_map_center": [33.804272, -117.474364],
+    "default_map_zoom": 12,
+    "datasets": ["LA Color"]
+  },
+  {
+    "name": "Boston Image",
+    "default_map_center": [43.0, -75.5],
+    "default_map_zoom": 6.5,
+    "datasets": ["Boston Image"]
   }
 ]

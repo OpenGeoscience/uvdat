@@ -4,13 +4,14 @@
 // On the `GenericDataViewSet` in `uvdat/core/rest/data.py`
 
 
-const RASTERIDS = [140, 141, 142, 143, 144, 145, 146]
+const RASTERIDS = [29, 30, 31, 32, 33, 34, 35]
 const AREA = [
-  [-71.08304319974873, 42.34884302805421],
-  [-71.02755108520374, 42.34884302805421],
-  [-71.08304319974873, 42.37486453517434],
-  [-71.02755108520374, 42.37486453517434],
-];
+  [74.1154, 43.1807],  // top-left
+  [74.2382, 43.1807],  // top-right
+  [74.2382, 43.0909],  // bottom-right
+  [74.1154, 43.0909],  // bottom-left
+]
+;
 
 const CancelledError = new Error('Cancelled')
 
