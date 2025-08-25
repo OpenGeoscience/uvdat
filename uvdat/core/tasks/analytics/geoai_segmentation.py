@@ -64,13 +64,13 @@ def geoai_segmentation(result_id):
             import geoai
 
             # Update name
-            result.name = f'Segmentation of {imagery.name}'
+            result.name = f'Segmentation of {segmentation_prompt} in {imagery.name}'
             result.save()
 
             result.write_status('Reading aerial imagery...')
             imagery_path = utilities.field_file_to_local_path(imagery.cloud_optimized_geotiff)
             segmentation_path = imagery_path.parent / 'segmentation.tif'
-            mask_path = imagery_path.parent / 'mask.tif'
+            mask_path = imagery_path.parent / f'{segmentation_prompt}_mask.tif'
 
             result.write_status('Loading GeoAI CLIPSegmentation model...')
             segmenter = geoai.CLIPSegmentation(tile_size=512, overlap=32)
@@ -134,5 +134,4 @@ def geoai_segmentation(result_id):
             result.outputs = dict(result=dataset.id)
     except Exception as e:
         result.error = str(e)
-    print('Reached end')
     result.complete()
