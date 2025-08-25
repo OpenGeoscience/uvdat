@@ -1411,7 +1411,7 @@ onMounted(resetCurrentStyle)
 .v-field__outline {
     visibility: hidden;
 }
-.v-window__container {
+.layer-style-card .v-window__container {
     height: 400px!important;
     overflow-y: auto;
     overflow-x: hidden;
