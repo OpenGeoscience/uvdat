@@ -1,17 +1,18 @@
-from django.core.management.base import BaseCommand
 from datetime import datetime
-import os
-import json
-import pooch
-from django.core.files.base import ContentFile
 import importlib.util
-
+import json
+import os
 from pathlib import Path
-from typing import Any, Dict, TypedDict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, TypedDict
+
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
+from django.core.files.base import ContentFile
+from django.core.management.base import BaseCommand
+import pooch
 
-from uvdat.core.models import Dataset, Project, FileItem, Chart
+from uvdat.core.models import Chart, Dataset, FileItem, Project
+
 DATA_FOLDER = Path(os.environ.get('INGEST_BIND_MOUNT_POINT', 'sample_data'))
 DOWNLOADS_FOLDER = Path(DATA_FOLDER, 'downloads')
 VALID_TYPES = ['Project', 'Dataset', 'Chart']
@@ -49,7 +50,9 @@ class DatasetItem(TypedDict):
     project: str
     file: str
     layers: Optional[list[LayerInfo]]
-    conversionScript: Optional[str]  # Relative path to python file used for conversion with function convert_dataset
+    conversionScript: Optional[  # noqa: N815
+        str
+    ]  # Relative path to python file used for conversion with function convert_dataset
     network_options: Optional[dict[str, Any]]
     region_options: Optional[dict[str, Any]]
     action: Optional[Literal['redownload', 'replace']]
@@ -89,6 +92,7 @@ class ChartItem(TypedDict, total=False):
     chart_options: Dict[str, Any]
     conversion_options: ConversionOptions
 
+
 class Command(BaseCommand):
     requires_migrations_checks = True
 
@@ -119,14 +123,17 @@ class Command(BaseCommand):
         clear = options.get('clear', False)
         if clear:
             confirm = input(
-                "Are you sure you want to delete ALL Project, Dataset and Chart models? Type 'yes' to confirm: "
+                'Are you sure you want to delete ALL Project, Dataset and Chart models?'
+                "Type 'yes' to confirm: "
             )
             if confirm.lower() == 'yes':
                 Project.objects.all().delete()
                 Dataset.objects.all().delete()
                 Chart.objects.all().delete()
                 self.stdout.write(
-                    self.style.SUCCESS('Successfully deleted all Project, Dataset, and Chart models')
+                    self.style.SUCCESS(
+                        'Successfully deleted all Project, Dataset, and Chart models'
+                    )
                 )
             else:
                 self.stdout.write(self.style.WARNING('Aborted deletion of models'))
@@ -150,15 +157,21 @@ class Command(BaseCommand):
                 charts.append(item)
         # Ingeset the datasets and charts now:
         self.stdout.write('Ingesting Datasets:')
-        self.ingest_datasets(datasets, str(file_path), replace=replace, no_cache=options.get('no_cache', False))
+        self.ingest_datasets(
+            datasets, str(file_path), replace=replace, no_cache=options.get('no_cache', False)
+        )
         self.stdout.write('Ingesting Projects:')
         self.ingest_projects(projects, str(file_path), replace=replace)
         self.stdout.write('Ingesting Charts:')
-        self.ingest_charts(charts, str(file_path), replace=replace, no_cache=options.get('no_cache', False))
+        self.ingest_charts(
+            charts, str(file_path), replace=replace, no_cache=options.get('no_cache', False)
+        )
 
         self.stdout.write(self.style.SUCCESS('Ingestion complete.'))
 
-    def ingest_file(self, file_info, index=0, dataset=None, chart=None, replace=False, no_cache=False):
+    def ingest_file(
+        self, file_info, index=0, dataset=None, chart=None, replace=False, no_cache=False
+    ):
         file_path = file_info.get('path')
         file_name = file_info.get('name', file_path.split('/')[-1])
         file_url = file_info.get('url')
@@ -223,16 +236,24 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                self.stdout.write(self.style.SUCCESS(f'Project {project_for_setting.name} created.'))
+                self.stdout.write(
+                    self.style.SUCCESS(f'Project {project_for_setting.name} created.')
+                )
 
-                project_for_setting.datasets.set(Dataset.objects.filter(name__in=project['datasets']))
+                project_for_setting.datasets.set(
+                    Dataset.objects.filter(name__in=project['datasets'])
+                )
 
                 superuser = User.objects.filter(is_superuser=True).first()
                 if superuser is None:
                     raise Exception('Please create at least one superuser')
                 project_for_setting.set_permissions(owner=superuser)
             else:
-                self.stdout.write(self.style.NOTICE(f'Project {project_for_setting.name} already exists, not importing.'))
+                self.stdout.write(
+                    self.style.NOTICE(
+                        f'Project {project_for_setting.name} already exists, not importing.'
+                    )
+                )
 
     def ingest_charts(self, data: list[ChartItem], replace=False, no_cache=False) -> None:
         for chart in data:
@@ -257,12 +278,7 @@ class Command(BaseCommand):
                 )
                 self.stdout.write(self.style.SUCCESS(f'\t\t Chart {new_chart.name} created.'))
                 for index, file_info in enumerate(chart.get('files', [])):
-                    self.ingest_file(
-                        file_info,
-                        index=index,
-                        chart=new_chart,
-                        no_cache=no_cache
-                    )
+                    self.ingest_file(file_info, index=index, chart=new_chart, no_cache=no_cache)
                 chart_for_conversion = new_chart
 
                 self.stdout.write(f'\t\t Converting data for {chart_for_conversion.name}.')
@@ -271,24 +287,31 @@ class Command(BaseCommand):
                     asynchronous=False,
                 )
             else:
-                self.stdout.write(self.style.NOTICE(f'\t\t Chart {chart["name"]} already exists, not importing/converting.'))
+                self.stdout.write(
+                    self.style.NOTICE(
+                        f'\t\t Chart {chart["name"]} already exists, not importing/converting.'
+                    )
+                )
 
     def run_conversion_script(self, script_path: str, dataset_for_conversion, dataset) -> None:
         # Resolve to absolute path
         path = Path(script_path).resolve()
-        
+
         # Load module dynamically
-        spec = importlib.util.spec_from_file_location("custom_conversion", path)
+        spec = importlib.util.spec_from_file_location('custom_conversion', path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)  # actually execute the file
 
         # Call convert_dataset if it exists
-        if hasattr(module, "convert_dataset"):
+        if hasattr(module, 'convert_dataset'):
             module.convert_dataset(dataset_for_conversion, dataset)
         else:
-            raise AttributeError(f"Script {script_path} has no convert_dataset() function.")
+            raise AttributeError(
+                f'Script {script_path} has \
+                                 no convert_dataset() function.'
+            )
 
-    def default_conversion_process(self, dataset: Dataset, options):
+    def default_conversion_process(self, dataset: Dataset, options: DatasetItem):
         self.stdout.write('\t', f'Converting data for {dataset.name}...')
         dataset.spawn_conversion_task(
             layer_options=options.get('layers'),
@@ -297,13 +320,15 @@ class Command(BaseCommand):
             asynchronous=False,
         )
 
-    def ingest_datasets(self, data: list[DatasetItem], json_file_path: str, replace=False, no_cache=False) -> None:
+    def ingest_datasets(
+        self, data: list[DatasetItem], json_file_path: str, replace=False, no_cache=False
+    ) -> None:
         for _dataset_index, dataset in enumerate(data):
             self.stdout.write(f'\t- {dataset["name"]}')
             create_new = True
             existing = Dataset.objects.filter(name=dataset['name'])
             if existing.count():
-                if replace:
+                if replace or no_cache or dataset.get('action', False) in ['redownload', 'replace']:
                     existing.delete()
                 else:
                     dataset_for_conversion = existing.first()
@@ -322,23 +347,31 @@ class Command(BaseCommand):
                         file_info,
                         index=index,
                         dataset=new_dataset,
-                        replace=replace,
-                        no_cache=no_cache
+                        replace=replace or dataset.get('action', False) == 'replace',
+                        no_cache=no_cache or dataset.get('action', False) == 'redownload',
                     )
                 dataset_for_conversion = new_dataset
 
-                dataset_size_mb = dataset_for_conversion.get_size() >> 20
+                #  _dataset_size_mb = dataset_for_conversion.get_size() >> 20
                 conversion_script = dataset.get('conversionScript')
                 if conversion_script:
                     self.stdout.write(f'\tUsing custom conversion script: {conversion_script}')
                     # the conversion script is relative to the json file path, make sure it exists
                     full_path = Path(json_file_path).parent / conversion_script
                     if not full_path.exists():
-                        self.stdout.write(self.style.ERROR(f'Conversion script {full_path} does not exist.'))
+                        self.stdout.write(
+                            self.style.ERROR(f'Conversion script {full_path} does not exist.')
+                        )
                     else:
                         self.run_conversion_script(full_path, dataset_for_conversion, dataset)
                 else:
                     self.default_conversion_process(dataset_for_conversion, dataset)
-                self.stdout.write(self.style.SUCCESS(f'\t\t Dataset {dataset_for_conversion.name} converted.'))
+                self.stdout.write(
+                    self.style.SUCCESS(f'\t\t Dataset {dataset_for_conversion.name} converted.')
+                )
             else:
-                self.stdout.write(self.style.NOTICE(f'\t\t Dataset {dataset["name"]} already exists, not importing/converting'))
+                self.stdout.write(
+                    self.style.NOTICE(
+                        f'\t\t Dataset {dataset["name"]} already exists, not importing/converting'
+                    )
+                )
