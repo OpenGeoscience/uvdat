@@ -24,6 +24,7 @@ class ProjectItem(TypedDict):
     default_map_center: list[float]
     default_map_zoom: float
     datasets: list[str]
+    action: Optional[Literal['replace']]
 
 
 class FrameInfo(TypedDict, total=False):
@@ -224,7 +225,7 @@ class Command(BaseCommand):
         for project in data:
             self.stdout.write(f'\t- {project["name"]}')
             existing = Project.objects.filter(name=project['name'])
-            if existing.count() and replace:
+            if existing.count() and replace or project.get('action') == 'replace':
                 existing.delete()
             project_for_setting, created = Project.objects.get_or_create(
                 name=project['name'],
@@ -350,7 +351,12 @@ class Command(BaseCommand):
                     )
                 dataset_for_conversion = new_dataset
 
-                #  _dataset_size_mb = dataset_for_conversion.get_size() >> 20
+                dataset_size_mb = dataset_for_conversion.get_size() >> 20
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'\t\t Dataset {dataset_for_conversion.name} of size {dataset_size_mb} MB.'
+                    )
+                )
                 conversion_script = dataset.get('conversionScript')
                 if conversion_script:
                     self.stdout.write(f'\tUsing custom conversion script: {conversion_script}')
