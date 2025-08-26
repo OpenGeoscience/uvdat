@@ -1,0 +1,47 @@
+[
+  {
+    "type": "Project",
+    "name": "Test",
+    "default_map_center": [42.4, -71.1],
+    "default_map_zoom": 11,
+    "datasets": ["Generated Vector Data", "Multiframe Generated Vector Data"]
+  },
+  {
+    "type": "Dataset",
+    "name": "Generated Vector Data",
+    "description": "Fake data generated via Python for style testing",
+    "category": "test",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
+        "hash": "9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee",
+        "path": "test/multiframe_vector.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Vector Test"
+      }
+    ]
+  },
+  {
+    "type": "Dataset",
+    "name": "Multiframe Generated Vector Data",
+    "description": "Fake data generated via Python for style testing",
+    "category": "test",
+    "conversionScript": "./ingest.py",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
+        "hash": "9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee",
+        "path": "test/multiframe_vector.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Multiframe Vector Test",
+        "frame_property": "frame"
+      }
+    ]
+  }
+]
