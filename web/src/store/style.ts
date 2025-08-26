@@ -261,7 +261,6 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, LayerStyle>>({});
     const colormaps = ref<ColorMap[]>(getDefaultColormaps())
-    const colormapsFetched = ref<boolean>(false);
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
@@ -283,7 +282,6 @@ export const useStyleStore = defineStore('style', () => {
                 n_colors: 5,
             }))
             colormaps.value = [...colormaps.value, ...customColormaps]
-            colormapsFetched.value = true
         })
     }
 
@@ -425,7 +423,6 @@ export const useStyleStore = defineStore('style', () => {
 
     return {
         colormaps,
-        colormapsFetched,
         selectedLayerStyles,
         fetchCustomColormaps,
         getRasterTilesQuery,
