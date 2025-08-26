@@ -27,23 +27,25 @@ const getColormap = (name: string, nshades: number) => colormap({
     alpha: 1
 })
 
-const colormaps: ColorMap[] = [
-    'terrain', 'viridis', 'plasma', 'inferno', 'magma',
-    'greys', 'greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
-    'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
-].map((name) => {
-    const colors = getColormap(name, 30)
-    return {
-        name,
-        null_color: 'transparent',
-        discrete: false,
-        n_colors: 5,
-        markers: colors.map((color: string, index: number) => ({
-            color,
-            value: index / (colors.length - 1)
-        }))
-    }
-})
+const getDefaultColormaps = () => {
+    return [
+        'terrain', 'viridis', 'plasma', 'inferno', 'magma',
+        'greys', 'greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
+        'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
+    ].map((name) => {
+        const colors = getColormap(name, 30)
+        return {
+            name,
+            null_color: 'transparent',
+            discrete: false,
+            n_colors: 5,
+            markers: colors.map((color: string, index: number) => ({
+                color,
+                value: index / (colors.length - 1)
+            }))
+        }
+    })
+}
 
 interface NetworkStyle {
     inactive?: number | string,
@@ -264,6 +266,7 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, LayerStyle>>({});
+    const colormaps = ref<ColorMap[]>(getDefaultColormaps())
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
