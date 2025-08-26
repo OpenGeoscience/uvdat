@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
+import ColormapEditor from './ColormapEditor.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
 
 import { useStyleStore, useProjectStore, usePanelStore, useLayerStore } from '@/store';
@@ -21,6 +22,7 @@ const props = defineProps<{
 
 const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
+const showColormapEditor = ref(false);
 const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
@@ -628,6 +630,14 @@ onMounted(resetCurrentStyle)
                                                         />
                                                         <span v-else class="secondary-text">Select Colormap</span>
                                                     </template>
+                                                    <template v-slot:prepend-item>
+                                                        <v-list-item @click="showColormapEditor = true">
+                                                            <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
+                                                                <v-icon color="primary">mdi-plus</v-icon>
+                                                                Create Custom Colormap
+                                                            </div>
+                                                        </v-list-item>
+                                                    </template>
                                                 </v-select>
                                             </td>
                                         </tr>
@@ -848,6 +858,14 @@ onMounted(resetCurrentStyle)
                                                                 :nColors="group.colormap.n_colors || -1"
                                                             />
                                                             <span v-else class="secondary-text">Select Colormap</span>
+                                                        </template>
+                                                        <template v-slot:prepend-item>
+                                                            <v-list-item @click="showColormapEditor = true">
+                                                                <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
+                                                                    <v-icon color="primary">mdi-plus</v-icon>
+                                                                    Create Custom Colormap
+                                                                </div>
+                                                            </v-list-item>
                                                         </template>
                                                     </v-select>
                                                 </td>
@@ -1347,6 +1365,10 @@ onMounted(resetCurrentStyle)
                         </v-btn>
                     </v-card-actions>
                 </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="showColormapEditor" contained>
+                <ColormapEditor @cancel="showColormapEditor = false"/>
             </v-dialog>
         </v-card>
     </v-menu>
