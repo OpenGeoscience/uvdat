@@ -1,8 +1,10 @@
 from datetime import datetime
+import importlib
 import importlib.util
 import json
 import os
 from pathlib import Path
+import sys
 from typing import Any, Dict, Literal, Optional, TypedDict
 
 from django.contrib.auth.models import User
@@ -293,22 +295,26 @@ class Command(BaseCommand):
                 )
 
     def run_conversion_script(self, script_path: str, dataset_for_conversion, dataset) -> None:
-        # Resolve to absolute path
         path = Path(script_path).resolve()
+        parent = path.parent
 
-        # Load module dynamically
-        spec = importlib.util.spec_from_file_location('custom_conversion', path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)  # actually execute the file
+        if (parent / '__init__.py').exists():
+            # Treat as package
+            self.stdout.write(f'Found __init__.py for {script_path}, adding to sys.path')
+            sys.path.append(str(parent.parent))  # add the package root
+            module_name = f'{parent.name}.{path.stem}'
+            module = importlib.import_module(module_name)
+        else:
+            # Load as standalone script
+            spec = importlib.util.spec_from_file_location('custom_conversion', path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
 
         # Call convert_dataset if it exists
         if hasattr(module, 'convert_dataset'):
             module.convert_dataset(dataset_for_conversion, dataset)
         else:
-            raise AttributeError(
-                f'Script {script_path} has \
-                                 no convert_dataset() function.'
-            )
+            raise AttributeError(f'Script {script_path} has no convert_dataset() function.')
 
     def default_conversion_process(self, dataset: Dataset, options: DatasetItem):
         self.stdout.write(f'\tConverting data for {dataset.name}...')
