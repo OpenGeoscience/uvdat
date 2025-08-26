@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ColorMap } from '@/types';
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref, computed, onMounted } from 'vue';
 import { useStyleStore } from '@/store';
 
 const styleStore = useStyleStore();
@@ -46,7 +46,7 @@ function draw() {
     }
 }
 onMounted(draw)
-watch([props.colormap, () => props.discrete, ()=> props.colormap.markers], draw, {deep: true})
+watch([() => props.colormap, () => props.discrete, () => props.colormap.markers], draw, {deep: true})
 </script>
 
 <template>
