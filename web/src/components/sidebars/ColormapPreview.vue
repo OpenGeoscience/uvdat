@@ -57,6 +57,6 @@ watch([props.colormap, () => props.discrete], draw, {deep: true})
 .canvas {
     border: 1px solid rgb(var(--v-theme-on-surface-variant));
     height: 20px;
-    width: 300px;
+    width: 100%;
 }
 </style>
