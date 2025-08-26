@@ -161,11 +161,9 @@ class Command(BaseCommand):
             datasets, str(file_path), replace=replace, no_cache=options.get('no_cache', False)
         )
         self.stdout.write('Ingesting Projects:')
-        self.ingest_projects(projects, str(file_path), replace=replace)
+        self.ingest_projects(projects, replace=replace)
         self.stdout.write('Ingesting Charts:')
-        self.ingest_charts(
-            charts, str(file_path), replace=replace, no_cache=options.get('no_cache', False)
-        )
+        self.ingest_charts(charts, replace=replace, no_cache=options.get('no_cache', False))
 
         self.stdout.write(self.style.SUCCESS('Ingestion complete.'))
 
@@ -312,7 +310,7 @@ class Command(BaseCommand):
             )
 
     def default_conversion_process(self, dataset: Dataset, options: DatasetItem):
-        self.stdout.write('\t', f'Converting data for {dataset.name}...')
+        self.stdout.write(f'\tConverting data for {dataset.name}...')
         dataset.spawn_conversion_task(
             layer_options=options.get('layers'),
             network_options=options.get('network_options'),
