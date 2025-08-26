@@ -11,6 +11,7 @@ declare module 'vue' {
     AccessControl: typeof import('./src/components/projects/AccessControl.vue')['default']
     AnalyticsPanel: typeof import('./src/components/sidebars/AnalyticsPanel.vue')['default']
     ChartsPanel: typeof import('./src/components/sidebars/ChartsPanel.vue')['default']
+    ColormapEditor: typeof import('./src/components/sidebars/ColormapEditor.vue')['default']
     ColormapPreview: typeof import('./src/components/sidebars/ColormapPreview.vue')['default']
     ControlsBar: typeof import('./src/components/ControlsBar.vue')['default']
     DatasetList: typeof import('./src/components/DatasetList.vue')['default']
