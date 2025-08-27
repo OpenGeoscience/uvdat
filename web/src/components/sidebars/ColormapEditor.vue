@@ -247,7 +247,7 @@ onMounted(drawMarkers)
                     <v-card>
                         <v-color-picker
                             v-model:model-value="marker.color"
-                            mode="rgb"
+                            mode="hex"
                             @update:modelValue="drawMarkers"
                         />
                     </v-card>
