@@ -214,6 +214,7 @@ onMounted(drawMarkers)
                 v-model="name"
                 autofocus
                 :rules="[nameExistsRule]"
+                @keydown.enter="createColormap"
             />
             <div class="gradient-editor">
                 <canvas
