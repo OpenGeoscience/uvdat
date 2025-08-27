@@ -138,12 +138,7 @@ function mouseDown(e: any) {
         return xRange[0] <= x && xRange[1] >= x && yRange[0] <= y && yRange[1] >= y
     })
     if (hoverMarkerValue.value) {
-        markers.value.push({
-            color: '#000',
-            value: hoverMarkerValue.value,
-        })
-        // immediately update order, don't wait for debounce
-        updateMarkerOrder()
+        addMarker(hoverMarkerValue.value)
         hoverMarkerValue.value = undefined
     }
 }
@@ -170,6 +165,16 @@ function mouseMove(e: any) {
 
 function cancelDrag() {
     draggingMarker.value = undefined
+}
+
+function addMarker(value: number) {
+    markers.value.push({
+        color: '#000',
+        value,
+    })
+    // immediately update order, don't wait for debounce
+    updateMarkerOrder()
+    drawMarkers()
 }
 
 function removeMarker(index: number) {
@@ -266,6 +271,13 @@ onMounted(drawMarkers)
                 >
                     mdi-alert
                 </v-icon>
+            </div>
+            <div
+                class="py-2 marker-row"
+                style="color: rgb(var(--v-theme-primary))"
+                @click="addMarker(0.5)"
+            >
+                + Add
             </div>
         </v-card-text>
 
