@@ -1,8 +1,0 @@
-[
-  {
-    "name": "Test",
-    "default_map_center": [42.4, -71.1],
-    "default_map_zoom": 11,
-    "datasets": ["Generated Vector Data", "Multiframe Generated Vector Data"]
-  }
-]
