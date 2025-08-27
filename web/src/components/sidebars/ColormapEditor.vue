@@ -20,7 +20,7 @@ interface MarkerBox {
 
 const styleStore = useStyleStore();
 const appStore = useAppStore();
-const colormaps: ColorMap[] = styleStore.colormaps;
+const colormaps = computed(() => styleStore.colormaps)
 
 const emit = defineEmits(['close'])
 
@@ -44,7 +44,7 @@ const markerOutlineColor = computed(() => {
     return THEMES[appStore.theme].colors['on-surface-variant']
 })
 
-const nameExistsRule = () => !colormaps?.map((c) => c.name).includes(name.value) || `Colormap ''${name.value}'' already exists.`
+const nameExistsRule = () => !colormaps.value?.map((c) => c.name).includes(name.value) || `Colormap ''${name.value}'' already exists.`
 
 const valid = computed(() => {
     return (
@@ -67,7 +67,7 @@ const currentColormap = computed(() => {
 
 function createColormap() {
     if (valid.value) {
-        colormaps.push(currentColormap.value)
+        colormaps.value.push(currentColormap.value)
         emit('close')
     }
 }

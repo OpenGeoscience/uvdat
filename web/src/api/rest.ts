@@ -18,6 +18,7 @@ import {
   LayerStyle,
   VectorSummary,
   LayerFrame,
+  ColorMap,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -201,4 +202,8 @@ export async function updateLayerStyle(styleId: number, data: LayerStyle): Promi
 
 export async function deleteLayerStyle(styleId: number): Promise<LayerStyle> {
   return (await apiClient.delete(`layer-styles/${styleId}/`)).data;
+}
+
+export async function getStyleColormaps(): Promise<ColorMap[]> {
+  return (await apiClient.get(`layer-styles/colormaps/`)).data;
 }
