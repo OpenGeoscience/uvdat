@@ -1,0 +1,304 @@
+[
+  {
+    "type": "Project",
+    "name": "Boston Transportation",
+    "default_map_center": [42.4, -71.1],
+    "default_map_zoom": 11,
+    "datasets": [
+      "MBTA Rapid Transit",
+      "MBTA Commuter Rail",
+      "Massachusetts Elevation Data",
+      "Boston Orthoimagery",
+      "Boston Hurricane Surge Inundation Zones",
+      "Bsoton FEMA National Flood Hazard",
+      "Boston Neighborhoods",
+      "Boston Census 2020 Block Groups",
+      "Boston Zip Codes",
+      "Boston Projected Flood Events",
+      "Boston Flood Timeseries"
+    ]
+  },
+  {
+    "type": "Project",
+    "name": "DC Transportation",
+    "default_map_center": [38.9, -77.1],
+    "default_map_zoom": 11,
+    "datasets": ["DC Metro"]
+  },
+  {
+    "type": "Dataset",
+    "name": "MBTA Rapid Transit",
+    "description": "Boston Subway System Lines and Stops",
+    "category": "transportation",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
+        "hash": "1a8d1a602e7880d091a156b3b97a47d453260ba41c7c4e6e872ca4543453985d",
+        "path": "boston/mbta_rapid_transit.zip",
+        "metadata": {
+          "combine_contents": "true"
+        }
+      }
+    ],
+    "network_options": {
+      "connection_column": "ROUTE",
+      "connection_column_delimiter": "/",
+      "node_id_column": "STATION"
+    }
+  },
+  {
+    "type": "Dataset",
+    "name": "Massachusetts Elevation Data",
+    "description": "Low resolution sampling of land elevation in meters above sea level",
+    "category": "elevation",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
+        "hash": "fceb76454c786d4e5ad6e05220073a0009e8deb008f5fd9195ff21c432fb8682",
+        "path": "boston/easternmass.tif"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Elevation",
+        "frames": [
+          {
+            "name": "Band 1",
+            "data": "easternmass.tif"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Dataset",
+    "name": "Boston Neighborhoods",
+    "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
+    "category": "region",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
+        "hash": "9917afa67c77b3f7a4e13637b21af60ec348cee0cd18bca92a0c87adf9d7134f",
+        "path": "boston/neighborhoods2020.json"
+      }
+    ],
+    "region_options": {
+      "name_property": "BlockGr202"
+    }
+  },
+  {
+    "type": "Dataset",
+    "name": "Boston Projected Flood Events",
+    "description": "Flood projections from Analyze Boston",
+    "category": "flood",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f8743d6725af35134c1479/download",
+        "hash": "9c95774905bb4d8f7bbcf4773b63793b09628c4b5d660a0de2610933379fb3b8",
+        "path": "boston/9in_rise.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f874486725af35134c147c/download",
+        "hash": "31084ff9275078a972af1b485cc412b996ecf657c0c2532d1bd01f893d5f6c13",
+        "path": "boston/21in_rise.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f874566725af35134c147f/download",
+        "hash": "36aa2821efc76fd32947b337303b450d80099734fa469c845226129a463ec7c9",
+        "path": "boston/36in_rise.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f87ba86725af35134c1485/download",
+        "hash": "4adec3a2a9fe2fc5d3822248ce8bcc8bf0ff4e499895df66039cc60a87295c09",
+        "path": "boston/9in_10yr_flood.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f87bd56725af35134c148b/download",
+        "hash": "8089ac4ab7339748e8101600ab30aa2670fb148202c442d8973c6f49232d49e2",
+        "path": "boston/21in_10yr_flood.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f87bfd6725af35134c1491/download",
+        "hash": "361107ef2607a9416834d4cc9d0937bbef7aa615b2c55349edcc463d0afb5056",
+        "path": "boston/36in_10yr_flood.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f87bc16725af35134c1488/download",
+        "hash": "2d0f5861099b14c9ff258695c54d2af10ec4dc2f742191a3be77e4fdd821138e",
+        "path": "boston/9in_100yr_flood.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f87be96725af35134c148e/download",
+        "hash": "f02447fac9168e848f890305b65731705cd84b42582a150c047cba5fe2009b9b",
+        "path": "boston/21in_100yr_flood.geojson"
+      },
+      {
+        "url": "https://data.kitware.com/api/v1/item/64f87c496725af35134c1494/download",
+        "hash": "aa33b5cfd1c260c0a684df1003d44b3eb813de81095e833d695a00fa6651958c",
+        "path": "boston/36in_100yr_flood.geojson"
+      }
+    ],
+    "layers": [
+      {
+        "name": "Boston Sea Level Rises",
+        "frames": [
+          {
+            "name": "9in",
+            "data": "9in_rise.geojson"
+          },
+          {
+            "name": "21in",
+            "data": "21in_rise.geojson"
+          },
+          {
+            "name": "36in",
+            "data": "36in_rise.geojson"
+          }
+        ]
+      },
+      {
+        "name": "Boston 10-Year Flood Events",
+        "frames": [
+          {
+            "name": "9in",
+            "data": "9in_10yr_flood.geojson"
+          },
+          {
+            "name": "21in",
+            "data": "21in_10yr_flood.geojson"
+          },
+          {
+            "name": "36in",
+            "data": "36in_10yr_flood.geojson"
+          }
+        ]
+      },
+      {
+        "name": "Boston 100-Year Flood Events",
+        "frames": [
+          {
+            "name": "9in",
+            "data": "9in_100yr_flood.geojson"
+          },
+          {
+            "name": "21in",
+            "data": "21in_100yr_flood.geojson"
+          },
+          {
+            "name": "36in",
+            "data": "36in_100yr_flood.geojson"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "Chart",
+    "name": "Boston Harbor Daily Tide Levels",
+    "description": "Raw data was obtained using the NOAA CO-OPS API for Data Retrieval and reformatted in tabular form",
+    "project": "Boston Transportation",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
+        "hash": "299afb2e6726024cc943c0267507cae7b635282db358fea688be81b569f0b9db",
+        "path": "boston/tide_level_data.csv"
+      }
+    ],
+    "editable": false,
+    "metadata": {
+      "columns": {
+        "Date": "YYYY-MM-DD",
+        "H": "High water",
+        "HH": "Higher High water",
+        "L": "Low water",
+        "LL": "Lower Low Water"
+      },
+      "contents": "Daily high-low tide levels",
+      "date_range": {
+        "from": "01-Jan-1980",
+        "to": "30-Jun-2023"
+      },
+      "location": {
+        "latitude": 42.3539,
+        "longitude": -71.0503
+      },
+      "rows": 15857,
+      "source": "https://api.tidesandcurrents.noaa.gov/api/prod/",
+      "station": {
+        "datum": "Station Datum (STND)",
+        "id": 8443970
+      }
+    },
+    "chart_options": {
+      "chart_title": "Daily Tide Levels",
+      "x_title": "Date Recorded",
+      "y_title": "Distance from Sensor (m)"
+    },
+    "conversion_options": {
+      "labels": "Date",
+      "datasets": ["HH", "H", "L", "LL"],
+      "palette": {
+        "HH": "red",
+        "H": "pink",
+        "L": "lightblue",
+        "LL": "blue"
+      }
+    }
+  },
+  {
+    "type": "Chart",
+    "name": "Parabolic Hyetograph",
+    "description": "Rainfall intensity over 24 hours following a parabolic model",
+    "project": "Boston Transportation",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
+        "hash": "0af8013362c94a3d043c88a277abcbf8e2c44999812f7b8da33dd18e4b22686e",
+        "path": "boston/parabolic_hyetograph.csv"
+      }
+    ],
+    "metadata": {
+      "precipitation_model": "Parabolic"
+    },
+    "chart_options": {
+      "chart_title": "Rainfall Intensity over 24 hours",
+      "x_title": "Hour",
+      "y_title": "Precipitation rate (mm/hr)"
+    },
+    "conversion_options": {
+      "labels": "hour",
+      "datasets": ["precipitation"],
+      "palette": {
+        "precipitation": "blue"
+      }
+    }
+  },
+  {
+    "type": "Chart",
+    "name": "NCRS Type II Hyetograph",
+    "description": "Rainfall intensity over 24 hours following the NCRS Type II model",
+    "project": "Boston Transportation",
+    "files": [
+      {
+        "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c2/download",
+        "hash": "aa83acf52af4dcc8e384fda18bcbba5d85d84ffdd30314950e8aacce772111e7",
+        "path": "boston/ncrs_type_2_hyetograph.csv"
+      }
+    ],
+    "metadata": {
+      "precipitation_model": "NCRS Type II"
+    },
+    "chart_options": {
+      "chart_title": "Rainfall Intensity over 24 hours",
+      "x_title": "Hour",
+      "y_title": "Precipitation rate (mm/hr)"
+    },
+    "conversion_options": {
+      "labels": "hour",
+      "datasets": ["precipitation"],
+      "palette": {
+        "precipitation": "blue"
+      }
+    }
+  }
+]

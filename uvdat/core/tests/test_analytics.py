@@ -71,9 +71,7 @@ def test_flood_analysis_chain(project):
     # ingest necessary objects
     call_command(
         'ingest',
-        'boston_floods.json',
-        include_large=False,
-        dataset_indexes=[0],  # dataset 0 is MBTA network
+        'tests/analytics.json',
     )
     network = Network.objects.get(name='MBTA Rapid Transit Network 1')
     chart = Chart.objects.get(name='Parabolic Hyetograph')

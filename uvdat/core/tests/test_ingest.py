@@ -30,13 +30,10 @@ def test_ingest():
     # 4 is Massachusetts Elevation Data, tests raster eval
     # 6 is Boston Neighborhoods, tests regions eval
     # 9 is Boston Projected Flood Events, tests multilayer/multiframe dataset eval
-    dataset_indexes = [0, 4, 6, 9]
 
     call_command(
         'ingest',
-        'boston_floods.json',
-        include_large=True,
-        dataset_indexes=dataset_indexes,
+        './tests/ingest.json',
     )
 
     assert Chart.objects.all().count() == 3
