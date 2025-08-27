@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useStyleStore, useAppStore } from '@/store';
 import { ColorMap } from '@/types';
 import ColormapPreview from './ColormapPreview.vue';
 import { THEMES } from '@/themes';
+import { debounce } from 'lodash';
+
+interface Marker {
+    color: string,
+    value: number,
+}
 
 interface MarkerBox {
     color: string,
@@ -29,7 +35,7 @@ const hoverMarkerValue = ref()
 const markerSize = 16
 const outlineSize = 1
 
-const markerBoxes = computed(() => markers.value.map((m: {color: string, value: number}, index: number) => {
+const markerBoxes = computed(() => markers.value.map((m: Marker, index: number) => {
     const {xRange, yRange} = getMarkerBoxRanges(m.value)
     return { color: m.color, xRange, yRange, index } as MarkerBox
 }))
@@ -41,7 +47,12 @@ const markerOutlineColor = computed(() => {
 const nameExistsRule = () => !colormaps?.map((c) => c.name).includes(name.value) || `Colormap ''${name.value}'' already exists.`
 
 const valid = computed(() => {
-    return name.value && name.value.length && markers.value && markers.value.length && nameExistsRule() === true
+    return (
+        name.value && name.value.length &&
+        markers.value && markers.value.length &&
+        nameExistsRule() === true &&
+        markers.value.every((m: Marker) => !markerHasDuplicateValue(m))
+    )
 })
 
 const currentColormap = computed(() => {
@@ -129,20 +140,21 @@ function mouseDown(e: any) {
     if (hoverMarkerValue.value) {
         markers.value.push({
             color: '#000',
-            value:hoverMarkerValue.value,
+            value: hoverMarkerValue.value,
         })
+        // immediately update order, don't wait for debounce
+        updateMarkerOrder()
+        hoverMarkerValue.value = undefined
     }
-}
-
-function mouseUp(e: any) {
-    draggingMarker.value = undefined
 }
 
 function mouseMove(e: any) {
     const x = e.layerX
     const y = e. layerY
     const width = canvas.value.width
-    const newValue = (x - markerSize / 2) / (width - markerSize - (outlineSize * 2))
+    let newValue = (x - markerSize / 2) / (width - markerSize - (outlineSize * 2))
+    // Round to 2 significant figures
+    newValue = parseFloat(newValue.toPrecision(2))
     hoverMarkerValue.value = undefined
     if (newValue >= 0 && newValue <= 1) {
         if (draggingMarker.value) {
@@ -156,11 +168,32 @@ function mouseMove(e: any) {
     drawMarkers()
 }
 
+function cancelDrag() {
+    draggingMarker.value = undefined
+}
+
+function removeMarker(index: number) {
+    markers.value.splice(index, 1)
+    drawMarkers()
+}
+
+function markerHasDuplicateValue(marker: Marker) {
+    const matches = markers.value.filter((m: Marker) => m.value === marker.value)
+    return matches.length !== 1
+}
+
+function updateMarkerOrder() {
+    markers.value = markers.value.toSorted((m1: Marker, m2: Marker) => m1.value - m2.value)
+}
+
+const debouncedUpdateMarkerOrder = debounce(updateMarkerOrder, 1000)
+
+watch(markers, debouncedUpdateMarkerOrder, {deep: true})
 onMounted(drawMarkers)
 </script>
 
 <template>
-    <v-card color="background">
+    <v-card color="background" @mouseup="cancelDrag">
         <v-card-subtitle class="pa-2" style="background-color: rgb(var(--v-theme-surface))">
             New Colormap
             <v-icon
@@ -177,12 +210,11 @@ onMounted(drawMarkers)
                 autofocus
                 :rules="[nameExistsRule]"
             />
-            <div style="width: 100%; position: relative;">
+            <div class="gradient-editor">
                 <canvas
                     ref="canvas"
                     class="marker-canvas"
                     @mousedown="mouseDown"
-                    @mouseup="mouseUp"
                     @mousemove="mouseMove"
                 />
                 <div style="padding: 0px 8px">
@@ -192,6 +224,48 @@ onMounted(drawMarkers)
                         :nColors="-1"
                     />
                 </div>
+            </div>
+            <div v-for="marker, index in markers" class="py-2 marker-row">
+                <v-menu
+                    :close-on-content-click="false"
+                    open-on-hover
+                    location="end"
+                >
+                    <template v-slot:activator="{ props }">
+                        <div
+                            v-bind="props"
+                            class="color-square ma-0"
+                            :style="{backgroundColor: marker.color}"
+                        />
+                    </template>
+                    <v-card>
+                        <v-color-picker
+                            v-model:model-value="marker.color"
+                            mode="rgb"
+                            @update:modelValue="drawMarkers"
+                        />
+                    </v-card>
+                </v-menu>
+                <v-number-input
+                    v-model="marker.value"
+                    :min="0"
+                    :max="1"
+                    :step="0.01"
+                    :precision="2"
+                    :style="{width: '80px'}"
+                    variant="outlined"
+                    controlVariant="stacked"
+                    hide-details
+                    @update:modelValue="drawMarkers"
+                />
+                <v-icon @click="removeMarker(index)">mdi-close</v-icon>
+                <v-icon
+                    v-if="markerHasDuplicateValue(marker)"
+                    v-tooltip="'Duplicate values found; colormap is invalid'"
+                    color="warning"
+                >
+                    mdi-alert
+                </v-icon>
             </div>
         </v-card-text>
 
@@ -215,4 +289,18 @@ onMounted(drawMarkers)
     right: 0;
     width: 100%;
     position: absolute;
-}</style>
+}
+.gradient-editor {
+    width: 100%;
+    margin-bottom: 24px;
+    position: relative;
+}
+.marker-row {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+}
+.marker-row > * {
+    flex-grow: 0;
+}
+</style>
