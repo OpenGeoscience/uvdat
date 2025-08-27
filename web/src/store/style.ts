@@ -51,6 +51,9 @@ function colormapMarkersSubsample(
 ) {
     if (!n && colormap.discrete && colormap.n_colors && colormap.markers) n = colormap.n_colors
     if (n && colormap.markers) {
+        if (n > colormap.markers.length) {
+            n = colormap.markers.length
+        }
         const elements = [colormap.markers[0]];
         const totalItems = colormap.markers.length - 1;
         const interval = Math.floor(totalItems / (n - 1));
