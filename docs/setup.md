@@ -15,7 +15,9 @@
 
    c. Run `docker compose run --rm django ./manage.py makeclient` to create a client Application object for authentication.
 
-   d. Run `docker compose run --rm django ./manage.py populate` to use sample data.
+   d. Run `docker compose run --rm django ./manage.py ingest {JSON file}` to use sample data.
+
+   e. The JSON file can either be `multiframe_test.json`, `boston_floods.json`, `la_wildfires.json` or `./new_york_energy/data.json`
 
 ### Run Application
 

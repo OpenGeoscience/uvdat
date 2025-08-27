@@ -68,10 +68,10 @@ def test_flood_analysis_chain(project):
     # ensure a superuser exists
     User.objects.create_superuser('testsuper')
 
-    # populate necessary objects
+    # ingest necessary objects
     call_command(
-        'populate',
-        'boston_floods',
+        'ingest',
+        'boston_floods.json',
         include_large=False,
         dataset_indexes=[0],  # dataset 0 is MBTA network
     )

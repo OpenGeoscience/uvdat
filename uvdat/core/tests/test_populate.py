@@ -21,7 +21,7 @@ from uvdat.core.models import (
 
 @pytest.mark.slow
 @pytest.mark.django_db
-def test_populate():
+def test_ingest():
     # ensure a superuser exists
     User.objects.create_superuser('testsuper')
 
@@ -33,8 +33,8 @@ def test_populate():
     dataset_indexes = [0, 4, 6, 9]
 
     call_command(
-        'populate',
-        'boston_floods',
+        'ingest',
+        'boston_floods.json',
         include_large=True,
         dataset_indexes=dataset_indexes,
     )
