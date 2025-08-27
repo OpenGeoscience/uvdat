@@ -35,8 +35,8 @@ const maxFilterId = ref<number>(1);
 const focusedFilterId = ref<number | undefined>();
 const highlightFilterId = ref<number | undefined>();
 
-// for correct typing in template, assign to local var
-const colormaps: ColorMap[] = styleStore.colormaps;
+// for correct typing in template, assign to computed variable
+const colormaps = computed(() => styleStore.colormaps);
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
@@ -106,6 +106,9 @@ async function init() {
         resetCurrentStyle()
         fetchRasterBands()
         if (currentStyleSpec.value) setAvailableGroups()
+    }
+    if (!styleStore.colormapsFetched) {
+        styleStore.fetchCustomColormaps()
     }
 }
 

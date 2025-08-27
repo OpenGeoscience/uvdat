@@ -14,6 +14,7 @@ import {
     StyleSpec,
     VectorData,
 } from "@/types";
+import { getStyleColormaps } from '@/api/rest';
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
@@ -270,12 +271,29 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, LayerStyle>>({});
     const colormaps = ref<ColorMap[]>(getDefaultColormaps())
+    const colormapsFetched = ref<boolean>(false);
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
 
     function getDefaultColor() {
         return THEMES.light.colors.primary;
+    }
+
+    function fetchCustomColormaps(){
+        getStyleColormaps().then((results) => {
+            const customColormaps = results.filter((cmap: ColorMap) => {
+                return !colormaps.value.some((c) => c.name === cmap.name)
+            }).map((cmap: ColorMap) => ({
+                name: cmap.name,
+                markers: cmap.markers,
+                null_color: 'transparent',
+                discrete: false,
+                n_colors: 5,
+            }))
+            colormaps.value = [...colormaps.value, ...customColormaps]
+            colormapsFetched.value = true
+        })
     }
 
     function getDefaultStyleSpec(raster: RasterData | null | undefined): StyleSpec {
@@ -525,7 +543,9 @@ export const useStyleStore = defineStore('style', () => {
 
     return {
         colormaps,
+        colormapsFetched,
         selectedLayerStyles,
+        fetchCustomColormaps,
         getRasterTilesQuery,
         colormapMarkersSubsample,
         getDefaultColor,
