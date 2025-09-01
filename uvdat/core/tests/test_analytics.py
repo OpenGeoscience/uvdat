@@ -71,7 +71,7 @@ def test_flood_analysis_chain(project):
     # ingest necessary objects
     call_command(
         'ingest',
-        'tests/analytics.json',
+        './tests/analytics.json',
     )
     network = Network.objects.get(name='MBTA Rapid Transit Network 1')
     chart = Chart.objects.get(name='Parabolic Hyetograph')

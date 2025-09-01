@@ -19,14 +19,14 @@
         "name": "National Grid CompanyBoundary",
         "description": "CompanyBoundary vector data",
         "category": "region",
-        "conversionScript": "./ingest.py"
+        "conversion_script": "./ingest.py"
     },
     {
         "type": "Dataset",
         "name": "County Boundaries",
         "description": "From https://gis.ny.gov/civil-boundaries",
         "category": "region",
-        "conversionScript": "./ingest.py",
+        "conversion_script": "./ingest.py",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/66a2a19a5d2551c516b1e502/download",
@@ -43,7 +43,7 @@
         "name": "National Grid Substations",
         "description": "Substations vector data",
         "category": "energy",
-        "conversionScript": "./ingest.py"
+        "conversion_script": "./ingest.py"
 
     },
     {
@@ -51,7 +51,7 @@
         "name": "National Grid County Networks",
         "description": "Energy networks for each county in New York",
         "category": "energy",
-        "conversionScript": "./ingest.py",
+        "conversion_script": "./ingest.py",
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/66cdd8a6886c56bdc7e282a4/download",

@@ -53,7 +53,7 @@ class DatasetItem(TypedDict):
     project: str
     file: str
     layers: Optional[list[LayerInfo]]
-    conversionScript: Optional[  # noqa: N815
+    conversion_script: Optional[  # noqa: N815
         str
     ]  # Relative path to python file used for conversion with function convert_dataset
     network_options: Optional[dict[str, Any]]
@@ -158,7 +158,6 @@ class Command(BaseCommand):
                 datasets.append(item)
             elif item['type'] == 'Chart':
                 charts.append(item)
-        # Ingeset the datasets and charts now:
         self.stdout.write('Ingesting Datasets:')
         self.ingest_datasets(
             datasets, str(file_path), replace=replace, no_cache=options.get('no_cache', False)
@@ -240,6 +239,19 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.SUCCESS(f'Project {project_for_setting.name} created.')
                 )
+
+                # log warning if any datasets are missing
+                missing_datasets = set(project['datasets']) - set(
+                    Dataset.objects.values_list('name', flat=True)
+                )
+                if missing_datasets:
+                    project_name = project_for_setting.name
+                    missing = ", ".join(missing_datasets)
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f'Missing datasets for project {project_name}: {missing}'
+                        )
+                    )
 
                 project_for_setting.datasets.set(
                     Dataset.objects.filter(name__in=project['datasets'])
@@ -363,7 +375,7 @@ class Command(BaseCommand):
                         f'\t\t Dataset {dataset_for_conversion.name} of size {dataset_size_mb} MB.'
                     )
                 )
-                conversion_script = dataset.get('conversionScript')
+                conversion_script = dataset.get('conversion_script')
                 if conversion_script:
                     self.stdout.write(f'\tUsing custom conversion script: {conversion_script}')
                     # the conversion script is relative to the json file path, make sure it exists

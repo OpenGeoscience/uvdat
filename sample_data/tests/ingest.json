@@ -5,25 +5,8 @@
     "default_map_center": [42.4, -71.1],
     "default_map_zoom": 11,
     "datasets": [
-      "MBTA Rapid Transit",
-      "MBTA Commuter Rail",
-      "Massachusetts Elevation Data",
-      "Boston Orthoimagery",
-      "Boston Hurricane Surge Inundation Zones",
-      "Bsoton FEMA National Flood Hazard",
-      "Boston Neighborhoods",
-      "Boston Census 2020 Block Groups",
-      "Boston Zip Codes",
-      "Boston Projected Flood Events",
-      "Boston Flood Timeseries"
+      "MBTA Rapid Transit"
     ]
-  },
-  {
-    "type": "Project",
-    "name": "DC Transportation",
-    "default_map_center": [38.9, -77.1],
-    "default_map_zoom": 11,
-    "datasets": ["DC Metro"]
   },
   {
     "type": "Dataset",
@@ -242,62 +225,6 @@
         "H": "pink",
         "L": "lightblue",
         "LL": "blue"
-      }
-    }
-  },
-  {
-    "type": "Chart",
-    "name": "Parabolic Hyetograph",
-    "description": "Rainfall intensity over 24 hours following a parabolic model",
-    "project": "Boston Transportation",
-    "files": [
-      {
-        "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
-        "hash": "0af8013362c94a3d043c88a277abcbf8e2c44999812f7b8da33dd18e4b22686e",
-        "path": "boston/parabolic_hyetograph.csv"
-      }
-    ],
-    "metadata": {
-      "precipitation_model": "Parabolic"
-    },
-    "chart_options": {
-      "chart_title": "Rainfall Intensity over 24 hours",
-      "x_title": "Hour",
-      "y_title": "Precipitation rate (mm/hr)"
-    },
-    "conversion_options": {
-      "labels": "hour",
-      "datasets": ["precipitation"],
-      "palette": {
-        "precipitation": "blue"
-      }
-    }
-  },
-  {
-    "type": "Chart",
-    "name": "NCRS Type II Hyetograph",
-    "description": "Rainfall intensity over 24 hours following the NCRS Type II model",
-    "project": "Boston Transportation",
-    "files": [
-      {
-        "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c2/download",
-        "hash": "aa83acf52af4dcc8e384fda18bcbba5d85d84ffdd30314950e8aacce772111e7",
-        "path": "boston/ncrs_type_2_hyetograph.csv"
-      }
-    ],
-    "metadata": {
-      "precipitation_model": "NCRS Type II"
-    },
-    "chart_options": {
-      "chart_title": "Rainfall Intensity over 24 hours",
-      "x_title": "Hour",
-      "y_title": "Precipitation rate (mm/hr)"
-    },
-    "conversion_options": {
-      "labels": "hour",
-      "datasets": ["precipitation"],
-      "palette": {
-        "precipitation": "blue"
       }
     }
   }
