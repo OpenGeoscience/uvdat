@@ -246,7 +246,7 @@ class Command(BaseCommand):
                 )
                 if missing_datasets:
                     project_name = project_for_setting.name
-                    missing = ", ".join(missing_datasets)
+                    missing = ', '.join(missing_datasets)
                     self.stdout.write(
                         self.style.WARNING(
                             f'Missing datasets for project {project_name}: {missing}'
