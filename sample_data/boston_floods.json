@@ -12,7 +12,6 @@
             "MBTA Commuter Rail",
             "Massachusetts Elevation Data",
             "Boston Orthoimagery",
-            "Boston Hurricane Surge Inundation Zones",
             "Boston Neighborhoods",
             "Boston Census 2020 Block Groups",
             "Boston Zip Codes"
@@ -57,19 +56,6 @@
     },
     {
         "type": "Dataset",
-        "name": "Boston Hurricane Surge Inundation Zones",
-        "description": "This layer represents worst-case Hurricane Surge Inundation areas for Category 1 through 4 hurricanes striking the coast of Massachusetts.",
-        "category": "climate",
-        "files": [
-            {
-                "url": "https://data.kitware.com/api/v1/item/64907b6ef04fb368544295e7/download",
-                "hash": "fd69257c873ebf26b2b2ff0be175791a56217c443a4d3719b517b7e99f7a879a",
-                "path": "boston/hurr_inun.zip"
-            }
-        ]
-    },
-    {
-        "type": "Dataset",
         "name": "Massachusetts Elevation Data",
         "description": "Low resolution sampling of land elevation in meters above sea level",
         "category": "elevation",
@@ -102,11 +88,6 @@
                 "url": "https://data.kitware.com/api/v1/item/6744df3c22f196cb5d931161/download",
                 "hash": "ea35f2e3d2c5dc0b2d3621ea66c1faf23632a2e1de6438cd2303e1896f75f4d4",
                 "path": "boston/boston_orthoimagery.tiff"
-            },
-            {
-                "url": "https://data.kitware.com/api/v1/item/677c69b537ed172242a867b1/download",
-                "hash": "50a6a71f7f51dcb63d9590ff7c0adccd95e709fa5f4cfce30466002c41069557",
-                "path": "boston/orthoimagery_tiles.zip"
             }
         ],
         "layers": [
