@@ -167,6 +167,11 @@ function cancelDrag() {
     draggingMarker.value = undefined
 }
 
+function cancelHover() {
+    hoverMarkerValue.value = undefined;
+    drawMarkers()
+}
+
 function addMarker(value: number) {
     markers.value.push({
         color: '#000',
@@ -222,6 +227,7 @@ onMounted(drawMarkers)
                     class="marker-canvas"
                     @mousedown="mouseDown"
                     @mousemove="mouseMove"
+                    @mouseleave="cancelHover"
                 />
                 <div style="padding: 0px 8px">
                     <ColormapPreview
@@ -231,54 +237,56 @@ onMounted(drawMarkers)
                     />
                 </div>
             </div>
-            <div v-for="marker, index in markers" class="py-2 marker-row">
-                <v-menu
-                    :close-on-content-click="false"
-                    open-on-hover
-                    location="end"
+            <div style="height: 200px; overflow-y: auto">
+                <div v-for="marker, index in markers" class="py-2 marker-row">
+                    <v-menu
+                        :close-on-content-click="false"
+                        open-on-hover
+                        location="end"
+                    >
+                        <template v-slot:activator="{ props }">
+                            <div
+                                v-bind="props"
+                                class="color-square ma-0"
+                                :style="{backgroundColor: marker.color}"
+                            />
+                        </template>
+                        <v-card>
+                            <v-color-picker
+                                v-model:model-value="marker.color"
+                                mode="hex"
+                                @update:modelValue="drawMarkers"
+                            />
+                        </v-card>
+                    </v-menu>
+                    <v-number-input
+                        v-model="marker.value"
+                        :min="0"
+                        :max="1"
+                        :step="0.01"
+                        :precision="2"
+                        :style="{width: '80px'}"
+                        variant="outlined"
+                        controlVariant="stacked"
+                        hide-details
+                        @update:modelValue="drawMarkers"
+                    />
+                    <v-icon @click="removeMarker(index)">mdi-close</v-icon>
+                    <v-icon
+                        v-if="markerHasDuplicateValue(marker)"
+                        v-tooltip="'Duplicate values found; colormap is invalid'"
+                        color="error"
+                    >
+                        mdi-alert
+                    </v-icon>
+                </div>
+                <div
+                    class="py-2 marker-row"
+                    style="color: rgb(var(--v-theme-primary)); cursor: pointer"
+                    @click="addMarker(0.5)"
                 >
-                    <template v-slot:activator="{ props }">
-                        <div
-                            v-bind="props"
-                            class="color-square ma-0"
-                            :style="{backgroundColor: marker.color}"
-                        />
-                    </template>
-                    <v-card>
-                        <v-color-picker
-                            v-model:model-value="marker.color"
-                            mode="hex"
-                            @update:modelValue="drawMarkers"
-                        />
-                    </v-card>
-                </v-menu>
-                <v-number-input
-                    v-model="marker.value"
-                    :min="0"
-                    :max="1"
-                    :step="0.01"
-                    :precision="2"
-                    :style="{width: '80px'}"
-                    variant="outlined"
-                    controlVariant="stacked"
-                    hide-details
-                    @update:modelValue="drawMarkers"
-                />
-                <v-icon @click="removeMarker(index)">mdi-close</v-icon>
-                <v-icon
-                    v-if="markerHasDuplicateValue(marker)"
-                    v-tooltip="'Duplicate values found; colormap is invalid'"
-                    color="warning"
-                >
-                    mdi-alert
-                </v-icon>
-            </div>
-            <div
-                class="py-2 marker-row"
-                style="color: rgb(var(--v-theme-primary))"
-                @click="addMarker(0.5)"
-            >
-                + Add
+                    + Add
+                </div>
             </div>
         </v-card-text>
 
