@@ -11,7 +11,7 @@ def test_rest_list_analysis_types(authenticated_api_client, project):
     analysis_type_instances = [at() for at in analysis_types]
     resp = authenticated_api_client.get(f'/api/v1/analytics/project/{project.id}/types/')
     data = resp.json()
-    assert len(data) == 4
+    assert len(data) == len(analysis_type_instances)
     assert set(type_info.get('name') for type_info in data) == set(
         i.name for i in analysis_type_instances
     )

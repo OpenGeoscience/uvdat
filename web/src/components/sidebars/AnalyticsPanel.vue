@@ -76,7 +76,7 @@ const networkInput = computed(() => {
 })
 const selectedInputs = ref<Record<string, any>>({});
 const inputSelectionRules = [
-  (v: any) => (v ? true : "Selection required."),
+  (v: any) => (v ? true : "Input required."),
 ];
 const additionalAnimationLayers = ref();
 const inputForm = ref();
@@ -263,19 +263,29 @@ watch(
           <v-window-item value="new">
             <v-form class="pa-3" @submit.prevent ref="inputForm">
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
-              <v-select
-                v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)"
-                v-model="selectedInputs[key]"
-                :key="key"
-                :label="key.replaceAll('_', ' ')"
-                :items="value"
-                :rules="inputSelectionRules"
-                item-value="id"
-                item-title="name"
-                density="compact"
-                hide-details="auto"
-                class="my-1"
-              />
+              <div v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)" :key="key">
+                <v-text-field
+                  v-if="analysisStore.currentAnalysisType.input_types[key] === 'string'"
+                  v-model="selectedInputs[key]"
+                  :label="key.replaceAll('_', ' ')"
+                  :rules="inputSelectionRules"
+                  density="compact"
+                  hide-details="auto"
+                  class="my-1"
+                />
+                <v-select
+                  v-else-if="value.length"
+                  v-model="selectedInputs[key]"
+                  :label="key.replaceAll('_', ' ')"
+                  :items="value"
+                  :rules="inputSelectionRules"
+                  item-value="id"
+                  item-title="name"
+                  density="compact"
+                  hide-details="auto"
+                  class="my-1"
+                />
+              </div>
               <v-btn @click="run" style="width: 100%" variant="tonal">
                 Run Analysis
               </v-btn>

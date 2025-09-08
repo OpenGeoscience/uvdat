@@ -1,8 +1,8 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 # Install system libraries for Python packages:
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-    libpq-dev libvips-dev gcc libc6-dev gdal-bin git libgl1-mesa-glx && \
+    libpq-dev libvips-dev gcc libc6-dev gdal-bin git libgl1 libglx-mesa0 && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONDONTWRITEBYTECODE=1
