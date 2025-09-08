@@ -93,5 +93,7 @@ class LayerStyleViewSet(ModelViewSet):
     def colormaps(self, request, **kwargs):
         colormaps = []
         for style in LayerStyle.objects.all():
-            colormaps += style.get_colormaps()
+            for cmap in style.get_colormaps():
+                if not any(c.get('name') == cmap.get('name') for c in colormaps):
+                    colormaps.append(cmap)
         return Response(colormaps, status=200)
