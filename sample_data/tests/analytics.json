@@ -1,5 +1,17 @@
 [
     {
+        "type": "Project",
+        "name": "Boston Transportation",
+        "default_map_center": [
+            42.4,
+            -71.1
+        ],
+        "default_map_zoom": 11,
+        "datasets": [
+            "MBTA Rapid Transit"
+        ]
+    },
+    {
         "type": "Dataset",
         "name": "MBTA Rapid Transit",
         "description": "Boston Subway System Lines and Stops",
