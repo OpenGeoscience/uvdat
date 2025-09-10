@@ -1,0 +1,65 @@
+[
+    {
+        "type": "Project",
+        "name": "Boston Transportation",
+        "default_map_center": [
+            42.4,
+            -71.1
+        ],
+        "default_map_zoom": 11,
+        "datasets": [
+            "MBTA Rapid Transit"
+        ]
+    },
+    {
+        "type": "Dataset",
+        "name": "MBTA Rapid Transit",
+        "description": "Boston Subway System Lines and Stops",
+        "category": "transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
+                "hash": "1a8d1a602e7880d091a156b3b97a47d453260ba41c7c4e6e872ca4543453985d",
+                "path": "boston/mbta_rapid_transit.zip",
+                "metadata": {
+                    "combine_contents": "true"
+                }
+            }
+        ],
+        "network_options": {
+            "connection_column": "ROUTE",
+            "connection_column_delimiter": "/",
+            "node_id_column": "STATION"
+        }
+    },
+    {
+        "type": "Chart",
+        "name": "Parabolic Hyetograph",
+        "description": "Rainfall intensity over 24 hours following a parabolic model",
+        "project": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
+                "hash": "0af8013362c94a3d043c88a277abcbf8e2c44999812f7b8da33dd18e4b22686e",
+                "path": "boston/parabolic_hyetograph.csv"
+            }
+        ],
+        "metadata": {
+            "precipitation_model": "Parabolic"
+        },
+        "chart_options": {
+            "chart_title": "Rainfall Intensity over 24 hours",
+            "x_title": "Hour",
+            "y_title": "Precipitation rate (mm/hr)"
+        },
+        "conversion_options": {
+            "labels": "hour",
+            "datasets": [
+                "precipitation"
+            ],
+            "palette": {
+                "precipitation": "blue"
+            }
+        }
+    }
+]

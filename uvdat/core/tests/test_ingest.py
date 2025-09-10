@@ -21,28 +21,19 @@ from uvdat.core.models import (
 
 @pytest.mark.slow
 @pytest.mark.django_db
-def test_populate():
+def test_ingest():
     # ensure a superuser exists
     User.objects.create_superuser('testsuper')
 
-    # smaller subset for faster evaluation
-    # 0 is MBTA Rapid Transit, tests network eval
-    # 4 is Massachusetts Elevation Data, tests raster eval
-    # 6 is Boston Neighborhoods, tests regions eval
-    # 9 is Boston Projected Flood Events, tests multilayer/multiframe dataset eval
-    dataset_indexes = [0, 4, 6, 9]
-
     call_command(
-        'populate',
-        'boston_floods',
-        include_large=True,
-        dataset_indexes=dataset_indexes,
+        'ingest',
+        './tests/ingest.json',
     )
 
-    assert Chart.objects.all().count() == 3
-    assert Project.objects.all().count() == 2
+    assert Chart.objects.all().count() == 1
+    assert Project.objects.all().count() == 1
     assert Dataset.objects.all().count() == 4
-    assert FileItem.objects.all().count() == 15
+    assert FileItem.objects.all().count() == 13
     assert Layer.objects.all().count() == 6
     assert LayerFrame.objects.all().count() == 12
     assert Network.objects.all().count() == 1
