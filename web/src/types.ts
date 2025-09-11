@@ -263,10 +263,9 @@ export type MapLibreLayerWithMetadata = MapGeoJSONFeature["layer"] & {
 export interface Network {
   id: number;
   name: string;
-  dataset: Dataset;
+  dataset: number;
   category: string;
   nodes: number[];
-  edges: number[];
   metadata: Record<string, any>;
   vector_data: number;
 }

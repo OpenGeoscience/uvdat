@@ -4,6 +4,7 @@ import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
 import { useNetworkStore, usePanelStore } from "@/store";
+import { getNetworkEdges, getNetworkNodes } from "@/api/rest";
 const networkStore = useNetworkStore();
 const panelStore = usePanelStore();
 
@@ -21,27 +22,10 @@ const networkState = computed(() => {
 })
 
 const tab = ref();
-const sort = ref([{key: 'active', order: true}]);
 const hoverNode = ref<NetworkNode>();
 const hoverEdge = ref<NetworkEdge>();
 const selectedNodes = ref<number[]>([]);
-
-function sortEdgeOrNode(a: NetworkNode | NetworkEdge, b: NetworkNode | NetworkEdge) {
-    if (typeof a !== typeof b) {
-        throw new Error('Cannot compare network nodes against edges');
-    }
-
-    const activeComp = Number(a.active) - Number(b.active);
-    if (activeComp !== 0) {
-        return activeComp;
-    }
-
-    // Sort by name if their active status is equal
-    if (a.name < b.name) {
-        return -1;
-    }
-    return 1;
-}
+const limit = 100;
 
 const currentNodes = computed(() =>
   networkStore.currentNetworkNodes
@@ -49,7 +33,6 @@ const currentNodes = computed(() =>
       ...n,
       active: !networkState.value?.deactivated?.nodes?.includes(n.id),
     }))
-    .toSorted(sortEdgeOrNode)
 );
 
 const currentEdges = computed(() =>
@@ -60,14 +43,31 @@ const currentEdges = computed(() =>
         !networkState.value?.deactivated?.nodes?.includes(e.from_node) &&
         !networkState.value?.deactivated?.nodes?.includes(e.to_node),
     }))
-    .toSorted(sortEdgeOrNode)
 );
 
 const headers = [
-    { title: '', value: 'active', sortable: false, width: 10 },
-    { title: 'Name', value: 'name', sortable: false },
+    { title: '', value: 'active', sortable: true, width: 10 },
+    { title: 'Name', value: 'name', sortable: true },
     { title: '', value: 'metadata', sortable: false, width: 10 },
 ]
+
+async function loadNodes({ done }: any)  {
+    if (networkStore.currentNetwork) {
+        const response = await getNetworkNodes(networkStore.currentNetwork.id, limit, networkStore.currentNetworkNodes.length)
+        networkStore.currentNetworkNodes = [...networkStore.currentNetworkNodes, ...response]
+        if (response.length < limit) done('empty')
+        else done('ok')
+    }
+}
+
+async function loadEdges({ done }: any) {
+    if (networkStore.currentNetwork) {
+        const response = await getNetworkEdges(networkStore.currentNetwork.id, limit, networkStore.currentNetworkEdges.length)
+        networkStore.currentNetworkEdges = [...networkStore.currentNetworkEdges, ...response]
+        if (response.length < limit) done('empty')
+        else done('ok')
+    }
+}
 
 function showNetwork() {
     if (networkStore.currentNetwork) {
@@ -83,8 +83,6 @@ function isNetworkVisible() {
 }
 
 function resetNetwork() {
-    // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
-    // TODO: Fix in the store function itself
     if (networkStore.currentNetwork) {
         selectedNodes.value = []
         networkStore.setNetworkDeactivatedNodes(networkStore.currentNetwork, [])
@@ -92,8 +90,6 @@ function resetNetwork() {
 }
 
 function toggleSelected() {
-    // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
-    // TODO: Fix in the store function itself
     if (networkStore.currentNetwork && networkState.value) {
         if (!isNetworkVisible()) showNetwork()
 
@@ -111,7 +107,6 @@ function toggleSelected() {
             networkStore.currentNetwork,
             deactivated,
         )
-
         selectedNodes.value = [];
     }
 }
@@ -194,7 +189,6 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                         <v-window-item value="nodes-tab">
                             <v-data-table
                                 v-model="selectedNodes"
-                                v-model:sort-by="sort"
                                 :items="currentNodes"
                                 :headers="headers"
                                 :search="searchText"
@@ -215,11 +209,18 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                                 <template v-slot:item.metadata="{ item }">
                                     <DetailView :details="{...item, type: 'networknode'}" />
                                 </template>
+                                <template v-slot:bottom>
+                                    <v-infinite-scroll @load="loadNodes">
+                                        <template v-slot:loading>
+                                            <v-progress-linear indeterminate />
+                                        </template>
+                                        <template v-slot:empty/>
+                                    </v-infinite-scroll>
+                                </template>
                             </v-data-table>
                         </v-window-item>
                         <v-window-item value="edges-tab">
                             <v-data-table
-                                v-model:sort-by="sort"
                                 :items="currentEdges"
                                 :headers="headers"
                                 :search="searchText"
@@ -238,6 +239,14 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                                 </template>
                                 <template v-slot:item.metadata="{ item }">
                                     <DetailView :details="{...item, type: 'networkedge'}" />
+                                </template>
+                                 <template v-slot:bottom>
+                                    <v-infinite-scroll @load="loadEdges">
+                                        <template v-slot:loading>
+                                            <v-progress-linear indeterminate />
+                                        </template>
+                                        <template v-slot:empty/>
+                                    </v-infinite-scroll>
                                 </template>
                             </v-data-table>
                         </v-window-item>
