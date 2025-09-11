@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ColorMap } from '@/types';
-import { watch, ref, onMounted } from 'vue';
+import { watch, ref, computed, onMounted } from 'vue';
 import { useStyleStore } from '@/store';
 
 const styleStore = useStyleStore();
@@ -46,17 +46,17 @@ function draw() {
     }
 }
 onMounted(draw)
-watch([props.colormap, () => props.discrete], draw, {deep: true})
+watch([() => props.colormap, () => props.discrete, () => props.colormap.markers], draw, {deep: true})
 </script>
 
 <template>
-    <canvas ref="canvas" class="canvas"></canvas>
+    <canvas ref="canvas" class="colormap-canvas"></canvas>
 </template>
 
 <style scoped>
-.canvas {
+.colormap-canvas {
     border: 1px solid rgb(var(--v-theme-on-surface-variant));
     height: 20px;
-    width: 300px;
+    width: 100%;
 }
 </style>
