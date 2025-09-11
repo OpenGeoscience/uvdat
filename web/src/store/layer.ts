@@ -118,10 +118,10 @@ export const useLayerStore = defineStore('layer', () => {
             const bounds = await getVectorDataBounds(currentFrame.vector.id);
             [xmin, ymin, xmax, ymax] = bounds;
           }
-          if (!xMinGlobal || xMinGlobal > xmin) xMinGlobal = xmin;
-          if (!yMinGlobal || yMinGlobal > ymin) yMinGlobal = ymin;
-          if (!xMaxGlobal || xMaxGlobal < xmax) xMaxGlobal = xmax;
-          if (!yMaxGlobal || yMaxGlobal < ymax) yMaxGlobal = ymax;
+          if (xmin && (!xMinGlobal || xMinGlobal > xmin)) xMinGlobal = xmin;
+          if (ymin && (!yMinGlobal || yMinGlobal > ymin)) yMinGlobal = ymin;
+          if (xmax && (!xMaxGlobal || xMaxGlobal < xmax)) xMaxGlobal = xmax;
+          if (ymax && (!yMaxGlobal || yMaxGlobal < ymax)) yMaxGlobal = ymax;
         }
       }
     }
