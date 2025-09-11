@@ -11,6 +11,7 @@ const networkStyle: NetworkStyle = {
         selected: '#ffffff',
         deactivate: '#f54242',
         activate: '#008837',
+        inactive: '#000000',
         gcc: '#f7e059',
     },
     opacity: {
@@ -44,7 +45,7 @@ function getNetworkPaintPropertyValue(
     if (paintProperty.includes('opacity')) {
         return [
             'case',
-                [
+            [
                 'any',
                 ['in', ['get', 'node_id'], ['literal', inactive]],
                 ['in', ['get', 'from_node_id'], ['literal', inactive]],
@@ -77,6 +78,13 @@ function getNetworkPaintPropertyValue(
             ['in', ['get', 'to_node_id'], ['literal', activate]],
         ],
         networkStyle.color.activate,
+        [
+            'any',
+            ['in', ['get', 'node_id'], ['literal', inactive]],
+            ['in', ['get', 'from_node_id'], ['literal', inactive]],
+            ['in', ['get', 'to_node_id'], ['literal', inactive]],
+        ],
+        networkStyle.color.inactive,
         [
             'any',
             ['in', ['get', 'node_id'], ['literal', gcc]],

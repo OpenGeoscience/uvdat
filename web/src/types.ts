@@ -299,6 +299,7 @@ export interface NetworkStyle {
     inactive: number,
   },
   color: {
+    inactive: string,
     deactivate: string,
     activate: string,
     gcc: string,
