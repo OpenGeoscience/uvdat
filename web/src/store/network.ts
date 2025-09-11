@@ -204,7 +204,7 @@ export const useNetworkStore = defineStore('network', () => {
             };
         }
         networkState.deactivated.nodes = Array.from(nodeIds);
-        if (nodeIds.length) {
+        if (nodeIds.length && nodeIds.length < 1000) {
             const cachedResult = GCCcache.find(
                 (result) => JSON.stringify(result.deactivatedNodes.toSorted()) === JSON.stringify(nodeIds.toSorted())
             );
