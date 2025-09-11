@@ -3,10 +3,9 @@ import { ref, computed, watch } from "vue";
 import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
-import { useNetworkStore, usePanelStore, useStyleStore } from "@/store";
+import { useNetworkStore, usePanelStore } from "@/store";
 const networkStore = useNetworkStore();
 const panelStore = usePanelStore();
-const styleStore = useStyleStore();
 
 const searchText = ref<string | undefined>();
 const filteredNetworks = computed(() => {
@@ -14,6 +13,11 @@ const filteredNetworks = computed(() => {
         return !searchText.value ||
             network.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
+})
+const networkState = computed(() => {
+    if (networkStore.currentNetwork){
+        return networkStore.networkStates[networkStore.currentNetwork.id]
+    }
 })
 
 const tab = ref();
@@ -43,7 +47,7 @@ const currentNodes = computed(() =>
   networkStore.currentNetworkNodes
     .map((n) => ({
       ...n,
-      active: !networkStore.currentNetwork?.deactivated?.nodes?.includes(n.id),
+      active: !networkState.value?.deactivated?.nodes?.includes(n.id),
     }))
     .toSorted(sortEdgeOrNode)
 );
@@ -53,8 +57,8 @@ const currentEdges = computed(() =>
     .map((e) => ({
       ...e,
       active:
-        !networkStore.currentNetwork?.deactivated?.nodes?.includes(e.from_node) &&
-        !networkStore.currentNetwork?.deactivated?.nodes?.includes(e.to_node),
+        !networkState.value?.deactivated?.nodes?.includes(e.from_node) &&
+        !networkState.value?.deactivated?.nodes?.includes(e.to_node),
     }))
     .toSorted(sortEdgeOrNode)
 );
@@ -68,7 +72,6 @@ const headers = [
 function showNetwork() {
     if (networkStore.currentNetwork) {
         panelStore.show({network: networkStore.currentNetwork})
-        styleStore.styleNetwork(networkStore.currentNetwork)
     }
 }
 
@@ -91,13 +94,13 @@ function resetNetwork() {
 function toggleSelected() {
     // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
     // TODO: Fix in the store function itself
-    if (networkStore.currentNetwork) {
+    if (networkStore.currentNetwork && networkState.value) {
         if (!isNetworkVisible()) showNetwork()
 
         // Any selected nodes that are already deactivated should be removed
         // from both sets, since they now need to be activated, and both sets
         // are used to set the new deactivated value.
-        let deactiveNodeSet = new Set(networkStore.currentNetwork.deactivated?.nodes);
+        let deactiveNodeSet = new Set(networkState.value.deactivated?.nodes);
         let selectedNodeSet = new Set(selectedNodes.value);
         const nodesToRemove = deactiveNodeSet.intersection(selectedNodeSet);
         deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
@@ -119,21 +122,21 @@ watch(() => networkStore.currentNetwork, () => {
 });
 
 watch([selectedNodes, hoverNode, hoverEdge], () => {
-    if (networkStore.currentNetwork) {
-        if (!networkStore.currentNetwork.selected) {
-            networkStore.currentNetwork.selected = { nodes: [], edges: [] }
+    if (networkStore.currentNetwork && networkState.value) {
+        if (!networkState.value.selected) {
+            networkState.value.selected = { nodes: [], edges: [] }
         }
         if (hoverNode.value) {
-            networkStore.currentNetwork.selected.nodes = [
+            networkState.value.selected.nodes = [
                 ...selectedNodes.value,
                 hoverNode.value.id,
             ]
         } else if (hoverEdge.value) {
-            networkStore.currentNetwork.selected.edges = [hoverEdge.value.id]
+            networkState.value.selected.edges = [hoverEdge.value.id]
         } else {
-            networkStore.currentNetwork.selected.nodes = selectedNodes.value;
+            networkState.value.selected.nodes = selectedNodes.value;
         }
-        styleStore.styleNetwork(networkStore.currentNetwork)
+        networkStore.styleNetwork(networkStore.currentNetwork)
     }
 }, {deep: true})
 </script>

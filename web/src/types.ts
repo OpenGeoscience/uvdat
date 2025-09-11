@@ -269,19 +269,6 @@ export interface Network {
   edges: number[];
   metadata: Record<string, any>;
   vector_data: number;
-  selected?: {
-    nodes: number[];
-    edges: number[];
-  },
-  deactivated?: {
-    nodes: number[];
-    edges: number[];
-  };
-  changes?: {
-    deactivate_nodes: number[];
-    activate_nodes: number[];
-  }
-  gcc: number[];
 }
 
 export interface NetworkNode {
@@ -305,6 +292,36 @@ export interface NetworkEdge {
   from_node: number;
   to_node: number;
   active: boolean;
+}
+
+export interface NetworkStyle {
+  inactive?: number | string,
+  deactivate?: number | string,
+  activate?: number | string,
+  gcc?: number | string,
+  selected?: number | string,
+  default: number | string,
+}
+
+export interface NetworkState {
+  selected?: {
+    nodes: number[];
+    edges: number[];
+  },
+  deactivated?: {
+    nodes: number[];
+    edges: number[];
+  };
+  changes?: {
+    deactivate_nodes: number[];
+    activate_nodes: number[];
+  }
+  gcc: number[] | null;
+}
+
+export interface GCCResult {
+  deactivatedNodes: number[];
+  gcc: number[];
 }
 
 export interface VectorTile {
