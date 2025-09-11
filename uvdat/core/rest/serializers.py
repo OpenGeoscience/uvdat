@@ -189,10 +189,9 @@ class NetworkEdgeSerializer(serializers.ModelSerializer):
 class NetworkSerializer(serializers.ModelSerializer):
     dataset = serializers.SerializerMethodField('get_dataset')
     nodes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    edges = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     def get_dataset(self, obj):
-        return DatasetSerializer(obj.vector_data.dataset).data
+        return obj.vector_data.dataset.id
 
     class Meta:
         model = Network

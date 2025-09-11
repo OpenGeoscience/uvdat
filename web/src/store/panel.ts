@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getDataset } from '@/api/rest';
 
-import { useAppStore, useLayerStore, useAnalysisStore } from '.';
+import { useAppStore, useLayerStore, useAnalysisStore, useProjectStore } from '.';
 
 const showableTypes = ['chart', 'dataset', 'network', 'layer', 'analysisresult', 'rasterdata', 'vectordata']
 
@@ -66,6 +66,7 @@ export const usePanelStore = defineStore('panel', () => {
     const analysisStore = useAnalysisStore();
     const layerStore = useLayerStore();
     const appStore = useAppStore();
+    const projectStore = useProjectStore();
 
     const panelArrangement = ref<FloatingPanelConfig[]>([]);
     const draggingPanel = ref<string | undefined>();
@@ -193,7 +194,8 @@ export const usePanelStore = defineStore('panel', () => {
                 return layer.id === showable.layer?.id && layer.visible
             });
         } else if (showable.network) {
-            return isVisible({dataset: showable.network.dataset})
+            const dataset = projectStore.availableDatasets?.find((d) => d.id === showable.network?.dataset)
+            return isVisible({dataset})
         } else if (showable.analysisresult) {
             const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
             if (analysisType) {
@@ -259,7 +261,8 @@ export const usePanelStore = defineStore('panel', () => {
                 layerStore.addLayer(showable.layer)
             }
         } else if (showable.network) {
-            show({dataset: showable.network.dataset})
+            const dataset = projectStore.availableDatasets?.find((d) => d.id === showable.network?.dataset)
+            return show({dataset})
         } else if (showable.analysisresult) {
             const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
             if (analysisType) {

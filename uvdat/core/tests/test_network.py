@@ -30,7 +30,6 @@ def test_rest_dataset_networks(authenticated_api_client, project: Project, netwo
 
     data: dict = data[0]
     assert len(data['nodes']) == 2
-    assert len(data['edges']) == 1
 
 
 @pytest.mark.django_db
@@ -38,7 +37,9 @@ def test_rest_network_gcc_empty(authenticated_api_client, user, project: Project
     dataset = network.vector_data.dataset
     project.set_owner(user)
     project.datasets.add(dataset)
-    resp = authenticated_api_client.get(f'/api/v1/networks/{network.id}/gcc/?exclude_nodes=1')
+    resp = authenticated_api_client.post(
+        f'/api/v1/networks/{network.id}/gcc/', data=dict(exclude_nodes=[1])
+    )
 
     assert resp.status_code == 200
     assert resp.json() == []
@@ -81,8 +82,8 @@ def test_rest_network_gcc(
     #  |
     #  *
 
-    resp = authenticated_api_client.get(
-        f'/api/v1/networks/{network.id}/gcc/?exclude_nodes={connecting_node.id}'
+    resp = authenticated_api_client.post(
+        f'/api/v1/networks/{network.id}/gcc/', data=dict(exclude_nodes=[connecting_node.id])
     )
 
     larger_group: list[NetworkNode] = max(group_a, group_b, key=len)
