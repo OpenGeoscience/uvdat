@@ -206,6 +206,7 @@ export const useLayerStore = defineStore('layer', () => {
   return {
     availableLayers,
     selectedLayers,
+    framesByLayerId,
     fetchAvailableLayer,
     fetchAvailableLayersForDataset,
     fetchFramesForLayer,

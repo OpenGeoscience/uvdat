@@ -3,18 +3,96 @@ import { ref, watch } from 'vue';
 import { getDatasetNetworks, getNetworkEdges, getNetworkGCC, getNetworkNodes, getProjectNetworks } from '@/api/rest';
 import { Dataset, GCCResult, Network, NetworkEdge, NetworkNode, NetworkStyle, NetworkState } from '@/types';
 
-import { usePanelStore, useMapStore, useStyleStore } from '.';
+import { usePanelStore, useMapStore, useStyleStore, useLayerStore } from '.';
 
 const GCCcache: GCCResult[] = [];
-const GCCColor = "#f7e059";
-const selectedColor = "#ffffff";
-const deactivateColor = "#f54242";
-const activateColor = "#008837";
+const networkStyle: NetworkStyle = {
+    color: {
+        selected: '#ffffff',
+        deactivate: '#f54242',
+        activate: '#008837',
+        gcc: '#f7e059',
+    },
+    opacity: {
+        inactive: 0.5
+    }
+}
+const networkPaintProperties = [
+    'circle-opacity',
+    'circle-stroke-opacity',
+    'line-opacity',
+    'circle-color',
+    'circle-stroke-color',
+    'line-color',
+]
+
+function getNetworkPaintPropertyValue(
+    paintProperty: string,
+    networkState: NetworkState,
+    defaultPropValue: any
+) {
+    const deactivate = networkState.changes?.deactivate_nodes || []
+    const activate = networkState.changes?.activate_nodes || []
+    const inactive = networkState.deactivated?.nodes.filter(
+        (n) => !deactivate.includes(n) && ! activate.includes(n)
+    ) || []
+    let gcc = networkState.gcc || []
+    if (!inactive.length && !deactivate.length && !activate.length ) {
+        gcc = []  // Network default state; don't show GCC
+    }
+
+    if (paintProperty.includes('opacity')) {
+        return [
+            'case',
+                [
+                'any',
+                ['in', ['get', 'node_id'], ['literal', inactive]],
+                ['in', ['get', 'from_node_id'], ['literal', inactive]],
+                ['in', ['get', 'to_node_id'], ['literal', inactive]],
+            ],
+            networkStyle.opacity.inactive,
+            defaultPropValue
+        ]
+    }
+
+    return [
+        'case',
+        [
+            'any',
+            ['in', ['get', 'node_id'], ['literal', networkState.selected?.nodes || []]],
+            ['in', ['get', 'edge_id'], ['literal', networkState.selected?.edges || []]],
+        ],
+        networkStyle.color.selected,
+        [
+            'any',
+            ['in', ['get', 'node_id'], ['literal', deactivate]],
+            ['in', ['get', 'from_node_id'], ['literal', deactivate]],
+            ['in', ['get', 'to_node_id'], ['literal', deactivate]],
+        ],
+        networkStyle.color.deactivate,
+        [
+            'any',
+            ['in', ['get', 'node_id'], ['literal', activate]],
+            ['in', ['get', 'from_node_id'], ['literal', activate]],
+            ['in', ['get', 'to_node_id'], ['literal', activate]],
+        ],
+        networkStyle.color.activate,
+        [
+            'any',
+            ['in', ['get', 'node_id'], ['literal', gcc]],
+            ['in', ['get', 'from_node_id'], ['literal', gcc]],
+            ['in', ['get', 'to_node_id'], ['literal', gcc]],
+        ],
+        networkStyle.color.gcc,
+        defaultPropValue,
+    ]
+}
 
 export const useNetworkStore = defineStore('network', () => {
     const panelStore = usePanelStore();
     const mapStore = useMapStore();
     const styleStore = useStyleStore();
+    const layerStore = useLayerStore();
 
     const loadingNetworks = ref<boolean>(false);
     const availableNetworks = ref<Network[]>([]);
@@ -131,7 +209,7 @@ export const useNetworkStore = defineStore('network', () => {
                 });
             }
         } else {
-            networkState.gcc = network.nodes;
+            networkState.gcc = [];
         }
         networkStates.value[network.id] = networkState
         styleNetwork(network);
@@ -153,105 +231,38 @@ export const useNetworkStore = defineStore('network', () => {
     }
 
     function styleNetwork(network: Network) {
-        const vectorId = network.vector_data;
-        const map = mapStore.getMap();
         const networkState = networkStates.value[network.id]
+        const map = mapStore.getMap()
         mapStore.getUserMapLayers().forEach((mapLayerId) => {
-            if (mapLayerId.includes(".vector." + vectorId)) {
-                const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
-                const currentStyle = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`];
-                // TODO: put this back when types are consistent
-                // let defaultColor = currentStyle.color || 'black'
-                let defaultColor = 'black'
-                const colorStyle: NetworkStyle = {
-                    deactivate: deactivateColor,
-                    activate: activateColor,
-                    gcc: GCCColor,
-                    selected: selectedColor,
-                    default: defaultColor,
-                }
-                const opacityStyle = {
-                    inactive: 0.4,
-                    default: 1,
-                }
-                const featureStyles: Record<string, NetworkStyle> = {
-                    'circle-opacity': opacityStyle,
-                    'circle-stroke-opacity': opacityStyle,
-                    'line-opacity': opacityStyle,
-                    'circle-color': colorStyle,
-                    'circle-stroke-color': colorStyle,
-                    'line-color': colorStyle,
-                }
-                Object.entries(featureStyles).forEach(([styleName, style]) => {
-                    const featureType = styleName.split('-')[0]
-                    if (mapLayerId.includes("." + featureType)) {
-                        const defaultValue = style.default;
-                        const selectedValue = style.selected || style.default;
-                        const gccValue = style.gcc || style.default;
-                        const inactiveValue = style.inactive || style.default;
-                        const deactivateValue = style.deactivate || style.default;
-                        const activateValue = style.activate || style.default;
-                        const deactivate = networkState.changes?.deactivate_nodes || [];
-                        const activate = networkState.changes?.activate_nodes || [];
-                        const inactive = networkState.deactivated?.nodes.filter((n) => (
-                            !deactivate?.includes(n) && !activate?.includes(n)
-                        )) || [];
-                        let gcc = networkState.gcc || []
-                        if (
-                            !inactive.length &&
-                            !deactivate.length &&
-                            !activate.length &&
-                            gcc.length === network.nodes.length
-                        ) {
-                            // Network default state; don't show GCC
-                            gcc = []
+            const layerInfo = mapStore.parseLayerString(mapLayerId)
+            if (layerInfo.type === 'vector' && layerInfo.typeId === network.vector_data) {
+                const currentStyleSpec = styleStore.selectedLayerStyles[`${layerInfo.layerId}.${layerInfo.layerCopyId}`].style_spec;
+                const frames = layerStore.framesByLayerId[layerInfo.layerId]
+                const currentFrame = frames.find((f) => f.id === layerInfo.frameId)
+                if (currentStyleSpec && currentFrame) {
+                    networkPaintProperties.forEach((paintProperty) => {
+                        if (paintProperty.includes(layerInfo.layerType)) {
+                            let defaultPropValue: any = currentStyleSpec?.opacity
+                            if (paintProperty.includes('color')) {
+                                const groupName = layerInfo.layerType === 'line' ? 'line' : 'point'
+                                const propsSpec = currentFrame.vector?.summary?.properties
+                                if (propsSpec) {
+                                    defaultPropValue = styleStore.getVectorColorPaintProperty(currentStyleSpec, groupName, propsSpec)
+                                } else {
+                                    defaultPropValue = 'black'
+                                }
+                            }
+                            const paintPropertyValue = getNetworkPaintPropertyValue(
+                                paintProperty,
+                                networkState,
+                                defaultPropValue
+                            )
+                            map.setPaintProperty(mapLayerId, paintProperty, paintPropertyValue)
                         }
-                        map.setPaintProperty(
-                            mapLayerId,
-                            styleName,
-                            [
-                                "case",
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", networkState.selected?.nodes || []]],
-                                    ["in", ["get", "edge_id"], ["literal", networkState.selected?.edges || []]],
-                                ],
-                                selectedValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", deactivate]],
-                                    ["in", ["get", "from_node_id"], ["literal", deactivate]],
-                                    ["in", ["get", "to_node_id"], ["literal", deactivate]],
-                                ],
-                                deactivateValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", activate]],
-                                    ["in", ["get", "from_node_id"], ["literal", activate]],
-                                    ["in", ["get", "to_node_id"], ["literal", activate]],
-                                ],
-                                activateValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", inactive]],
-                                    ["in", ["get", "from_node_id"], ["literal", inactive]],
-                                    ["in", ["get", "to_node_id"], ["literal", inactive]],
-                                ],
-                                inactiveValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", gcc]],
-                                    ["in", ["get", "from_node_id"], ["literal", gcc]],
-                                    ["in", ["get", "to_node_id"], ["literal", gcc]],
-                                ],
-                                gccValue,
-                                defaultValue,
-                            ],
-                        )
-                    }
-                })
+                    })
+                }
             }
-        });
+        })
     }
 
     return {

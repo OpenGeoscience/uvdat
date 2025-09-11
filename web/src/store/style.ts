@@ -328,9 +328,6 @@ export const useStyleStore = defineStore('style', () => {
         vector: VectorData | null
     ) {
         const map = mapStore.getMap();
-        const sourceId = mapStore.sourceIdFromMapLayerId(mapLayerId);
-        const { network } = layerStore.getDBObjectsForSourceID(sourceId)
-
         let filters: StyleFilter[] = styleSpec.filters
         if (frame?.source_filters) {
             filters = [
@@ -409,6 +406,7 @@ export const useStyleStore = defineStore('style', () => {
         colormapMarkersSubsample,
         getDefaultColor,
         getDefaultStyleSpec,
+        getVectorColorPaintProperty,
         updateLayerStyles,
         setMapLayerStyle,
     }

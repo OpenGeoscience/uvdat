@@ -295,12 +295,15 @@ export interface NetworkEdge {
 }
 
 export interface NetworkStyle {
-  inactive?: number | string,
-  deactivate?: number | string,
-  activate?: number | string,
-  gcc?: number | string,
-  selected?: number | string,
-  default: number | string,
+  opacity: {
+    inactive: number,
+  },
+  color: {
+    deactivate: string,
+    activate: string,
+    gcc: string,
+    selected: string,
+  }
 }
 
 export interface NetworkState {
