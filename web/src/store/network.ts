@@ -244,7 +244,7 @@ export const useNetworkStore = defineStore('network', () => {
                         if (paintProperty.includes(layerInfo.layerType)) {
                             let defaultPropValue: any = currentStyleSpec?.opacity
                             if (paintProperty.includes('color')) {
-                                const groupName = layerInfo.layerType === 'line' ? 'line' : 'point'
+                                const groupName = layerInfo.layerType === 'line' ? 'lines' : 'points'
                                 const propsSpec = currentFrame.vector?.summary?.properties
                                 if (propsSpec) {
                                     defaultPropValue = styleStore.getVectorColorPaintProperty(currentStyleSpec, groupName, propsSpec)
