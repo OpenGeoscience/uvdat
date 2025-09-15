@@ -80,6 +80,7 @@ setup(
             'pytest==8.3.3',
             'pytest-django==4.9.0',
             'pytest-mock==3.14.0',
+            'django-s3-file-field-client==1.1.0',
         ],
     },
 )
