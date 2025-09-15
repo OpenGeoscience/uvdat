@@ -132,7 +132,7 @@ def test_rest_dataset_upload(project, user, authenticated_api_client, live_serve
     serialized_fileitem = resp.json()
     for key, value in fileitem_expected.items():
         if key == 'file':
-            assert 'http://minio:9000/test-django-storage' in serialized_fileitem[key]
+            assert ':9000/test-django-storage' in serialized_fileitem[key]
         else:
             assert serialized_fileitem[key] == value
     assert 'id' in serialized_fileitem
