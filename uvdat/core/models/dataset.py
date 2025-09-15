@@ -18,7 +18,22 @@ class Dataset(models.Model):
         from uvdat.core.tasks.dataset import convert_dataset
 
         if asynchronous:
-            convert_dataset.delay(self.id, layer_options, network_options, region_options)
+            from uvdat.core.models.analysis_result import AnalysisResult
+
+            result = AnalysisResult.objects.create(
+                name=f'Conversion of Dataset {self.id}',
+                analysis_type='conversion',
+                inputs=dict(
+                    layer_options=layer_options,
+                    network_options=network_options,
+                    region_options=region_options,
+                ),
+                status='Initializing task...',
+            )
+            convert_dataset.delay(
+                self.id, layer_options, network_options, region_options, result.id
+            )
+            return result
         else:
             convert_dataset(self.id, layer_options, network_options, region_options)
 

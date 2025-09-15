@@ -1,6 +1,14 @@
 from celery import shared_task
 
-from uvdat.core.models import Dataset, FileItem, Layer, LayerFrame, RasterData, VectorData
+from uvdat.core.models import (
+    AnalysisResult,
+    Dataset,
+    FileItem,
+    Layer,
+    LayerFrame,
+    RasterData,
+    VectorData,
+)
 
 from .conversion import convert_file_item
 from .data import create_vector_features
@@ -102,19 +110,32 @@ def convert_dataset(
     layer_options=None,
     network_options=None,
     region_options=None,
+    result_id=None,
 ):
     dataset = Dataset.objects.get(id=dataset_id)
     dataset.processing = True
     dataset.save()
 
+    result = None
+    if result_id:
+        try:
+            result = AnalysisResult.objects.get(id=result_id)
+        except AnalysisResult.DoesNotExist:
+            pass
+
     VectorData.objects.filter(dataset=dataset).delete()
     RasterData.objects.filter(dataset=dataset).delete()
 
     for file_to_convert in FileItem.objects.filter(dataset=dataset):
+        if result is not None:
+            result.write_status(f'Converting file {file_to_convert.name}...')
         convert_file_item(file_to_convert)
 
     vectors = VectorData.objects.filter(dataset=dataset)
     for vector_data in vectors.all():
+        if result is not None:
+            result.write_status(f'Processing vector data {vector_data.name}...')
+
         if network_options:
             create_network(vector_data, network_options)
         elif region_options:
@@ -129,3 +150,6 @@ def convert_dataset(
 
     dataset.processing = False
     dataset.save()
+
+    if result is not None:
+        result.complete()
