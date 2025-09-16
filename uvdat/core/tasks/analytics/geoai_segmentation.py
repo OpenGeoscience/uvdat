@@ -7,7 +7,7 @@ from django_large_image import utilities
 import large_image
 from pyproj import CRS, Transformer
 
-from uvdat.core.models import AnalysisResult, Dataset, FileItem, RasterData
+from uvdat.core.models import Dataset, FileItem, RasterData, TaskResult
 
 from .analysis_type import AnalysisType
 
@@ -32,7 +32,7 @@ class GeoAISegmentation(AnalysisType):
 
     def run_task(self, project, **inputs):
         prompt = inputs.get('segmentation_prompt', '')
-        result = AnalysisResult.objects.create(
+        result = TaskResult.objects.create(
             name=f'Segment {prompt}',
             analysis_type=self.db_value,
             inputs=inputs,
@@ -45,7 +45,7 @@ class GeoAISegmentation(AnalysisType):
 
 @shared_task
 def geoai_segmentation(result_id):
-    result = AnalysisResult.objects.get(id=result_id)
+    result = TaskResult.objects.get(id=result_id)
     try:
         # Verify inputs
         imagery = None

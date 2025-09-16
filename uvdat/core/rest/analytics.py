@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from uvdat.core.models import AnalysisResult, Project
+from uvdat.core.models import Project, TaskResult
 from uvdat.core.rest.access_control import (
     GuardianFilter,
     GuardianPermission,
@@ -17,8 +17,8 @@ from uvdat.core.tasks.analytics import __all__ as analysis_types
 
 
 class AnalyticsViewSet(ReadOnlyModelViewSet):
-    queryset = AnalysisResult.objects.all()
-    serializer_class = uvdat_serializers.AnalysisResultSerializer
+    queryset = TaskResult.objects.all()
+    serializer_class = uvdat_serializers.TaskResultSerializer
     permission_classes = [GuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
@@ -74,12 +74,12 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
         url_path=r'project/(?P<project_id>[\d*]+)/types/(?P<analysis_type>.+)/results',
     )
     def list_results(self, request, project_id: int, analysis_type: str, **kwargs):
-        results = AnalysisResult.objects.filter(
+        results = TaskResult.objects.filter(
             project__id=project_id,
             analysis_type=analysis_type,
         )
         return Response(
-            [uvdat_serializers.AnalysisResultSerializer(result).data for result in results],
+            [uvdat_serializers.TaskResultSerializer(result).data for result in results],
             status=200,
         )
 
@@ -97,6 +97,6 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
             return Response(f'Analysis type "{analysis_type}" not found', status=404)
         result = analysis_type_class().run_task(project, **request.data)
         return Response(
-            uvdat_serializers.AnalysisResultSerializer(result).data,
+            uvdat_serializers.TaskResultSerializer(result).data,
             status=200,
         )

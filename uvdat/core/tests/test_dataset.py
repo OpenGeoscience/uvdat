@@ -162,7 +162,7 @@ def test_rest_dataset_upload(project, user, authenticated_api_client, live_serve
     assert 'id' in serialized_result
     result_id = serialized_result['id']
 
-    # Poll AnalysisResult object until complete
+    # Poll TaskResult object until complete
     while serialized_result['completed'] is None:
         resp = authenticated_api_client.get(f'/api/v1/analytics/{result_id}/')
         assert resp.status_code == 200

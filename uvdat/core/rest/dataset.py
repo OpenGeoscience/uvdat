@@ -5,12 +5,12 @@ from rest_framework.viewsets import ModelViewSet
 from uvdat.core.models import Dataset
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import (
-    AnalysisResultSerializer,
     DatasetSerializer,
     FileItemSerializer,
     LayerSerializer,
     NetworkSerializer,
     RasterDataSerializer,
+    TaskResultSerializer,
     VectorDataSerializer,
 )
 
@@ -73,4 +73,4 @@ class DatasetViewSet(ModelViewSet):
             region_options=request.data.get('region_options'),
         )
 
-        return Response(AnalysisResultSerializer(result).data, status=200)
+        return Response(TaskResultSerializer(result).data, status=200)

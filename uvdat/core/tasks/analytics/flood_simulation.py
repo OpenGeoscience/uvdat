@@ -7,7 +7,7 @@ from urllib.request import urlretrieve
 from celery import shared_task
 from django.core.files.base import ContentFile
 
-from uvdat.core.models import AnalysisResult, Chart, Dataset, FileItem
+from uvdat.core.models import Chart, Dataset, FileItem, TaskResult
 
 from .analysis_type import AnalysisType
 
@@ -102,7 +102,7 @@ class FloodSimulation(AnalysisType):
         }
 
     def run_task(self, project, **inputs):
-        result = AnalysisResult.objects.create(
+        result = TaskResult.objects.create(
             name='Flood Simulation',
             analysis_type=self.db_value,
             inputs=inputs,
@@ -115,7 +115,7 @@ class FloodSimulation(AnalysisType):
 
 @shared_task
 def flood_simulation(result_id):
-    result = AnalysisResult.objects.get(id=result_id)
+    result = TaskResult.objects.get(id=result_id)
 
     try:
         # Verify inputs

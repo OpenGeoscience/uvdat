@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from uvdat.core.models import (
-    AnalysisResult,
     Chart,
     Dataset,
     FileItem,
@@ -14,6 +13,7 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
+    TaskResult,
     VectorData,
     VectorFeature,
 )
@@ -122,7 +122,7 @@ class NetworkNodeAdmin(admin.ModelAdmin):
         return ', '.join(n.name for n in obj.get_adjacent_nodes())
 
 
-class AnalysisResultAdmin(admin.ModelAdmin):
+class TaskResultAdmin(admin.ModelAdmin):
     list_display = ['id', 'analysis_type', 'inputs']
 
 
@@ -140,4 +140,4 @@ admin.site.register(Region, RegionAdmin)
 admin.site.register(Network, NetworkAdmin)
 admin.site.register(NetworkNode, NetworkNodeAdmin)
 admin.site.register(NetworkEdge, NetworkEdgeAdmin)
-admin.site.register(AnalysisResult, AnalysisResultAdmin)
+admin.site.register(TaskResult, TaskResultAdmin)

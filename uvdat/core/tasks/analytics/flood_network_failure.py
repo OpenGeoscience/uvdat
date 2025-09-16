@@ -4,7 +4,7 @@ from celery import shared_task
 from django_large_image import tilesource, utilities
 import numpy
 
-from uvdat.core.models import AnalysisResult, Layer, Network
+from uvdat.core.models import Layer, Network, TaskResult
 
 from .analysis_type import AnalysisType
 from .flood_simulation import FloodSimulation
@@ -21,7 +21,7 @@ class FloodNetworkFailure(AnalysisType):
         self.db_value = 'flood_network_failure'
         self.input_types = {
             'network': 'Network',
-            'flood_simulation': 'AnalysisResult',
+            'flood_simulation': 'TaskResult',
             'depth_tolerance_meters': 'number',
             'station_radius_meters': 'number',
         }
@@ -31,15 +31,13 @@ class FloodNetworkFailure(AnalysisType):
     def get_input_options(self):
         return {
             'network': Network.objects.all(),
-            'flood_simulation': AnalysisResult.objects.filter(
-                analysis_type=FloodSimulation().db_value
-            ),
+            'flood_simulation': TaskResult.objects.filter(analysis_type=FloodSimulation().db_value),
             'depth_tolerance_meters': [0.1, 0.5, 1, 2, 3],
             'station_radius_meters': [10, 15, 20, 25, 30, 35, 40, 45, 50],
         }
 
     def run_task(self, project, **inputs):
-        result = AnalysisResult.objects.create(
+        result = TaskResult.objects.create(
             name='Flood Network Failure',
             analysis_type=self.db_value,
             inputs=inputs,
@@ -52,7 +50,7 @@ class FloodNetworkFailure(AnalysisType):
 
 @shared_task
 def flood_network_failure(result_id):
-    result = AnalysisResult.objects.get(id=result_id)
+    result = TaskResult.objects.get(id=result_id)
 
     try:
         # Verify inputs
@@ -72,8 +70,8 @@ def flood_network_failure(result_id):
             result.write_error('Flood simulation not provided')
         else:
             try:
-                flood_sim = AnalysisResult.objects.get(id=flood_sim_id)
-            except AnalysisResult.DoesNotExist:
+                flood_sim = TaskResult.objects.get(id=flood_sim_id)
+            except TaskResult.DoesNotExist:
                 result.write_error('Flood simulation not found')
 
         tolerance = result.inputs.get('depth_tolerance_meters')

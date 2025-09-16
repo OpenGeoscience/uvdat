@@ -18,9 +18,9 @@ class Dataset(models.Model):
         from uvdat.core.tasks.dataset import convert_dataset
 
         if asynchronous:
-            from uvdat.core.models.analysis_result import AnalysisResult
+            from uvdat.core.models.task_result import TaskResult
 
-            result = AnalysisResult.objects.create(
+            result = TaskResult.objects.create(
                 name=f'Conversion of Dataset {self.id}',
                 analysis_type='conversion',
                 inputs=dict(

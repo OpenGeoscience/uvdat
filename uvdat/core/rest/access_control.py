@@ -20,7 +20,7 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
 
     if model == models.Project:
         return queryset.filter(id__in=projects.values_list('id', flat=True))
-    if model == models.AnalysisResult:
+    if model == models.TaskResult:
         return queryset.filter(Q(project__isnull=True) | Q(project__in=projects))
     if model == models.Chart:
         return queryset.filter(project__in=projects)

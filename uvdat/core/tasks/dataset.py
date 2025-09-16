@@ -1,12 +1,12 @@
 from celery import shared_task
 
 from uvdat.core.models import (
-    AnalysisResult,
     Dataset,
     FileItem,
     Layer,
     LayerFrame,
     RasterData,
+    TaskResult,
     VectorData,
 )
 
@@ -134,8 +134,8 @@ def convert_dataset(
     result = None
     if result_id:
         try:
-            result = AnalysisResult.objects.get(id=result_id)
-        except AnalysisResult.DoesNotExist:
+            result = TaskResult.objects.get(id=result_id)
+        except TaskResult.DoesNotExist:
             pass
 
     VectorData.objects.filter(dataset=dataset).delete()
