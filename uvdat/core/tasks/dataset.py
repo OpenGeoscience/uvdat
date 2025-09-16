@@ -53,7 +53,7 @@ def create_layers_and_frames(dataset, layer_options=None):
                 additional_filters = layer_info.get('additional_filters', {})
                 metadata = layer_data.metadata or {}
                 bands = metadata.get('bands')
-                summary = layer_data.summary or {}
+                summary = layer_data.summary if hasattr(layer_data, 'summary') else {}
                 properties = summary.get('properties')
                 if properties and frame_property and frame_property in properties:
                     property_summary = properties.get(frame_property)
