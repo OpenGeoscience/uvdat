@@ -393,13 +393,15 @@ export const useStyleStore = defineStore('style', () => {
             if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
-            if (source?.tiles?.length) {
-                const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
+            const sourceURL = mapStore.rasterSourceTileURLs[mapLayer.source]
+            if (source && sourceURL) {
+                const oldQuery = new URLSearchParams(sourceURL.split('?')[1])
                 const newQueryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
                 if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
                 const newQuery = new URLSearchParams(newQueryParams)
                 if (newQuery.toString() !== oldQuery.toString()) {
-                    source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
+                    const newURL = sourceURL.split('?')[0] + '?' + newQuery
+                    source.setTiles([newURL])
                 }
             }
         }
