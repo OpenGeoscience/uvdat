@@ -2,6 +2,13 @@
 import { Dataset } from '@/types';
 import { computed, ref, watch } from 'vue';
 
+import { VFileUpload } from 'vuetify/labs/VFileUpload'
+
+
+interface LayerSpec {
+    id: number;
+    name: string | undefined,
+}
 
 const props = defineProps<{
   allDatasets: Dataset[];
@@ -11,6 +18,9 @@ const open = ref<boolean>(false)
 const name = ref<string>()
 const description = ref<string>()
 const category = ref<string>()
+const layers = ref<LayerSpec[]>([])
+const maxLayerId = ref<number>(0)
+const focusedLayerId = ref<number>(0)
 const mandatoryRule = [
   (v: any) => (v ? true : "Input required.")
 ];
@@ -28,6 +38,24 @@ function cancel() {
     name.value = undefined
     description.value = undefined
     category.value = undefined
+    layers.value = []
+}
+
+function addLayer() {
+    maxLayerId.value += 1
+    const id = maxLayerId.value
+    layers.value.push({
+        id,
+        name: undefined
+    })
+    focusedLayerId.value = id
+}
+
+function removeLayer(layer_id: number) {
+    layers.value = layers.value.filter((l) => l.id !== layer_id)
+    if (focusedLayerId.value === layer_id) {
+        focusedLayerId.value = 0
+    }
 }
 
 function submit() {
@@ -36,6 +64,7 @@ function submit() {
 
 watch(open, () => {
     if(!open) cancel()
+    else addLayer()
 })
 </script>
 
@@ -87,6 +116,59 @@ watch(open, () => {
                             />
                         </template>
                     </v-combobox>
+
+                    <div class="layers-configuration">
+                        <div class="px-4 py-2" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
+                            Layers Configuration
+                        </div>
+                        <div class="pa-2">
+                            <v-card
+                                v-for="layer, index in layers"
+                                :key="layer.id"
+                                class="layer-card"
+                            >
+                                <div v-if="focusedLayerId === layer.id">
+                                    <v-text-field
+                                        label="Layer Name"
+                                        v-model="layer.name"
+                                        :rules="mandatoryRule"
+                                        hide-details="auto"
+                                    />
+                                    <v-file-upload
+                                        density="compact"
+                                        class="mt-2"
+                                        multiple
+                                        clearable
+                                        style="background-color: rgb(var(--v-theme-secondary)); padding: 10px"
+                                    >
+                                        <template v-slot:icon>
+                                            <v-icon size="xs" icon="mdi-upload" color="primary"/>
+                                        </template>
+                                        <template v-slot:title>
+                                            <div style="font-weight: normal; font-size: medium;">
+                                                Drag & drop file(s) or
+                                                <span style="text-decoration: underline;" class="text-primary">Browse</span>
+                                            </div>
+                                        </template>
+                                    </v-file-upload>
+                                </div>
+                                <div v-else style="width: 100%; display: flex; justify-content: space-between;">
+                                    {{ layer.name || ('Layer ' + (index + 1)) }}
+
+                                    <div>
+                                        <v-icon @click="focusedLayerId = layer.id" class="ml-2">mdi-pencil-outline</v-icon>
+                                        <v-icon @click="removeLayer(layer.id)" class="ml-2">mdi-delete-outline</v-icon>
+                                    </div>
+                                </div>
+                            </v-card>
+                            <div style="text-align: center;" class="pt-2">
+                                <v-btn color="background" class="text-primary" flat @click="addLayer">
+                                    <v-icon icon="mdi-plus" color="primary"/>
+                                    Add Layer
+                                </v-btn>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <v-card-actions style="float: right;">
@@ -113,5 +195,15 @@ watch(open, () => {
     max-height: 80vh!important;
     overflow-y: auto;
     overflow-x: hidden;
+}
+.layers-configuration {
+    border: 1px solid rgb(var(--v-theme-primary-text))
+}
+.layer-card {
+    padding: 8px !important;
+    margin-top: 8px;
+    background-color: rgb(var(--v-theme-background)) !important;
+    box-shadow: none !important;
+    border-bottom: 1px solid rgb(var(--v-theme-surface))
 }
 </style>
