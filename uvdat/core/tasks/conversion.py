@@ -31,6 +31,8 @@ def get_cog_path(file):
         # if large_image can open file and geospatial is True, rasterio is not needed.
         source = large_image.open(file)
         if source.geospatial:
+            if source.sourceLevels > 1:
+                return file
             raster_path = file
     except large_image.exceptions.TileSourceError:
         pass
