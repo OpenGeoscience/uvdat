@@ -9,9 +9,11 @@ const layerStore = useLayerStore();
 
 const props = defineProps<{
   datasets: Dataset[] | undefined;
-  selectedIds: number[] | undefined;
+  savingId: number | undefined;
+  addedIds?: number[] | undefined;
+  buttonIcon: string
 }>();
-const emit = defineEmits(["toggleDatasets"]);
+const emit = defineEmits(["buttonClick"]);
 
 const datasetsWithLayers = computed(() => {
   return props.datasets?.map((dataset) => {
@@ -21,10 +23,6 @@ const datasetsWithLayers = computed(() => {
     }
   })
 })
-
-function toggleSelected(items: Dataset[]) {
-    emit("toggleDatasets", items);
-}
 </script>
 
 <template>
@@ -37,33 +35,45 @@ function toggleSelected(items: Dataset[]) {
         >
           <v-expansion-panel-title>
             <div style="display: flex; justify-content: space-between; width: 100%;">
-              <div class="item-title">
-                <div>
-                    <v-checkbox-btn
-                      :model-value="props.selectedIds?.includes(dataset.id)"
-                      style="display: inline"
-                      class="mr-2"
-                      @click.stop="() => toggleSelected([dataset])"
-                    />
-                    {{ dataset.name }}
-                </div>
-                <div v-if="dataset.layers" style="min-width: 75px; text-align: right">
-                  <v-icon
-                    icon="mdi-layers"
-                    size="small"
-                    v-tooltip="dataset.layers.length + ' layers'"
-                    class="ml-2"
-                  ></v-icon>
-                  <span class="secondary-text">{{ dataset.layers.length }}</span>
-                  <v-icon
-                    icon="mdi-information-outline"
-                    size="small"
-                    v-tooltip="dataset.description"
-                    class="mx-1"
-                  ></v-icon>
-                </div>
+              <div>
+                <v-progress-circular
+                  v-if="props.savingId === dataset.id"
+                  size="24"
+                  class="mr-5"
+                  indeterminate
+                />
+                <v-icon
+                  v-else-if="!props.addedIds || !props.addedIds.includes(dataset.id)"
+                  :icon="props.buttonIcon"
+                  color="primary"
+                  class="icon-button mr-5"
+                  @click.stop="emit('buttonClick', dataset)"
+                />
+                <v-icon
+                  v-else
+                  icon="mdi-check"
+                  color="success"
+                  class="mr-5"
+                  @click.stop
+                />
+                {{ dataset.name }}
               </div>
-              <DetailView v-if="dataset" :details="{...dataset, type: 'dataset'}"/>
+              <div v-if="dataset.layers" style="min-width: 75px; text-align: right">
+                <v-icon
+                  icon="mdi-layers"
+                  size="small"
+                  v-tooltip="dataset.layers.length + ' layers'"
+                  class="ml-2"
+                ></v-icon>
+                <span class="secondary-text">{{ dataset.layers.length }}</span>
+                <v-icon
+                  icon="mdi-information-outline"
+                  size="small"
+                  v-tooltip="dataset.description"
+                  class="mx-1"
+                ></v-icon>
+                <DetailView v-if="dataset" :details="{...dataset, type: 'dataset'}"/>
+              </div>
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
@@ -84,3 +94,10 @@ function toggleSelected(items: Dataset[]) {
     </template>
   </DatasetList>
 </template>
+
+<style>
+.icon-button {
+  background-color: rgb(var(--v-theme-secondary));
+  border-radius: 4px;
+}
+</style>
