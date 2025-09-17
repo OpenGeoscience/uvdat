@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, Ref, computed, onMounted, watch } from "vue";
 import DatasetSelect from "@/components/projects/DatasetSelect.vue";
+import DatasetUpload from "@/components/projects/DatasetUpload.vue";
 import AccessControl from "@/components/projects/AccessControl.vue";
 import {
   getDatasets,
@@ -489,7 +490,10 @@ watch(() => projectStore.projectConfigMode, () => {
               </div>
               <v-divider class="mx-5" vertical></v-divider>
               <div style="width: 45%">
-                <v-card-text>All Datasets</v-card-text>
+                <div class="d-flex">
+                  <v-card-text>All Datasets</v-card-text>
+                  <DatasetUpload :allDatasets="allDatasets"/>
+                </div>
                 <div class="pa-2 dataset-card">
                   <DatasetSelect
                     :datasets="allDatasets"
