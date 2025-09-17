@@ -53,6 +53,7 @@ def create_layers_and_frames(dataset, layer_options=None):
                 additional_filters = layer_info.get('additional_filters', {})
                 metadata = layer_data.metadata or {}
                 bands = metadata.get('bands')
+                raster_frames = metadata.get('frames')
                 summary = layer_data.summary if hasattr(layer_data, 'summary') else {}
                 properties = summary.get('properties')
                 if properties and frame_property and frame_property in properties:
@@ -79,6 +80,17 @@ def create_layers_and_frames(dataset, layer_options=None):
                                     source_filters=dict(frame_property=i, **additional_filters),
                                 )
                             )
+                elif raster_frames and len(raster_frames) > 1:
+                    for raster_frame in raster_frames:
+                        i = raster_frame.get('Index')
+                        frames.append(
+                            dict(
+                                name=f'Frame {i}',
+                                index=i,
+                                data=layer_data.name,
+                                source_filters=dict(frame=i),
+                            )
+                        )
                 elif bands and len(bands) > 1:
                     for band in bands:
                         frames.append(
