@@ -1,0 +1,30 @@
+[
+  {
+    "type": "Project",
+    "name": "Flood Test",
+    "default_map_center": [
+      42.4,
+      -71.1
+    ],
+    "default_map_zoom": 11,
+    "datasets": [
+      "Dynamic Flood Simulation"
+    ]
+  },
+  {
+    "type": "Dataset",
+    "name": "Dynamic Flood Simulation",
+    "description": "Generated with flood_sim module",
+    "category": "flood",
+    "files": [
+      {
+        "path": "test/flood_simulation.tif"
+      }
+    ],
+    "layers": [
+      {
+        "name": "24-hour flood event"
+      }
+    ]
+  }
+]
