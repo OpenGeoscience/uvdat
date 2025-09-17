@@ -96,6 +96,17 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
             if (colorSpec.colormap && colorSpec.visible) query.bands.push(colorQuery)
         }
     })
+    styleSpec.filters.forEach((filter) => {
+        if (
+            filter.filter_by &&
+            ['frame', 'band'].includes(filter.filter_by) &&
+            filter.include &&
+            filter.list &&
+            filter.list.length == 1
+        ) {
+            query[filter.filter_by] = filter.list[0]
+        }
+    })
     if (!Object.keys(query).length) return undefined
     return query;
 }
@@ -394,17 +405,19 @@ export const useStyleStore = defineStore('style', () => {
                 map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
             }
         } else if (mapLayerId.includes("raster")) {
-            const rasterTilesQuery = getRasterTilesQuery(styleSpec)
+            const rasterTilesQuery = getRasterTilesQuery({...styleSpec, filters})
             if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
-            if (source?.tiles?.length) {
-                const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
+            const sourceURL = mapStore.rasterSourceTileURLs[mapLayer.source]
+            if (source && sourceURL) {
+                const oldQuery = new URLSearchParams(sourceURL.split('?')[1])
                 const newQueryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
                 if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
                 const newQuery = new URLSearchParams(newQueryParams)
                 if (newQuery.toString() !== oldQuery.toString()) {
-                    source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
+                    const newURL = sourceURL.split('?')[0] + '?' + newQuery
+                    source.setTiles([newURL])
                 }
             }
         }
