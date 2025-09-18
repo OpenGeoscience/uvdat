@@ -6,8 +6,10 @@ import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
 
 interface LayerSpec {
     id: number;
-    name: string | undefined,
-    files: File[],
+    name: string | undefined;
+    files: File[];
+    frame_method: 'single' | 'multi';
+    frame_property: string | undefined
 }
 
 const props = defineProps<{
@@ -67,7 +69,9 @@ function addLayer() {
     layers.value.push({
         id,
         name: undefined,
-        files: []
+        files: [],
+        frame_method: 'single',
+        frame_property: undefined,
     })
     focusedLayerId.value = id
 }
@@ -77,6 +81,14 @@ function removeLayer(layer_id: number) {
     if (focusedLayerId.value === layer_id) {
         focusedLayerId.value = 0
     }
+}
+
+function isRasterFile(file: File) {
+    return ['image/tiff'].includes(file.type)
+}
+
+function isVectorFile(file: File) {
+    return ['application/json', 'application/geo+json'].includes(file.type)
 }
 
 function submit() {
@@ -97,7 +109,7 @@ onMounted(init)
         Upload New Dataset
 
         <v-dialog v-model="open" persistent width="700">
-            <v-card class="dataset-upload-card" color="background">
+            <v-card color="background">
                 <div class="px-4 py-2" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
                     Upload Dataset
 
@@ -108,7 +120,7 @@ onMounted(init)
                         @mousedown="cancel"
                     />
                 </div>
-                <div class="pa-5 d-flex" style="flex-direction: column; row-gap: 10px">
+                <div class="pa-5 d-flex dataset-upload-form-content" style="flex-direction: column; row-gap: 10px">
                     <v-text-field
                         autofocus
                         label="Dataset Name"
@@ -177,6 +189,7 @@ onMounted(init)
                                         clearable
                                         :accept="acceptTypes"
                                         style="background-color: rgb(var(--v-theme-secondary)); padding: 10px"
+                                        @update:model-value="() => {layer.frame_method = 'single'; layer.frame_property = undefined}"
                                     >
                                         <template v-slot:icon>
                                             <v-icon size="xs" icon="mdi-upload" color="primary"/>
@@ -201,6 +214,54 @@ onMounted(init)
                                             </v-file-upload-item>
                                         </template>
                                     </v-file-upload>
+                                    <div
+                                        v-if="layer.files.length > 1 || layer.files.some((f) => f.type === 'application/zip')"
+                                        class="secondary-text"
+                                        style="text-align: center; font-size: 0.8rem;"
+                                    >
+                                        Each file will be treated as a frame in the layer's sequence.
+                                    </div>
+                                    <div v-else-if="layer.files.length === 1">
+                                        <v-btn-toggle
+                                            v-model="layer.frame_method"
+                                            variant="outlined"
+                                            density="compact"
+                                            divided
+                                            mandatory
+                                        >
+                                            <v-btn value="single">Add as single frame</v-btn>
+                                            <v-btn value="multi">Add as multi-frame</v-btn>
+                                        </v-btn-toggle>
+                                        <div v-if="layer.frame_method === 'multi'" class="mt-2">
+                                            <v-btn-toggle
+                                                v-if="isRasterFile(layer.files[0])"
+                                                v-model="layer.frame_property"
+                                                variant="outlined"
+                                                density="compact"
+                                                divided
+                                                mandatory
+                                            >
+                                                <v-btn value="frame">Split by raster frame</v-btn>
+                                                <v-btn value="band">Split by raster band</v-btn>
+                                            </v-btn-toggle>
+                                            <v-text-field
+                                                v-else-if="isVectorFile(layer.files[0])"
+                                                v-model="layer.frame_property"
+                                                label="Frame Property"
+                                                density="compact"
+                                                :rules="mandatoryRule"
+                                                hide-details="auto"
+                                            >
+                                                <template v-slot:append>
+                                                    <v-icon
+                                                        icon="mdi-information-outline"
+                                                        v-tooltip="'Enter the name of an ordered feature property that corresponds to frame'"
+                                                        color="primary"
+                                                    />
+                                                </template>
+                                            </v-text-field>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div v-else style="width: 100%; display: flex; justify-content: space-between;">
                                     {{ layer.name || ('Layer ' + (index + 1)) }}
@@ -251,8 +312,8 @@ onMounted(init)
 </template>
 
 <style>
-.dataset-upload-card {
-    max-height: 80vh!important;
+.dataset-upload-form-content {
+    max-height: 70vh!important;
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -271,6 +332,9 @@ onMounted(init)
     right: 15px;
     padding-top: 25px;
     z-index: 1;
+}
+.v-file-upload-items .v-list-item {
+    border: none!important
 }
 .v-file-upload-items .v-list-item-title {
     font-size: 1rem!important;
