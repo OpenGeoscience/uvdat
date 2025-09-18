@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { Dataset } from '@/types';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
-
 
 interface LayerSpec {
     id: number;
@@ -13,6 +12,7 @@ interface LayerSpec {
 
 const props = defineProps<{
   allDatasets: Dataset[];
+  projectPermission: any;
 }>();
 
 const open = ref<boolean>(false)
@@ -22,18 +22,36 @@ const category = ref<string>()
 const layers = ref<LayerSpec[]>([])
 const maxLayerId = ref<number>(0)
 const focusedLayerId = ref<number>(0)
+const addToCurrentProject = ref<boolean>(false)
 const mandatoryRule = [
   (v: any) => (v ? true : "Input required.")
 ];
 const acceptTypes = '.json,.geojson,.tif,.tiff,.zip'
 
+const similarExisting = computed(() => {
+    return props.allDatasets.filter((d) => {
+        if (name.value && name.value.length > 2) return d.name?.toLowerCase().includes(name.value.toLowerCase())
+        return false
+    })
+})
 const categories = computed(() => {
     return [...new Set(props.allDatasets?.map((d) => d.category))]
 })
-
 const valid = computed(() => {
-    return name.value && description.value && category.value
+    return (
+        name.value && description.value && category.value &&
+        layers.value.length > 0 && layers.value.every((l) => l.name && l.files.length)
+    )
 })
+const canEditProject = computed(() => {
+    return ['owner', 'collaborator'].includes(props.projectPermission)
+})
+
+function init() {
+    if (canEditProject) {
+        addToCurrentProject.value = true
+    }
+}
 
 function cancel() {
     open.value = false
@@ -69,6 +87,8 @@ watch(open, () => {
     if(!open) cancel()
     else addLayer()
 })
+
+onMounted(init)
 </script>
 
 <template>
@@ -96,6 +116,12 @@ watch(open, () => {
                         :rules="mandatoryRule"
                         hide-details="auto"
                     />
+                    <div v-if="similarExisting.length" class="bg-surface-light pa-2">
+                        <span class="secondary-text">Similar Existing Datasets:</span>
+                        <div v-for="dataset in similarExisting" style="font-size: 0.8rem; margin-left: 10px">
+                            {{ dataset.name }}
+                        </div>
+                    </div>
                     <v-text-field
                         label="Description"
                         v-model="description"
@@ -195,6 +221,16 @@ watch(open, () => {
                     </div>
                 </div>
 
+                <div class="d-flex px-3" style="justify-content: right;">
+                    <v-checkbox
+                        v-if="canEditProject"
+                        v-model="addToCurrentProject"
+                        label="Add dataset to current project"
+                        density="compact"
+                        color="primary"
+                        hide-details
+                    />
+                </div>
                 <v-card-actions style="float: right;">
                     <v-btn class="secondary-button" @click="cancel">
                         <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
@@ -238,5 +274,8 @@ watch(open, () => {
 }
 .v-file-upload-items .v-list-item-title {
     font-size: 1rem!important;
+}
+.v-checkbox-btn .text-primary .v-icon {
+    color: rgb(var(--v-theme-primary))!important
 }
 </style>

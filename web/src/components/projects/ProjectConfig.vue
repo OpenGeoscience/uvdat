@@ -31,7 +31,6 @@ const filteredProjects = computed(() => {
 const selectedProject: Ref<Project | undefined> = ref();
 const allDatasets: Ref<Dataset[]> = ref([]);
 const projDatasets: Ref<Dataset[] | undefined> = ref();
-const projSelectedDatasetIds: Ref<number[]> = ref([]);
 
 const permissions = computed(() => {
   const ret = Object.fromEntries(
@@ -492,7 +491,11 @@ watch(() => projectStore.projectConfigMode, () => {
               <div style="width: 45%">
                 <div class="d-flex">
                   <v-card-text>All Datasets</v-card-text>
-                  <DatasetUpload :allDatasets="allDatasets"/>
+                  <DatasetUpload
+                    v-if=projectStore.currentProject
+                    :allDatasets="allDatasets"
+                    :projectPermission="permissions[projectStore.currentProject.id]"
+                  />
                 </div>
                 <div class="pa-2 dataset-card">
                   <DatasetSelect
