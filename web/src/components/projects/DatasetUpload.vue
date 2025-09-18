@@ -2,12 +2,13 @@
 import { Dataset } from '@/types';
 import { computed, ref, watch } from 'vue';
 
-import { VFileUpload } from 'vuetify/labs/VFileUpload'
+import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
 
 
 interface LayerSpec {
     id: number;
     name: string | undefined,
+    files: File[],
 }
 
 const props = defineProps<{
@@ -24,6 +25,7 @@ const focusedLayerId = ref<number>(0)
 const mandatoryRule = [
   (v: any) => (v ? true : "Input required.")
 ];
+const acceptTypes = '.json,.geojson,.tif,.tiff,.zip'
 
 const categories = computed(() => {
     return [...new Set(props.allDatasets?.map((d) => d.category))]
@@ -46,7 +48,8 @@ function addLayer() {
     const id = maxLayerId.value
     layers.value.push({
         id,
-        name: undefined
+        name: undefined,
+        files: []
     })
     focusedLayerId.value = id
 }
@@ -108,7 +111,7 @@ watch(open, () => {
                     >
                         <template v-slot:append-inner>
                             <v-icon
-                                v-if="!categories.includes(category)"
+                                v-if="category && !categories.includes(category)"
                                 icon="mdi-information-outline"
                                 class="ml-2"
                                 color="primary"
@@ -134,11 +137,19 @@ watch(open, () => {
                                         :rules="mandatoryRule"
                                         hide-details="auto"
                                     />
+                                    <v-icon
+                                        icon="mdi-information-outline"
+                                        color="primary"
+                                        class="upload-info-icon"
+                                        v-tooltip="'Upload multiple files to create a sequence of frames, or upload a single file to optionally split into frames.'"
+                                    />
                                     <v-file-upload
+                                        v-model="layer.files"
                                         density="compact"
                                         class="mt-2"
                                         multiple
                                         clearable
+                                        :accept="acceptTypes"
                                         style="background-color: rgb(var(--v-theme-secondary)); padding: 10px"
                                     >
                                         <template v-slot:icon>
@@ -149,6 +160,19 @@ watch(open, () => {
                                                 Drag & drop file(s) or
                                                 <span style="text-decoration: underline;" class="text-primary">Browse</span>
                                             </div>
+                                        </template>
+                                        <template v-slot:item="{ props: itemProps }">
+                                            <v-file-upload-item v-bind="itemProps" lines="one" nav>
+                                                <template v-slot:prepend>
+                                                    <v-icon icon="mdi-file-outline" />
+                                                </template>
+                                                <template v-slot:title="{ title }">
+                                                    <div class="text-primary">{{ title }}</div>
+                                                </template>
+                                                <template v-slot:clear="{ props: clearProps }">
+                                                <v-icon color="error" icon="mdi-close-circle" v-bind="clearProps" />
+                                                </template>
+                                            </v-file-upload-item>
                                         </template>
                                     </v-file-upload>
                                 </div>
@@ -205,5 +229,14 @@ watch(open, () => {
     background-color: rgb(var(--v-theme-background)) !important;
     box-shadow: none !important;
     border-bottom: 1px solid rgb(var(--v-theme-surface))
+}
+.upload-info-icon {
+    position: absolute;
+    right: 15px;
+    padding-top: 25px;
+    z-index: 1;
+}
+.v-file-upload-items .v-list-item-title {
+    font-size: 1rem!important;
 }
 </style>
