@@ -10,7 +10,7 @@ import {
   deleteProject,
   patchProject,
 } from "@/api/rest";
-import { Project, Dataset } from "@/types";
+import { Project, Dataset, TaskResult } from "@/types";
 
 import { useMapStore, useAppStore, useProjectStore, useLayerStore } from "@/store";
 const projectStore = useProjectStore();
@@ -140,12 +140,7 @@ function selectProject(project: Project) {
   if (selectedProject.value?.id !== project.id) {
     selectedProject.value = project;
     projectStore.loadingDatasets = true;
-    getDatasets().then(async (datasets) => {
-      allDatasets.value = datasets
-      allDatasets.value.forEach((dataset: Dataset) => {
-        layerStore.fetchAvailableLayersForDataset(dataset.id)
-      })
-    })
+    refreshAllDatasets()
     refreshProjectDatasets(null);
   }
 }
@@ -194,6 +189,15 @@ function updateSelectedProject(newProjectData: Project) {
   selectedProject.value = newProjectData;
 }
 
+function refreshAllDatasets() {
+  getDatasets().then(async (datasets) => {
+    allDatasets.value = datasets
+    allDatasets.value.forEach((dataset: Dataset) => {
+      layerStore.fetchAvailableLayersForDataset(dataset.id)
+    })
+  })
+}
+
 function refreshProjectDatasets(callback: Function | null) {
   if (selectedProject.value) {
     getProjectDatasets(selectedProject.value.id).then(async (datasets) => {
@@ -217,6 +221,11 @@ function handleEditFocus(focused: boolean) {
   if (!focused && !newProjectName) {
     resetProjectEdit();
   }
+}
+
+function datasetUploaded(result: {dataset: Dataset, conversionTask: TaskResult}) {
+  refreshAllDatasets()
+  refreshProjectDatasets(null)
 }
 
 onMounted(() => {
@@ -492,9 +501,11 @@ watch(() => projectStore.projectConfigMode, () => {
                 <div class="d-flex">
                   <v-card-text>All Datasets</v-card-text>
                   <DatasetUpload
-                    v-if=projectStore.currentProject
+                    v-if="projectStore.currentProject"
                     :allDatasets="allDatasets"
                     :projectPermission="permissions[projectStore.currentProject.id]"
+                    @addToCurrentProject="addDatasetToProject"
+                    @uploaded="datasetUploaded"
                   />
                 </div>
                 <div class="pa-2 dataset-card">

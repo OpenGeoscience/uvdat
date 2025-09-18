@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { createDataset, createFileItem, spawnDatasetConversion, uploadFile } from '@/api/rest';
 import { Dataset } from '@/types';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
 
@@ -16,6 +17,8 @@ const props = defineProps<{
   allDatasets: Dataset[];
   projectPermission: any;
 }>();
+const emit = defineEmits(['addToCurrentProject', 'uploaded']);
+
 
 const open = ref<boolean>(false)
 const name = ref<string>()
@@ -25,6 +28,7 @@ const layers = ref<LayerSpec[]>([])
 const maxLayerId = ref<number>(0)
 const focusedLayerId = ref<number>(0)
 const addToCurrentProject = ref<boolean>(false)
+const submitting = ref<boolean>(false)
 const mandatoryRule = [
   (v: any) => (v ? true : "Input required.")
 ];
@@ -42,7 +46,11 @@ const categories = computed(() => {
 const valid = computed(() => {
     return (
         name.value && description.value && category.value &&
-        layers.value.length > 0 && layers.value.every((l) => l.name && l.files.length)
+        layers.value.length > 0 && layers.value.every((l) => {
+            return l.name && l.files.length && (
+                l.frame_method === 'single' || l.frame_property
+            )
+        })
     )
 })
 const canEditProject = computed(() => {
@@ -50,6 +58,7 @@ const canEditProject = computed(() => {
 })
 
 function init() {
+    addLayer()
     if (canEditProject) {
         addToCurrentProject.value = true
     }
@@ -61,6 +70,10 @@ function cancel() {
     description.value = undefined
     category.value = undefined
     layers.value = []
+    maxLayerId.value = 0
+    focusedLayerId.value = 0
+    addToCurrentProject.value = false
+    submitting.value = false
 }
 
 function addLayer() {
@@ -92,15 +105,49 @@ function isVectorFile(file: File) {
 }
 
 function submit() {
-    console.log('submit')
+    submitting.value = true
+    createDataset({
+        name: name.value,
+        description: description.value,
+        category: category.value,
+    }).then(async (dataset) => {
+        if (addToCurrentProject.value) {
+            emit('addToCurrentProject', dataset)
+        }
+        const layerOptions = await Promise.all(
+            layers.value.map(async (l) => {
+                let fileValues = await Promise.all(
+                    l.files.map(async (f) => await uploadFile(f))
+                )
+                let fileItems = await Promise.all(
+                    l.files.map(async (f, i) => await createFileItem({
+                        name: f.name,
+                        file: fileValues[i],
+                        file_type: f.type.substring(f.type.lastIndexOf('/') + 1).replaceAll('+', ''),
+                        dataset: dataset.id,
+                    }))
+                )
+                const layerInfo: any = {
+                    name: l.name,
+                    source_files: fileItems.map((f) => f.name)
+                }
+                if (l.frame_property) {
+                    layerInfo.frame_property = l.frame_property
+                }
+                return layerInfo
+            })
+        )
+        spawnDatasetConversion(dataset.id, {layer_options: layerOptions}).then((conversionTask) => {
+            emit('uploaded', {dataset, conversionTask})
+            cancel()
+        })
+    })
 }
 
 watch(open, () => {
     if(!open) cancel()
-    else addLayer()
+    else init()
 })
-
-onMounted(init)
 </script>
 
 <template>
@@ -299,10 +346,11 @@ onMounted(init)
                     </v-btn>
                     <v-btn
                         class="primary-button"
-                        :disabled="!valid"
+                        :disabled="!valid || submitting"
                         @click="submit"
                     >
-                        <v-icon color="button-text" class="mr-1" icon="mdi-upload" />
+                        <v-progress-circular v-if="submitting" indeterminate size="20" class="mr-1"/>
+                        <v-icon v-else color="button-text" class="mr-1" icon="mdi-upload" />
                         Upload
                     </v-btn>
                 </v-card-actions>
