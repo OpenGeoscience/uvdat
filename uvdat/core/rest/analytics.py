@@ -71,12 +71,12 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
     @action(
         detail=False,
         methods=['get'],
-        url_path=r'project/(?P<project_id>[\d*]+)/types/(?P<analysis_type>.+)/results',
+        url_path=r'project/(?P<project_id>[\d*]+)/types/(?P<task_type>.+)/results',
     )
-    def list_results(self, request, project_id: int, analysis_type: str, **kwargs):
+    def list_results(self, request, project_id: int, task_type: str, **kwargs):
         results = TaskResult.objects.filter(
             project__id=project_id,
-            analysis_type=analysis_type,
+            task_type=task_type,
         )
         return Response(
             [uvdat_serializers.TaskResultSerializer(result).data for result in results],
@@ -86,15 +86,15 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
     @action(
         detail=False,
         methods=['post'],
-        url_path=r'project/(?P<project_id>[\d*]+)/types/(?P<analysis_type>.+)/run',
+        url_path=r'project/(?P<project_id>[\d*]+)/types/(?P<task_type>.+)/run',
     )
-    def run(self, request, project_id: int, analysis_type: str, **kwargs):
+    def run(self, request, project_id: int, task_type: str, **kwargs):
         project = Project.objects.get(id=project_id)
         analysis_type_class = next(
-            iter(at for at in analysis_types if at().db_value == analysis_type), None
+            iter(at for at in analysis_types if at().db_value == task_type), None
         )
         if analysis_type_class is None:
-            return Response(f'Analysis type "{analysis_type}" not found', status=404)
+            return Response(f'Analysis type "{task_type}" not found', status=404)
         result = analysis_type_class().run_task(project, **request.data)
         return Response(
             uvdat_serializers.TaskResultSerializer(result).data,

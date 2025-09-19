@@ -123,7 +123,7 @@ class NetworkNodeAdmin(admin.ModelAdmin):
 
 
 class TaskResultAdmin(admin.ModelAdmin):
-    list_display = ['id', 'analysis_type', 'inputs']
+    list_display = ['id', 'task_type', 'inputs']
 
 
 admin.site.register(Project, ProjectAdmin)

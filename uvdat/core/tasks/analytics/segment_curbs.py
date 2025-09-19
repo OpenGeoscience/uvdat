@@ -32,7 +32,7 @@ class SegmentCurbs(AnalysisType):
     def run_task(self, project, **inputs):
         result = TaskResult.objects.create(
             name='Segment Curbs',
-            analysis_type=self.db_value,
+            task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',

@@ -195,7 +195,7 @@ export const usePanelStore = defineStore('panel', () => {
         } else if (showable.network) {
             return isVisible({dataset: showable.network.dataset})
         } else if (showable.taskresult) {
-            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.analysis_type)
+            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
             if (analysisType) {
                 const showableChildren: Record<string, any>[] = []
                 Object.entries(showable.taskresult.outputs).forEach(
@@ -261,7 +261,7 @@ export const usePanelStore = defineStore('panel', () => {
         } else if (showable.network) {
             show({dataset: showable.network.dataset})
         } else if (showable.taskresult) {
-            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.analysis_type)
+            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
             if (analysisType) {
                 Object.entries(showable.taskresult.outputs).map(([outputKey, outputValue]) => {
                     const type = analysisType.output_types[outputKey].toLowerCase()

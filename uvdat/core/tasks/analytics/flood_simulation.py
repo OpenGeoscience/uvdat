@@ -104,7 +104,7 @@ class FloodSimulation(AnalysisType):
     def run_task(self, project, **inputs):
         result = TaskResult.objects.create(
             name='Flood Simulation',
-            analysis_type=self.db_value,
+            task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',

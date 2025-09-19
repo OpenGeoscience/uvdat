@@ -140,7 +140,7 @@ def test_rest_dataset_upload(project, user, authenticated_api_client, live_serve
     # Spawn conversion task for Dataset
     result_expected = dict(
         name=f'Conversion of Dataset {dataset_id}',
-        analysis_type='conversion',
+        task_type='conversion',
         inputs=dict(
             layer_options=[dict(name='Multiframe Vector Test', frame_property='frame')],
             network_options=None,

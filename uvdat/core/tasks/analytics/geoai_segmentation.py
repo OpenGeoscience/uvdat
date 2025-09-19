@@ -34,7 +34,7 @@ class GeoAISegmentation(AnalysisType):
         prompt = inputs.get('segmentation_prompt', '')
         result = TaskResult.objects.create(
             name=f'Segment {prompt}',
-            analysis_type=self.db_value,
+            task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',

@@ -51,7 +51,7 @@ const networkInput = computed(() => {
     const networkId = analysis.inputs.network
     network = networkStore.availableNetworks.find((n) => n.id === networkId)
     if (!network) {
-      const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.analysis_type)
+      const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.task_type)
       network = analysisType?.input_options.network.find(
         (o: any) => o.id ===  networkId
       )

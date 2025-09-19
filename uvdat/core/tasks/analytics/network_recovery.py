@@ -50,16 +50,14 @@ class NetworkRecovery(AnalysisType):
             if at().output_types.get('failures') == 'network_animation'
         ]
         return {
-            'network_failure': TaskResult.objects.filter(
-                analysis_type__in=node_failure_analysis_types
-            ),
+            'network_failure': TaskResult.objects.filter(task_type__in=node_failure_analysis_types),
             'recovery_mode': RECOVERY_MODES,
         }
 
     def run_task(self, project, **inputs):
         result = TaskResult.objects.create(
             name='Network Recovery',
-            analysis_type=self.db_value,
+            task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',

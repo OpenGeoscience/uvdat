@@ -22,7 +22,7 @@ class Dataset(models.Model):
 
             result = TaskResult.objects.create(
                 name=f'Conversion of Dataset {self.id}',
-                analysis_type='conversion',
+                task_type='conversion',
                 inputs=dict(
                     layer_options=layer_options,
                     network_options=network_options,

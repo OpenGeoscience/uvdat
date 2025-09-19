@@ -12,7 +12,7 @@ from .project import Project
 
 class TaskResult(models.Model):
     name = models.CharField(max_length=255)
-    analysis_type = models.CharField(max_length=25)
+    task_type = models.CharField(max_length=25)
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name='task_results', null=True
     )
