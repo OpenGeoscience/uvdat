@@ -1,5 +1,7 @@
 from django.db import models
 
+from uvdat.core.tasks.dataset import convert_dataset
+
 
 class Dataset(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -15,8 +17,6 @@ class Dataset(models.Model):
         region_options=None,
         asynchronous=True,
     ):
-        from uvdat.core.tasks.dataset import convert_dataset
-
         if asynchronous:
             from uvdat.core.models.task_result import TaskResult
 

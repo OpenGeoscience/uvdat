@@ -1,22 +1,9 @@
 from celery import shared_task
 
-from uvdat.core.models import (
-    Dataset,
-    FileItem,
-    Layer,
-    LayerFrame,
-    RasterData,
-    TaskResult,
-    VectorData,
-)
-
-from .conversion import convert_file_item
-from .data import create_vector_features
-from .networks import create_network
-from .regions import create_source_regions
-
 
 def create_layers_and_frames(dataset, layer_options=None):
+    from uvdat.core.models import Layer, LayerFrame, RasterData, VectorData
+
     Layer.objects.filter(dataset=dataset).delete()
     LayerFrame.objects.filter(layer__dataset=dataset).delete()
     vectors = VectorData.objects.filter(dataset=dataset)
@@ -127,6 +114,13 @@ def convert_dataset(
     region_options=None,
     result_id=None,
 ):
+    from uvdat.core.models import Dataset, FileItem, RasterData, TaskResult, VectorData
+
+    from .conversion import convert_file_item
+    from .data import create_vector_features
+    from .networks import create_network
+    from .regions import create_source_regions
+
     dataset = Dataset.objects.get(id=dataset_id)
     dataset.processing = True
     dataset.save()
