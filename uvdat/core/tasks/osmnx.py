@@ -2,7 +2,16 @@ from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
 import osmnx
 
-from uvdat.core.models import Dataset, Network, NetworkEdge, NetworkNode, Project, VectorData
+from uvdat.core.models import (
+    Dataset,
+    Layer,
+    LayerFrame,
+    Network,
+    NetworkEdge,
+    NetworkNode,
+    Project,
+    VectorData,
+)
 from uvdat.core.tasks.data import create_vector_features
 from uvdat.core.tasks.networks import geojson_from_network
 
@@ -18,6 +27,8 @@ def get_or_create_road_dataset(project, location):
 
     print('Clearing previous results...')
     Network.objects.filter(vector_data__dataset=dataset).delete()
+    VectorData.objects.filter(dataset=dataset).delete()
+    Layer.objects.filter(dataset=dataset).delete()
     return dataset
 
 
@@ -33,8 +44,17 @@ def metadata_for_row(row):
 def load_roads(project_id, location):
     project = Project.objects.get(id=project_id)
     dataset = get_or_create_road_dataset(project, location)
-    vector_data = VectorData.objects.create(dataset=dataset)
+    vector_data = VectorData.objects.create(
+        name=f'{location} Road Vector Data',
+        dataset=dataset,
+    )
+    layer = Layer.objects.create(
+        name=f'{location} Roads',
+        dataset=dataset,
+    )
+    LayerFrame.objects.create(name='Frame 0', layer=layer, vector=vector_data)
     network = Network.objects.create(
+        name=f'{location} Road Network',
         category='roads',
         vector_data=vector_data,
         metadata={'source': 'Fetched with OSMnx.'},
@@ -90,4 +110,5 @@ def load_roads(project_id, location):
 
     vector_data.write_geojson_data(geojson_from_network(dataset))
     create_vector_features(vector_data)
+    vector_data.get_summary()
     print('Done.')

@@ -41,7 +41,7 @@ SELECT id FROM n ORDER BY id
 ;
 """
 
-GCC_QUERY_ITERATION_THRESHOLD = 10
+GCC_QUERY_ITERATION_THRESHOLD = 50
 
 
 class Network(models.Model):
