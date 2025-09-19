@@ -88,6 +88,7 @@ def test_rest_dataset_upload(project, user, authenticated_api_client, live_serve
         assert serialized_dataset[key] == value
     assert 'id' in serialized_dataset
     dataset_id = serialized_dataset['id']
+    dataset_name = serialized_dataset['name']
 
     # Add Dataset to Project
     resp = authenticated_api_client.patch(
@@ -139,9 +140,10 @@ def test_rest_dataset_upload(project, user, authenticated_api_client, live_serve
 
     # Spawn conversion task for Dataset
     result_expected = dict(
-        name=f'Conversion of Dataset {dataset_id}',
+        name=f'Conversion of Dataset {dataset_name}',
         task_type='conversion',
         inputs=dict(
+            dataset_id=dataset_id,
             layer_options=[dict(name='Multiframe Vector Test', frame_property='frame')],
             network_options=None,
             region_options=None,
