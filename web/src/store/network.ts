@@ -236,33 +236,39 @@ export const useNetworkStore = defineStore('network', () => {
         const map = mapStore.getMap()
         mapStore.getUserMapLayers().forEach((mapLayerId) => {
             const layerInfo = mapStore.parseLayerString(mapLayerId)
-            if (layerInfo.type === 'vector' && layerInfo.typeId === network.vector_data) {
-                const currentStyleSpec = styleStore.selectedLayerStyles[`${layerInfo.layerId}.${layerInfo.layerCopyId}`].style_spec;
-                const frames = layerStore.framesByLayerId[layerInfo.layerId]
-                const currentFrame = frames.find((f) => f.id === layerInfo.frameId)
-                if (currentStyleSpec && currentFrame) {
-                    networkPaintProperties.forEach((paintProperty) => {
-                        if (paintProperty.includes(layerInfo.layerType)) {
-                            let defaultPropValue: any = currentStyleSpec?.opacity
-                            if (paintProperty.includes('color')) {
-                                const groupName = layerInfo.layerType === 'line' ? 'lines' : 'points'
-                                const propsSpec = currentFrame.vector?.summary?.properties
-                                if (propsSpec) {
-                                    defaultPropValue = styleStore.getVectorColorPaintProperty(currentStyleSpec, groupName, propsSpec)
-                                } else {
-                                    defaultPropValue = 'black'
-                                }
-                            }
-                            const paintPropertyValue = getNetworkPaintPropertyValue(
-                                paintProperty,
-                                networkState,
-                                defaultPropValue
-                            )
-                            map.setPaintProperty(mapLayerId, paintProperty, paintPropertyValue)
-                        }
-                    })
-                }
+            if (!(layerInfo.type === 'vector' && layerInfo.typeId === network.vector_data)) {
+                // No-op for map layers that do not correspond to the Network's VectorData object
+                return;
             }
+            const currentStyleSpec = styleStore.selectedLayerStyles[`${layerInfo.layerId}.${layerInfo.layerCopyId}`].style_spec;
+            const frames = layerStore.framesByLayerId[layerInfo.layerId]
+            const currentFrame = frames.find((f) => f.id === layerInfo.frameId)
+            if (!(currentStyleSpec && currentFrame)) {
+                // Must have current style to use as default and current frame to get vector feature properties
+                return;
+            }
+            networkPaintProperties.forEach((paintProperty) => {
+                if (!(paintProperty.includes(layerInfo.layerType))) {
+                    // No-op for paint properties that do not match the current layer's type (i.e. line-color for point layer)
+                    return;
+                }
+                let defaultPropValue: any = currentStyleSpec?.opacity
+                if (paintProperty.includes('color')) {
+                    const groupName = layerInfo.layerType === 'line' ? 'lines' : 'points'
+                    const propsSpec = currentFrame.vector?.summary?.properties
+                    if (propsSpec) {
+                        defaultPropValue = styleStore.getVectorColorPaintProperty(currentStyleSpec, groupName, propsSpec)
+                    } else {
+                        defaultPropValue = 'black'
+                    }
+                }
+                const paintPropertyValue = getNetworkPaintPropertyValue(
+                    paintProperty,
+                    networkState,
+                    defaultPropValue
+                )
+                map.setPaintProperty(mapLayerId, paintProperty, paintPropertyValue)
+            })
         })
     }
 
