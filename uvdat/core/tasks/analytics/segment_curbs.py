@@ -8,7 +8,7 @@ from celery import shared_task
 from django.core.files.base import ContentFile
 from django_large_image import tilesource, utilities
 
-from uvdat.core.models import AnalysisResult, Dataset, FileItem, RasterData
+from uvdat.core.models import Dataset, FileItem, RasterData, TaskResult
 
 from .analysis_type import AnalysisType
 
@@ -30,9 +30,9 @@ class SegmentCurbs(AnalysisType):
         return {'aerial_imagery': RasterData.objects.filter(dataset__category='imagery')}
 
     def run_task(self, project, **inputs):
-        result = AnalysisResult.objects.create(
+        result = TaskResult.objects.create(
             name='Segment Curbs',
-            analysis_type=self.db_value,
+            task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',
@@ -43,7 +43,7 @@ class SegmentCurbs(AnalysisType):
 
 @shared_task
 def segment_curbs(result_id):
-    result = AnalysisResult.objects.get(id=result_id)
+    result = TaskResult.objects.get(id=result_id)
 
     try:
         # Verify inputs

@@ -5,7 +5,7 @@ from django.utils import timezone
 import networkx as nx
 import numpy
 
-from uvdat.core.models import AnalysisResult, Chart, Network
+from uvdat.core.models import Chart, Network, TaskResult
 
 from .analysis_type import AnalysisType
 
@@ -31,7 +31,7 @@ class NetworkRecovery(AnalysisType):
         )
         self.db_value = 'network_recovery'
         self.input_types = {
-            'network_failure': 'AnalysisResult',
+            'network_failure': 'TaskResult',
             'recovery_mode': 'string',
         }
         self.output_types = {
@@ -50,16 +50,14 @@ class NetworkRecovery(AnalysisType):
             if at().output_types.get('failures') == 'network_animation'
         ]
         return {
-            'network_failure': AnalysisResult.objects.filter(
-                analysis_type__in=node_failure_analysis_types
-            ),
+            'network_failure': TaskResult.objects.filter(task_type__in=node_failure_analysis_types),
             'recovery_mode': RECOVERY_MODES,
         }
 
     def run_task(self, project, **inputs):
-        result = AnalysisResult.objects.create(
+        result = TaskResult.objects.create(
             name='Network Recovery',
-            analysis_type=self.db_value,
+            task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',
@@ -124,7 +122,7 @@ def sort_graph_centrality(g, measure):
 
 @shared_task
 def network_recovery(result_id):
-    result = AnalysisResult.objects.get(id=result_id)
+    result = TaskResult.objects.get(id=result_id)
 
     try:
         # Verify inputs
@@ -134,8 +132,8 @@ def network_recovery(result_id):
             result.write_error('Network failure result not provided')
         else:
             try:
-                failure = AnalysisResult.objects.get(id=failure_id)
-            except AnalysisResult.DoesNotExist:
+                failure = TaskResult.objects.get(id=failure_id)
+            except TaskResult.DoesNotExist:
                 result.write_error('Network failure result not found')
 
         mode = result.inputs.get('recovery_mode')

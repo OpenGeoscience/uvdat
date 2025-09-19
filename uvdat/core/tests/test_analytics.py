@@ -38,7 +38,7 @@ def test_rest_run_analysis_task_no_inputs(authenticated_api_client, user, projec
     data = resp.json()
 
     # evaluate initial response
-    assert data.get('analysis_type') == task
+    assert data.get('task_type') == task
     assert data.get('project') == project.id
     assert data.get('status') == 'Initializing task...'
     assert data.get('inputs') == {}
@@ -51,7 +51,7 @@ def test_rest_run_analysis_task_no_inputs(authenticated_api_client, user, projec
     resp = authenticated_api_client.get(f'/api/v1/analytics/{result_id}/')
     data = resp.json()
     assert data.get('id') == result_id
-    assert data.get('analysis_type') == task
+    assert data.get('task_type') == task
     assert data.get('error') is not None
     assert re.search(r'(.+) not provided', data.get('error')) is not None
     assert re.search(r'Completed in (\d|.)+ seconds.', data.get('status')) is not None
