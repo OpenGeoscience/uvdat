@@ -21,9 +21,10 @@ class Dataset(models.Model):
             from uvdat.core.models.task_result import TaskResult
 
             result = TaskResult.objects.create(
-                name=f'Conversion of Dataset {self.id}',
+                name=f'Conversion of Dataset {self.name}',
                 task_type='conversion',
                 inputs=dict(
+                    dataset_id=self.id,
                     layer_options=layer_options,
                     network_options=network_options,
                     region_options=region_options,
