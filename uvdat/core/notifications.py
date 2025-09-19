@@ -14,3 +14,16 @@ class AnalyticsConsumer(JsonWebsocketConsumer):
 
     def send_notification(self, event):
         self.send_json(content=event['message'])
+
+
+class ConversionConsumer(JsonWebsocketConsumer):
+    def connect(self):
+        self.group_name = 'conversion'
+        async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
+        self.accept()
+
+    def disconnect(self, code):
+        async_to_sync(self.channel_layer.group_discard)(self.group_name, self.channel_name)
+
+    def send_notification(self, event):
+        self.send_json(content=event['message'])
