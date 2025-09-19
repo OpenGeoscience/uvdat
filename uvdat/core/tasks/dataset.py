@@ -44,28 +44,31 @@ def create_layers_and_frames(dataset, layer_options=None):
                 properties = summary.get('properties')
                 if properties and frame_property and frame_property in properties:
                     property_summary = properties.get(frame_property)
-                    value_set = property_summary.get('value_set')
-                    if value_set is not None:
-                        for value in value_set:
-                            frames.append(
-                                dict(
-                                    name=value,
-                                    index=len(frames),
-                                    data=layer_data.name,
-                                    source_filters=dict(frame_property=value, **additional_filters),
+                    if property_summary is not None:
+                        value_set = property_summary.get('value_set')
+                        if value_set is not None:
+                            for value in value_set:
+                                frames.append(
+                                    dict(
+                                        name=value,
+                                        index=len(frames),
+                                        data=layer_data.name,
+                                        source_filters=dict(
+                                            frame_property=value, **additional_filters
+                                        ),
+                                    )
                                 )
-                            )
-                    value_range = property_summary.get('range')
-                    if value_range is not None:
-                        for i in range(*value_range):
-                            frames.append(
-                                dict(
-                                    name=f'Frame {i}',
-                                    index=len(frames),
-                                    data=layer_data.name,
-                                    source_filters=dict(frame_property=i, **additional_filters),
+                        value_range = property_summary.get('range')
+                        if value_range is not None:
+                            for i in range(*value_range):
+                                frames.append(
+                                    dict(
+                                        name=f'Frame {i}',
+                                        index=len(frames),
+                                        data=layer_data.name,
+                                        source_filters=dict(frame_property=i, **additional_filters),
+                                    )
                                 )
-                            )
                 elif bands and len(bands) > 1:
                     for band in bands:
                         frames.append(
