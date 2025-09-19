@@ -172,7 +172,7 @@ export async function runAnalysis(
   ).data;
 }
 
-export async function getAnalysisResults(
+export async function getTaskResults(
   analysisType: string,
   projectId: number
 ) {

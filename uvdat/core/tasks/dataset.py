@@ -1,14 +1,9 @@
 from celery import shared_task
 
-from uvdat.core.models import Dataset, FileItem, Layer, LayerFrame, RasterData, VectorData
-
-from .conversion import convert_file_item
-from .data import create_vector_features
-from .networks import create_network
-from .regions import create_source_regions
-
 
 def create_layers_and_frames(dataset, layer_options=None):
+    from uvdat.core.models import Layer, LayerFrame, RasterData, VectorData
+
     Layer.objects.filter(dataset=dataset).delete()
     LayerFrame.objects.filter(layer__dataset=dataset).delete()
     vectors = VectorData.objects.filter(dataset=dataset)
@@ -44,18 +39,36 @@ def create_layers_and_frames(dataset, layer_options=None):
                 frame_property = layer_info.get('frame_property')
                 additional_filters = layer_info.get('additional_filters', {})
                 metadata = layer_data.metadata or {}
-                properties = metadata.get('properties')
                 bands = metadata.get('bands')
+                summary = layer_data.summary if hasattr(layer_data, 'summary') else {}
+                properties = summary.get('properties')
                 if properties and frame_property and frame_property in properties:
-                    for value in properties[frame_property]:
-                        frames.append(
-                            dict(
-                                name=value,
-                                index=len(frames),
-                                data=layer_data.name,
-                                source_filters={frame_property: value, **additional_filters},
-                            )
-                        )
+                    property_summary = properties.get(frame_property)
+                    if property_summary is not None:
+                        value_set = property_summary.get('value_set')
+                        if value_set is not None:
+                            for value in value_set:
+                                frames.append(
+                                    dict(
+                                        name=value,
+                                        index=len(frames),
+                                        data=layer_data.name,
+                                        source_filters=dict(
+                                            frame_property=value, **additional_filters
+                                        ),
+                                    )
+                                )
+                        value_range = property_summary.get('range')
+                        if value_range is not None:
+                            for i in range(*value_range):
+                                frames.append(
+                                    dict(
+                                        name=f'Frame {i}',
+                                        index=len(frames),
+                                        data=layer_data.name,
+                                        source_filters=dict(frame_property=i, **additional_filters),
+                                    )
+                                )
                 elif bands and len(bands) > 1:
                     for band in bands:
                         frames.append(
@@ -102,19 +115,39 @@ def convert_dataset(
     layer_options=None,
     network_options=None,
     region_options=None,
+    result_id=None,
 ):
+    from uvdat.core.models import Dataset, FileItem, RasterData, TaskResult, VectorData
+
+    from .conversion import convert_file_item
+    from .data import create_vector_features
+    from .networks import create_network
+    from .regions import create_source_regions
+
     dataset = Dataset.objects.get(id=dataset_id)
     dataset.processing = True
     dataset.save()
+
+    result = None
+    if result_id:
+        try:
+            result = TaskResult.objects.get(id=result_id)
+        except TaskResult.DoesNotExist:
+            pass
 
     VectorData.objects.filter(dataset=dataset).delete()
     RasterData.objects.filter(dataset=dataset).delete()
 
     for file_to_convert in FileItem.objects.filter(dataset=dataset):
+        if result is not None:
+            result.write_status(f'Converting file {file_to_convert.name}...')
         convert_file_item(file_to_convert)
 
     vectors = VectorData.objects.filter(dataset=dataset)
     for vector_data in vectors.all():
+        if result is not None:
+            result.write_status(f'Processing vector data {vector_data.name}...')
+
         if network_options:
             create_network(vector_data, network_options)
         elif region_options:
@@ -129,3 +162,6 @@ def convert_dataset(
 
     dataset.processing = False
     dataset.save()
+
+    if result is not None:
+        result.complete()

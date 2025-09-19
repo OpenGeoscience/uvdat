@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-__version__ = '1.6.0'
+__version__ = '1.7.0'
 
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
@@ -80,6 +80,7 @@ setup(
             'pytest==8.3.3',
             'pytest-django==4.9.0',
             'pytest-mock==3.14.0',
+            'django-s3-file-field-client==1.1.0',
         ],
     },
 )

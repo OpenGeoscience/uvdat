@@ -1,11 +1,11 @@
-import { FloatingPanelConfig, AnalysisResult, Chart, Dataset, Layer, Network, RasterData, VectorData } from '@/types';
+import { FloatingPanelConfig, TaskResult, Chart, Dataset, Layer, Network, RasterData, VectorData } from '@/types';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getDataset } from '@/api/rest';
 
 import { useAppStore, useLayerStore, useAnalysisStore, useProjectStore } from '.';
 
-const showableTypes = ['chart', 'dataset', 'network', 'layer', 'analysisresult', 'rasterdata', 'vectordata']
+const showableTypes = ['chart', 'dataset', 'network', 'layer', 'taskresult', 'rasterdata', 'vectordata']
 
 interface Showable {
     chart?: Chart,
@@ -14,7 +14,7 @@ interface Showable {
     network?: Network,
     rasterdata?: RasterData,
     vectordata?: VectorData,
-    analysisresult?: AnalysisResult,
+    taskresult?: TaskResult,
 }
 
 function defaultPanelArrangement(): FloatingPanelConfig[] {
@@ -196,13 +196,13 @@ export const usePanelStore = defineStore('panel', () => {
         } else if (showable.network) {
             const dataset = projectStore.availableDatasets?.find((d) => d.id === showable.network?.dataset)
             return isVisible({dataset})
-        } else if (showable.analysisresult) {
-            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
-            if (analysisType) {
+        } else if (showable.taskresult) {
+            const taskType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
+            if (taskType) {
                 const showableChildren: Record<string, any>[] = []
-                Object.entries(showable.analysisresult.outputs).forEach(
+                Object.entries(showable.taskresult.outputs).forEach(
                     ([outputKey, outputValue]) => {
-                        const type = analysisType?.output_types[outputKey].toLowerCase()
+                        const type = taskType?.output_types[outputKey].toLowerCase()
                         if (showableTypes.includes(type)) {
                             showableChildren.push({
                                 id: outputValue,
@@ -211,10 +211,10 @@ export const usePanelStore = defineStore('panel', () => {
                         }
                     }
                 );
-                Object.entries(showable.analysisresult.inputs).forEach(
+                Object.entries(showable.taskresult.inputs).forEach(
                     ([inputKey, inputValue])=> {
-                        const type = analysisType?.input_types[inputKey].toLowerCase()
-                        const value: Record<string, any> = analysisType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
+                        const type = taskType?.input_types[inputKey].toLowerCase()
+                        const value: Record<string, any> = taskType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
                         if (showableTypes.includes(type)) {
                             showableChildren.push({
                                 ...value,
@@ -263,18 +263,18 @@ export const usePanelStore = defineStore('panel', () => {
         } else if (showable.network) {
             const dataset = projectStore.availableDatasets?.find((d) => d.id === showable.network?.dataset)
             return show({dataset})
-        } else if (showable.analysisresult) {
-            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.analysisresult?.analysis_type)
-            if (analysisType) {
-                Object.entries(showable.analysisresult.outputs).map(([outputKey, outputValue]) => {
-                    const type = analysisType.output_types[outputKey].toLowerCase()
+        } else if (showable.taskresult) {
+            const taskType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
+            if (taskType) {
+                Object.entries(showable.taskresult.outputs).map(([outputKey, outputValue]) => {
+                    const type = taskType.output_types[outputKey].toLowerCase()
                     if (showableTypes.includes(type)) {
                         show({[type]: {id: outputValue}})
                     }
                 })
-                Object.entries(showable.analysisresult.inputs).map(([inputKey, inputValue]) => {
-                    const type = analysisType.input_types[inputKey].toLowerCase()
-                    const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
+                Object.entries(showable.taskresult.inputs).map(([inputKey, inputValue]) => {
+                    const type = taskType.input_types[inputKey].toLowerCase()
+                    const value: Record<string, any> = taskType.input_options[inputKey].find((o: any) => o.id === inputValue)
                     if (showableTypes.includes(type)) {
                         show({[type]: value})
                     }

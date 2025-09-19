@@ -393,10 +393,10 @@ export interface AnalysisType {
   output_types: Record<string, any>;
 }
 
-export interface AnalysisResult {
+export interface TaskResult {
   id: number;
   name: string;
-  analysis_type: string;
+  task_type: string;
   project: number;
   inputs: Record<string, any>;
   outputs: Record<string, any>;

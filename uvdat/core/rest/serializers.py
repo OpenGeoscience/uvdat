@@ -4,7 +4,6 @@ from django.contrib.gis.serializers import geojson
 from rest_framework import serializers
 
 from uvdat.core.models import (
-    AnalysisResult,
     Chart,
     Dataset,
     FileItem,
@@ -17,6 +16,7 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
+    TaskResult,
     VectorData,
 )
 
@@ -70,7 +70,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         return {
             'datasets': obj.datasets.count(),
             'charts': obj.charts.count(),
-            'analyses': obj.analysis_results.count(),
+            'analyses': obj.task_results.count(),
         }
 
     def to_internal_value(self, data):
@@ -208,7 +208,7 @@ class AnalysisTypeSerializer(serializers.Serializer):
     output_types = serializers.JSONField()
 
 
-class AnalysisResultSerializer(serializers.ModelSerializer):
+class TaskResultSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AnalysisResult
+        model = TaskResult
         fields = '__all__'
