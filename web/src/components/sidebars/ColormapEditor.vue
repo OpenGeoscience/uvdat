@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useStyleStore, useAppStore } from '@/store';
+import { useStyleStore, useAppStore, useProjectStore } from '@/store';
 import ColormapPreview from './ColormapPreview.vue';
 import { THEMES } from '@/themes';
 import { debounce } from 'lodash';
+import { createColormap } from '@/api/rest';
+import { Colormap } from '@/types';
 
 interface Marker {
     color: string,
@@ -19,9 +21,9 @@ interface MarkerBox {
 
 const styleStore = useStyleStore();
 const appStore = useAppStore();
-const colormaps = computed(() => styleStore.colormaps)
+const projectStore = useProjectStore();
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'create'])
 
 const name = ref()
 const markers = ref([
@@ -43,7 +45,7 @@ const markerOutlineColor = computed(() => {
     return THEMES[appStore.theme].colors['on-surface-variant']
 })
 
-const nameExistsRule = () => !colormaps.value?.map((c) => c.name).includes(name.value) || `Colormap ''${name.value}'' already exists.`
+const nameExistsRule = () => !styleStore.colormaps.map((c) => c.name).includes(name.value) || `Colormap ''${name.value}'' already exists.`
 
 const valid = computed(() => {
     return (
@@ -58,13 +60,17 @@ const currentColormap = computed(() => {
     return  {
         name: name.value,
         markers: markers.value,
+        project: projectStore.currentProject?.id,
     }
 })
 
-function createColormap() {
+function create() {
     if (valid.value) {
-        colormaps.value.push(currentColormap.value)
-        emit('close')
+        createColormap(currentColormap.value).then((result: Colormap) => {
+            styleStore.colormaps.push(result)
+            emit('create', result)
+            emit('close')
+        })
     }
 }
 
@@ -215,7 +221,7 @@ onMounted(drawMarkers)
                 v-model="name"
                 autofocus
                 :rules="[nameExistsRule]"
-                @keydown.enter="createColormap"
+                @keydown.enter="create"
             />
             <div class="gradient-editor">
                 <canvas
@@ -291,7 +297,7 @@ onMounted(drawMarkers)
                 <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                 close
             </v-btn>
-            <v-btn class="primary-button" variant="tonal" @click="createColormap" :disabled="!valid">
+            <v-btn class="primary-button" variant="tonal" @click="create" :disabled="!valid">
                 <v-icon color="button-text" class="mr-1">mdi-plus-circle</v-icon>
                 Create Colormap
             </v-btn>
