@@ -1,12 +1,27 @@
+from pathlib import Path
+import tempfile
+
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
+from django.urls import reverse
+import pooch
 import pytest
+import requests
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
+from s3_file_field_client import S3FileFieldClient
 
-from uvdat.core.models import Project
+from uvdat.core.models import Dataset, Project
 
 from .factory_fixtures import *  # noqa: F403, F401
+
+TEST_FILE = dict(
+    name='multiframe_vector.geojson',
+    file_type='geojson',
+    content_type='application/json',
+    url='https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download',
+    hash='9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee',
+)
 
 
 @pytest.fixture
@@ -81,6 +96,16 @@ def test_project() -> Project:
 
 
 @pytest.fixture
+def test_dataset(user, test_project) -> Dataset:
+    dataset = Dataset.objects.create(
+        name='Test Dataset', description='My test dataset', category='test'
+    )
+    test_project.set_collaborators([user])
+    test_project.datasets.set([dataset])
+    return dataset
+
+
+@pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
 
@@ -106,3 +131,41 @@ def permissions_client(user_info, test_project) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
     return (client, user)
+
+
+@pytest.fixture
+def s3ff_value(live_server, token) -> str:
+    session = requests.Session()
+    session.headers.update(dict(Authorization=f'Token {token}'))
+    s3ff_base_url = reverse('s3_file_field:finalize').replace('finalize/', '')
+    s3ff_client = S3FileFieldClient(f'{live_server}{s3ff_base_url}', session)
+    with tempfile.TemporaryDirectory() as tmp:
+        pooch.retrieve(
+            url=TEST_FILE['url'],
+            known_hash=TEST_FILE['hash'],
+            fname=TEST_FILE['name'],
+            path=tmp,
+        )
+        test_file_path = Path(tmp, TEST_FILE['name'])
+        with test_file_path.open('rb') as f:
+            return s3ff_client.upload_file(
+                file_stream=f,
+                file_name=TEST_FILE['name'],
+                file_content_type=TEST_FILE['content_type'],
+                field_id='core.FileItem.file',
+            )
+
+
+@pytest.fixture
+def test_file_item(test_dataset, s3ff_value, authenticated_api_client):
+    # Creating FileItem directly gets a NoSuchKey S3Error, must use API to create
+    resp = authenticated_api_client.post(
+        '/api/v1/files/',
+        dict(
+            name=TEST_FILE['name'],
+            file=s3ff_value,
+            file_type=TEST_FILE['file_type'],
+            dataset=test_dataset.id,
+        ),
+    )
+    return resp.json()
