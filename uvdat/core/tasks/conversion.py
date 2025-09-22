@@ -7,8 +7,6 @@ import zipfile
 from django.core.files.base import ContentFile
 from django_large_image import utilities
 import geopandas
-import large_image
-import large_image_converter
 import numpy
 import rasterio
 import shapefile
@@ -25,6 +23,9 @@ logging.getLogger('large-image-converter').setLevel(logging.ERROR)
 
 
 def get_cog_path(file):
+    import large_image
+    import large_image_converter
+
     raster_path = None
     try:
         # if large_image can open file and geospatial is True, rasterio is not needed.
@@ -114,6 +115,8 @@ def convert_files(*files, file_item=None, combine=False):
         print('\t\t', str(vector_data), 'created for ' + geodata.get('name'))
 
     for cog in cog_set:
+        import large_image
+
         cog_path = cog.get('path')
         source = large_image.open(cog_path)
         metadata.update(source.getMetadata())

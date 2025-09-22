@@ -41,6 +41,8 @@ SELECT id FROM n ORDER BY id
 ;
 """
 
+GCC_QUERY_ITERATION_THRESHOLD = 10
+
 
 class Network(models.Model):
     name = models.CharField(max_length=255, default='Network')
@@ -56,7 +58,10 @@ class Network(models.Model):
         cur_excluded_nodes = excluded_nodes.copy()
 
         # Store largest network found so far
-        gcc = []
+        gcc: list[int] = []
+
+        # Track the number of iterations, aborting if this reaches some threshold
+        iterations = 0
 
         with connection.cursor() as cursor:
             # If the GCC size is greater than half the network, we know that there's no way to
@@ -69,13 +74,17 @@ class Network(models.Model):
                         'network_id': self.pk,
                     },
                 )
-                nodes = [x[0] for x in cursor.fetchall()]
+                nodes: list[int] = [x[0] for x in cursor.fetchall()]
                 if not nodes:
                     raise Exception('Expected to find nodes but found none')
 
                 cur_excluded_nodes.extend(nodes)
                 if len(nodes) > len(gcc):
                     gcc = nodes
+
+                iterations += 1
+                if iterations > GCC_QUERY_ITERATION_THRESHOLD:
+                    return None
 
         return gcc
 

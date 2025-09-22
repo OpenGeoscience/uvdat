@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-__version__ = '1.4.0'
+__version__ = '1.7.0'
 
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
@@ -52,8 +52,9 @@ setup(
         'django-large-image==0.10.0',
         'drf-yasg==1.21.7',
         'matplotlib==3.9.2',  # for raster colormaps
-        'osmnx==1.9.4',
-        'geopandas==0.14.4',
+        'osmnx==2.0.6',
+        'geoai-py==0.9.2',
+        'geopandas==1.1.1',
         'networkx==3.3',
         'pooch==1.8.2',
         'pyshp==2.3.1',
@@ -79,6 +80,7 @@ setup(
             'pytest==8.3.3',
             'pytest-django==4.9.0',
             'pytest-mock==3.14.0',
+            'django-s3-file-field-client==1.1.0',
         ],
     },
 )

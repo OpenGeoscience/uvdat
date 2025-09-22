@@ -10,10 +10,12 @@ from django.utils import timezone
 from .project import Project
 
 
-class AnalysisResult(models.Model):
+class TaskResult(models.Model):
     name = models.CharField(max_length=255)
-    analysis_type = models.CharField(max_length=25)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='analysis_results')
+    task_type = models.CharField(max_length=25)
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='task_results', null=True
+    )
     inputs = models.JSONField(blank=True, null=True)
     outputs = models.JSONField(blank=True, null=True)
     status = models.TextField(null=True, blank=True)
@@ -40,12 +42,14 @@ class AnalysisResult(models.Model):
         self.save()
 
 
-@receiver(post_save, sender=AnalysisResult)
+@receiver(post_save, sender=TaskResult)
 def result_post_save(sender, instance, **kwargs):
-    from uvdat.core.rest.serializers import AnalysisResultSerializer
+    from uvdat.core.rest.serializers import TaskResultSerializer
 
-    payload = AnalysisResultSerializer(instance).data
-    group_name = f'analytics_{instance.project.id}'
+    payload = TaskResultSerializer(instance).data
+    group_name = 'conversion'
+    if instance.project:
+        group_name = f'analytics_{instance.project.id}'
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         group_name, {'type': 'send_notification', 'message': json.dumps(payload)}

@@ -1,6 +1,6 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from uvdat.core.models import Dataset
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
@@ -10,11 +10,12 @@ from uvdat.core.rest.serializers import (
     LayerSerializer,
     NetworkSerializer,
     RasterDataSerializer,
+    TaskResultSerializer,
     VectorDataSerializer,
 )
 
 
-class DatasetViewSet(ReadOnlyModelViewSet):
+class DatasetViewSet(ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
     permission_classes = [GuardianPermission]
@@ -62,3 +63,14 @@ class DatasetViewSet(ReadOnlyModelViewSet):
             [FileItemSerializer(file).data for file in dataset.source_files.all()],
             status=200,
         )
+
+    @action(detail=True, methods=['post'])
+    def convert(self, request, **kwargs):
+        dataset = self.get_object()
+        result = dataset.spawn_conversion_task(
+            layer_options=request.data.get('layer_options'),
+            network_options=request.data.get('network_options'),
+            region_options=request.data.get('region_options'),
+        )
+
+        return Response(TaskResultSerializer(result).data, status=200)

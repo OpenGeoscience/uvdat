@@ -11,7 +11,7 @@ def test_rest_list_analysis_types(authenticated_api_client, project):
     analysis_type_instances = [at() for at in analysis_types]
     resp = authenticated_api_client.get(f'/api/v1/analytics/project/{project.id}/types/')
     data = resp.json()
-    assert len(data) == 4
+    assert len(data) == len(analysis_type_instances)
     assert set(type_info.get('name') for type_info in data) == set(
         i.name for i in analysis_type_instances
     )
@@ -38,7 +38,7 @@ def test_rest_run_analysis_task_no_inputs(authenticated_api_client, user, projec
     data = resp.json()
 
     # evaluate initial response
-    assert data.get('analysis_type') == task
+    assert data.get('task_type') == task
     assert data.get('project') == project.id
     assert data.get('status') == 'Initializing task...'
     assert data.get('inputs') == {}
@@ -51,7 +51,7 @@ def test_rest_run_analysis_task_no_inputs(authenticated_api_client, user, projec
     resp = authenticated_api_client.get(f'/api/v1/analytics/{result_id}/')
     data = resp.json()
     assert data.get('id') == result_id
-    assert data.get('analysis_type') == task
+    assert data.get('task_type') == task
     assert data.get('error') is not None
     assert re.search(r'(.+) not provided', data.get('error')) is not None
     assert re.search(r'Completed in (\d|.)+ seconds.', data.get('status')) is not None
@@ -68,12 +68,10 @@ def test_flood_analysis_chain(project):
     # ensure a superuser exists
     User.objects.create_superuser('testsuper')
 
-    # populate necessary objects
+    # ingest necessary objects
     call_command(
-        'populate',
-        'boston_floods',
-        include_large=False,
-        dataset_indexes=[0],  # dataset 0 is MBTA network
+        'ingest',
+        './tests/analytics.json',
     )
     network = Network.objects.get(name='MBTA Rapid Transit Network 1')
     chart = Chart.objects.get(name='Parabolic Hyetograph')

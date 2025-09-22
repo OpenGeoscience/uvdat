@@ -47,7 +47,7 @@ class NetworkViewSet(ModelViewSet):
     @swagger_auto_schema(query_serializer=GCCQueryParamSerializer)
     @action(detail=True, methods=['get'])
     def gcc(self, request, **kwargs):
-        network = self.get_object()
+        network: Network = self.get_object()
 
         # Validate and de-serialize query params
         serializer = GCCQueryParamSerializer(data=request.query_params)
@@ -55,6 +55,9 @@ class NetworkViewSet(ModelViewSet):
         exclude_nodes = [int(n) for n in serializer.validated_data['exclude_nodes'].split(',')]
 
         gcc = network.get_gcc(excluded_nodes=exclude_nodes)
+        if gcc is None:
+            return Response(None)
+
         result = GCCResultSerializer(data=dict(gcc=gcc))
         result.is_valid(raise_exception=True)
         return Response(result.validated_data['gcc'], status=200)

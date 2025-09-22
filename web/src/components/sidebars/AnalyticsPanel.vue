@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
 import {
-  getAnalysisResults,
+  getTaskResults,
   runAnalysis,
   getDataset,
   getProjectAnalysisTypes,
   getChart,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
-import { AnalysisResult } from "@/types";
+import { TaskResult } from "@/types";
 
 import {
   useLayerStore,
@@ -32,7 +32,7 @@ const filteredAnalysisTypes = computed(() => {
   })
 })
 const tab = ref();
-const availableResults = ref<AnalysisResult[]>([]);
+const availableResults = ref<TaskResult[]>([]);
 const newestFirstResults = computed(() => {
   return availableResults.value.toSorted((a, b)=> {
     const aCreated = new Date(a.created);
@@ -40,7 +40,7 @@ const newestFirstResults = computed(() => {
     return bCreated.getTime() - aCreated.getTime();
   })
 })
-const currentResult = ref<AnalysisResult>();
+const currentResult = ref<TaskResult>();
 const fullInputs = ref<Record<string, any>>();
 const fullOutputs = ref<Record<string, any>>();
 const networkInput = computed(() => {
@@ -51,7 +51,7 @@ const networkInput = computed(() => {
     const networkId = analysis.inputs.network
     network = networkStore.availableNetworks.find((n) => n.id === networkId)
     if (!network) {
-      const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.analysis_type)
+      const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === analysis.task_type)
       network = analysisType?.input_options.network.find(
         (o: any) => o.id ===  networkId
       )
@@ -76,7 +76,7 @@ const networkInput = computed(() => {
 })
 const selectedInputs = ref<Record<string, any>>({});
 const inputSelectionRules = [
-  (v: any) => (v ? true : "Selection required."),
+  (v: any) => (v ? true : "Input required."),
 ];
 const additionalAnimationLayers = ref();
 const inputForm = ref();
@@ -100,7 +100,7 @@ function run() {
 
 function fetchResults() {
   if (!projectStore.currentProject || !analysisStore.currentAnalysisType) return;
-  getAnalysisResults(
+  getTaskResults(
     analysisStore.currentAnalysisType.db_value,
     projectStore.currentProject.id
   ).then((results) => {
@@ -263,19 +263,29 @@ watch(
           <v-window-item value="new">
             <v-form class="pa-3" @submit.prevent ref="inputForm">
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
-              <v-select
-                v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)"
-                v-model="selectedInputs[key]"
-                :key="key"
-                :label="key.replaceAll('_', ' ')"
-                :items="value"
-                :rules="inputSelectionRules"
-                item-value="id"
-                item-title="name"
-                density="compact"
-                hide-details="auto"
-                class="my-1"
-              />
+              <div v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)" :key="key">
+                <v-text-field
+                  v-if="analysisStore.currentAnalysisType.input_types[key] === 'string'"
+                  v-model="selectedInputs[key]"
+                  :label="key.replaceAll('_', ' ')"
+                  :rules="inputSelectionRules"
+                  density="compact"
+                  hide-details="auto"
+                  class="my-1"
+                />
+                <v-select
+                  v-else-if="value.length"
+                  v-model="selectedInputs[key]"
+                  :label="key.replaceAll('_', ' ')"
+                  :items="value"
+                  :rules="inputSelectionRules"
+                  item-value="id"
+                  item-title="name"
+                  density="compact"
+                  hide-details="auto"
+                  class="my-1"
+                />
+              </div>
               <v-btn @click="run" style="width: 100%" variant="tonal">
                 Run Analysis
               </v-btn>

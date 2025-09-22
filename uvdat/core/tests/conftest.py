@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.gis.geos import Point
 import pytest
+from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from uvdat.core.models import Project
@@ -89,6 +90,12 @@ def authenticated_api_client(user) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
+
+@pytest.fixture
+def token(user) -> str:
+    token, _ = Token.objects.get_or_create(user=user)
+    return token.key
 
 
 @pytest.fixture

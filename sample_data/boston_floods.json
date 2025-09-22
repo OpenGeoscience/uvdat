@@ -1,0 +1,272 @@
+[
+    {
+        "type": "Project",
+        "name": "Boston Transportation",
+        "default_map_center": [
+            42.4,
+            -71.1
+        ],
+        "default_map_zoom": 11,
+        "datasets": [
+            "MBTA Rapid Transit",
+            "MBTA Commuter Rail",
+            "Massachusetts Elevation Data",
+            "Boston Orthoimagery",
+            "Boston Neighborhoods",
+            "Boston Census 2020 Block Groups",
+            "Boston Zip Codes"
+        ]
+    },
+    {
+        "type": "Dataset",
+        "name": "MBTA Rapid Transit",
+        "description": "Boston Subway System Lines and Stops",
+        "category": "transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
+                "hash": "1a8d1a602e7880d091a156b3b97a47d453260ba41c7c4e6e872ca4543453985d",
+                "path": "boston/mbta_rapid_transit.zip",
+                "metadata": {
+                    "combine_contents": "true"
+                }
+            }
+        ],
+        "network_options": {
+            "connection_column": "ROUTE",
+            "connection_column_delimiter": "/",
+            "node_id_column": "STATION"
+        }
+    },
+    {
+        "type": "Dataset",
+        "name": "MBTA Commuter Rail",
+        "description": "Rail linework and station points for passenger, freight, and Amtrak and MBTA Commuter Rail trains.",
+        "category": "transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
+                "hash": "57158adcedb10e6e8db680d2b031556ad7ff31b2e936ac29679b5e68746aa2e0",
+                "path": "boston/commuter_rail.zip",
+                "metadata": {
+                    "combine_contents": "true"
+                }
+            }
+        ]
+    },
+    {
+        "type": "Dataset",
+        "name": "Massachusetts Elevation Data",
+        "description": "Low resolution sampling of land elevation in meters above sea level",
+        "category": "elevation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
+                "hash": "fceb76454c786d4e5ad6e05220073a0009e8deb008f5fd9195ff21c432fb8682",
+                "path": "boston/easternmass.tif"
+            }
+        ],
+        "layers": [
+            {
+                "name": "Elevation",
+                "frames": [
+                    {
+                        "name": "Band 1",
+                        "data": "easternmass.tif"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "Dataset",
+        "name": "Boston Orthoimagery",
+        "description": "Sourced from https://gis.data.mass.gov/maps/6c7009c789354573a42af7251fb768a4/about",
+        "category": "imagery",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/6744df3c22f196cb5d931161/download",
+                "hash": "ea35f2e3d2c5dc0b2d3621ea66c1faf23632a2e1de6438cd2303e1896f75f4d4",
+                "path": "boston/boston_orthoimagery.tiff"
+            }
+        ],
+        "layers": [
+            {
+                "name": "Orthoimagery from a single precomposited image",
+                "frames": [
+                    {
+                        "name": "2023",
+                        "index": 0,
+                        "data": "boston_orthoimagery.tiff"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "Dataset",
+        "name": "Boston Neighborhoods",
+        "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
+        "category": "region",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
+                "hash": "9917afa67c77b3f7a4e13637b21af60ec348cee0cd18bca92a0c87adf9d7134f",
+                "path": "boston/neighborhoods2020.json"
+            }
+        ],
+        "region_options": {
+            "name_property": "BlockGr202"
+        }
+    },
+    {
+        "type": "Dataset",
+        "name": "Boston Census 2020 Block Groups",
+        "description": "Block groups (between 600 and 3,000 people per block) for Boston from the 2020 census",
+        "category": "region",
+        "files": [
+            {
+                "url": "https://data.boston.gov/dataset/c478b600-3e3e-46fd-9f57-da89459e9928/resource/11282722-9386-4272-8a82-2fcec89e6d55/download/census2020_blockgroups.zip",
+                "hash": "98d6346c117ea2bf6e7da3a382f88e75e3a028fd395fe4419a46022e76c2cf50",
+                "path": "mass/blockgroups.zip"
+            }
+        ],
+        "region_options": {
+            "name_property": "GEOID20"
+        }
+    },
+    {
+        "type": "Dataset",
+        "name": "Boston Zip Codes",
+        "description": "Zip codes 01001-02791",
+        "category": "region",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64fbb4c6e99e9e6006f00114/download",
+                "hash": "44ea42d43c6699118e6e9b4d4939ecc1fde95f1150b9d288842efbd9900eaa3f",
+                "path": "boston/zipcodes.zip"
+            }
+        ],
+        "region_options": {
+            "name_property": "GEOID20"
+        }
+    },
+    {
+        "type": "Chart",
+        "name": "Boston Harbor Daily Tide Levels",
+        "description": "Raw data was obtained using the NOAA CO-OPS API for Data Retrieval and reformatted in tabular form",
+        "project": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/64beb508b4d956782eee8cb1/download",
+                "hash": "299afb2e6726024cc943c0267507cae7b635282db358fea688be81b569f0b9db",
+                "path": "boston/tide_level_data.csv"
+            }
+        ],
+        "editable": false,
+        "metadata": {
+            "columns": {
+                "Date": "YYYY-MM-DD",
+                "H": "High water",
+                "HH": "Higher High water",
+                "L": "Low water",
+                "LL": "Lower Low Water"
+            },
+            "contents": "Daily high-low tide levels",
+            "date_range": {
+                "from": "01-Jan-1980",
+                "to": "30-Jun-2023"
+            },
+            "location": {
+                "latitude": 42.3539,
+                "longitude": -71.0503
+            },
+            "rows": 15857,
+            "source": "https://api.tidesandcurrents.noaa.gov/api/prod/",
+            "station": {
+                "datum": "Station Datum (STND)",
+                "id": 8443970
+            }
+        },
+        "chart_options": {
+            "chart_title": "Daily Tide Levels",
+            "x_title": "Date Recorded",
+            "y_title": "Distance from Sensor (m)"
+        },
+        "conversion_options": {
+            "labels": "Date",
+            "datasets": [
+                "HH",
+                "H",
+                "L",
+                "LL"
+            ],
+            "palette": {
+                "HH": "red",
+                "H": "pink",
+                "L": "lightblue",
+                "LL": "blue"
+            }
+        }
+    },
+    {
+        "type": "Chart",
+        "name": "Parabolic Hyetograph",
+        "description": "Rainfall intensity over 24 hours following a parabolic model",
+        "project": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
+                "hash": "0af8013362c94a3d043c88a277abcbf8e2c44999812f7b8da33dd18e4b22686e",
+                "path": "boston/parabolic_hyetograph.csv"
+            }
+        ],
+        "metadata": {
+            "precipitation_model": "Parabolic"
+        },
+        "chart_options": {
+            "chart_title": "Rainfall Intensity over 24 hours",
+            "x_title": "Hour",
+            "y_title": "Precipitation rate (mm/hr)"
+        },
+        "conversion_options": {
+            "labels": "hour",
+            "datasets": [
+                "precipitation"
+            ],
+            "palette": {
+                "precipitation": "blue"
+            }
+        }
+    },
+    {
+        "type": "Chart",
+        "name": "NCRS Type II Hyetograph",
+        "description": "Rainfall intensity over 24 hours following the NCRS Type II model",
+        "project": "Boston Transportation",
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c2/download",
+                "hash": "aa83acf52af4dcc8e384fda18bcbba5d85d84ffdd30314950e8aacce772111e7",
+                "path": "boston/ncrs_type_2_hyetograph.csv"
+            }
+        ],
+        "metadata": {
+            "precipitation_model": "NCRS Type II"
+        },
+        "chart_options": {
+            "chart_title": "Rainfall Intensity over 24 hours",
+            "x_title": "Hour",
+            "y_title": "Precipitation rate (mm/hr)"
+        },
+        "conversion_options": {
+            "labels": "hour",
+            "datasets": [
+                "precipitation"
+            ],
+            "palette": {
+                "precipitation": "blue"
+            }
+        }
+    }
+]
