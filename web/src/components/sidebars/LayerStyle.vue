@@ -23,6 +23,7 @@ const props = defineProps<{
 const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
 const showColormapEditor = ref(false);
+const editColormapGroupName = ref();
 const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
@@ -639,7 +640,7 @@ onMounted(resetCurrentStyle)
                                                         <span v-else class="secondary-text">Select Colormap</span>
                                                     </template>
                                                     <template v-slot:prepend-item>
-                                                        <v-list-item @click="showColormapEditor = true">
+                                                        <v-list-item @click="showColormapEditor = true; editColormapGroupName = group.name">
                                                             <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
                                                                 <v-icon color="primary">mdi-plus</v-icon>
                                                                 Create Custom Colormap
@@ -871,7 +872,7 @@ onMounted(resetCurrentStyle)
                                                             <span v-else class="secondary-text">Select Colormap</span>
                                                         </template>
                                                         <template v-slot:prepend-item>
-                                                            <v-list-item @click="showColormapEditor = true">
+                                                            <v-list-item @click="showColormapEditor = true; editColormapGroupName = group.name">
                                                                 <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
                                                                     <v-icon color="primary">mdi-plus</v-icon>
                                                                     Create Custom Colormap
@@ -1383,7 +1384,10 @@ onMounted(resetCurrentStyle)
             </v-dialog>
 
             <v-dialog v-model="showColormapEditor" contained>
-                <ColormapEditor @close="showColormapEditor = false"/>
+                <ColormapEditor
+                    @close="showColormapEditor = false"
+                    @create="(cmap) => setGroupColormap(editColormapGroupName, cmap)"
+                />
             </v-dialog>
         </v-card>
     </v-menu>

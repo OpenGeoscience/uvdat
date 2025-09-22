@@ -207,3 +207,7 @@ export async function deleteLayerStyle(styleId: number): Promise<LayerStyle> {
 export async function getProjectColormaps(projectId: number): Promise<Colormap[]> {
   return (await apiClient.get(`colormaps?project=${projectId}`)).data.results;
 }
+
+export async function createColormap(colormap: Colormap): Promise<Colormap> {
+  return (await apiClient.post(`colormaps/`, colormap)).data;
+}
