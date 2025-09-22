@@ -88,12 +88,3 @@ class LayerStyleViewSet(ModelViewSet):
                 instance.layer.save()
             self.perform_destroy(instance)
         return Response(status=204)
-
-    @action(detail=False, methods=['get'])
-    def colormaps(self, request, **kwargs):
-        colormaps = []
-        for style in LayerStyle.objects.all():
-            for cmap in style.get_colormaps():
-                if not any(c.get('name') == cmap.get('name') for c in colormaps):
-                    colormaps.append(cmap)
-        return Response(colormaps, status=200)
