@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ColorMap } from '@/types';
-import { watch, ref, computed, onMounted } from 'vue';
+import { Colormap } from '@/types';
+import { watch, ref, onMounted } from 'vue';
 import { useStyleStore } from '@/store';
 
 const styleStore = useStyleStore();
 
 const canvas = ref();
 const props = defineProps<{
-  colormap: ColorMap,
+  colormap: Colormap,
   discrete: boolean,
   nColors: number,
 }>();
@@ -22,8 +22,11 @@ function draw() {
     if (props.discrete) {
         if (props.nColors > 0 && props.nColors < markers.length) {
             markers = styleStore.colormapMarkersSubsample({
+                id: -1,
                 name: 'colormap',
                 markers,
+                project: null,
+            }, {
                 discrete: props.discrete,
                 n_colors: props.nColors,
             })
@@ -46,7 +49,7 @@ function draw() {
     }
 }
 onMounted(draw)
-watch([() => props.colormap, () => props.discrete, () => props.colormap.markers], draw, {deep: true})
+watch([() => props.colormap, () => props.discrete, () => props.nColors, () => props.colormap.markers], draw, {deep: true})
 </script>
 
 <template>

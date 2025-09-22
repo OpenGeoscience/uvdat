@@ -431,7 +431,7 @@ export const useMapStore = defineStore('map', () => {
     const { layerId, layerCopyId } = parseSourceString(sourceId);
     const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`].style_spec;
     if (styleSpec) {
-      const styleParams = styleStore.getRasterTilesQuery(styleSpec)
+      const styleParams = styleStore.getRasterTilesQuery(styleSpec, styleStore.colormaps)
       if (styleParams) queryParams.style = JSON.stringify(styleParams)
     }
     const query = new URLSearchParams(queryParams)
