@@ -22,6 +22,8 @@ def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[mo
         return queryset.filter(id__in=projects.values_list('id', flat=True))
     if model == models.TaskResult:
         return queryset.filter(Q(project__isnull=True) | Q(project__in=projects))
+    if model == models.Colormap:
+        return queryset.filter(Q(project__isnull=True) | Q(project__in=projects))
     if model == models.Chart:
         return queryset.filter(project__in=projects)
     if model in [

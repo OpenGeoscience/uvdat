@@ -10,6 +10,7 @@ from rest_framework.authtoken.views import obtain_auth_token
 from uvdat.core.rest import (
     AnalyticsViewSet,
     ChartViewSet,
+    ColormapViewSet,
     DatasetViewSet,
     FileItemViewSet,
     LayerFrameViewSet,
@@ -36,6 +37,7 @@ router.register(r'projects', ProjectViewSet, basename='projects')
 router.register(r'datasets', DatasetViewSet, basename='datasets')
 router.register(r'files', FileItemViewSet, basename='files')
 router.register(r'charts', ChartViewSet, basename='charts')
+router.register(r'colormaps', ColormapViewSet, basename='colormaps')
 router.register(r'layers', LayerViewSet, basename='layers')
 router.register(r'layer-frames', LayerFrameViewSet, basename='layer-frames')
 router.register(r'layer-styles', LayerStyleViewSet, basename='layer-styles')
