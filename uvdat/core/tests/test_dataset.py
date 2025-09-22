@@ -78,12 +78,16 @@ def test_rest_create_dataset(authenticated_api_client):
 
 
 @pytest.mark.django_db
-def test_rest_convert_dataset(test_dataset, test_file_item, authenticated_api_client):
+def test_rest_convert_dataset(file_item, authenticated_api_client, project, user):
+    dataset = file_item.dataset
+    project.set_collaborators([user])
+    project.datasets.set([dataset])
+
     result_expected = dict(
-        name=f'Conversion of Dataset {test_dataset.name}',
+        name=f'Conversion of Dataset {dataset.name}',
         task_type='conversion',
         inputs=dict(
-            dataset_id=test_dataset.id,
+            dataset_id=dataset.id,
             layer_options=[dict(name='Multiframe Vector Test', frame_property='frame')],
             network_options=None,
             region_options=None,
@@ -95,7 +99,7 @@ def test_rest_convert_dataset(test_dataset, test_file_item, authenticated_api_cl
         project=None,
     )
     resp = authenticated_api_client.post(
-        f'/api/v1/datasets/{test_dataset.id}/convert/', result_expected.get('inputs')
+        f'/api/v1/datasets/{dataset.id}/convert/', result_expected.get('inputs')
     )
     assert resp.status_code == 200
     serialized_result = resp.json()
@@ -104,7 +108,7 @@ def test_rest_convert_dataset(test_dataset, test_file_item, authenticated_api_cl
     assert 'id' in serialized_result
 
     # Check that one Layer was created
-    resp = authenticated_api_client.get(f'/api/v1/datasets/{test_dataset.id}/layers/')
+    resp = authenticated_api_client.get(f'/api/v1/datasets/{dataset.id}/layers/')
     serialized_layers = resp.json()
     assert len(serialized_layers) == 1
     assert 'id' in serialized_layers[0]

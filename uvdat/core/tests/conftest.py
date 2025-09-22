@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 
 from django.contrib.auth.models import User
-from django.contrib.gis.geos import Point
+from django.core import signing
 from django.urls import reverse
 import pooch
 import pytest
@@ -11,7 +11,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 from s3_file_field_client import S3FileFieldClient
 
-from uvdat.core.models import Dataset, Project
+from uvdat.core.models import Project
 
 from .factory_fixtures import *  # noqa: F403, F401
 
@@ -86,26 +86,6 @@ USER_INFOS = [
 
 
 @pytest.fixture
-def test_project() -> Project:
-    project = Project.objects.create(
-        name='Test Project', default_map_zoom=10, default_map_center=Point(42, -71)
-    )
-    original_owner = User.objects.create(username='testowner')
-    project.set_permissions(owner=original_owner)
-    return project
-
-
-@pytest.fixture
-def test_dataset(user, test_project) -> Dataset:
-    dataset = Dataset.objects.create(
-        name='Test Dataset', description='My test dataset', category='test'
-    )
-    test_project.set_collaborators([user])
-    test_project.datasets.set([dataset])
-    return dataset
-
-
-@pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
 
@@ -124,7 +104,7 @@ def token(user) -> str:
 
 
 @pytest.fixture
-def permissions_client(user_info, test_project) -> APIClient:
+def permissions_client(user_info) -> APIClient:
     user_info.pop('perm', None)
     user_info.pop('id', None)
     user = User.objects.create(**user_info)
@@ -157,15 +137,6 @@ def s3ff_value(live_server, token) -> str:
 
 
 @pytest.fixture
-def test_file_item(test_dataset, s3ff_value, authenticated_api_client):
-    # Creating FileItem directly gets a NoSuchKey S3Error, must use API to create
-    resp = authenticated_api_client.post(
-        '/api/v1/files/',
-        dict(
-            name=TEST_FILE['name'],
-            file=s3ff_value,
-            file_type=TEST_FILE['file_type'],
-            dataset=test_dataset.id,
-        ),
-    )
-    return resp.json()
+def s3ff_object_key(s3ff_value):
+    file_key_data = signing.loads(s3ff_value)
+    return file_key_data.get('object_key')

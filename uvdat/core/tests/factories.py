@@ -6,7 +6,7 @@ import factory.django
 from factory.faker import faker
 import factory.fuzzy
 
-from uvdat.core.models import Dataset, Layer, LayerFrame, Project, RasterData, VectorData
+from uvdat.core.models import Dataset, FileItem, Layer, LayerFrame, Project, RasterData, VectorData
 from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
 
 
@@ -67,6 +67,16 @@ class DatasetFactory(factory.django.DjangoModelFactory):
             'energy',
         ],
     )
+
+
+class FileItemFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = FileItem
+
+    name = factory.Faker('name')
+    dataset = factory.SubFactory(DatasetFactory)
+    file_type = 'geojson'
+    file = None
 
 
 class RasterDataFactory(factory.django.DjangoModelFactory):
