@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useStyleStore, useAppStore } from '@/store';
-import { ColorMap } from '@/types';
 import ColormapPreview from './ColormapPreview.vue';
 import { THEMES } from '@/themes';
 import { debounce } from 'lodash';
@@ -59,9 +58,6 @@ const currentColormap = computed(() => {
     return  {
         name: name.value,
         markers: markers.value,
-        discrete: false,
-        n_colors: 5,
-        null_color: 'transparent',
     }
 })
 
