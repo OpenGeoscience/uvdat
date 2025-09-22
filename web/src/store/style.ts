@@ -20,33 +20,74 @@ import { THEMES } from "@/themes";
 import { useMapStore, useLayerStore, useProjectStore, useNetworkStore } from '.';
 
 
+function getMidMarker(
+    markerA: {color: string, value: number},
+    markerB: {color: string, value: number},
+) {
+    const colorA = markerA.color
+    const colorB = markerB.color
+    const rgbA = {
+        r: parseInt(colorA.substring(1, 3), 16),
+        g: parseInt(colorA.substring(3, 5), 16),
+        b: parseInt(colorA.substring(5, 7), 16),
+    }
+    const rgbB = {
+        r: parseInt(colorB.substring(1, 3), 16),
+        g: parseInt(colorB.substring(3, 5), 16),
+        b: parseInt(colorB.substring(5, 7), 16),
+    }
+    const rgbMid = {
+        r: Math.round((rgbA.r + rgbB.r) / 2),
+        g: Math.round((rgbA.g + rgbB.g) / 2),
+        b: Math.round((rgbA.b + rgbB.b) / 2),
+    }
+    const hexComponents = [
+        rgbMid.r.toString(16),
+        rgbMid.g.toString(16),
+        rgbMid.b.toString(16),
+    ].map((c) => c.length === 1 ? '0' + c : c)
+    return {
+        color: '#' + hexComponents.join('').toUpperCase(),
+        value: (markerA.value + markerB.value) / 2
+    }
+}
+
 function colormapMarkersSubsample(
     colormap: Colormap,
     appliedColormap: AppliedColormap,
     n: number | undefined = undefined
 ) {
+    let markers = colormap.markers
     if (
         !n &&
         appliedColormap.discrete &&
         appliedColormap.n_colors &&
-        colormap.markers
+        markers
     ) {
         n = appliedColormap.n_colors
     }
-    if (n && colormap.markers) {
-        if (n > colormap.markers.length) {
-            n = colormap.markers.length
+    if (n && markers) {
+        while (n > markers.length) {
+            const newMarkers = []
+            for (let i = 0; i < markers.length - 1; i++) {
+                newMarkers.push(markers[i])
+                newMarkers.push(
+                    getMidMarker(markers[i], markers[i + 1])
+                )
+            }
+            newMarkers.push(markers[markers.length - 1])
+            markers = newMarkers
         }
-        const elements = [colormap.markers[0]];
-        const totalItems = colormap.markers.length - 1;
+        const elements = [markers[0]];
+        const totalItems = markers.length - 1;
         const interval = Math.floor(totalItems / (n - 1));
         for (let i = 1; i < n - 1; i++) {
-            elements.push(colormap.markers[i * interval]);
+            elements.push(markers[i * interval]);
         }
-        elements.push(colormap.markers[colormap.markers.length - 1]);
+        elements.push(markers[markers.length - 1]);
         return elements;
     }
-    return colormap.markers
+    return markers
 }
 
 function getRasterTilesQuery(styleSpec: StyleSpec, colormaps: Colormap[]) {

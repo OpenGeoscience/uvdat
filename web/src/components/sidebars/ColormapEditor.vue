@@ -27,8 +27,8 @@ const emit = defineEmits(['close', 'create'])
 
 const name = ref()
 const markers = ref([
-    {color: '#000', value: 0},
-    {color: '#fff', value: 1},
+    {color: '#000000', value: 0},
+    {color: '#ffffff', value: 1},
 ])
 const canvas = ref()
 const draggingMarker = ref()

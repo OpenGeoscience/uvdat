@@ -20,7 +20,7 @@ function draw() {
     const rect = [0, 0, canvas.value.width, canvas.value.height]
     ctx.clearRect(...rect)
     if (props.discrete) {
-        if (props.nColors > 0 && props.nColors < markers.length) {
+        if (props.nColors > 0) {
             markers = styleStore.colormapMarkersSubsample({
                 id: -1,
                 name: 'colormap',
