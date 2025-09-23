@@ -1,4 +1,4 @@
-from django.core.files.base import ContentFile
+from django.core.files.base import File
 import pytest
 
 from uvdat.core.models.project import Dataset
@@ -80,14 +80,17 @@ def test_rest_create_dataset(authenticated_api_client):
 
 @pytest.mark.django_db
 def test_rest_convert_dataset(
-    file_item, multiframe_vector_file, authenticated_api_client, project, user
+    file_item_factory, multiframe_vector_file, authenticated_api_client, project, user
 ):
+    with open(multiframe_vector_file['path'], 'rb') as f:
+        file_item = file_item_factory(
+            file=File(f),
+            name=multiframe_vector_file['name'],
+            file_type=multiframe_vector_file['file_type'],
+        )
     dataset = file_item.dataset
     project.set_collaborators([user])
     project.datasets.set([dataset])
-    with open(multiframe_vector_file['path'], 'rb') as f:
-        file_item.file.save(multiframe_vector_file['name'], ContentFile(f.read()))
-    file_item.file_type = multiframe_vector_file['file_type']
 
     result_expected = dict(
         name=f'Conversion of Dataset {dataset.name}',
