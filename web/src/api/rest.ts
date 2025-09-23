@@ -211,3 +211,11 @@ export async function getProjectColormaps(projectId: number): Promise<Colormap[]
 export async function createColormap(colormap: Colormap): Promise<Colormap> {
   return (await apiClient.post(`colormaps/`, colormap)).data;
 }
+
+export async function updateColormap(colormap: Colormap): Promise<Colormap> {
+  return (await apiClient.patch(`colormaps/${colormap.id}/`, colormap)).data;
+}
+
+export async function deleteColormap(colormapId: number): Promise<Colormap> {
+  return (await apiClient.delete(`colormaps/${colormapId}/`)).data;
+}

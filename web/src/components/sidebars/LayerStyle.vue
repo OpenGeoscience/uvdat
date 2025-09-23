@@ -2,16 +2,17 @@
 import { debounce, cloneDeep } from 'lodash'
 import { computed, onMounted, ref, watch } from 'vue';
 import { AppliedColormap, Colormap, Layer, LayerStyle, StyleSpec } from '@/types';
-import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
+import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary, deleteColormap } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
 import ColormapEditor from './ColormapEditor.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
 
-import { useStyleStore, useProjectStore, usePanelStore, useLayerStore } from '@/store';
+import { useStyleStore, useProjectStore, usePanelStore, useLayerStore, useAppStore } from '@/store';
 const styleStore = useStyleStore();
 const projectStore = useProjectStore();
 const panelStore = usePanelStore();
 const layerStore = useLayerStore();
+const appStore = useAppStore();
 
 
 const emit = defineEmits(["setLayerActive"]);
@@ -24,6 +25,8 @@ const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
 const showColormapEditor = ref(false);
 const editColormapGroupName = ref();
+const editColormap = ref<Colormap | undefined>();
+const delColormap = ref<Colormap | undefined>();
 const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
@@ -38,6 +41,19 @@ const highlightFilterId = ref<number | undefined>();
 
 // for correct typing in template, assign to computed variable
 const colormaps = computed(() => styleStore.colormaps);
+
+const projectPermission = computed(() => {
+    if (!projectStore.currentProject || !appStore.currentUser) return 'none'
+    let user = appStore.currentUser
+    let proj = projectStore.currentProject
+    let perm = 'follower'
+    if (proj.owner?.id === user.id || user.is_superuser ) {
+        perm = "owner";
+    } else if (proj.collaborators.map((u) => u.id).includes(user.id)) {
+        perm = "collaborator";
+    }
+    return perm
+})
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
@@ -259,6 +275,36 @@ function setGroupColormap(groupName: string, colormap: Colormap) {
             return c
         }
     )
+}
+
+function openColormapEditor(groupName: string, colormap: Colormap | undefined) {
+    showColormapEditor.value = true
+    editColormapGroupName.value = groupName
+    editColormap.value = colormap
+}
+
+function confirmDeleteColormap() {
+    if (delColormap.value?.id) {
+        deleteColormap(delColormap.value.id).then(() => {
+            delColormap.value = undefined
+            styleStore.colormaps = styleStore.colormaps.filter((c) => c.id !== delColormap.value?.id)
+            // update other styles in case colormap changed to default
+            layerStore.selectedLayers.forEach((layer) => {
+                const layerStyleKey = `${layer.id}.${layer.copy_id}`
+                getLayerStyles(layer.id).then((styles) => {
+                    const updated = styles.find((s) => s.id === styleStore.selectedLayerStyles[layerStyleKey].id)
+                    if (updated) {
+                        styleStore.selectedLayerStyles[layerStyleKey] = updated
+                        if (layer.id === props.layer.id) {
+                            availableStyles.value = styles;
+                            currentStyleSpec.value = updated.style_spec;
+                        }
+                        styleStore.updateLayerStyles(layer)
+                    }
+                })
+            })
+        })
+    }
 }
 
 function setSizeGroups(different: boolean | null) {
@@ -618,7 +664,19 @@ onMounted(resetCurrentStyle)
                                                     <template v-slot:item="{ props, item }">
                                                         <v-list-item v-bind="props">
                                                             <template v-slot:append>
-                                                                <div style="width: 300px">
+                                                                <v-icon
+                                                                    v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                    icon="mdi-pencil"
+                                                                    class="ml-2"
+                                                                    @click="openColormapEditor(group.name, item.raw)"
+                                                                />
+                                                                <v-icon
+                                                                    v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                    icon="mdi-trash-can"
+                                                                    class="ml-2"
+                                                                    @click="delColormap = item.raw"
+                                                                />
+                                                                <div style="width: 300px" class="ml-2">
                                                                     <colormap-preview
                                                                         :colormap="item.raw"
                                                                         :discrete="group.colormap?.discrete || false"
@@ -630,7 +688,7 @@ onMounted(resetCurrentStyle)
                                                     </template>
                                                     <template v-slot:selection="{ item }">
                                                         <span class="pr-15" v-if="getColormap(group.colormap)?.markers">{{ item.title }}</span>
-                                                        <div style="width: 300px" v-if="group.colormap && getColormap(group.colormap)?.markers">
+                                                        <div style="width: 300px" class="ml-2" v-if="group.colormap && getColormap(group.colormap)?.markers">
                                                             <colormap-preview
                                                                 :colormap="item.raw"
                                                                 :discrete="group.colormap.discrete || false"
@@ -640,7 +698,10 @@ onMounted(resetCurrentStyle)
                                                         <span v-else class="secondary-text">Select Colormap</span>
                                                     </template>
                                                     <template v-slot:prepend-item>
-                                                        <v-list-item @click="showColormapEditor = true; editColormapGroupName = group.name">
+                                                        <v-list-item
+                                                            v-if="['owner', 'collaborator'].includes(projectPermission)"
+                                                            @click="openColormapEditor(group.name, undefined)"
+                                                        >
                                                             <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
                                                                 <v-icon color="primary">mdi-plus</v-icon>
                                                                 Create Custom Colormap
@@ -850,7 +911,19 @@ onMounted(resetCurrentStyle)
                                                         <template v-slot:item="{ props, item }">
                                                             <v-list-item v-bind="props">
                                                                 <template v-slot:append>
-                                                                    <div style="width: 300px">
+                                                                    <v-icon
+                                                                        v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                        icon="mdi-pencil"
+                                                                        class="ml-2"
+                                                                        @click="openColormapEditor(group.name, item.raw)"
+                                                                    />
+                                                                    <v-icon
+                                                                        v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                        icon="mdi-trash-can"
+                                                                        class="ml-2"
+                                                                        @click="delColormap = item.raw"
+                                                                    />
+                                                                    <div style="width: 300px" class="ml-2">
                                                                         <colormap-preview
                                                                             :colormap="item.raw"
                                                                             :discrete="group.colormap.discrete || false"
@@ -862,7 +935,7 @@ onMounted(resetCurrentStyle)
                                                         </template>
                                                         <template v-slot:selection="{ item }">
                                                             <span class="pr-15" v-if="getColormap(group.colormap)?.markers">{{ item.title }}</span>
-                                                            <div style="width: 300px" v-if="getColormap(group.colormap)?.markers">
+                                                            <div style="width: 300px" class="ml-2" v-if="getColormap(group.colormap)?.markers">
                                                                 <colormap-preview
                                                                     :colormap="item.raw"
                                                                     :discrete="group.colormap.discrete || false"
@@ -872,7 +945,10 @@ onMounted(resetCurrentStyle)
                                                             <span v-else class="secondary-text">Select Colormap</span>
                                                         </template>
                                                         <template v-slot:prepend-item>
-                                                            <v-list-item @click="showColormapEditor = true; editColormapGroupName = group.name">
+                                                            <v-list-item
+                                                                v-if="['owner', 'collaborator'].includes(projectPermission)"
+                                                                @click="openColormapEditor(group.name, undefined)"
+                                                            >
                                                                 <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
                                                                     <v-icon color="primary">mdi-plus</v-icon>
                                                                     Create Custom Colormap
@@ -1383,10 +1459,47 @@ onMounted(resetCurrentStyle)
                 </v-card>
             </v-dialog>
 
+            <v-dialog :model-value="!!delColormap" contained peristent>
+                <v-card v-if="delColormap" color="background">
+                    <v-card-subtitle class="pa-2" style="background-color: rgb(var(--v-theme-surface))">
+                        Delete Colormap
+                        <span class="secondary-text">({{ delColormap.name }})</span>
+
+                        <v-icon
+                            icon="mdi-close"
+                            style="float:right"
+                            @click="delColormap = undefined"
+                        />
+                    </v-card-subtitle>
+
+                    <v-card-text>
+                        Are you sure you want to delete colormap "{{ delColormap.name }}"?
+                        <div class="pa-3 d-flex" style="align-items: center; column-gap: 10px">
+                            <v-icon icon="mdi-alert" color="warning" />
+                            <span class="secondary-text">
+                                This action cannot be undone. Any style using this colormap will revert to a default colormap.
+                            </span>
+                        </div>
+                    </v-card-text>
+
+                    <v-card-actions>
+                        <v-btn class="secondary-button" @click="delColormap = undefined">
+                            <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
+                            Cancel
+                        </v-btn>
+                        <v-btn color="error" variant="tonal" @click="confirmDeleteColormap">
+                            <v-icon color="error" class="mr-1">mdi-delete</v-icon>
+                            Delete
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
             <v-dialog v-model="showColormapEditor" contained>
                 <ColormapEditor
-                    @close="showColormapEditor = false"
-                    @create="(cmap) => setGroupColormap(editColormapGroupName, cmap)"
+                    :edit="editColormap"
+                    @close="showColormapEditor = false; editColormapGroupName = undefined"
+                    @submit="(cmap) => setGroupColormap(editColormapGroupName, cmap)"
                 />
             </v-dialog>
         </v-card>
