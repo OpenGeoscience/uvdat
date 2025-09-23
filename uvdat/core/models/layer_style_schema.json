@@ -27,8 +27,8 @@
                     "colormap": {
                         "type": "object",
                         "properties": {
-                            "name": {
-                                "type": "string"
+                            "id": {
+                                "type": "number"
                             },
                             "discrete": {
                                 "type": "boolean"
@@ -50,36 +50,13 @@
                                 },
                                 "minItems": 2,
                                 "maxItems": 2
-                            },
-                            "markers": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "color": {
-                                            "type": "string"
-                                        },
-                                        "value": {
-                                            "type": "number",
-                                            "minimum": 0,
-                                            "maximum": 1
-                                        }
-                                    },
-                                    "required": [
-                                        "color",
-                                        "value"
-                                    ]
-                                },
-                                "minItems": 2,
-                                "uniqueItems": true
                             }
                         },
                         "required": [
-                            "name",
+                            "id",
                             "discrete",
                             "color_by",
-                            "null_color",
-                            "markers"
+                            "null_color"
                         ]
                     }
                 },
