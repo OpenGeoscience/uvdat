@@ -138,7 +138,7 @@ export async function getNetworkGCC(
   exclude_nodes: number[]
 ): Promise<number[]> {
   return (
-    await apiClient.post(`networks/${networkId}/gcc/`, { exclude_nodes })
+    await apiClient.get(`networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`)
   ).data;
 }
 
