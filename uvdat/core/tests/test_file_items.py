@@ -1,24 +1,21 @@
-from django.urls import reverse
+from __future__ import annotations
+
+from typing import Callable
+
+from django.core.files.base import File
 import pytest
-import requests
-from s3_file_field_client import S3FileFieldClient
 
 
 @pytest.mark.django_db
 def test_upload_and_create_file_item(
-    multiframe_vector_file, dataset, live_server, token, authenticated_api_client
+    multiframe_vector_file,
+    dataset,
+    authenticated_api_client,
+    s3ff_field_value_factory: Callable[[File[bytes]], str],
 ):
-    session = requests.Session()
-    session.headers.update(dict(Authorization=f'Token {token}'))
-    s3ff_base_url = reverse('s3_file_field:finalize').replace('finalize/', '')
-    s3ff_client = S3FileFieldClient(f'{live_server}{s3ff_base_url}', session)
-    with open(multiframe_vector_file['path']) as f:
-        s3ff_value = s3ff_client.upload_file(
-            file_stream=f,
-            file_name=multiframe_vector_file['name'],
-            file_content_type=multiframe_vector_file['content_type'],
-            field_id='core.FileItem.file',
-        )
+    with open(multiframe_vector_file['path'], 'rb') as f:
+        s3ff_value = s3ff_field_value_factory(File(file=f, name=multiframe_vector_file['name']))
+
     fileitem_expected = dict(
         name='multiframe_vector.geojson',
         file=s3ff_value,
