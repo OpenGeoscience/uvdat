@@ -71,11 +71,8 @@ def file_item_factory():
 
 
 @pytest.fixture
-def file_item(file_item_factory, s3ff_object_key):
-    file_item = file_item_factory()
-    file_item.file = s3ff_object_key
-    file_item.save()
-    return file_item
+def file_item(file_item_factory):
+    return file_item_factory()
 
 
 # Network

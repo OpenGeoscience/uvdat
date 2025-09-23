@@ -1,27 +1,14 @@
 from pathlib import Path
-import tempfile
 
 from django.contrib.auth.models import User
-from django.core import signing
-from django.urls import reverse
 import pooch
 import pytest
-import requests
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
-from s3_file_field_client import S3FileFieldClient
 
 from uvdat.core.models import Project
 
 from .factory_fixtures import *  # noqa: F403, F401
-
-TEST_FILE = dict(
-    name='multiframe_vector.geojson',
-    file_type='geojson',
-    content_type='application/json',
-    url='https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download',
-    hash='9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee',
-)
 
 
 @pytest.fixture
@@ -114,29 +101,19 @@ def permissions_client(user_info) -> APIClient:
 
 
 @pytest.fixture
-def s3ff_value(live_server, token) -> str:
-    session = requests.Session()
-    session.headers.update(dict(Authorization=f'Token {token}'))
-    s3ff_base_url = reverse('s3_file_field:finalize').replace('finalize/', '')
-    s3ff_client = S3FileFieldClient(f'{live_server}{s3ff_base_url}', session)
-    with tempfile.TemporaryDirectory() as tmp:
-        pooch.retrieve(
-            url=TEST_FILE['url'],
-            known_hash=TEST_FILE['hash'],
-            fname=TEST_FILE['name'],
-            path=tmp,
-        )
-        test_file_path = Path(tmp, TEST_FILE['name'])
-        with test_file_path.open('rb') as f:
-            return s3ff_client.upload_file(
-                file_stream=f,
-                file_name=TEST_FILE['name'],
-                file_content_type=TEST_FILE['content_type'],
-                field_id='core.FileItem.file',
-            )
-
-
-@pytest.fixture
-def s3ff_object_key(s3ff_value):
-    file_key_data = signing.loads(s3ff_value)
-    return file_key_data.get('object_key')
+def multiframe_vector_file(tmp_path):
+    file_info = dict(
+        name='multiframe_vector.geojson',
+        file_type='geojson',
+        content_type='application/json',
+        url='https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download',
+        hash='9c24922c9d95fd49f8fd3bafa7ed60f093ac292891a4301bac2be883eeef65ee',
+    )
+    pooch.retrieve(
+        url=file_info['url'],
+        known_hash=file_info['hash'],
+        fname=file_info['name'],
+        path=tmp_path,
+    )
+    file_info['path'] = Path(tmp_path, file_info['name'])
+    return file_info

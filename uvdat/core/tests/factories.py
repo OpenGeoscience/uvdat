@@ -76,7 +76,11 @@ class FileItemFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('name')
     dataset = factory.SubFactory(DatasetFactory)
     file_type = 'geojson'
-    file = None
+    file_size = 100
+    file = factory.django.FileField(
+        filename=factory.Faker('file_name', extension=factory.SelfAttribute('...file_type')),
+        data=factory.Faker('binary', length=factory.SelfAttribute('...file_size')),
+    )
 
 
 class RasterDataFactory(factory.django.DjangoModelFactory):
