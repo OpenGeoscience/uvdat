@@ -4,6 +4,7 @@ from uvdat.core.models import Project
 
 from .factories import (
     DatasetFactory,
+    FileItemFactory,
     LayerFactory,
     LayerFrameFactory,
     NetworkEdgeFactory,
@@ -61,6 +62,17 @@ def dataset_factory():
 @pytest.fixture
 def dataset(dataset_factory):
     return dataset_factory()
+
+
+# File Item
+@pytest.fixture
+def file_item_factory():
+    return FileItemFactory
+
+
+@pytest.fixture
+def file_item(file_item_factory):
+    return file_item_factory()
 
 
 # Network
