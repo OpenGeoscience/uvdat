@@ -3,9 +3,10 @@ import { computed } from 'vue';
 import DatasetList from '@/components/DatasetList.vue'
 import DetailView from '@/components/DetailView.vue'
 import { Dataset } from '@/types';
-import { useLayerStore } from '@/store';
 
+import { useLayerStore, useConversionStore } from '@/store';
 const layerStore = useLayerStore();
+const conversionStore = useConversionStore();
 
 const props = defineProps<{
   datasets: Dataset[] | undefined;
@@ -36,8 +37,27 @@ const datasetsWithLayers = computed(() => {
           <v-expansion-panel-title>
             <div style="display: flex; justify-content: space-between; width: 100%;">
               <div>
+                <div
+                  v-if="conversionStore.datasetConversionTasks[dataset.id] && !conversionStore.datasetConversionTasks[dataset.id].completed"
+                  style="display: inline-block"
+                >
+                  <v-icon
+                    v-if="conversionStore.datasetConversionTasks[dataset.id].error"
+                    v-tooltip="conversionStore.datasetConversionTasks[dataset.id].error"
+                    icon="mdi-alert-outline"
+                    color="error"
+                    class="mr-5"
+                  />
+                  <v-progress-circular
+                    v-else
+                    v-tooltip="conversionStore.datasetConversionTasks[dataset.id].status"
+                    size="24"
+                    class="mr-5"
+                    indeterminate
+                  />
+                </div>
                 <v-progress-circular
-                  v-if="props.savingId === dataset.id"
+                  v-else-if="props.savingId === dataset.id"
                   size="24"
                   class="mr-5"
                   indeterminate
