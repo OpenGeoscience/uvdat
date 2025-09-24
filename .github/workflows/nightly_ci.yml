@@ -1,8 +1,5 @@
 name: nightly-ci
 on:
-  push:
-    branches:
-      - nightly-ci-fix
   workflow_dispatch:
   schedule:
     # Run at 1:14 am every night, to avoid high load at common schedule times.
