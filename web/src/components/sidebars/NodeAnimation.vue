@@ -3,10 +3,9 @@ import { Layer } from "@/types";
 import { ref, watch, computed } from "vue";
 import { Network } from '../../types';
 
-import { useLayerStore, useNetworkStore, useStyleStore } from "@/store";
+import { useLayerStore, useNetworkStore } from "@/store";
 const networkStore = useNetworkStore();
 const layerStore = useLayerStore();
-const styleStore = useStyleStore();
 
 const props = defineProps<{
   nodeFailures?: Record<number, number[]>,
@@ -18,7 +17,11 @@ const props = defineProps<{
 const currentMode = ref();
 const currentTick = ref(0);
 const ticker = ref();
-const seconds = ref(1);
+const seconds = computed(() => {
+  const nNodes = props.network.nodes.length
+  const ordersOfMagnitude = nNodes.toString().length
+  return Math.max(ordersOfMagnitude - 2, 1)
+});
 
 const nodeChanges = computed(() => {
   if (props.nodeRecoveries) return props.nodeRecoveries;

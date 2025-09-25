@@ -31,16 +31,18 @@ class NetworkViewSet(ModelViewSet):
     @action(detail=True, methods=['get'])
     def nodes(self, request, **kwargs):
         network: Network = self.get_object()
+        page = self.paginate_queryset(network.nodes.all())
         return Response(
-            NetworkNodeSerializer(network.nodes.all(), many=True).data,
+            NetworkNodeSerializer(page, many=True).data,
             status=200,
         )
 
     @action(detail=True, methods=['get'])
     def edges(self, request, **kwargs):
         network: Network = self.get_object()
+        page = self.paginate_queryset(network.edges.all())
         return Response(
-            NetworkEdgeSerializer(network.edges.all(), many=True).data,
+            NetworkEdgeSerializer(page, many=True).data,
             status=200,
         )
 

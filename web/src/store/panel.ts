@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getDataset } from '@/api/rest';
 
-import { useAppStore, useLayerStore, useAnalysisStore } from '.';
+import { useAppStore, useLayerStore, useAnalysisStore, useProjectStore } from '.';
 
 const showableTypes = ['chart', 'dataset', 'network', 'layer', 'taskresult', 'rasterdata', 'vectordata']
 
@@ -66,6 +66,7 @@ export const usePanelStore = defineStore('panel', () => {
     const analysisStore = useAnalysisStore();
     const layerStore = useLayerStore();
     const appStore = useAppStore();
+    const projectStore = useProjectStore();
 
     const panelArrangement = ref<FloatingPanelConfig[]>([]);
     const draggingPanel = ref<string | undefined>();
@@ -193,14 +194,15 @@ export const usePanelStore = defineStore('panel', () => {
                 return layer.id === showable.layer?.id && layer.visible
             });
         } else if (showable.network) {
-            return isVisible({dataset: showable.network.dataset})
+            const dataset = projectStore.availableDatasets?.find((d) => d.id === showable.network?.dataset)
+            return isVisible({dataset})
         } else if (showable.taskresult) {
-            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
-            if (analysisType) {
+            const taskType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
+            if (taskType) {
                 const showableChildren: Record<string, any>[] = []
                 Object.entries(showable.taskresult.outputs).forEach(
                     ([outputKey, outputValue]) => {
-                        const type = analysisType?.output_types[outputKey].toLowerCase()
+                        const type = taskType?.output_types[outputKey].toLowerCase()
                         if (showableTypes.includes(type)) {
                             showableChildren.push({
                                 id: outputValue,
@@ -211,8 +213,8 @@ export const usePanelStore = defineStore('panel', () => {
                 );
                 Object.entries(showable.taskresult.inputs).forEach(
                     ([inputKey, inputValue])=> {
-                        const type = analysisType?.input_types[inputKey].toLowerCase()
-                        const value: Record<string, any> = analysisType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
+                        const type = taskType?.input_types[inputKey].toLowerCase()
+                        const value: Record<string, any> = taskType.input_options[inputKey]?.find((o: any) => o.id === inputValue)
                         if (showableTypes.includes(type)) {
                             showableChildren.push({
                                 ...value,
@@ -259,19 +261,20 @@ export const usePanelStore = defineStore('panel', () => {
                 layerStore.addLayer(showable.layer)
             }
         } else if (showable.network) {
-            show({dataset: showable.network.dataset})
+            const dataset = projectStore.availableDatasets?.find((d) => d.id === showable.network?.dataset)
+            return show({dataset})
         } else if (showable.taskresult) {
-            const analysisType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
-            if (analysisType) {
+            const taskType = analysisStore.availableAnalysisTypes?.find((t) => t.db_value === showable.taskresult?.task_type)
+            if (taskType) {
                 Object.entries(showable.taskresult.outputs).map(([outputKey, outputValue]) => {
-                    const type = analysisType.output_types[outputKey].toLowerCase()
+                    const type = taskType.output_types[outputKey].toLowerCase()
                     if (showableTypes.includes(type)) {
                         show({[type]: {id: outputValue}})
                     }
                 })
                 Object.entries(showable.taskresult.inputs).map(([inputKey, inputValue]) => {
-                    const type = analysisType.input_types[inputKey].toLowerCase()
-                    const value: Record<string, any> = analysisType.input_options[inputKey].find((o: any) => o.id === inputValue)
+                    const type = taskType.input_types[inputKey].toLowerCase()
+                    const value: Record<string, any> = taskType.input_options[inputKey].find((o: any) => o.id === inputValue)
                     if (showableTypes.includes(type)) {
                         show({[type]: value})
                     }
