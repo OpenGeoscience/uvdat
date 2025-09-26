@@ -1,4 +1,9 @@
-from django.db import models
+import typing
+
+from django.contrib.auth.models import User
+from django.db import models, transaction
+from guardian.models import UserObjectPermission
+from guardian.shortcuts import assign_perm, get_users_with_perms
 
 from uvdat.core.tasks.dataset import convert_dataset
 
@@ -9,6 +14,38 @@ class Dataset(models.Model):
     category = models.CharField(max_length=25)
     processing = models.BooleanField(default=False)
     metadata = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        permissions = [('owner', 'Can read, write, and delete')]
+
+    def owner(self) -> User:
+        users = typing.cast(
+            list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))
+        )
+        if len(users) != 1:
+            raise Exception('Dataset must have exactly one owner')
+        return users[0]
+
+    @transaction.atomic()
+    def set_owner(self, user: User):
+        filters = dict(
+            content_type__app_label=self._meta.app_label,
+            content_type__model=self._meta.model_name,
+            object_pk=self.pk,
+        )
+
+        # Remove existing owner
+        UserObjectPermission.objects.filter(
+            **filters,
+            permission__codename='owner',
+        ).delete()
+
+        # Delete any existing user perms and set owner
+        UserObjectPermission.objects.filter(
+            **filters,
+            user_id__in=[user.id],
+        ).delete()
+        assign_perm('owner', user, self)
 
     def spawn_conversion_task(
         self,
