@@ -60,9 +60,12 @@ def dataset_factory():
     return DatasetFactory
 
 
+# Ensure that when a dataset is created, it always has an owner
 @pytest.fixture
-def dataset(dataset_factory):
-    return dataset_factory()
+def dataset(user_factory, dataset_factory):
+    dataset = dataset_factory()
+    dataset.set_owner(user_factory())
+    return dataset
 
 
 # File Item

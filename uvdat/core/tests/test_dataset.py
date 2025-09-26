@@ -127,3 +127,36 @@ def test_rest_convert_dataset(
     resp = authenticated_api_client.get(f'/api/v1/layers/{layer_id}/frames/')
     serialized_frames = resp.json()
     assert len(serialized_frames) == 39
+
+
+@pytest.mark.django_db
+def test_dataset_set_owner(dataset, user):
+    owner = dataset.owner()
+    assert owner.id != user.id
+
+    dataset.set_owner(user)
+    assert dataset.owner().id == user.id
+
+
+@pytest.mark.django_db
+def test_rest_dataset_edit(authenticated_api_client, user, dataset: Dataset):
+    patch = dict(name='New Name')
+    resp = authenticated_api_client.patch(f'/api/v1/datasets/{dataset.id}/', patch)
+    assert resp.status_code == 403
+
+    dataset.set_owner(user)
+    resp = authenticated_api_client.patch(f'/api/v1/datasets/{dataset.id}/', patch)
+    assert resp.status_code == 200
+
+    dataset.refresh_from_db()
+    assert dataset.name == patch['name']
+
+
+@pytest.mark.django_db
+def test_rest_dataset_delete(authenticated_api_client, user, dataset: Dataset):
+    resp = authenticated_api_client.delete(f'/api/v1/datasets/{dataset.id}/')
+    assert resp.status_code == 403
+
+    dataset.set_owner(user)
+    resp = authenticated_api_client.delete(f'/api/v1/datasets/{dataset.id}/')
+    assert resp.status_code == 204
