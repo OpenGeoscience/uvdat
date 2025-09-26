@@ -16,7 +16,7 @@ COPY ./setup.py /opt/uvdat-server/setup.py
 COPY ./manage.py /opt/uvdat-server/manage.py
 COPY ./uvdat /opt/uvdat-server/uvdat
 RUN pip install large-image[all] large-image-converter --find-links https://girder.github.io/large_image_wheels
-RUN pip install --editable /opt/uvdat-server[dev]
+RUN pip install --editable /opt/uvdat-server[dev,tasks]
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
 WORKDIR /opt/uvdat-server
