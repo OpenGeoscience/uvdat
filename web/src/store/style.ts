@@ -13,6 +13,7 @@ import {
     StyleSpec,
     VectorData,
 } from "@/types";
+import { getStyleColormaps } from '@/api/rest';
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
@@ -26,29 +27,34 @@ const getColormap = (name: string, nshades: number) => colormap({
     alpha: 1
 })
 
-const colormaps: ColorMap[] = [
-    'terrain', 'viridis', 'plasma', 'inferno', 'magma',
-    'greys', 'greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
-    'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
-].map((name) => {
-    const colors = getColormap(name, 30)
-    return {
-        name,
-        null_color: 'transparent',
-        discrete: false,
-        n_colors: 5,
-        markers: colors.map((color: string, index: number) => ({
-            color,
-            value: index / (colors.length - 1)
-        }))
-    }
-})
+const getDefaultColormaps = () => {
+    return [
+        'terrain', 'viridis', 'plasma', 'inferno', 'magma',
+        'greys', 'greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
+        'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
+    ].map((name) => {
+        const colors = getColormap(name, 30)
+        return {
+            name,
+            null_color: 'transparent',
+            discrete: false,
+            n_colors: 5,
+            markers: colors.map((color: string, index: number) => ({
+                color,
+                value: index / (colors.length - 1)
+            }))
+        }
+    })
+}
 
 function colormapMarkersSubsample(
     colormap: ColorMap, n: number | undefined = undefined
 ) {
     if (!n && colormap.discrete && colormap.n_colors && colormap.markers) n = colormap.n_colors
     if (n && colormap.markers) {
+        if (n > colormap.markers.length) {
+            n = colormap.markers.length
+        }
         const elements = [colormap.markers[0]];
         const totalItems = colormap.markers.length - 1;
         const interval = Math.floor(totalItems / (n - 1));
@@ -254,6 +260,8 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, LayerStyle>>({});
+    const colormaps = ref<ColorMap[]>(getDefaultColormaps())
+    const colormapsFetched = ref<boolean>(false);
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
@@ -261,6 +269,22 @@ export const useStyleStore = defineStore('style', () => {
 
     function getDefaultColor() {
         return THEMES.light.colors.primary;
+    }
+
+    function fetchCustomColormaps(){
+        getStyleColormaps().then((results) => {
+            const customColormaps = results.filter((cmap: ColorMap) => {
+                return !colormaps.value.some((c) => c.name === cmap.name)
+            }).map((cmap: ColorMap) => ({
+                name: cmap.name,
+                markers: cmap.markers,
+                null_color: 'transparent',
+                discrete: false,
+                n_colors: 5,
+            }))
+            colormaps.value = [...colormaps.value, ...customColormaps]
+            colormapsFetched.value = true
+        })
     }
 
     function getDefaultStyleSpec(raster: RasterData | null | undefined): StyleSpec {
@@ -401,7 +425,9 @@ export const useStyleStore = defineStore('style', () => {
 
     return {
         colormaps,
+        colormapsFetched,
         selectedLayerStyles,
+        fetchCustomColormaps,
         getRasterTilesQuery,
         colormapMarkersSubsample,
         getDefaultColor,

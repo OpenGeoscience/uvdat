@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
 import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
+import ColormapEditor from './ColormapEditor.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
 
 import { useStyleStore, useProjectStore, usePanelStore, useLayerStore } from '@/store';
@@ -21,6 +22,7 @@ const props = defineProps<{
 
 const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
+const showColormapEditor = ref(false);
 const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
@@ -33,8 +35,8 @@ const maxFilterId = ref<number>(1);
 const focusedFilterId = ref<number | undefined>();
 const highlightFilterId = ref<number | undefined>();
 
-// for correct typing in template, assign to local var
-const colormaps: ColorMap[] = styleStore.colormaps;
+// for correct typing in template, assign to computed variable
+const colormaps = computed(() => styleStore.colormaps);
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
@@ -104,6 +106,9 @@ async function init() {
         resetCurrentStyle()
         fetchRasterBands()
         if (currentStyleSpec.value) setAvailableGroups()
+    }
+    if (!styleStore.colormapsFetched) {
+        styleStore.fetchCustomColormaps()
     }
 }
 
@@ -610,23 +615,34 @@ onMounted(resetCurrentStyle)
                                                     <template v-slot:item="{ props, item }">
                                                         <v-list-item v-bind="props">
                                                             <template v-slot:append>
-                                                                <colormap-preview
-                                                                    :colormap="item.raw"
-                                                                    :discrete="group.colormap?.discrete || false"
-                                                                    :nColors="group.colormap?.n_colors || -1"
-                                                                />
+                                                                <div style="width: 300px">
+                                                                    <colormap-preview
+                                                                        :colormap="item.raw"
+                                                                        :discrete="group.colormap?.discrete || false"
+                                                                        :nColors="group.colormap?.n_colors || -1"
+                                                                    />
+                                                                </div>
                                                             </template>
                                                         </v-list-item>
                                                     </template>
                                                     <template v-slot:selection="{ item }">
                                                         <span class="pr-15" v-if="group.colormap?.markers">{{ item.title }}</span>
-                                                        <colormap-preview
-                                                            v-if="group.colormap?.markers"
-                                                            :colormap="item.raw"
-                                                            :discrete="group.colormap.discrete || false"
-                                                            :nColors="group.colormap.n_colors || -1"
-                                                        />
+                                                        <div style="width: 300px" v-if="group.colormap?.markers">
+                                                            <colormap-preview
+                                                                :colormap="item.raw"
+                                                                :discrete="group.colormap.discrete || false"
+                                                                :nColors="group.colormap.n_colors || -1"
+                                                            />
+                                                        </div>
                                                         <span v-else class="secondary-text">Select Colormap</span>
+                                                    </template>
+                                                    <template v-slot:prepend-item>
+                                                        <v-list-item @click="showColormapEditor = true">
+                                                            <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
+                                                                <v-icon color="primary">mdi-plus</v-icon>
+                                                                Create Custom Colormap
+                                                            </div>
+                                                        </v-list-item>
                                                     </template>
                                                 </v-select>
                                             </td>
@@ -831,23 +847,34 @@ onMounted(resetCurrentStyle)
                                                         <template v-slot:item="{ props, item }">
                                                             <v-list-item v-bind="props">
                                                                 <template v-slot:append>
-                                                                    <colormap-preview
-                                                                        :colormap="item.raw"
-                                                                        :discrete="group.colormap.discrete || false"
-                                                                        :nColors="group.colormap.n_colors || -1"
-                                                                    />
+                                                                    <div style="width: 300px">
+                                                                        <colormap-preview
+                                                                            :colormap="item.raw"
+                                                                            :discrete="group.colormap.discrete || false"
+                                                                            :nColors="group.colormap.n_colors || -1"
+                                                                        />
+                                                                    </div>
                                                                 </template>
                                                             </v-list-item>
                                                         </template>
                                                         <template v-slot:selection="{ item }">
                                                             <span class="pr-15" v-if="group.colormap?.markers">{{ item.title }}</span>
-                                                            <colormap-preview
-                                                                v-if="group.colormap?.markers"
-                                                                :colormap="item.raw"
-                                                                :discrete="group.colormap.discrete || false"
-                                                                :nColors="group.colormap.n_colors || -1"
-                                                            />
+                                                            <div style="width: 300px" v-if="group.colormap?.markers">
+                                                                <colormap-preview
+                                                                    :colormap="item.raw"
+                                                                    :discrete="group.colormap.discrete || false"
+                                                                    :nColors="group.colormap.n_colors || -1"
+                                                                />
+                                                            </div>
                                                             <span v-else class="secondary-text">Select Colormap</span>
+                                                        </template>
+                                                        <template v-slot:prepend-item>
+                                                            <v-list-item @click="showColormapEditor = true">
+                                                                <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
+                                                                    <v-icon color="primary">mdi-plus</v-icon>
+                                                                    Create Custom Colormap
+                                                                </div>
+                                                            </v-list-item>
                                                         </template>
                                                     </v-select>
                                                 </td>
@@ -1347,6 +1374,10 @@ onMounted(resetCurrentStyle)
                         </v-btn>
                     </v-card-actions>
                 </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="showColormapEditor" contained>
+                <ColormapEditor @close="showColormapEditor = false"/>
             </v-dialog>
         </v-card>
     </v-menu>
