@@ -1,5 +1,6 @@
 import axios from "axios";
 import OauthClient from "@resonant/oauth-client";
+import S3FileFieldClient from 'django-s3-file-field';
 import { useAppStore, useMapStore, useProjectStore } from "@/store";
 
 export const baseURL = `${import.meta.env.VITE_APP_API_ROOT}api/v1/`;
@@ -13,6 +14,12 @@ export const oauthClient = new OauthClient(
   { redirectUrl: window.location.origin }
 );
 
+let s3ffClient = undefined;
+
+export function getS3ffClient() {
+  return s3ffClient
+}
+
 export async function restoreLogin() {
   if (!oauthClient) {
     return;
@@ -24,6 +31,12 @@ export async function restoreLogin() {
         useAppStore().currentUser = response.data;
       }
     });
+    s3ffClient = new S3FileFieldClient({
+      baseUrl: baseURL + 's3-upload/',
+      apiConfig: {
+        headers: oauthClient.authHeaders
+      }
+    })
   }
 }
 

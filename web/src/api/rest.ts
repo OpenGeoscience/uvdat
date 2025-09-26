@@ -1,4 +1,4 @@
-import { apiClient } from "./auth";
+import { apiClient, getS3ffClient } from "./auth";
 import {
   User,
   Project,
@@ -93,6 +93,14 @@ export async function getDataset(datasetId: number): Promise<Dataset> {
   return (await apiClient.get(`datasets/${datasetId}`)).data;
 }
 
+export async function createDataset(data: any): Promise<Dataset> {
+  return (await apiClient.post('datasets/', data)).data;
+}
+
+export async function spawnDatasetConversion(datasetId: number, options: any): Promise<Dataset> {
+  return (await apiClient.post(`datasets/${datasetId}/convert/`, options || {})).data;
+}
+
 export async function getDatasetLayers(datasetId: number): Promise<Layer[]> {
   return (await apiClient.get(`datasets/${datasetId}/layers`)).data;
 }
@@ -111,6 +119,17 @@ export async function getDatasetFiles(datasetId: number): Promise<FileItem[]> {
 
 export async function getFileDataObjects(fileId: number): Promise<(RasterData | VectorData)[]> {
   return (await apiClient.get(`files/${fileId}/data`)).data;
+}
+
+export async function uploadFile(file:File): Promise<string> {
+  const s3ffClient = getS3ffClient()
+  return await s3ffClient.uploadFile(
+    file, 'core.FileItem.file',
+  )
+}
+
+export async function createFileItem(data: any): Promise<FileItem> {
+  return (await apiClient.post('files/', data)).data;
 }
 
 export async function getDatasetNetworks(datasetId: number): Promise<Network[]> {

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { usePanelStore } from "@/store";
+import { usePanelStore, useProjectStore } from "@/store";
 const panelStore = usePanelStore();
+const projectStore = useProjectStore();
 
 const props = defineProps<{
   id: string;
@@ -96,6 +97,13 @@ function panelUpdated() {
           <v-card-text class="pa-3" style="font-size: 18px;">{{ panel.label }}</v-card-text>
           <div class="mr-3">
             <v-icon
+              v-if="panel.id === 'datasets' && projectStore.currentProject"
+              v-tooltip="'Add Dataset'"
+              icon="mdi-plus"
+              color="primary"
+              @mousedown="projectStore.projectConfigMode = 'existing'"
+            />
+            <v-icon
               :icon="panel.collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'"
               v-tooltip="panel.collapsed ? 'Expand' : 'Collapse'"
               @mousedown="togglePanelCollapsed"
@@ -103,7 +111,7 @@ function panelUpdated() {
             <v-icon
               icon="mdi-drag"
               class="draggable"
-              @mousedown="(e) => {
+              @mousedown="(e: any) => {
                 updatePanelElement();
                 startDrag(e, panel, ['position'])
               }"
@@ -123,7 +131,7 @@ function panelUpdated() {
             icon="mdi-resize-bottom-right"
             class="right mr-2 draggable-corner"
             @mousedown="
-              (e) => {
+              (e: any) => {
                 updatePanelElement();
                 startDrag(e, panel, ['width', 'height']);
               }

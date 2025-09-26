@@ -5,10 +5,11 @@ import Map from "./components/map/Map.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
-import { useAppStore, usePanelStore, useProjectStore } from "@/store";
+import { useAppStore, usePanelStore, useProjectStore, useConversionStore } from "@/store";
 const appStore = useAppStore();
 const panelStore = usePanelStore();
 const projectStore = useProjectStore();
+const conversionStore = useConversionStore();
 
 const showError = computed(() => appStore.currentError !== undefined);
 
@@ -16,6 +17,7 @@ function onReady() {
   if (appStore.currentUser) {
     projectStore.clearState();
     projectStore.loadProjects();
+    conversionStore.createWebSocket();
   }
 }
 
