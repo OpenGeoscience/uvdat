@@ -14,15 +14,15 @@ def test_load_roads():
 
     call_command(
         'load_roads',
-        'Boston',
+        'Clifton Park',
         project_id=project.id,
     )
 
-    dataset = Dataset.objects.get(name='Boston Road Network')
+    dataset = Dataset.objects.get(name='Clifton Park Road Network')
     assert dataset is not None
     networks = Network.objects.filter(vector_data__dataset=dataset)
     assert networks.count() == 1
     # check if nodes and edges surpass a minimum amount
     # (exact amounts are expected to change over time)
-    assert networks.first().nodes.count() > 10000
-    assert networks.first().edges.count() > 20000
+    assert networks.first().nodes.count() > 1000
+    assert networks.first().edges.count() > 2000

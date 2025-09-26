@@ -24,6 +24,7 @@ LIKELIHOODS = [
 TIME_PERIODS = [
     dict(label='2030-2050', value=[2030, 2050]),
     dict(label='2080-2100', value=[2080, 2100]),
+    dict(label='Test', value='test'),
 ]
 
 DATA_PRODUCTS = [
@@ -75,6 +76,12 @@ DATA_PRODUCTS = [
         likelihood=0.01,
         time_period=[2080, 2100],
     ),
+    dict(
+        url='https://data.kitware.com/api/v1/item/68d438a2af4f192121e81684/download',
+        precipitation='parabolic',
+        likelihood=0.01,
+        time_period='test',
+    ),
 ]
 
 
@@ -98,7 +105,9 @@ class FloodSimulation(AnalysisType):
         return {
             'precipitation': Chart.objects.filter(name__icontains='hyetograph'),
             'likelihood': [likelihood.get('label') for likelihood in LIKELIHOODS],
-            'time_period': [period.get('label') for period in TIME_PERIODS],
+            'time_period': [
+                period.get('label') for period in TIME_PERIODS if period.get('value') != 'test'
+            ],
         }
 
     def run_task(self, project, **inputs):

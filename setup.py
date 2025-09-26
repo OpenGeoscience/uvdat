@@ -53,7 +53,6 @@ setup(
         'drf-yasg==1.21.7',
         'matplotlib==3.9.2',  # for raster colormaps
         'osmnx==2.0.6',
-        'geoai-py==0.9.2',
         'geopandas==1.1.1',
         'networkx==3.3',
         'pooch==1.8.2',
@@ -61,10 +60,6 @@ setup(
         'rasterio==1.3.10',
         'urllib3==1.26.15',
         'webcolors==24.6.0',
-        # Production-only
-        'django-composed-configuration[prod]==0.25.0',
-        'django-s3-file-field[boto3]==1.0.1',
-        'gunicorn==22.0.0',
     ],
     extras_require={
         'dev': [
@@ -74,6 +69,14 @@ setup(
             'ipython==8.26.0',
             'tox==4.16.0',
             'pre-commit==4.0.1',
+        ],
+        'prod': [
+            'django-composed-configuration[prod]==0.25.0',
+            'django-s3-file-field[boto3]==1.0.1',
+            'gunicorn==22.0.0',
+        ],
+        'tasks': [
+            'geoai-py==0.9.2',
         ],
         'test': [
             'factory-boy==3.3.1',
