@@ -188,7 +188,7 @@ watch(open, () => {
                         hide-details="auto"
                     />
                     <v-combobox
-                        label="Combobox"
+                        label="Category"
                         v-model="category"
                         :items="categories"
                         :rules="mandatoryRule"
