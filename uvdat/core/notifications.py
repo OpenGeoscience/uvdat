@@ -1,4 +1,5 @@
 from asgiref.sync import async_to_sync
+from channels.exceptions import StopConsumer
 from channels.generic.websocket import JsonWebsocketConsumer
 
 
@@ -11,6 +12,7 @@ class AnalyticsConsumer(JsonWebsocketConsumer):
 
     def disconnect(self, code):
         async_to_sync(self.channel_layer.group_discard)(self.group_name, self.channel_name)
+        raise StopConsumer()
 
     def send_notification(self, event):
         self.send_json(content=event['message'])
@@ -24,6 +26,7 @@ class ConversionConsumer(JsonWebsocketConsumer):
 
     def disconnect(self, code):
         async_to_sync(self.channel_layer.group_discard)(self.group_name, self.channel_name)
+        raise StopConsumer()
 
     def send_notification(self, event):
         self.send_json(content=event['message'])
