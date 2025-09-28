@@ -8,6 +8,7 @@ import {
   getChart,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
+import SliderNumericInput from "../SliderNumericInput.vue";
 import { TaskResult } from "@/types";
 
 import {
@@ -113,6 +114,17 @@ function fetchResults() {
   });
 }
 
+function inputIsNumeric(key: string) {
+  return (
+    analysisStore.currentAnalysisType &&
+    analysisStore.currentAnalysisType.input_types[key] === 'number' &&
+    analysisStore.currentAnalysisType.input_options[key].length == 1 &&
+    analysisStore.currentAnalysisType.input_options[key][0].min !== undefined &&
+    analysisStore.currentAnalysisType.input_options[key][0].max !== undefined &&
+    analysisStore.currentAnalysisType.input_options[key][0].step !== undefined
+  )
+}
+
 async function fillInputsAndOutputs() {
   if (!currentResult.value?.inputs){
     fullInputs.value = undefined;
@@ -206,6 +218,14 @@ watch(() => projectStore.currentProject, createWebSocket)
 
 watch(() => analysisStore.currentAnalysisType, () => {
   fetchResults()
+  const type = analysisStore.currentAnalysisType
+  if (type) {
+    Object.keys(type.input_types).forEach((key) => {
+      if (inputIsNumeric(key)) {
+        selectedInputs.value[key] = type.input_options[key][0].min
+      }
+    })
+  }
 })
 
 watch(tab, () => {
@@ -264,8 +284,20 @@ watch(
             <v-form class="pa-3" @submit.prevent ref="inputForm">
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
               <div v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)" :key="key">
+                <div v-if="inputIsNumeric(key)">
+                  {{ key }}
+                  <div class="px-2 mb-2">
+                    <SliderNumericInput
+                      :model="selectedInputs[key]"
+                      :min="analysisStore.currentAnalysisType.input_options[key][0].min"
+                      :max="analysisStore.currentAnalysisType.input_options[key][0].max"
+                      :step="analysisStore.currentAnalysisType.input_options[key][0].step"
+                      @update="(v: number) => selectedInputs[key] = v"
+                    />
+                  </div>
+                </div>
                 <v-text-field
-                  v-if="analysisStore.currentAnalysisType.input_types[key] === 'string'"
+                  v-else-if="analysisStore.currentAnalysisType.input_types[key] === 'string' && !analysisStore.currentAnalysisType.input_options[key].length"
                   v-model="selectedInputs[key]"
                   :label="key.replaceAll('_', ' ')"
                   :rules="inputSelectionRules"
