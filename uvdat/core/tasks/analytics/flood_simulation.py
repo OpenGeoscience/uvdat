@@ -114,6 +114,12 @@ def flood_simulation(result_id):
         gw_percentile = result.inputs.get('ground_water_percentile')
         annual_probability = result.inputs.get('annual_probability')
 
+        name = (
+            f'{time_period} {annual_probability} Flood Simulation '
+            f'with {hydrograph_chart.name} and '
+            f'percentiles {pet_percentile}, {sm_percentile}, {gw_percentile}'
+        )
+        result.name = name
         result.write_status('Running flood simulation module with specified inputs')
         output_path = Path(tempfile.gettempdir(), 'flood_simulation.tif')
 
@@ -142,11 +148,6 @@ def flood_simulation(result_id):
 
         result.write_status('Saving result to database')
         if output_path.exists():
-            name = (
-                f'{time_period} {annual_probability} Flood Simulation '
-                f'with {hydrograph_chart.name} and '
-                f'percentiles {pet_percentile}, {sm_percentile}, {gw_percentile}'
-            )
             metadata = dict(
                 attribution='Simulation code by August Posch at Northeastern University',
                 simulation_steps=[
