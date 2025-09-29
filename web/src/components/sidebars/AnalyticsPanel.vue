@@ -125,23 +125,43 @@ function inputIsNumeric(key: string) {
   )
 }
 
+async function getFullObject(type: string, value: any) {
+  if (type !== 'number' && typeof value === 'number') {
+    value = {id: value}
+  }
+  if (type == 'dataset') {
+    value = await getDataset(value.id)
+  }
+  if (type == 'chart') {
+    value = await getChart(value.id)
+  }
+  if (typeof value === 'object') {
+    value.type = type
+    value.visible = panelStore.isVisible({[type]: value})
+    value.showable = panelStore.showableTypes.includes(value.type)
+  } else {
+    value = {
+      name: value,
+    }
+  }
+  return value
+}
+
 async function fillInputsAndOutputs() {
   if (!currentResult.value?.inputs){
     fullInputs.value = undefined;
     additionalAnimationLayers.value = undefined;
   } else {
     fullInputs.value = Object.fromEntries(
-      Object.entries(currentResult.value.inputs).map(([key, value]) => {
-        const fullValue = analysisStore.currentAnalysisType?.input_options[key]?.find(
-          (o: any) => o.id == value
-        );
-        if (fullValue) {
-          fullValue.type = analysisStore.currentAnalysisType?.input_types[key].toLowerCase()
-          fullValue.visible = panelStore.isVisible({[fullValue.type]: fullValue})
-          fullValue.showable = panelStore.showableTypes.includes(fullValue.type)
-        }
-        return [key, fullValue || value];
-      })
+      await Promise.all(
+        Object.entries(currentResult.value.inputs).map(async ([key, value]) => {
+          const fullValue = analysisStore.currentAnalysisType?.input_options[key]?.find(
+            (o: any) => o.id == value
+          );
+          const type = analysisStore.currentAnalysisType?.input_types[key].toLowerCase()
+          return [key, await getFullObject(type, fullValue || value)];
+        })
+      )
     );
     if (fullInputs.value?.flood_simulation && !additionalAnimationLayers.value) {
       const floodDataset = {
@@ -160,22 +180,7 @@ async function fillInputsAndOutputs() {
       await Promise.all(
         Object.entries(currentResult.value.outputs).map(async ([key, value]) => {
           const type = analysisStore.currentAnalysisType?.output_types[key].toLowerCase();
-          if (type == 'dataset') {
-            value = await getDataset(value)
-          }
-          if (type == 'chart') {
-            value = await getChart(value)
-          }
-          if (typeof value === 'object') {
-            value.type = type
-            value.visible = panelStore.isVisible({[type]: value})
-            value.showable = panelStore.showableTypes.includes(value.type)
-          } else {
-            value = {
-              name: value,
-            }
-          }
-          return [key, value];
+          return [key, await getFullObject(type, value)];
         })
       )
     );
@@ -239,7 +244,6 @@ watch(
     currentResult,
     () => layerStore.selectedLayers,
     () => analysisStore.currentChart,
-    () => panelStore.panelArrangement
   ],
   fillInputsAndOutputs,
   {deep: true}
@@ -285,7 +289,7 @@ watch(
               <v-card-subtitle class="px-1">Select inputs</v-card-subtitle>
               <div v-for="[key, value] in Object.entries(analysisStore.currentAnalysisType.input_options)" :key="key">
                 <div v-if="inputIsNumeric(key)">
-                  {{ key }}
+                  {{ key.replaceAll('_', ' ') }}
                   <div class="px-2 mb-2">
                     <SliderNumericInput
                       :model="selectedInputs[key]"
