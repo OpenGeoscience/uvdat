@@ -320,7 +320,15 @@ watch(
                   density="compact"
                   hide-details="auto"
                   class="my-1"
-                />
+                >
+                  <template #item="{ item, props: itemProps }">
+                    <v-list-item
+                      v-bind="itemProps"
+                      v-tooltip="item.title"
+                      style="max-width: 400px;"
+                    />
+                  </template>
+                </v-select>
               </div>
               <v-btn @click="run" style="width: 100%" variant="tonal">
                 Run Analysis
