@@ -6,6 +6,8 @@ import {
   getDataset,
   getProjectAnalysisTypes,
   getChart,
+  getTaskResult,
+  getNetwork,
 } from "@/api/rest";
 import NodeAnimation from "./NodeAnimation.vue";
 import SliderNumericInput from "../SliderNumericInput.vue";
@@ -135,6 +137,12 @@ async function getFullObject(type: string, value: any) {
   if (type == 'chart') {
     value = await getChart(value.id)
   }
+  if (type == 'network') {
+    value = await getNetwork(value.id)
+  }
+  if (type == 'taskresult') {
+    value = await getTaskResult(value.id)
+  }
   if (typeof value === 'object') {
     value.type = type
     value.visible = panelStore.isVisible({[type]: value})
@@ -224,6 +232,7 @@ watch(() => projectStore.currentProject, createWebSocket)
 watch(() => analysisStore.currentAnalysisType, () => {
   fetchResults()
   const type = analysisStore.currentAnalysisType
+  selectedInputs.value = {}
   if (type) {
     Object.keys(type.input_types).forEach((key) => {
       if (inputIsNumeric(key)) {
