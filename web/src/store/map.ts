@@ -10,6 +10,7 @@ import {
   MapLibreLayerWithMetadata,
   MapLibreLayerMetadata,
   Layer,
+  StyleFilter,
 } from '@/types';
 import {
   Map, MapLayerMouseEvent,
@@ -19,7 +20,7 @@ import {
 import { getRasterDataValues } from '@/api/rest';
 import { baseURL } from '@/api/auth';
 import proj4 from 'proj4';
-import { useStyleStore } from './style';
+import { useStyleStore, useLayerStore } from '.';
 
 function getLayerIsVisible(layer: MapLibreLayerWithMetadata) {
   // Since visibility must be 'visible' for a feature click to even be registered,
@@ -133,6 +134,7 @@ export const useMapStore = defineStore('map', () => {
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
 
   const styleStore = useStyleStore();
+  const layerStore = useLayerStore();
 
   function handleLayerClick(e: MapLayerMouseEvent) {
     const map = getMap();
@@ -430,8 +432,23 @@ export const useMapStore = defineStore('map', () => {
     const queryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
     const { layerId, layerCopyId } = parseSourceString(sourceId);
     const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`].style_spec;
+    let filters: StyleFilter[] = []
+    const layer = layerStore.selectedLayers.find((l: Layer) => l.id = layerId)
+    if (layer) {
+      const frames = layerStore.layerFrames(layer)
+      const frame = frames.find((f: LayerFrame) => f.index === layer.current_frame_index)
+      if (frame?.source_filters) {
+        filters = Object.entries(frame.source_filters).map(([k, v]) => ({
+          filter_by: k,
+          list: [v],
+          include: true,
+          transparency: true,
+          apply: true,
+        }))
+      }
+    }
     if (styleSpec) {
-      const styleParams = styleStore.getRasterTilesQuery(styleSpec)
+      const styleParams = styleStore.getRasterTilesQuery({...styleSpec, filters})
       if (styleParams) queryParams.style = JSON.stringify(styleParams)
     }
     const query = new URLSearchParams(queryParams)

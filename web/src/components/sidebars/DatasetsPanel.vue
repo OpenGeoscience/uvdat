@@ -4,8 +4,9 @@ import DatasetList from '@/components/DatasetList.vue'
 import DetailView from '@/components/DetailView.vue'
 import { Dataset, Layer } from '@/types';
 
-import { useLayerStore } from '@/store';
+import { useLayerStore, useConversionStore } from '@/store';
 const layerStore = useLayerStore();
+const conversionStore = useConversionStore();
 
 const props = defineProps<{
   datasets: Dataset[] | undefined;
@@ -39,7 +40,28 @@ function toggleSelected(items: Layer[]) {
           <v-expansion-panel-title>
             <div style="display: flex; justify-content: space-between; width: 100%;">
               <div class="item-title" style="margin-left: 12px">
-                {{ dataset.name }}
+                <div>
+                  <div
+                    v-if="conversionStore.datasetConversionTasks[dataset.id] && !conversionStore.datasetConversionTasks[dataset.id].completed"
+                    style="display: inline-block"
+                  >
+                    <v-icon
+                      v-if="conversionStore.datasetConversionTasks[dataset.id].error"
+                      v-tooltip="conversionStore.datasetConversionTasks[dataset.id].error"
+                      icon="mdi-alert-outline"
+                      color="error"
+                      class="mr-2"
+                    />
+                    <v-progress-circular
+                      v-else
+                      v-tooltip="conversionStore.datasetConversionTasks[dataset.id].status"
+                      size="18"
+                      class="mr-2"
+                      indeterminate
+                    />
+                  </div>
+                  {{ dataset.name }}
+                </div>
                 <div style="min-width: 75px; text-align: right" v-if="dataset.layers">
                   <v-icon
                     icon="mdi-layers-outline"
