@@ -23,10 +23,6 @@ def forwards(apps, schema_editor):
                 )
 
 
-def backwards(apps, schema_editor):
-    pass
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -56,5 +52,5 @@ class Migration(migrations.Migration):
                 ),
             ],
         ),
-        migrations.RunPython(forwards, backwards),
+        migrations.RunPython(forwards, migrations.RunPython.noop),
     ]
