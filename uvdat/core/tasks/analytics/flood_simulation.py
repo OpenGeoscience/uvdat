@@ -98,6 +98,19 @@ def flood_simulation(result_id):
     result = TaskResult.objects.get(id=result_id)
 
     try:
+        for input_key in [
+            'time_period',
+            'hydrograph',
+            'potential_evapotranspiration_percentile',
+            'soil_moisture_percentile',
+            'ground_water_percentile',
+            'annual_probability',
+        ]:
+            if result.inputs.get(input_key) is None:
+                result.write_error(f'{input_key} not provided')
+                result.complete()
+                return
+
         result.write_status(
             'Ensuring that flood simulation module code and dependencies are up to date'
         )
