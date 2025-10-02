@@ -16,6 +16,7 @@ import {
 } from "@/types";
 import { getProjectColormaps } from '@/api/rest';
 import { THEMES } from "@/themes";
+import chroma from 'chroma-js';
 
 import { useMapStore, useLayerStore, useProjectStore, useNetworkStore } from '.';
 
@@ -24,30 +25,9 @@ function getMidMarker(
     markerA: {color: string, value: number},
     markerB: {color: string, value: number},
 ) {
-    const colorA = markerA.color
-    const colorB = markerB.color
-    const rgbA = {
-        r: parseInt(colorA.substring(1, 3), 16),
-        g: parseInt(colorA.substring(3, 5), 16),
-        b: parseInt(colorA.substring(5, 7), 16),
-    }
-    const rgbB = {
-        r: parseInt(colorB.substring(1, 3), 16),
-        g: parseInt(colorB.substring(3, 5), 16),
-        b: parseInt(colorB.substring(5, 7), 16),
-    }
-    const rgbMid = {
-        r: Math.round((rgbA.r + rgbB.r) / 2),
-        g: Math.round((rgbA.g + rgbB.g) / 2),
-        b: Math.round((rgbA.b + rgbB.b) / 2),
-    }
-    const hexComponents = [
-        rgbMid.r.toString(16),
-        rgbMid.g.toString(16),
-        rgbMid.b.toString(16),
-    ].map((c) => c.length === 1 ? '0' + c : c)
+    const mid = chroma(markerA.color).mix(markerB.color, 0.5, 'lab')
     return {
-        color: '#' + hexComponents.join('').toUpperCase(),
+        color: mid.hex().toUpperCase(),
         value: (markerA.value + markerB.value) / 2
     }
 }
