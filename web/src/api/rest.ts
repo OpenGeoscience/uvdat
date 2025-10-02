@@ -18,6 +18,7 @@ import {
   LayerStyle,
   VectorSummary,
   LayerFrame,
+  TaskResult,
 } from "@/types";
 
 export async function getUsers(): Promise<User[]> {
@@ -200,6 +201,10 @@ export async function getTaskResults(
       `analytics/project/${projectId}/types/${analysisType}/results/`
     )
   ).data;
+}
+
+export async function getTaskResult(resultId: number): Promise<TaskResult> {
+  return (await apiClient.get(`analytics/${resultId}`)).data;
 }
 
 export async function getVectorDataBounds(vectorId: number): Promise<number[]> {
