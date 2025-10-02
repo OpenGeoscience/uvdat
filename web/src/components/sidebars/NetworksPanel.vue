@@ -3,10 +3,10 @@ import { ref, computed, watch } from "vue";
 import DetailView from "../DetailView.vue";
 import { NetworkEdge, NetworkNode } from "@/types";
 
-import { useNetworkStore, usePanelStore, useStyleStore } from "@/store";
+import { useNetworkStore, usePanelStore } from "@/store";
+import { getNetworkEdges, getNetworkNodes } from "@/api/rest";
 const networkStore = useNetworkStore();
 const panelStore = usePanelStore();
-const styleStore = useStyleStore();
 
 const searchText = ref<string | undefined>();
 const filteredNetworks = computed(() => {
@@ -15,37 +15,24 @@ const filteredNetworks = computed(() => {
             network.name.toLowerCase().includes(searchText.value.toLowerCase())
     })
 })
+const networkState = computed(() => {
+    if (networkStore.currentNetwork){
+        return networkStore.networkStates[networkStore.currentNetwork.id]
+    }
+})
 
 const tab = ref();
-const sort = ref([{key: 'active', order: true}]);
 const hoverNode = ref<NetworkNode>();
 const hoverEdge = ref<NetworkEdge>();
 const selectedNodes = ref<number[]>([]);
-
-function sortEdgeOrNode(a: NetworkNode | NetworkEdge, b: NetworkNode | NetworkEdge) {
-    if (typeof a !== typeof b) {
-        throw new Error('Cannot compare network nodes against edges');
-    }
-
-    const activeComp = Number(a.active) - Number(b.active);
-    if (activeComp !== 0) {
-        return activeComp;
-    }
-
-    // Sort by name if their active status is equal
-    if (a.name < b.name) {
-        return -1;
-    }
-    return 1;
-}
+const limit = 100;
 
 const currentNodes = computed(() =>
   networkStore.currentNetworkNodes
     .map((n) => ({
       ...n,
-      active: !networkStore.currentNetwork?.deactivated?.nodes?.includes(n.id),
+      active: !networkState.value?.deactivated?.nodes?.includes(n.id),
     }))
-    .toSorted(sortEdgeOrNode)
 );
 
 const currentEdges = computed(() =>
@@ -53,22 +40,38 @@ const currentEdges = computed(() =>
     .map((e) => ({
       ...e,
       active:
-        !networkStore.currentNetwork?.deactivated?.nodes?.includes(e.from_node) &&
-        !networkStore.currentNetwork?.deactivated?.nodes?.includes(e.to_node),
+        !networkState.value?.deactivated?.nodes?.includes(e.from_node) &&
+        !networkState.value?.deactivated?.nodes?.includes(e.to_node),
     }))
-    .toSorted(sortEdgeOrNode)
 );
 
 const headers = [
-    { title: '', value: 'active', sortable: false, width: 10 },
-    { title: 'Name', value: 'name', sortable: false },
+    { title: '', value: 'active', sortable: true, width: 10 },
+    { title: 'Name', value: 'name', sortable: true },
     { title: '', value: 'metadata', sortable: false, width: 10 },
 ]
+
+async function loadNodes({ done }: any)  {
+    if (networkStore.currentNetwork) {
+        const response = await getNetworkNodes(networkStore.currentNetwork.id, limit, networkStore.currentNetworkNodes.length)
+        networkStore.currentNetworkNodes = [...networkStore.currentNetworkNodes, ...response]
+        if (response.length < limit) done('empty')
+        else done('ok')
+    }
+}
+
+async function loadEdges({ done }: any) {
+    if (networkStore.currentNetwork) {
+        const response = await getNetworkEdges(networkStore.currentNetwork.id, limit, networkStore.currentNetworkEdges.length)
+        networkStore.currentNetworkEdges = [...networkStore.currentNetworkEdges, ...response]
+        if (response.length < limit) done('empty')
+        else done('ok')
+    }
+}
 
 function showNetwork() {
     if (networkStore.currentNetwork) {
         panelStore.show({network: networkStore.currentNetwork})
-        styleStore.styleNetwork(networkStore.currentNetwork)
     }
 }
 
@@ -80,8 +83,6 @@ function isNetworkVisible() {
 }
 
 function resetNetwork() {
-    // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
-    // TODO: Fix in the store function itself
     if (networkStore.currentNetwork) {
         selectedNodes.value = []
         networkStore.setNetworkDeactivatedNodes(networkStore.currentNetwork, [])
@@ -89,15 +90,13 @@ function resetNetwork() {
 }
 
 function toggleSelected() {
-    // Must pass actual network object into setNetworkDeactivatedNodes, not computed prop
-    // TODO: Fix in the store function itself
-    if (networkStore.currentNetwork) {
+    if (networkStore.currentNetwork && networkState.value) {
         if (!isNetworkVisible()) showNetwork()
 
         // Any selected nodes that are already deactivated should be removed
         // from both sets, since they now need to be activated, and both sets
         // are used to set the new deactivated value.
-        let deactiveNodeSet = new Set(networkStore.currentNetwork.deactivated?.nodes);
+        let deactiveNodeSet = new Set(networkState.value.deactivated?.nodes);
         let selectedNodeSet = new Set(selectedNodes.value);
         const nodesToRemove = deactiveNodeSet.intersection(selectedNodeSet);
         deactiveNodeSet = deactiveNodeSet.difference(nodesToRemove);
@@ -108,7 +107,6 @@ function toggleSelected() {
             networkStore.currentNetwork,
             deactivated,
         )
-
         selectedNodes.value = [];
     }
 }
@@ -119,21 +117,21 @@ watch(() => networkStore.currentNetwork, () => {
 });
 
 watch([selectedNodes, hoverNode, hoverEdge], () => {
-    if (networkStore.currentNetwork) {
-        if (!networkStore.currentNetwork.selected) {
-            networkStore.currentNetwork.selected = { nodes: [], edges: [] }
+    if (networkStore.currentNetwork && networkState.value) {
+        if (!networkState.value.selected) {
+            networkState.value.selected = { nodes: [], edges: [] }
         }
         if (hoverNode.value) {
-            networkStore.currentNetwork.selected.nodes = [
+            networkState.value.selected.nodes = [
                 ...selectedNodes.value,
                 hoverNode.value.id,
             ]
         } else if (hoverEdge.value) {
-            networkStore.currentNetwork.selected.edges = [hoverEdge.value.id]
+            networkState.value.selected.edges = [hoverEdge.value.id]
         } else {
-            networkStore.currentNetwork.selected.nodes = selectedNodes.value;
+            networkState.value.selected.nodes = selectedNodes.value;
         }
-        styleStore.styleNetwork(networkStore.currentNetwork)
+        networkStore.styleNetwork(networkStore.currentNetwork)
     }
 }, {deep: true})
 </script>
@@ -191,7 +189,6 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                         <v-window-item value="nodes-tab">
                             <v-data-table
                                 v-model="selectedNodes"
-                                v-model:sort-by="sort"
                                 :items="currentNodes"
                                 :headers="headers"
                                 :search="searchText"
@@ -212,11 +209,18 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                                 <template v-slot:item.metadata="{ item }">
                                     <DetailView :details="{...item, type: 'networknode'}" />
                                 </template>
+                                <template v-slot:bottom>
+                                    <v-infinite-scroll @load="loadNodes">
+                                        <template v-slot:loading>
+                                            <v-progress-linear indeterminate />
+                                        </template>
+                                        <template v-slot:empty/>
+                                    </v-infinite-scroll>
+                                </template>
                             </v-data-table>
                         </v-window-item>
                         <v-window-item value="edges-tab">
                             <v-data-table
-                                v-model:sort-by="sort"
                                 :items="currentEdges"
                                 :headers="headers"
                                 :search="searchText"
@@ -235,6 +239,14 @@ watch([selectedNodes, hoverNode, hoverEdge], () => {
                                 </template>
                                 <template v-slot:item.metadata="{ item }">
                                     <DetailView :details="{...item, type: 'networkedge'}" />
+                                </template>
+                                 <template v-slot:bottom>
+                                    <v-infinite-scroll @load="loadEdges">
+                                        <template v-slot:loading>
+                                            <v-progress-linear indeterminate />
+                                        </template>
+                                        <template v-slot:empty/>
+                                    </v-infinite-scroll>
                                 </template>
                             </v-data-table>
                         </v-window-item>

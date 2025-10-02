@@ -144,12 +144,12 @@ export async function getNetwork(networkId: number): Promise<Network> {
   return (await apiClient.get(`networks/${networkId}`)).data;
 }
 
-export async function getNetworkNodes(networkId: number): Promise<NetworkNode[]> {
-  return (await apiClient.get(`networks/${networkId}/nodes`)).data;
+export async function getNetworkNodes(networkId: number, limit: number, offset: number): Promise<NetworkNode[]> {
+  return (await apiClient.get(`networks/${networkId}/nodes?limit=${limit}&offset=${offset}`)).data;
 }
 
-export async function getNetworkEdges(networkId: number): Promise<NetworkEdge[]> {
-  return (await apiClient.get(`networks/${networkId}/edges`)).data;
+export async function getNetworkEdges(networkId: number, limit: number, offset: number): Promise<NetworkEdge[]> {
+  return (await apiClient.get(`networks/${networkId}/edges?limit=${limit}&offset=${offset}`)).data;
 }
 
 export async function getNetworkGCC(
@@ -157,9 +157,7 @@ export async function getNetworkGCC(
   exclude_nodes: number[]
 ): Promise<number[]> {
   return (
-    await apiClient.get(
-      `networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`
-    )
+    await apiClient.get(`networks/${networkId}/gcc?exclude_nodes=${exclude_nodes.toString()}`)
   ).data;
 }
 

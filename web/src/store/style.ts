@@ -7,7 +7,6 @@ import {
     LayerFrame,
     LayerStyle,
     MapLibreLayerWithMetadata,
-    Network,
     PropertySummary,
     RasterData,
     StyleFilter,
@@ -17,7 +16,7 @@ import {
 import { THEMES } from "@/themes";
 import colormap from 'colormap'
 
-import { useMapStore, useLayerStore } from '.';
+import { useMapStore, useLayerStore, useNetworkStore } from '.';
 
 
 const getColormap = (name: string, nshades: number) => colormap({
@@ -44,15 +43,6 @@ const colormaps: ColorMap[] = [
         }))
     }
 })
-
-interface NetworkStyle {
-    inactive?: number | string,
-    deactivate?: number | string,
-    activate?: number | string,
-    gcc?: number | string,
-    selected?: number | string,
-    default: number | string,
-}
 
 function colormapMarkersSubsample(
     colormap: ColorMap, n: number | undefined = undefined
@@ -272,6 +262,7 @@ export const useStyleStore = defineStore('style', () => {
 
     const mapStore = useMapStore();
     const layerStore = useLayerStore();
+    const networkStore = useNetworkStore();
 
     function getDefaultColor() {
         return THEMES.light.colors.primary;
@@ -332,6 +323,7 @@ export const useStyleStore = defineStore('style', () => {
                 }
             }
         });
+        networkStore.styleVisibleNetworks()
     }
 
     function setMapLayerStyle(
@@ -341,9 +333,6 @@ export const useStyleStore = defineStore('style', () => {
         vector: VectorData | null
     ) {
         const map = mapStore.getMap();
-        const sourceId = mapStore.sourceIdFromMapLayerId(mapLayerId);
-        const { network } = layerStore.getDBObjectsForSourceID(sourceId)
-
         let filters: StyleFilter[] = styleSpec.filters
         if (frame?.source_filters) {
             filters = [
@@ -414,113 +403,6 @@ export const useStyleStore = defineStore('style', () => {
                 }
             }
         }
-        if (network?.gcc && opacity) styleNetwork(network)
-    }
-
-    function styleNetwork(network: Network) {
-        const vectorId = network.vector_data;
-        const gccColor = "#f7e059";
-        const selectedColor = "#ffffff";
-        const deactivateColor = "#7b3294";
-        const activateColor = "#008837";
-
-        const map = mapStore.getMap();
-        mapStore.getUserMapLayers().forEach((mapLayerId) => {
-            if (mapLayerId.includes(".vector." + vectorId)) {
-                const { layerId, layerCopyId } = mapStore.parseLayerString(mapLayerId);
-                const currentStyle = selectedLayerStyles.value[`${layerId}.${layerCopyId}`];
-                // TODO: put this back when types are consistent
-                // let defaultColor = currentStyle.color || 'black'
-                let defaultColor = 'black'
-                const colorStyle: NetworkStyle = {
-                    deactivate: deactivateColor,
-                    activate: activateColor,
-                    gcc: gccColor,
-                    selected: selectedColor,
-                    default: defaultColor,
-                }
-                const opacityStyle = {
-                    inactive: 0.4,
-                    default: 1,
-                }
-                const featureStyles: Record<string, NetworkStyle> = {
-                    'circle-opacity': opacityStyle,
-                    'circle-stroke-opacity': opacityStyle,
-                    'line-opacity': opacityStyle,
-                    'circle-color': colorStyle,
-                    'circle-stroke-color': colorStyle,
-                    'line-color': colorStyle,
-                }
-                Object.entries(featureStyles).forEach(([styleName, style]) => {
-                    const featureType = styleName.split('-')[0]
-                    if (mapLayerId.includes("." + featureType)) {
-                        const defaultValue = style.default;
-                        const selectedValue = style.selected || style.default;
-                        const gccValue = style.gcc || style.default;
-                        const inactiveValue = style.inactive || style.default;
-                        const deactivateValue = style.deactivate || style.default;
-                        const activateValue = style.activate || style.default;
-                        const deactivate = network.changes?.deactivate_nodes || [];
-                        const activate = network.changes?.activate_nodes || [];
-                        const inactive = network.deactivated?.nodes.filter((n) => (
-                            !deactivate?.includes(n) && !activate?.includes(n)
-                        )) || [];
-                        let gcc = network.gcc || []
-                        if (
-                            !inactive.length &&
-                            !deactivate.length &&
-                            !activate.length &&
-                            gcc.length === network.nodes.length
-                        ) {
-                            // Network default state; don't show GCC
-                            gcc = []
-                        }
-                        map.setPaintProperty(
-                            mapLayerId,
-                            styleName,
-                            [
-                                "case",
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", network.selected?.nodes || []]],
-                                    ["in", ["get", "edge_id"], ["literal", network.selected?.edges || []]],
-                                ],
-                                selectedValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", deactivate]],
-                                    ["in", ["get", "from_node_id"], ["literal", deactivate]],
-                                    ["in", ["get", "to_node_id"], ["literal", deactivate]],
-                                ],
-                                deactivateValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", activate]],
-                                    ["in", ["get", "from_node_id"], ["literal", activate]],
-                                    ["in", ["get", "to_node_id"], ["literal", activate]],
-                                ],
-                                activateValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", inactive]],
-                                    ["in", ["get", "from_node_id"], ["literal", inactive]],
-                                    ["in", ["get", "to_node_id"], ["literal", inactive]],
-                                ],
-                                inactiveValue,
-                                [
-                                    "any",
-                                    ["in", ["get", "node_id"], ["literal", gcc]],
-                                    ["in", ["get", "from_node_id"], ["literal", gcc]],
-                                    ["in", ["get", "to_node_id"], ["literal", gcc]],
-                                ],
-                                gccValue,
-                                defaultValue,
-                            ],
-                        )
-                    }
-                })
-            }
-        });
     }
 
     return {
@@ -530,8 +412,8 @@ export const useStyleStore = defineStore('style', () => {
         colormapMarkersSubsample,
         getDefaultColor,
         getDefaultStyleSpec,
+        getVectorColorPaintProperty,
         updateLayerStyles,
         setMapLayerStyle,
-        styleNetwork,
     }
 });
