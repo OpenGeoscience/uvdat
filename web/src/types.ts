@@ -54,18 +54,24 @@ export interface PropertySummary {
   sample_label: string,
 }
 
-export interface ColorMap {
+export interface Colormap {
+  id?: number;
+  project?: number | null;
   name?: string;
+  markers?: {
+    color: string;
+    value: number;
+  }[]
+}
+
+export interface AppliedColormap {
+  id?: number;
   discrete?: boolean;
   n_colors?: number;
   color_by?: string;
   range?: [number, number],
   clamp?: boolean,
   null_color?: string;
-  markers?: {
-    color: string;
-    value: number;
-  }[]
 }
 
 export interface StyleFilter {
@@ -85,7 +91,7 @@ export interface StyleSpec {
     name: string;
     visible: boolean;
     single_color?: string;
-    colormap?: ColorMap,
+    colormap?: AppliedColormap,
   }[],
   sizes: {
     name: string;

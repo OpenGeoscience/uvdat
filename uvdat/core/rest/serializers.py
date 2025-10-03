@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from uvdat.core.models import (
     Chart,
+    Colormap,
     Dataset,
     FileItem,
     Layer,
@@ -100,6 +101,12 @@ class FileItemSerializer(serializers.ModelSerializer):
 class ChartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chart
+        fields = '__all__'
+
+
+class ColormapSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Colormap
         fields = '__all__'
 
 

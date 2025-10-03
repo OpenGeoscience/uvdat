@@ -33,10 +33,10 @@ def test_layer_style_validation(layer: Layer, project: Project):
                 ),
                 (
                     [{'name': 'polygons', 'visible': True, 'colormap': {}}],
-                    r'\'name\' is a required property',
+                    r'\'id\' is a required property',
                 ),
                 (
-                    [{'name': 'polygons', 'visible': True, 'colormap': {'name': 'viridis'}}],
+                    [{'name': 'polygons', 'visible': True, 'colormap': {'id': 1}}],
                     r'\'discrete\' is a required property',
                 ),
                 (
@@ -44,7 +44,7 @@ def test_layer_style_validation(layer: Layer, project: Project):
                         {
                             'name': 'polygons',
                             'visible': True,
-                            'colormap': {'name': 'viridis', 'discrete': False},
+                            'colormap': {'id': 1, 'discrete': False},
                         }
                     ],
                     r'\'color_by\' is a required property',
@@ -54,60 +54,10 @@ def test_layer_style_validation(layer: Layer, project: Project):
                         {
                             'name': 'polygons',
                             'visible': True,
-                            'colormap': {'name': 'viridis', 'discrete': False, 'color_by': 'depth'},
+                            'colormap': {'id': 1, 'discrete': False, 'color_by': 'depth'},
                         }
                     ],
                     r'\'null_color\' is a required property',
-                ),
-                (
-                    [
-                        {
-                            'name': 'polygons',
-                            'visible': True,
-                            'colormap': {
-                                'name': 'viridis',
-                                'discrete': False,
-                                'color_by': 'depth',
-                                'null_color': '#000000',
-                            },
-                        }
-                    ],
-                    r'\'markers\' is a required property',
-                ),
-                (
-                    [
-                        {
-                            'name': 'polygons',
-                            'visible': True,
-                            'colormap': {
-                                'name': 'viridis',
-                                'discrete': False,
-                                'color_by': 'depth',
-                                'null_color': '#000000',
-                                'markers': [{'color': '#ffffff', 'value': 0}],
-                            },
-                        }
-                    ],
-                    r'\'minItems\': 2',
-                ),
-                (
-                    [
-                        {
-                            'name': 'polygons',
-                            'visible': True,
-                            'colormap': {
-                                'name': 'viridis',
-                                'discrete': False,
-                                'color_by': 'depth',
-                                'null_color': '#000000',
-                                'markers': [
-                                    {'color': '#ffffff', 'value': 0},
-                                    {'color': '#ffffff', 'value': -1},
-                                ],
-                            },
-                        }
-                    ],
-                    '-1 is less than the minimum of 0',
                 ),
             ],
         },

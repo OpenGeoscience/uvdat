@@ -1,5 +1,6 @@
 from .analytics import AnalyticsViewSet
 from .chart import ChartViewSet
+from .colormap import ColormapViewSet
 from .data import RasterDataViewSet, VectorDataViewSet
 from .dataset import DatasetViewSet
 from .file_item import FileItemViewSet
@@ -12,6 +13,7 @@ from .user import UserViewSet
 __all__ = [
     AnalyticsViewSet,
     ChartViewSet,
+    ColormapViewSet,
     LayerViewSet,
     LayerFrameViewSet,
     LayerStyleViewSet,
