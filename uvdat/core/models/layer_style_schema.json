@@ -10,64 +10,6 @@
             "minimum": 0,
             "maximum": 1
         },
-        "colors": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "visible": {
-                        "type": "boolean"
-                    },
-                    "single_color": {
-                        "type": "string"
-                    },
-                    "colormap": {
-                        "type": "object",
-                        "properties": {
-                            "id": {
-                                "type": "number"
-                            },
-                            "discrete": {
-                                "type": "boolean"
-                            },
-                            "n_colors": {
-                                "type": "integer",
-                                "minimum": 2
-                            },
-                            "color_by": {
-                                "type": "string"
-                            },
-                            "null_color": {
-                                "type": "string"
-                            },
-                            "range": {
-                                "type": "array",
-                                "items": {
-                                    "type": "number"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            }
-                        },
-                        "required": [
-                            "id",
-                            "discrete",
-                            "color_by",
-                            "null_color"
-                        ]
-                    }
-                },
-                "required": [
-                    "name",
-                    "visible"
-                ]
-            },
-            "minItems": 1,
-            "uniqueItems": true
-        },
         "sizes": {
             "type": "array",
             "items": {
@@ -168,7 +110,6 @@
     "required": [
         "default_frame",
         "opacity",
-        "colors",
         "sizes",
         "filters"
     ]

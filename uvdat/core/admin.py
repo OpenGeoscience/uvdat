@@ -2,7 +2,9 @@ from django.contrib import admin
 
 from uvdat.core.models import (
     Chart,
+    ColorConfig,
     Colormap,
+    ColormapConfig,
     Dataset,
     FileItem,
     Layer,
@@ -66,6 +68,14 @@ class LayerStyleAdmin(admin.ModelAdmin):
 
 class ColormapAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
+
+
+class ColormapConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'colormap', 'color_by']
+
+
+class ColorConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'style', 'name']
 
 
 class RasterDataAdmin(admin.ModelAdmin):
@@ -139,6 +149,8 @@ admin.site.register(Layer, LayerAdmin)
 admin.site.register(LayerFrame, LayerFrameAdmin)
 admin.site.register(LayerStyle, LayerStyleAdmin)
 admin.site.register(Colormap, ColormapAdmin)
+admin.site.register(ColormapConfig, ColormapConfigAdmin)
+admin.site.register(ColorConfig, ColorConfigAdmin)
 admin.site.register(RasterData, RasterDataAdmin)
 admin.site.register(VectorData, VectorDataAdmin)
 admin.site.register(VectorFeature, VectorFeatureAdmin)

@@ -5,7 +5,9 @@ from rest_framework import serializers
 
 from uvdat.core.models import (
     Chart,
+    ColorConfig,
     Colormap,
+    ColormapConfig,
     Dataset,
     FileItem,
     Layer,
@@ -110,13 +112,46 @@ class ColormapSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ColormapConfigSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField('get_colormap_id')
+    range = serializers.SerializerMethodField('get_range')
+
+    def get_colormap_id(self, obj):
+        if obj.colormap:
+            return obj.colormap.id
+
+    def get_range(self, obj):
+        if obj.range_minimum is not None and obj.range_maximum is not None:
+            return [obj.range_minimum, obj.range_maximum]
+
+    class Meta:
+        model = ColormapConfig
+        fields = ['id', 'color_by', 'null_color', 'discrete', 'n_colors', 'range']
+
+
+class ColorConfigSerializer(serializers.ModelSerializer):
+    colormap = ColormapConfigSerializer()
+
+    class Meta:
+        model = ColorConfig
+        fields = ['name', 'visible', 'single_color', 'colormap']
+
+
 class LayerStyleSerializer(serializers.ModelSerializer):
     is_default = serializers.SerializerMethodField('get_is_default')
+    style_spec = serializers.SerializerMethodField('get_style_spec')
 
     def get_is_default(self, obj):
         if obj.layer.default_style is None:
             return False
         return obj.layer.default_style.id == obj.id
+
+    def get_style_spec(self, obj):
+        spec = obj.style_spec
+        spec['colors'] = [
+            ColorConfigSerializer(color_config).data for color_config in obj.color_configs.all()
+        ]
+        return spec
 
     class Meta:
         model = LayerStyle

@@ -53,4 +53,71 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.RunPython(forwards, migrations.RunPython.noop),
+        migrations.CreateModel(
+            name='ColormapConfig',
+            fields=[
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                ('color_by', models.CharField(max_length=255)),
+                ('null_color', models.CharField(max_length=7)),
+                ('discrete', models.BooleanField(default=False)),
+                (
+                    'n_colors',
+                    models.IntegerField(
+                        null=True,
+                        validators=[
+                            django.core.validators.MinValueValidator(2),
+                            django.core.validators.MaxValueValidator(30),
+                        ],
+                    ),
+                ),
+                ('range_minimum', models.DecimalField(decimal_places=2, max_digits=10, null=True)),
+                ('range_maximum', models.DecimalField(decimal_places=2, max_digits=10, null=True)),
+                (
+                    'colormap',
+                    models.ForeignKey(
+                        default=1,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_DEFAULT,
+                        related_name='colormap_configs',
+                        to='core.colormap',
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name='ColorConfig',
+            fields=[
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                ('name', models.CharField(max_length=255)),
+                ('visible', models.BooleanField(default=True)),
+                ('single_color', models.CharField(max_length=7, null=True)),
+                (
+                    'style',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='color_configs',
+                        to='core.layerstyle',
+                    ),
+                ),
+                (
+                    'colormap',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='color_configs',
+                        to='core.colormapconfig',
+                    ),
+                ),
+            ],
+        ),
     ]

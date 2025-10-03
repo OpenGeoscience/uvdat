@@ -1,5 +1,5 @@
 from .chart import Chart
-from .colormap import Colormap
+from .colors import ColorConfig, Colormap, ColormapConfig
 from .data import RasterData, VectorData, VectorFeature
 from .dataset import Dataset
 from .file_item import FileItem
@@ -13,6 +13,8 @@ __all__ = [
     TaskResult,
     Chart,
     Colormap,
+    ColormapConfig,
+    ColorConfig,
     Project,
     Dataset,
     FileItem,

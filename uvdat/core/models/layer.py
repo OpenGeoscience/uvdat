@@ -74,3 +74,49 @@ class LayerStyle(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+        self.save_color_configs()
+
+    def save_color_configs(self):
+        from .colors import ColorConfig, Colormap, ColormapConfig
+
+        color_specs = self.style_spec.pop('colors', None)
+        if color_specs is None:
+            return
+        names = []
+        for color_spec in color_specs:
+            name = color_spec.get('name')
+            if name is None:
+                continue
+            names.append(name)
+            color_config, _ = ColorConfig.objects.get_or_create(
+                style=self,
+                name=name,
+            )
+            color_config.visible = color_spec.get('visible', True)
+            single_color = color_spec.get('single_color')
+            if single_color is not None:
+                color_config.single_color = single_color
+                if color_config.colormap is not None:
+                    color_config.colormap.delete()
+                    color_config.colormap = None
+            else:
+                color_config.single_color = None
+                colormap_spec = color_spec.get('colormap')
+                colormap = Colormap.objects.get(id=colormap_spec.get('id'))
+                map_range = colormap_spec.get('range')
+                colormap_config_args = dict(
+                    colormap=colormap,
+                    color_by=colormap_spec.get('color_by'),
+                    null_color=colormap_spec.get('null_color'),
+                    discrete=colormap_spec.get('discrete', False),
+                    n_colors=colormap_spec.get('n_colors'),
+                    range_minimum=map_range[0],
+                    range_maximum=map_range[1],
+                )
+                if color_config.colormap is not None:
+                    color_config.colormap.update(**colormap_config_args)
+                    color_config.colormap.save()
+                else:
+                    color_config.colormap = ColormapConfig.objects.create(**colormap_config_args)
+            color_config.save()
+        ColorConfig.objects.filter(style=self).exclude(name__in=names).delete()
