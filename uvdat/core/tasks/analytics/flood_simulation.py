@@ -40,7 +40,7 @@ class FloodSimulation(AnalysisType):
             'potential_evapotranspiration_percentile': [25, 50, 75, 90],
             'soil_moisture_percentile': [25, 50, 75, 90],
             'ground_water_percentile': [25, 50, 75, 90],
-            'annual_probability': [dict(min=0, max=1, step=0.05)],
+            'annual_probability': [dict(min=0, max=1, step=0.01)],
         }
 
     def run_task(self, project, **inputs):
