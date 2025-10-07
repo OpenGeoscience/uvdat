@@ -31,7 +31,7 @@ const datasetGroups = computed(() => {
 const expandedGroups = ref();
 
 function expandAllGroups() {
-  if (!expandedGroups.value && filteredDatasets.value) {
+  if (filteredDatasets.value) {
     expandedGroups.value = Object.keys(datasetGroups.value)
   }
 }
