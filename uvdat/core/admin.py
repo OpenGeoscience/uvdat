@@ -2,9 +2,12 @@ from django.contrib import admin
 
 from uvdat.core.models import (
     Chart,
+    ColorConfig,
     Colormap,
+    ColormapConfig,
     Dataset,
     FileItem,
+    FilterConfig,
     Layer,
     LayerFrame,
     LayerStyle,
@@ -14,6 +17,8 @@ from uvdat.core.models import (
     Project,
     RasterData,
     Region,
+    SizeConfig,
+    SizeRangeConfig,
     TaskResult,
     VectorData,
     VectorFeature,
@@ -66,6 +71,38 @@ class LayerStyleAdmin(admin.ModelAdmin):
 
 class ColormapAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
+
+
+class ColorConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'get_style_name', 'name']
+
+    def get_style_name(self, obj):
+        return obj.style.name
+
+
+class ColormapConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'get_colormap_name', 'color_by']
+
+    def get_colormap_name(self, obj):
+        return obj.colormap.name
+
+
+class SizeConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'get_style_name', 'name']
+
+    def get_style_name(self, obj):
+        return obj.style.name
+
+
+class SizeRangeConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'minimum', 'maximum', 'size_by']
+
+
+class FilterConfigAdmin(admin.ModelAdmin):
+    list_display = ['id', 'get_style_name', 'filter_by']
+
+    def get_style_name(self, obj):
+        return obj.style.name
 
 
 class RasterDataAdmin(admin.ModelAdmin):
@@ -139,6 +176,11 @@ admin.site.register(Layer, LayerAdmin)
 admin.site.register(LayerFrame, LayerFrameAdmin)
 admin.site.register(LayerStyle, LayerStyleAdmin)
 admin.site.register(Colormap, ColormapAdmin)
+admin.site.register(ColorConfig, ColorConfigAdmin)
+admin.site.register(ColormapConfig, ColormapConfigAdmin)
+admin.site.register(SizeConfig, SizeConfigAdmin)
+admin.site.register(SizeRangeConfig, SizeRangeConfigAdmin)
+admin.site.register(FilterConfig, FilterConfigAdmin)
 admin.site.register(RasterData, RasterDataAdmin)
 admin.site.register(VectorData, VectorDataAdmin)
 admin.site.register(VectorFeature, VectorFeatureAdmin)
