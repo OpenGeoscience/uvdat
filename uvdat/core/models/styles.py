@@ -29,6 +29,8 @@ class LayerStyle(models.Model):
     def save_style_configs(self, style_spec):
         if style_spec is None:
             raise ValueError('style_spec must not be None.')
+        self.default_frame = style_spec.get('default_frame', 0)
+        self.opacity = style_spec.get('opacity')
         color_specs = style_spec.get('colors', [])
         size_specs = style_spec.get('sizes', [])
         filter_specs = style_spec.get('filters', [])
@@ -199,7 +201,13 @@ class LayerStyle(models.Model):
                 filter_['list'] = filter_config.values_list
             filters.append(filter_)
 
-        return dict(colors=colors, sizes=sizes, filters=filters)
+        return dict(
+            default_frame=self.default_frame,
+            opacity=self.opacity,
+            colors=colors,
+            sizes=sizes,
+            filters=filters,
+        )
 
 
 class ColorConfig(models.Model):

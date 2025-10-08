@@ -3,6 +3,8 @@ import pytest
 from uvdat.core.models import ColorConfig, SizeConfig
 
 SIMPLE_SPEC = dict(
+    default_frame=1,
+    opacity=0.5,
     colors=[
         dict(
             name='all',
@@ -21,6 +23,8 @@ SIMPLE_SPEC = dict(
 )
 
 COMPLEX_SPEC = dict(
+    default_frame=1,
+    opacity=0.5,
     colors=[
         dict(
             name='all',
@@ -137,8 +141,6 @@ def test_rest_style_create_and_update(authenticated_api_client, layer, project, 
         name='Test Style',
         layer=layer.id,
         project=project.id,
-        default_frame=1,
-        opacity=0.5,
     )
 
     # Create style with simple spec

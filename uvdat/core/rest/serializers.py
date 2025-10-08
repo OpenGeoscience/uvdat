@@ -112,7 +112,6 @@ class ColormapSerializer(serializers.ModelSerializer):
 
 class LayerStyleSerializer(serializers.ModelSerializer):
     is_default = serializers.SerializerMethodField('get_is_default')
-    opacity = serializers.DecimalField(max_digits=2, decimal_places=1, coerce_to_string=False)
 
     def get_is_default(self, obj):
         if obj.layer.default_style is None:
@@ -137,7 +136,7 @@ class LayerStyleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LayerStyle
-        fields = '__all__'
+        exclude = ['default_frame', 'opacity']
 
 
 class LayerSerializer(serializers.ModelSerializer):
