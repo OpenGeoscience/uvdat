@@ -29,6 +29,7 @@ COMPLEX_SPEC = dict(
             colormap=dict(
                 id=1,
                 discrete=True,
+                clamp=False,
                 n_colors=5,
                 color_by='depth',
                 null_color='#000000',

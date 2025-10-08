@@ -154,7 +154,8 @@ class LayerStyle(models.Model):
             color = serialize_fields(color_config, ['name', 'visible', 'single_color'])
             try:
                 colormap = serialize_fields(
-                    color_config.colormap, ['discrete', 'n_colors', 'color_by', 'null_color']
+                    color_config.colormap,
+                    ['discrete', 'clamp', 'n_colors', 'color_by', 'null_color'],
                 )
                 colormap['id'] = color_config.colormap.colormap.id
                 colormap['range'] = [
