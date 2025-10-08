@@ -17,6 +17,7 @@ declare module 'vue' {
     DatasetList: typeof import('./src/components/DatasetList.vue')['default']
     DatasetSelect: typeof import('./src/components/projects/DatasetSelect.vue')['default']
     DatasetsPanel: typeof import('./src/components/sidebars/DatasetsPanel.vue')['default']
+    DatasetUpload: typeof import('./src/components/projects/DatasetUpload.vue')['default']
     DetailView: typeof import('./src/components/DetailView.vue')['default']
     FloatingPanel: typeof import('./src/components/sidebars/FloatingPanel.vue')['default']
     LayersPanel: typeof import('./src/components/sidebars/LayersPanel.vue')['default']

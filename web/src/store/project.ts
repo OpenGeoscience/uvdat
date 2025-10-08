@@ -103,6 +103,7 @@ export const useProjectStore = defineStore('project', () => {
         projectConfigMode,
         loadingDatasets,
         availableDatasets,
+        fetchProjectDatasets,
         clearState,
         clearProjectState,
         loadProjects,

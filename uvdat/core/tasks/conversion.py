@@ -32,6 +32,11 @@ def get_cog_path(file):
         source = large_image.open(file)
         if source.geospatial:
             raster_path = file
+            metadata = source.getMetadata()
+            if len(metadata.get('frames', [])) > 1:
+                # If multiframe, return early;
+                # large_image_converter is not multiframe-compatible yet
+                return raster_path
     except large_image.exceptions.TileSourceError:
         pass
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, Ref, computed, onMounted, ComputedRef, watch } from "vue";
+import { ref, Ref, computed, onMounted, watch } from "vue";
 import DatasetSelect from "@/components/projects/DatasetSelect.vue";
+import DatasetUpload from "@/components/projects/DatasetUpload.vue";
 import AccessControl from "@/components/projects/AccessControl.vue";
 import {
   getDatasets,
@@ -9,7 +10,7 @@ import {
   deleteProject,
   patchProject,
 } from "@/api/rest";
-import { Project, Dataset } from "@/types";
+import { Project, Dataset, TaskResult } from "@/types";
 
 import { useMapStore, useAppStore, useProjectStore, useLayerStore } from "@/store";
 const projectStore = useProjectStore();
@@ -30,13 +31,6 @@ const filteredProjects = computed(() => {
 const selectedProject: Ref<Project | undefined> = ref();
 const allDatasets: Ref<Dataset[]> = ref([]);
 const projDatasets: Ref<Dataset[] | undefined> = ref();
-const projSelectedDatasetIds: Ref<number[]> = ref([]);
-const otherDatasets: ComputedRef<Dataset[]> = computed(() => {
-  return allDatasets.value.filter(
-    (d1) => !projDatasets.value?.map((d2) => d2.id).includes(d1.id)
-  );
-});
-const otherSelectedDatasetIds: Ref<number[]> = ref([]);
 
 const permissions = computed(() => {
   const ret = Object.fromEntries(
@@ -62,6 +56,7 @@ const permissions = computed(() => {
   return ret;
 });
 const saving = ref<"waiting" | "done">();
+const savingId = ref<number | undefined>();
 const newProjectName = ref();
 const projectToEdit: Ref<Project | undefined> = ref();
 const projectToDelete: Ref<Project | undefined> = ref();
@@ -145,12 +140,7 @@ function selectProject(project: Project) {
   if (selectedProject.value?.id !== project.id) {
     selectedProject.value = project;
     projectStore.loadingDatasets = true;
-    getDatasets().then(async (datasets) => {
-      allDatasets.value = datasets
-      allDatasets.value.forEach((dataset: Dataset) => {
-        layerStore.fetchAvailableLayersForDataset(dataset.id)
-      })
-    })
+    refreshAllDatasets()
     refreshProjectDatasets(null);
   }
 }
@@ -160,62 +150,35 @@ function loadSelectedProject() {
   projectStore.projectConfigMode = undefined;
 }
 
-function toggleOtherDatasetSelection(datasets: Dataset[]) {
-  datasets.forEach((dataset: Dataset) => {
-    if (!otherSelectedDatasetIds.value.includes(dataset.id)) {
-      otherSelectedDatasetIds.value.push(dataset.id);
-    } else {
-      otherSelectedDatasetIds.value = otherSelectedDatasetIds.value.filter(
-        (id) => id !== dataset.id
-      );
-    }
-  });
-}
-
-function toggleProjDatasetSelection(datasets: Dataset[]) {
-  datasets.forEach((dataset: Dataset) => {
-    if (!projSelectedDatasetIds.value.includes(dataset.id)) {
-      projSelectedDatasetIds.value.push(dataset.id);
-    } else {
-      projSelectedDatasetIds.value = projSelectedDatasetIds.value.filter(
-        (id) => id !== dataset.id
-      );
-    }
-  });
-}
-
-function addAllSelectionToProject() {
-  if (projDatasets.value) {
-    saveDatasetsToProject([
-      ...projDatasets.value.map((d) => d.id),
-      ...otherSelectedDatasetIds.value,
-    ]);
-    otherSelectedDatasetIds.value = [];
+function addDatasetToProject(dataset: Dataset) {
+  savingId.value = dataset.id
+  const projDatasetIds = projDatasets.value?.map((d) => d.id)
+  if (!projDatasetIds?.includes(dataset.id)) {
+    projDatasetIds?.push(dataset.id)
+  }
+  if (projDatasetIds) {
+    saveDatasetsToProject(projDatasetIds)
   }
 }
 
-function removeProjSelectionFromProject() {
-  if (projDatasets.value) {
-    saveDatasetsToProject(
-      projDatasets.value
-        .map((d) => d.id)
-        .filter((id) => !projSelectedDatasetIds.value.includes(id))
-    );
-    projSelectedDatasetIds.value = [];
+function removeDatasetFromProject(dataset: Dataset) {
+  savingId.value = dataset.id
+  let projDatasetIds = projDatasets.value?.map((d) => d.id)
+  if (projDatasetIds?.includes(dataset.id)) {
+    projDatasetIds = projDatasetIds.filter((id) => id !== dataset.id)
+  }
+  if (projDatasetIds) {
+    saveDatasetsToProject(projDatasetIds)
   }
 }
 
 function saveDatasetsToProject(ids: number[]) {
-  saving.value = "waiting";
   if (selectedProject.value) {
     patchProject(selectedProject.value.id, {
       datasets: ids,
     }).then(() => {
       refreshProjectDatasets(() => {
-        saving.value = "done";
-        setTimeout(() => {
-          saving.value = undefined;
-        }, 2000);
+        savingId.value = undefined
       })
     });
   }
@@ -224,6 +187,15 @@ function saveDatasetsToProject(ids: number[]) {
 function updateSelectedProject(newProjectData: Project) {
   projectStore.loadProjects();
   selectedProject.value = newProjectData;
+}
+
+function refreshAllDatasets() {
+  getDatasets().then(async (datasets) => {
+    allDatasets.value = datasets
+    allDatasets.value.forEach((dataset: Dataset) => {
+      layerStore.fetchAvailableLayersForDataset(dataset.id)
+    })
+  })
 }
 
 function refreshProjectDatasets(callback: Function | null) {
@@ -251,6 +223,11 @@ function handleEditFocus(focused: boolean) {
   }
 }
 
+function datasetUploaded(result: {dataset: Dataset, conversionTask: TaskResult}) {
+  refreshAllDatasets()
+  refreshProjectDatasets(null)
+}
+
 onMounted(() => {
   window.addEventListener("keydown", (e) => {
     if (e.key == "Escape" && projectStore.projectConfigMode) {
@@ -261,7 +238,7 @@ onMounted(() => {
 
 watch(selectedProject, resetProjectEdit);
 
-watch(otherDatasets, () => {
+watch(allDatasets, () => {
   if (allDatasets.value && projDatasets.value) {
     projectStore.loadingDatasets = false;
   }
@@ -508,67 +485,38 @@ watch(() => projectStore.projectConfigMode, () => {
           >
             <v-progress-linear v-if="projectStore.loadingDatasets" indeterminate></v-progress-linear>
             <div v-else class="py-3 px-6 d-flex">
-              <div style="width: 30%">
-                <v-card-text>Available Datasets</v-card-text>
-                <v-card class="pa-2 dataset-card">
-                  <DatasetSelect
-                    :datasets="otherDatasets"
-                    :selected-ids="otherSelectedDatasetIds"
-                    @toggleDatasets="toggleOtherDatasetSelection"
-                  />
-                </v-card>
-                <v-btn
-                  color="primary"
-                  @click="addAllSelectionToProject"
-                  :disabled="!!saving || !otherSelectedDatasetIds.length"
-                  class="mt-2"
-                >
-                  Add
-                  <v-icon icon="mdi-chevron-double-right" />
-                  <v-icon
-                    v-if="saving === 'done'"
-                    icon="mdi-check"
-                    color="green"
-                    class="ml-4"
-                  />
-                  <v-progress-circular
-                    v-else-if="saving"
-                    size="25"
-                    indeterminate
-                    class="ml-4"
-                  />
-                </v-btn>
-              </div>
-              <div class="ml-10" style="width: 30%">
+              <div style="width: 45%">
                 <v-card-text>Project Datasets</v-card-text>
-                <v-card class="pa-2 dataset-card">
+                <div class="pa-2 dataset-card">
                   <DatasetSelect
                     :datasets="projDatasets"
-                    :selected-ids="projSelectedDatasetIds"
-                    @toggleDatasets="toggleProjDatasetSelection"
+                    :savingId="savingId"
+                    button-icon="mdi-close"
+                    @buttonClick="removeDatasetFromProject"
                   />
-                </v-card>
-                <v-btn
-                  color="primary"
-                  @click="removeProjSelectionFromProject"
-                  :disabled="!!saving || !projSelectedDatasetIds.length"
-                  class="mt-2"
-                >
-                  <v-icon icon="mdi-chevron-double-left" />
-                  Remove
-                  <v-icon
-                    v-if="saving === 'done'"
-                    icon="mdi-check"
-                    color="green"
-                    class="ml-4"
+                </div>
+              </div>
+              <v-divider class="mx-5" vertical></v-divider>
+              <div style="width: 45%">
+                <div class="d-flex">
+                  <v-card-text>All Datasets</v-card-text>
+                  <DatasetUpload
+                    v-if="projectStore.currentProject"
+                    :allDatasets="allDatasets"
+                    :projectPermission="permissions[projectStore.currentProject.id]"
+                    @addToCurrentProject="addDatasetToProject"
+                    @uploaded="datasetUploaded"
                   />
-                  <v-progress-circular
-                    v-else-if="saving"
-                    size="25"
-                    indeterminate
-                    class="ml-4"
+                </div>
+                <div class="pa-2 dataset-card">
+                  <DatasetSelect
+                    :datasets="allDatasets"
+                    :savingId="savingId"
+                    :addedIds="projDatasets?.map((d) => d.id)"
+                    button-icon="mdi-plus"
+                    @buttonClick="addDatasetToProject"
                   />
-                </v-btn>
+                </div>
               </div>
             </div>
           </div>

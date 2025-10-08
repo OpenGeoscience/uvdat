@@ -6,7 +6,7 @@ import configurations.importer
 from django.core.asgi import get_asgi_application
 from django.urls import path
 
-from uvdat.core.notifications import AnalyticsConsumer
+from uvdat.core.notifications import AnalyticsConsumer, ConversionConsumer
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'uvdat.settings'
 if not os.environ.get('DJANGO_CONFIGURATION'):
@@ -23,7 +23,12 @@ application = ProtocolTypeRouter(
                         'ws/analytics/project/<int:project_id>/results/',
                         AnalyticsConsumer.as_asgi(),
                         name='analytics-ws',
-                    )
+                    ),
+                    path(
+                        'ws/conversion/',
+                        ConversionConsumer.as_asgi(),
+                        name='conversion-ws',
+                    ),
                 ]
             )
         ),

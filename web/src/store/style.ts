@@ -102,6 +102,11 @@ function getRasterTilesQuery(styleSpec: StyleSpec, colormaps: Colormap[]) {
             if (colorSpec.colormap && colorSpec.visible) query.bands.push(colorQuery)
         }
     })
+    styleSpec.filters.forEach((f) => {
+        if (f.apply && f.filter_by && f.include && f.list?.length === 1) {
+            query[f.filter_by] = f.list[0]
+        }
+    })
     if (!Object.keys(query).length) return undefined
     return query;
 }
@@ -376,6 +381,7 @@ export const useStyleStore = defineStore('style', () => {
                     list: [v],
                     include: true,
                     transparency: true,
+                    apply: true,
                 }))
             ]
         }
@@ -422,7 +428,7 @@ export const useStyleStore = defineStore('style', () => {
                 map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
             }
         } else if (mapLayerId.includes("raster")) {
-            const rasterTilesQuery = getRasterTilesQuery(styleSpec, colormaps.value)
+            const rasterTilesQuery = getRasterTilesQuery({...styleSpec, filters}, colormaps.value)
             if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;

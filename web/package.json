@@ -1,6 +1,6 @@
 {
   "name": "uvdat",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "private": true,
   "scripts": {
     "serve": "vite",
@@ -17,6 +17,7 @@
     "chroma-js": "^3.1.2",
     "core-js": "^3.8.3",
     "dayjs": "^1.11.13",
+    "django-s3-file-field": "^1.1.0",
     "git-describe": "^4.1.1",
     "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",

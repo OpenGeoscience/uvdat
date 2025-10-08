@@ -6,6 +6,7 @@ import { useNetworkStore } from './network';
 import { useProjectStore } from './project';
 import { useStyleStore } from './style';
 import { usePanelStore } from './panel';
+import { useConversionStore } from './conversion';
 
 export {
     useAppStore,
@@ -16,4 +17,5 @@ export {
     useProjectStore,
     useStyleStore,
     usePanelStore,
+    useConversionStore,
 }
