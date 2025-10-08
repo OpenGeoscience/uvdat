@@ -158,10 +158,14 @@ class LayerStyle(models.Model):
                     ['discrete', 'clamp', 'n_colors', 'color_by', 'null_color'],
                 )
                 colormap['id'] = color_config.colormap.colormap.id
-                colormap['range'] = [
-                    float(color_config.colormap.range_minimum),
-                    float(color_config.colormap.range_maximum),
-                ]
+                if (
+                    color_config.colormap.range_minimum is not None
+                    and color_config.colormap.range_maximum is not None
+                ):
+                    colormap['range'] = [
+                        float(color_config.colormap.range_minimum),
+                        float(color_config.colormap.range_maximum),
+                    ]
                 color['colormap'] = colormap
             except ColorConfig.colormap.RelatedObjectDoesNotExist:
                 pass
