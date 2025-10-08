@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useStyleStore, useAppStore } from '@/store';
-import { ColorMap } from '@/types';
+import { useStyleStore, useAppStore, useProjectStore } from '@/store';
 import ColormapPreview from './ColormapPreview.vue';
 import { THEMES } from '@/themes';
 import { debounce } from 'lodash';
+import { createColormap, updateColormap } from '@/api/rest';
+import { Colormap } from '@/types';
 
 interface Marker {
     color: string,
@@ -20,14 +21,18 @@ interface MarkerBox {
 
 const styleStore = useStyleStore();
 const appStore = useAppStore();
-const colormaps = computed(() => styleStore.colormaps)
+const projectStore = useProjectStore();
 
-const emit = defineEmits(['close'])
+const props = defineProps<{
+  edit: Colormap | undefined
+}>();
+
+const emit = defineEmits(['close', 'submit'])
 
 const name = ref()
 const markers = ref([
-    {color: '#000', value: 0},
-    {color: '#fff', value: 1},
+    {color: '#000000', value: 0},
+    {color: '#ffffff', value: 1},
 ])
 const canvas = ref()
 const draggingMarker = ref()
@@ -44,7 +49,11 @@ const markerOutlineColor = computed(() => {
     return THEMES[appStore.theme].colors['on-surface-variant']
 })
 
-const nameExistsRule = () => !colormaps.value?.map((c) => c.name).includes(name.value) || `Colormap ''${name.value}'' already exists.`
+const nameExistsRule = () => !styleStore.colormaps.filter(
+    (c) => props.edit?.id !== c.id
+).map(
+    (c) => c.name
+).includes(name.value) || `Colormap ''${name.value}'' already exists.`
 
 const valid = computed(() => {
     return (
@@ -57,18 +66,39 @@ const valid = computed(() => {
 
 const currentColormap = computed(() => {
     return  {
+        id: props.edit?.id,
         name: name.value,
         markers: markers.value,
-        discrete: false,
-        n_colors: 5,
-        null_color: 'transparent',
+        project: projectStore.currentProject?.id,
     }
 })
 
-function createColormap() {
+function init() {
+    if (props.edit?.markers) {
+        name.value = props.edit.name
+        markers.value = props.edit.markers
+    }
+    drawMarkers()
+}
+
+function submit() {
     if (valid.value) {
-        colormaps.value.push(currentColormap.value)
-        emit('close')
+        if (props.edit) {
+            updateColormap(currentColormap.value).then((result: Colormap) => {
+                styleStore.colormaps = styleStore.colormaps.map((c) => {
+                    if (c.id === props.edit?.id) return result
+                    return c
+                })
+                emit('submit', result)
+                emit('close')
+            })
+        } else {
+            createColormap(currentColormap.value).then((result: Colormap) => {
+                styleStore.colormaps.push(result)
+                emit('submit', result)
+                emit('close')
+            })
+        }
     }
 }
 
@@ -199,7 +229,7 @@ function updateMarkerOrder() {
 const debouncedUpdateMarkerOrder = debounce(updateMarkerOrder, 1000)
 
 watch(markers, debouncedUpdateMarkerOrder, {deep: true})
-onMounted(drawMarkers)
+onMounted(init)
 </script>
 
 <template>
@@ -219,7 +249,7 @@ onMounted(drawMarkers)
                 v-model="name"
                 autofocus
                 :rules="[nameExistsRule]"
-                @keydown.enter="createColormap"
+                @keydown.enter="submit"
             />
             <div class="gradient-editor">
                 <canvas
@@ -295,9 +325,9 @@ onMounted(drawMarkers)
                 <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                 close
             </v-btn>
-            <v-btn class="primary-button" variant="tonal" @click="createColormap" :disabled="!valid">
+            <v-btn class="primary-button" variant="tonal" @click="submit" :disabled="!valid">
                 <v-icon color="button-text" class="mr-1">mdi-plus-circle</v-icon>
-                Create Colormap
+                {{ props.edit ? 'Save' : 'Create' }} Colormap
             </v-btn>
         </v-card-actions>
     </v-card>

@@ -50,6 +50,7 @@ export const useProjectStore = defineStore('project', () => {
         clearProjectState();
         mapStore.setMapCenter(currentProject.value);
         mapStore.clearMapLayers();
+        styleStore.fetchColormaps();
 
         if (currentProject.value) {
             fetchProjectDatasets();

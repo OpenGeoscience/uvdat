@@ -74,11 +74,3 @@ class LayerStyle(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def get_colormaps(self):
-        colormaps = []
-        for color_spec in self.style_spec.get('colors', []):
-            colormap = color_spec.get('colormap')
-            if colormap is not None:
-                colormaps.append(colormap)
-        return colormaps
