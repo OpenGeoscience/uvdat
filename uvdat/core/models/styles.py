@@ -210,6 +210,10 @@ class LayerStyle(models.Model):
         )
 
 
+def get_default_colormap():
+    return Colormap.objects.filter(project__isnull=True).first()
+
+
 class ColorConfig(models.Model):
     style = models.ForeignKey(LayerStyle, related_name='color_configs', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
@@ -229,7 +233,7 @@ class ColormapConfig(models.Model):
         Colormap,
         related_name='colormap_configs',
         null=True,
-        on_delete=models.SET_NULL,
+        on_delete=models.SET(get_default_colormap),
     )
     color_by = models.CharField(max_length=255)  # contains property name
     null_color = models.CharField(max_length=12)  # contains a color hex or 'transparent'

@@ -4,6 +4,8 @@ import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
 
+import uvdat
+
 
 class Migration(migrations.Migration):
 
@@ -95,7 +97,7 @@ class Migration(migrations.Migration):
                     'colormap',
                     models.ForeignKey(
                         null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
+                        on_delete=models.SET(uvdat.core.models.styles.get_default_colormap),
                         related_name='colormap_configs',
                         to='core.colormap',
                     ),
