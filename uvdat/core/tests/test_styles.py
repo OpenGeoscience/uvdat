@@ -126,3 +126,35 @@ def test_style_config_update(layer_style):
     with pytest.raises(SizeConfig.size_range.RelatedObjectDoesNotExist):
         size_config.size_range
     assert layer_style.filter_configs.count() == 0
+
+
+@pytest.mark.django_db
+def test_rest_style_create_and_update(authenticated_api_client, layer, project, user):
+    project.set_collaborators([user])
+    project.datasets.set([layer.dataset])
+
+    style = dict(
+        name='Test Style',
+        layer=layer.id,
+        project=project.id,
+        default_frame=1,
+        opacity=0.5,
+    )
+
+    # Create style with simple spec
+    style['style_spec'] = SIMPLE_SPEC
+    resp = authenticated_api_client.post('/api/v1/layer-styles/', style)
+    assert resp.status_code == 200
+    serialized_result = resp.json()
+    style_id = serialized_result.pop('id')
+    assert serialized_result.pop('is_default') is not None
+    assert serialized_result == style
+
+    # Update style with complex spec
+    style['style_spec'] = COMPLEX_SPEC
+    resp = authenticated_api_client.patch(f'/api/v1/layer-styles/{style_id}/', style)
+    assert resp.status_code == 200
+    serialized_result = resp.json()
+    assert serialized_result.pop('id') is not None
+    assert serialized_result.pop('is_default') is not None
+    assert serialized_result == style
