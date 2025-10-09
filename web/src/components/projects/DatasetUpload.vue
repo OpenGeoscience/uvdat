@@ -62,7 +62,6 @@ const canEditProject = computed(() => {
 })
 
 function init() {
-    projectStore.fetchProjectDatasets()
     addLayer()
     if (canEditProject) {
         addToCurrentProject.value = true
@@ -74,6 +73,7 @@ function cancel() {
     name.value = undefined
     description.value = undefined
     category.value = undefined
+    tags.value = []
     layers.value = []
     maxLayerId.value = 0
     focusedLayerId.value = 0

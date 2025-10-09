@@ -83,7 +83,7 @@ watch(filteredDatasets, expandAllGroups)
         v-if="props.datasets?.length"
         v-model="expandedGroups"
         variant="accordion"
-        class="dataset-list ml-4 pr-4"
+        class="dataset-list"
         style="height: fit-content;"
         multiple
         flat
@@ -94,10 +94,10 @@ watch(filteredDatasets, expandAllGroups)
           :value="groupName"
           bg-color="background"
         >
-          <v-expansion-panel-title style="font-weight: bold" class="ml-0">
-            <span class="capitalize secondary-text">{{ groupName }}</span>
+          <v-expansion-panel-title style="font-weight: bold">
+            <span class="capitalize secondary-text pl-3">{{ groupName }}</span>
           </v-expansion-panel-title>
-          <v-expansion-panel-text>
+          <v-expansion-panel-text class="ml-3">
             <slot name="list" :data="groupDatasets"></slot>
           </v-expansion-panel-text>
         </v-expansion-panel>

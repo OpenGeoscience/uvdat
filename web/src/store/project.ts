@@ -2,6 +2,7 @@ import {
     getProjects,
     getProjectDatasets,
     getDatasetTags,
+    getDatasets,
 } from '@/api/rest';
 import { Dataset, Project } from '@/types';
 import { defineStore } from 'pinia';
@@ -31,6 +32,7 @@ export const useProjectStore = defineStore('project', () => {
     const currentProject = ref<Project>();
     const projectConfigMode = ref<"new" | "existing">();
     const loadingDatasets = ref<boolean>(false);
+    const allDatasets = ref<Dataset[]>();
     const availableDatasets = ref<Dataset[]>();
     const availableDatasetTags = ref<string[]>([]);
 
@@ -92,6 +94,15 @@ export const useProjectStore = defineStore('project', () => {
         analysisStore.currentAnalysisType = undefined;
     }
 
+    function refreshAllDatasets() {
+        getDatasets().then(async (datasets) => {
+            allDatasets.value = datasets
+            allDatasets.value.forEach((dataset: Dataset) => {
+            layerStore.fetchAvailableLayersForDataset(dataset.id)
+            })
+        })
+    }
+
     watch(projectConfigMode, loadProjects);
     function loadProjects() {
         clearState();
@@ -107,12 +118,14 @@ export const useProjectStore = defineStore('project', () => {
         currentProject,
         projectConfigMode,
         loadingDatasets,
+        allDatasets,
         availableDatasets,
         availableDatasetTags,
         fetchProjectDatasets,
         fetchAvailableDatasetTags,
         clearState,
         clearProjectState,
+        refreshAllDatasets,
         loadProjects,
     }
 });

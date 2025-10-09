@@ -88,6 +88,7 @@ function toggleSelected(items: Layer[]) {
                 :text="tag"
                 variant="outlined"
                 size="small"
+                class="ml-3 mb-2"
               />
             </div>
             <div
