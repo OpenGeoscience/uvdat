@@ -8,12 +8,16 @@ from guardian.shortcuts import assign_perm, get_users_with_perms
 from uvdat.core.tasks.dataset import convert_dataset
 
 
+class DatasetTag(models.Model):
+    tag = models.CharField(max_length=255, unique=True)
+
+
 class Dataset(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
     processing = models.BooleanField(default=False)
-    tags = models.JSONField(default=list)
+    tags = models.ManyToManyField(DatasetTag, blank=True)
     metadata = models.JSONField(blank=True, null=True)
 
     class Meta:

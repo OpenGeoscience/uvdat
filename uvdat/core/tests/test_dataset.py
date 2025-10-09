@@ -68,6 +68,7 @@ def test_rest_create_dataset(authenticated_api_client, user):
         name='My Test Dataset',
         description='created to test dataset uploads',
         category='test',
+        tags=['boston', 'flood', 'simulation'],
         metadata=dict(source='pytest'),
     )
     resp = authenticated_api_client.post('/api/v1/datasets/', dataset_expected)
@@ -161,3 +162,17 @@ def test_rest_dataset_delete(authenticated_api_client, user, dataset: Dataset):
     dataset.set_owner(user)
     resp = authenticated_api_client.delete(f'/api/v1/datasets/{dataset.id}/')
     assert resp.status_code == 204
+
+
+@pytest.mark.django_db
+def test_rest_dataset_invalid_tags(authenticated_api_client):
+    dataset_expected = dict(
+        name='My Test Dataset',
+        description='created to test dataset uploads',
+        category='test',
+        tags='invalid',
+        metadata=dict(source='pytest'),
+    )
+    resp = authenticated_api_client.post('/api/v1/datasets/', dataset_expected)
+    assert resp.status_code == 400
+    assert resp.json() == {'tags': ['Dataset tags must be expressed as a list of strings.']}
