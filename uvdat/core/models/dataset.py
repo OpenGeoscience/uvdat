@@ -13,6 +13,7 @@ class Dataset(models.Model):
     description = models.TextField(null=True, blank=True)
     category = models.CharField(max_length=25)
     processing = models.BooleanField(default=False)
+    tags = models.JSONField(default=list)
     metadata = models.JSONField(blank=True, null=True)
 
     class Meta:
