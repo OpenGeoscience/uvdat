@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { debounce, cloneDeep } from 'lodash'
 import { computed, onMounted, ref, watch } from 'vue';
-import { ColorMap, Layer, LayerStyle, StyleSpec } from '@/types';
-import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary } from '@/api/rest';
+import { AppliedColormap, Colormap, Layer, LayerStyle, StyleSpec } from '@/types';
+import { createLayerStyle, deleteLayerStyle, getLayerStyles, updateLayerStyle, getVectorSummary, deleteColormap } from '@/api/rest';
 import ColormapPreview from './ColormapPreview.vue';
+import ColormapEditor from './ColormapEditor.vue';
 import SliderNumericInput from '../SliderNumericInput.vue';
 
-import { useStyleStore, useProjectStore, usePanelStore, useLayerStore } from '@/store';
+import { useStyleStore, useProjectStore, usePanelStore, useLayerStore, useAppStore } from '@/store';
 const styleStore = useStyleStore();
 const projectStore = useProjectStore();
 const panelStore = usePanelStore();
 const layerStore = useLayerStore();
+const appStore = useAppStore();
 
 
 const emit = defineEmits(["setLayerActive"]);
@@ -21,6 +23,10 @@ const props = defineProps<{
 
 const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
+const showColormapEditor = ref(false);
+const editColormapGroupName = ref();
+const editColormap = ref<Colormap | undefined>();
+const delColormap = ref<Colormap | undefined>();
 const newNameMode = ref<'create' | 'update' | undefined>();
 const newName = ref();
 const tab = ref('color')
@@ -33,8 +39,21 @@ const maxFilterId = ref<number>(1);
 const focusedFilterId = ref<number | undefined>();
 const highlightFilterId = ref<number | undefined>();
 
-// for correct typing in template, assign to local var
-const colormaps: ColorMap[] = styleStore.colormaps;
+// for correct typing in template, assign to computed variable
+const colormaps = computed(() => styleStore.colormaps);
+
+const projectPermission = computed(() => {
+    if (!projectStore.currentProject || !appStore.currentUser) return 'none'
+    let user = appStore.currentUser
+    let proj = projectStore.currentProject
+    let perm = 'follower'
+    if (proj.owner?.id === user.id || user.is_superuser ) {
+        perm = "owner";
+    } else if (proj.collaborators.map((u) => u.id).includes(user.id)) {
+        perm = "collaborator";
+    }
+    return perm
+})
 
 const styleKey = computed(() => {
     return `${props.layer.id}.${props.layer.copy_id}`;
@@ -234,7 +253,12 @@ function setGroupColorMode(groupName: string, colorMode: string) {
     )
 }
 
-function setGroupColorMap(groupName: string, colormap: ColorMap) {
+function getColormap(appliedColormap: AppliedColormap | undefined) {
+    if (!appliedColormap) return undefined
+    return styleStore.colormaps.find((cmap) => cmap.id === appliedColormap.id)
+}
+
+function setGroupColormap(groupName: string, colormap: Colormap) {
     if (!currentStyleSpec.value) return
     currentStyleSpec.value.colors = currentStyleSpec.value.colors.map(
         (c) => {
@@ -243,7 +267,7 @@ function setGroupColorMap(groupName: string, colormap: ColorMap) {
                     ...c,
                     colormap: {
                         ...c.colormap,
-                        ...colormap,
+                        id: colormap.id,
                     },
                     single_color: undefined
                 }
@@ -251,6 +275,36 @@ function setGroupColorMap(groupName: string, colormap: ColorMap) {
             return c
         }
     )
+}
+
+function openColormapEditor(groupName: string, colormap: Colormap | undefined) {
+    showColormapEditor.value = true
+    editColormapGroupName.value = groupName
+    editColormap.value = colormap
+}
+
+function confirmDeleteColormap() {
+    if (delColormap.value?.id) {
+        deleteColormap(delColormap.value.id).then(() => {
+            delColormap.value = undefined
+            styleStore.colormaps = styleStore.colormaps.filter((c) => c.id !== delColormap.value?.id)
+            // update other styles in case colormap changed to default
+            layerStore.selectedLayers.forEach((layer) => {
+                const layerStyleKey = `${layer.id}.${layer.copy_id}`
+                getLayerStyles(layer.id).then((styles) => {
+                    const updated = styles.find((s) => s.id === styleStore.selectedLayerStyles[layerStyleKey].id)
+                    if (updated) {
+                        styleStore.selectedLayerStyles[layerStyleKey] = updated
+                        if (layer.id === props.layer.id) {
+                            availableStyles.value = styles;
+                            currentStyleSpec.value = updated.style_spec;
+                        }
+                        styleStore.updateLayerStyles(layer)
+                    }
+                })
+            })
+        })
+    }
 }
 
 function setSizeGroups(different: boolean | null) {
@@ -597,7 +651,7 @@ onMounted(resetCurrentStyle)
                                             <td><v-label :class="group.visible ? '' : 'helper-text'">Colormap</v-label></td>
                                             <td>
                                                 <v-select
-                                                    :model-value="group.colormap"
+                                                    :model-value="getColormap(group.colormap)"
                                                     :items="colormaps"
                                                     item-title="name"
                                                     density="compact"
@@ -605,34 +659,60 @@ onMounted(resetCurrentStyle)
                                                     hide-details
                                                     return-object
                                                     :disabled="!group.visible"
-                                                    @update:model-value="(v) => setGroupColorMap(group.name, v)"
+                                                    @update:model-value="(v: Colormap) => setGroupColormap(group.name, v)"
                                                 >
                                                     <template v-slot:item="{ props, item }">
                                                         <v-list-item v-bind="props">
                                                             <template v-slot:append>
-                                                                <colormap-preview
-                                                                    :colormap="item.raw"
-                                                                    :discrete="group.colormap?.discrete || false"
-                                                                    :nColors="group.colormap?.n_colors || -1"
+                                                                <v-icon
+                                                                    v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                    icon="mdi-pencil"
+                                                                    class="ml-2"
+                                                                    @click="openColormapEditor(group.name, item.raw)"
                                                                 />
+                                                                <v-icon
+                                                                    v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                    icon="mdi-trash-can"
+                                                                    class="ml-2"
+                                                                    @click="delColormap = item.raw"
+                                                                />
+                                                                <div style="width: 300px" class="ml-2">
+                                                                    <colormap-preview
+                                                                        :colormap="item.raw"
+                                                                        :discrete="group.colormap?.discrete || false"
+                                                                        :nColors="group.colormap?.n_colors || -1"
+                                                                    />
+                                                                </div>
                                                             </template>
                                                         </v-list-item>
                                                     </template>
                                                     <template v-slot:selection="{ item }">
-                                                        <span class="pr-15" v-if="group.colormap?.markers">{{ item.title }}</span>
-                                                        <colormap-preview
-                                                            v-if="group.colormap?.markers"
-                                                            :colormap="item.raw"
-                                                            :discrete="group.colormap.discrete || false"
-                                                            :nColors="group.colormap.n_colors || -1"
-                                                        />
+                                                        <span class="pr-15" v-if="getColormap(group.colormap)?.markers">{{ item.title }}</span>
+                                                        <div style="width: 300px" class="ml-2" v-if="group.colormap && getColormap(group.colormap)?.markers">
+                                                            <colormap-preview
+                                                                :colormap="item.raw"
+                                                                :discrete="group.colormap.discrete || false"
+                                                                :nColors="group.colormap.n_colors || -1"
+                                                            />
+                                                        </div>
                                                         <span v-else class="secondary-text">Select Colormap</span>
+                                                    </template>
+                                                    <template v-slot:prepend-item>
+                                                        <v-list-item
+                                                            v-if="['owner', 'collaborator'].includes(projectPermission)"
+                                                            @click="openColormapEditor(group.name, undefined)"
+                                                        >
+                                                            <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
+                                                                <v-icon color="primary">mdi-plus</v-icon>
+                                                                Create Custom Colormap
+                                                            </div>
+                                                        </v-list-item>
                                                     </template>
                                                 </v-select>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'helper-text'">Colormap class</v-label></td>
+                                            <td><v-label :class="group.visible && getColormap(group.colormap)?.markers ? '' : 'helper-text'">Colormap class</v-label></td>
                                             <td>
                                                 <v-btn-toggle
                                                     :model-value="group.colormap?.discrete ? 'discrete' : 'continuous'"
@@ -640,7 +720,7 @@ onMounted(resetCurrentStyle)
                                                     variant="outlined"
                                                     divided
                                                     mandatory
-                                                    :disabled="!group.visible || !group.colormap?.markers"
+                                                    :disabled="!group.visible || !getColormap(group.colormap)?.markers"
                                                     @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                 >
                                                     <v-btn :value="'discrete'">Discrete</v-btn>
@@ -649,38 +729,38 @@ onMounted(resetCurrentStyle)
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap?.markers && group.colormap?.discrete ? '' : 'helper-text'">No. of colors</v-label></td>
+                                            <td><v-label :class="group.visible && getColormap(group.colormap)?.markers && group.colormap?.discrete ? '' : 'helper-text'">No. of colors</v-label></td>
                                             <td>
                                                 <SliderNumericInput
                                                     :model="group.colormap?.n_colors"
                                                     :min="2"
                                                     :max="30"
-                                                    :disabled="!group.visible || !group.colormap?.markers || !group.colormap?.discrete"
+                                                    :disabled="!group.visible || !getColormap(group.colormap)?.markers || !group.colormap?.discrete"
                                                     @update="(v: number) => {if (group.colormap) group.colormap.n_colors = v}"
                                                 />
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td><v-label :class="group.visible && group.colormap?.markers ? '' : 'helper-text'">Range</v-label></td>
+                                            <td><v-label :class="group.visible && getColormap(group.colormap)?.markers ? '' : 'helper-text'">Range</v-label></td>
                                             <td>
                                                 <SliderNumericInput
                                                     v-if="dataRange"
                                                     :rangeModel="group.colormap?.range || dataRange"
                                                     :min="dataRange[0]"
                                                     :max="dataRange[1]"
-                                                    :disabled="!group.visible || !group.colormap?.markers"
+                                                    :disabled="!group.visible || !getColormap(group.colormap)?.markers"
                                                     @update="(v: [number, number]) => {if (group.colormap) group.colormap.range = v}"
                                                 />
                                             </td>
                                         </tr>
                                         <tr>
                                             <td>
-                                                <v-label :class="group.visible && group.colormap?.markers ? '' : 'helper-text'">Clamping</v-label>
+                                                <v-label :class="group.visible && getColormap(group.colormap)?.markers ? '' : 'helper-text'">Clamping</v-label>
                                                 <v-icon
                                                     icon="mdi-information-outline"
                                                     color="primary"
                                                     size="small"
-                                                    :class="group.visible && group.colormap?.markers ? 'ml-2' : 'helper-text ml-2'"
+                                                    :class="group.visible && getColormap(group.colormap)?.markers ? 'ml-2' : 'helper-text ml-2'"
                                                     v-tooltip="'When enabled, values outside the selected range will be clamped to the ends of the colormap. When disabled, those values will appear transparent.'"
                                                 />
                                             </td>
@@ -691,7 +771,7 @@ onMounted(resetCurrentStyle)
                                                     variant="outlined"
                                                     divided
                                                     mandatory
-                                                    :disabled="!group.visible || !group.colormap?.markers"
+                                                    :disabled="!group.visible || !getColormap(group.colormap)?.markers"
                                                     @update:model-value="(value: string) => {if (group.colormap) group.colormap.clamp = value === 'enable'}"
                                                 >
                                                     <v-btn :value="'disable'">Disable</v-btn>
@@ -800,7 +880,7 @@ onMounted(resetCurrentStyle)
                                                         placeholder="Select property"
                                                         hide-details
                                                         @update:model-value="(v) => {if (group.colormap) {
-                                                            if (!group.colormap.name) setGroupColorMap(group.name, colormaps[0])
+                                                            if (!group.colormap.id) setGroupColormap(group.name, colormaps[0])
                                                             group.colormap.discrete = !vectorProperties?.find((p) => p.name === v)?.range;
                                                         }}"
                                                     >
@@ -818,7 +898,7 @@ onMounted(resetCurrentStyle)
                                                 <td><v-label :class="group.visible && group.colormap.color_by ? '' : 'helper-text'">Colormap</v-label></td>
                                                 <td>
                                                     <v-select
-                                                        :model-value="group.colormap"
+                                                        :model-value="getColormap(group.colormap)"
                                                         :items="colormaps"
                                                         :disabled="!group.visible || !group.colormap.color_by"
                                                         item-title="name"
@@ -826,34 +906,64 @@ onMounted(resetCurrentStyle)
                                                         variant="outlined"
                                                         hide-details
                                                         return-object
-                                                        @update:model-value="(v) => setGroupColorMap(group.name, v)"
+                                                        @update:model-value="(v: Colormap) => setGroupColormap(group.name, v)"
                                                     >
                                                         <template v-slot:item="{ props, item }">
                                                             <v-list-item v-bind="props">
                                                                 <template v-slot:append>
-                                                                    <colormap-preview
-                                                                        :colormap="item.raw"
-                                                                        :discrete="group.colormap.discrete || false"
-                                                                        :nColors="group.colormap.n_colors || -1"
+                                                                    <v-icon
+                                                                        v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                        icon="mdi-pencil"
+                                                                        class="ml-2"
+                                                                        @click="openColormapEditor(group.name, item.raw)"
                                                                     />
+                                                                    <v-icon
+                                                                        v-if="item.raw.project && ['owner', 'collaborator'].includes(projectPermission)"
+                                                                        icon="mdi-trash-can"
+                                                                        class="ml-2"
+                                                                        @click="delColormap = item.raw"
+                                                                    />
+                                                                    <div style="width: 300px" class="ml-2">
+                                                                        <colormap-preview
+                                                                            :colormap="item.raw"
+                                                                            :discrete="group.colormap.discrete || false"
+                                                                            :nColors="group.colormap.n_colors || -1"
+                                                                        />
+                                                                    </div>
                                                                 </template>
                                                             </v-list-item>
                                                         </template>
                                                         <template v-slot:selection="{ item }">
-                                                            <span class="pr-15" v-if="group.colormap?.markers">{{ item.title }}</span>
-                                                            <colormap-preview
-                                                                v-if="group.colormap?.markers"
-                                                                :colormap="item.raw"
-                                                                :discrete="group.colormap.discrete || false"
-                                                                :nColors="group.colormap.n_colors || -1"
-                                                            />
+                                                            <span class="pr-15" v-if="getColormap(group.colormap)?.markers">{{ item.title }}</span>
+                                                            <div style="width: 300px" class="ml-2" v-if="getColormap(group.colormap)?.markers">
+                                                                <colormap-preview
+                                                                    :colormap="item.raw"
+                                                                    :discrete="group.colormap.discrete || false"
+                                                                    :nColors="group.colormap.n_colors || -1"
+                                                                />
+                                                            </div>
                                                             <span v-else class="secondary-text">Select Colormap</span>
+                                                        </template>
+                                                        <template v-slot:prepend-item>
+                                                            <v-list-item
+                                                                v-if="['owner', 'collaborator'].includes(projectPermission)"
+                                                                @click="openColormapEditor(group.name, undefined)"
+                                                            >
+                                                                <div style="color: rgb(var(--v-theme-primary)); align-items: center; display: flex">
+                                                                    <v-icon color="primary">mdi-plus</v-icon>
+                                                                    Create Custom Colormap
+                                                                </div>
+                                                            </v-list-item>
                                                         </template>
                                                     </v-select>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.markers && vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range ? '' : 'helper-text'">Colormap class</v-label></td>
+                                                <td>
+                                                    <v-label :class="group.visible && getColormap(group.colormap)?.markers && vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range ? '' : 'helper-text'">
+                                                        Colormap class
+                                                    </v-label>
+                                                </td>
                                                 <td>
                                                     <v-btn-toggle
                                                         :model-value="group.colormap.discrete ? 'discrete' : 'continuous'"
@@ -861,7 +971,7 @@ onMounted(resetCurrentStyle)
                                                         variant="outlined"
                                                         divided
                                                         mandatory
-                                                        :disabled="!group.visible || !group.colormap.markers || !vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range"
+                                                        :disabled="!group.visible || !getColormap(group.colormap)?.markers || !vectorProperties?.find((p) => p.name === group.colormap?.color_by)?.range"
                                                         @update:model-value="(value: string) => {if (group.colormap) group.colormap.discrete = value === 'discrete'}"
                                                     >
                                                         <v-btn :value="'discrete'">Discrete</v-btn>
@@ -870,19 +980,19 @@ onMounted(resetCurrentStyle)
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.markers && group.colormap.discrete ? '' : 'helper-text'">No. of colors</v-label></td>
+                                                <td><v-label :class="group.visible && getColormap(group.colormap)?.markers && group.colormap.discrete ? '' : 'helper-text'">No. of colors</v-label></td>
                                                 <td>
                                                     <SliderNumericInput
                                                         :model="group.colormap.n_colors"
                                                         :min="2"
                                                         :max="30"
-                                                        :disabled="!group.visible || !group.colormap.markers || !group.colormap?.discrete"
+                                                        :disabled="!group.visible || !getColormap(group.colormap)?.markers || !group.colormap?.discrete"
                                                         @update="(v: number) => {if (group.colormap) group.colormap.n_colors = v}"
                                                     />
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td><v-label :class="group.visible && group.colormap.color_by && group.colormap.markers ? '' : 'helper-text'">Null values</v-label></td>
+                                                <td><v-label :class="group.visible && group.colormap.color_by && getColormap(group.colormap)?.markers ? '' : 'helper-text'">Null values</v-label></td>
                                                 <td>
                                                     <div
                                                         class="d-flex"
@@ -894,7 +1004,7 @@ onMounted(resetCurrentStyle)
                                                             variant="outlined"
                                                             divided
                                                             mandatory
-                                                            :disabled="!group.visible || !group.colormap.color_by || !group.colormap.markers"
+                                                            :disabled="!group.visible || !group.colormap.color_by || !getColormap(group.colormap)?.markers"
                                                             @update:model-value="(value: string) => {if (group.colormap) group.colormap.null_color = value}"
                                                         >
                                                             <v-btn :value="'transparent'">Transparent</v-btn>
@@ -1347,6 +1457,50 @@ onMounted(resetCurrentStyle)
                         </v-btn>
                     </v-card-actions>
                 </v-card>
+            </v-dialog>
+
+            <v-dialog :model-value="!!delColormap" contained peristent>
+                <v-card v-if="delColormap" color="background">
+                    <v-card-subtitle class="pa-2" style="background-color: rgb(var(--v-theme-surface))">
+                        Delete Colormap
+                        <span class="secondary-text">({{ delColormap.name }})</span>
+
+                        <v-icon
+                            icon="mdi-close"
+                            style="float:right"
+                            @click="delColormap = undefined"
+                        />
+                    </v-card-subtitle>
+
+                    <v-card-text>
+                        Are you sure you want to delete colormap "{{ delColormap.name }}"?
+                        <div class="pa-3 d-flex" style="align-items: center; column-gap: 10px">
+                            <v-icon icon="mdi-alert" color="warning" />
+                            <span class="secondary-text">
+                                This action cannot be undone. Any style using this colormap will revert to a default colormap.
+                            </span>
+                        </div>
+                    </v-card-text>
+
+                    <v-card-actions>
+                        <v-btn class="secondary-button" @click="delColormap = undefined">
+                            <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
+                            Cancel
+                        </v-btn>
+                        <v-btn color="error" variant="tonal" @click="confirmDeleteColormap">
+                            <v-icon color="error" class="mr-1">mdi-delete</v-icon>
+                            Delete
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
+
+            <v-dialog v-model="showColormapEditor" contained>
+                <ColormapEditor
+                    :edit="editColormap"
+                    @close="showColormapEditor = false; editColormapGroupName = undefined"
+                    @submit="(cmap) => setGroupColormap(editColormapGroupName, cmap)"
+                />
             </v-dialog>
         </v-card>
     </v-menu>

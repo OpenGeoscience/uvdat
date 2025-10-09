@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { RasterTileSource } from "maplibre-gl";
 import {
-    ColorMap,
+    AppliedColormap,
+    Colormap,
     Layer,
     LayerFrame,
     LayerStyle,
@@ -13,59 +14,67 @@ import {
     StyleSpec,
     VectorData,
 } from "@/types";
+import { getProjectColormaps } from '@/api/rest';
 import { THEMES } from "@/themes";
-import colormap from 'colormap'
+import chroma from 'chroma-js';
 
-import { useMapStore, useLayerStore, useNetworkStore } from '.';
+import { useMapStore, useLayerStore, useProjectStore, useNetworkStore } from '.';
 
 
-const getColormap = (name: string, nshades: number) => colormap({
-    nshades,
-    colormap: name === 'terrain' ? 'earth' : name.toLowerCase(),
-    format: 'hex',
-    alpha: 1
-})
-
-const colormaps: ColorMap[] = [
-    'terrain', 'viridis', 'plasma', 'inferno', 'magma',
-    'greys', 'greens', 'bone', 'copper', 'rainbow', 'jet', 'hsv',
-    'spring', 'summer', 'autumn', 'winter', 'cool', 'hot',
-].map((name) => {
-    const colors = getColormap(name, 30)
-    return {
-        name,
-        null_color: 'transparent',
-        discrete: false,
-        n_colors: 5,
-        markers: colors.map((color: string, index: number) => ({
-            color,
-            value: index / (colors.length - 1)
-        }))
-    }
-})
-
-function colormapMarkersSubsample(
-    colormap: ColorMap, n: number | undefined = undefined
+function getMidMarker(
+    markerA: {color: string, value: number},
+    markerB: {color: string, value: number},
 ) {
-    if (!n && colormap.discrete && colormap.n_colors && colormap.markers) n = colormap.n_colors
-    if (n && colormap.markers) {
-        const elements = [colormap.markers[0]];
-        const totalItems = colormap.markers.length - 1;
-        const interval = Math.floor(totalItems / (n - 1));
-        for (let i = 1; i < n - 1; i++) {
-            elements.push(colormap.markers[i * interval]);
-        }
-        elements.push(colormap.markers[colormap.markers.length - 1]);
-        return elements;
+    const mid = chroma(markerA.color).mix(markerB.color, 0.5, 'lab')
+    return {
+        color: mid.hex().toUpperCase(),
+        value: (markerA.value + markerB.value) / 2
     }
-    return colormap.markers
 }
 
-function getRasterTilesQuery(styleSpec: StyleSpec) {
+function colormapMarkersSubsample(
+    colormap: Colormap,
+    appliedColormap: AppliedColormap,
+    n: number | undefined = undefined
+) {
+    let markers = colormap.markers
+    if (
+        !n &&
+        appliedColormap.discrete &&
+        appliedColormap.n_colors &&
+        markers
+    ) {
+        n = appliedColormap.n_colors
+    }
+    if (n && markers) {
+        while (n > markers.length) {
+            const newMarkers = []
+            for (let i = 0; i < markers.length - 1; i++) {
+                newMarkers.push(markers[i])
+                newMarkers.push(
+                    getMidMarker(markers[i], markers[i + 1])
+                )
+            }
+            newMarkers.push(markers[markers.length - 1])
+            markers = newMarkers
+        }
+        const elements = [markers[0]];
+        const totalItems = markers.length - 1;
+        const interval = Math.floor(totalItems / (n - 1));
+        for (let i = 1; i < n - 1; i++) {
+            elements.push(markers[i * interval]);
+        }
+        elements.push(markers[markers.length - 1]);
+        return elements;
+    }
+    return markers
+}
+
+function getRasterTilesQuery(styleSpec: StyleSpec, colormaps: Colormap[]) {
     let query: Record<string, any> = {}
     styleSpec.colors.forEach((colorSpec) => {
         const colorQuery: Record<string, any> = {}
-        if (colorSpec.colormap?.markers) {
+        if (colorSpec.colormap) {
             if (colorSpec.colormap.range) {
                 colorQuery.min = colorSpec.colormap.range[0];
                 colorQuery.max = colorSpec.colormap.range[1];
@@ -76,7 +85,14 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
             if (colorSpec.colormap.clamp === false) {
                 colorQuery.clamp = false
             }
-            colorQuery.palette = colormapMarkersSubsample(colorSpec.colormap)?.map((marker) => marker.color)
+            const colormap = colormaps.find((cmap) => cmap.id === colorSpec.colormap?.id)
+            if (colormap?.markers) {
+                colorQuery.palette = colormapMarkersSubsample(
+                    colormap, colorSpec.colormap
+                )?.map(
+                    (marker) => marker.color
+                )
+            }
         }
         if (colorSpec.name === 'all') {
             if (colorSpec.colormap && colorSpec.visible) query = colorQuery
@@ -95,7 +111,12 @@ function getRasterTilesQuery(styleSpec: StyleSpec) {
     return query;
 }
 
-function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, propsSpec: Record<string, PropertySummary>) {
+function getVectorColorPaintProperty(
+    styleSpec: StyleSpec,
+    groupName: string,
+    propsSpec: Record<string, PropertySummary>,
+    colormaps: Colormap[],
+) {
     const colorSpec = styleSpec.colors.find((c) => [groupName, 'all'].includes(c.name))
     let baseColor: any = '#000'
     if (colorSpec?.single_color) {
@@ -107,7 +128,9 @@ function getVectorColorPaintProperty(styleSpec: StyleSpec, groupName: string, pr
         let nColors = colorSpec.colormap.n_colors
         if (!nColors) return undefined
         if (range && range[1] - range[0] < nColors) nColors = range[1] - range[0];
-        const markers = colormapMarkersSubsample(colorSpec.colormap, nColors)
+        const colormap = colormaps.find((cmap) => cmap.id === colorSpec.colormap?.id)
+        if (!colormap) return undefined
+        const markers = colormapMarkersSubsample(colormap, colorSpec.colormap, nColors)
         if (!markers) return undefined
         if (range) {
             const [min, max] = range
@@ -259,13 +282,24 @@ function getVectorVisibilityPaintProperty(styleSpec: StyleSpec, groupName: strin
 
 export const useStyleStore = defineStore('style', () => {
     const selectedLayerStyles = ref<Record<string, LayerStyle>>({});
+    const colormaps = ref<Colormap[]>([])
 
     const mapStore = useMapStore();
+    const projectStore = useProjectStore();
     const layerStore = useLayerStore();
     const networkStore = useNetworkStore();
 
     function getDefaultColor() {
         return THEMES.light.colors.primary;
+    }
+
+    function fetchColormaps() {
+        colormaps.value = []
+        if (projectStore.currentProject) {
+            getProjectColormaps(projectStore.currentProject.id).then((results) => {
+                colormaps.value = results
+            })
+        }
     }
 
     function getDefaultStyleSpec(raster: RasterData | null | undefined): StyleSpec {
@@ -288,7 +322,12 @@ export const useStyleStore = defineStore('style', () => {
                     name: 'all',
                     visible: true,
                     single_color: raster ? undefined : getDefaultColor(),
-                    colormap: raster ? { range, color_by: 'value' } : undefined,
+                    colormap: raster ? {
+                        range,
+                        color_by: 'value',
+                        n_colors: 5,
+                        null_color: 'transparent'
+                    } : undefined,
                 }
             ],
             sizes: [
@@ -361,13 +400,13 @@ export const useStyleStore = defineStore('style', () => {
         const propsSpec = vector?.summary?.properties
         if (mapLayerId.includes("fill") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'fill-opacity', opacity / 2);
-            const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec)
+            const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec, colormaps.value)
             if (color) map.setPaintProperty(mapLayerId, 'fill-color', color)
             const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'polygons')
             if (visibility !== undefined) map.setPaintProperty(mapLayerId, 'fill-opacity', visibility)
         } else if (mapLayerId.includes("line") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'line-opacity', opacity);
-            const color = getVectorColorPaintProperty(styleSpec, 'lines', propsSpec)
+            const color = getVectorColorPaintProperty(styleSpec, 'lines', propsSpec, colormaps.value)
             if (color) map.setPaintProperty(mapLayerId, 'line-color', color)
             const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
             if (size) map.setPaintProperty(mapLayerId, 'line-width', size)
@@ -376,7 +415,7 @@ export const useStyleStore = defineStore('style', () => {
         } else if (mapLayerId.includes("circle") && propsSpec) {
             map.setPaintProperty(mapLayerId, 'circle-opacity', opacity);
             map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', opacity);
-            const color = getVectorColorPaintProperty(styleSpec, 'points', propsSpec)
+            const color = getVectorColorPaintProperty(styleSpec, 'points', propsSpec, colormaps.value)
             if (color) {
                 map.setPaintProperty(mapLayerId, 'circle-color', color)
                 map.setPaintProperty(mapLayerId, 'circle-stroke-color', color)
@@ -389,7 +428,7 @@ export const useStyleStore = defineStore('style', () => {
                 map.setPaintProperty(mapLayerId, 'circle-stroke-opacity', visibility)
             }
         } else if (mapLayerId.includes("raster")) {
-            const rasterTilesQuery = getRasterTilesQuery({...styleSpec, filters})
+            const rasterTilesQuery = getRasterTilesQuery({...styleSpec, filters}, colormaps.value)
             if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
@@ -408,6 +447,7 @@ export const useStyleStore = defineStore('style', () => {
     return {
         colormaps,
         selectedLayerStyles,
+        fetchColormaps,
         getRasterTilesQuery,
         colormapMarkersSubsample,
         getDefaultColor,

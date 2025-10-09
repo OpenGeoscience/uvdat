@@ -448,7 +448,7 @@ export const useMapStore = defineStore('map', () => {
       }
     }
     if (styleSpec) {
-      const styleParams = styleStore.getRasterTilesQuery({...styleSpec, filters})
+      const styleParams = styleStore.getRasterTilesQuery({...styleSpec, filters}, styleStore.colormaps)
       if (styleParams) queryParams.style = JSON.stringify(styleParams)
     }
     const query = new URLSearchParams(queryParams)
