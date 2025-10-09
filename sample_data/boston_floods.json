@@ -22,6 +22,11 @@
         "name": "MBTA Rapid Transit",
         "description": "Boston Subway System Lines and Stops",
         "category": "transportation",
+        "tags": [
+            "boston",
+            "public transit",
+            "network"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
@@ -43,6 +48,11 @@
         "name": "MBTA Commuter Rail",
         "description": "Rail linework and station points for passenger, freight, and Amtrak and MBTA Commuter Rail trains.",
         "category": "transportation",
+        "tags": [
+            "boston",
+            "public transit",
+            "network"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907c77f04fb368544295ed/download",
@@ -59,6 +69,10 @@
         "name": "Massachusetts Elevation Data",
         "description": "Low resolution sampling of land elevation in meters above sea level",
         "category": "elevation",
+        "tags": [
+            "boston",
+            "terrain"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
@@ -83,6 +97,10 @@
         "name": "Boston Orthoimagery",
         "description": "Sourced from https://gis.data.mass.gov/maps/6c7009c789354573a42af7251fb768a4/about",
         "category": "imagery",
+        "tags": [
+            "boston",
+            "aerial imagery"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/6744df3c22f196cb5d931161/download",
@@ -108,6 +126,12 @@
         "name": "Boston Neighborhoods",
         "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
         "category": "region",
+        "tags": [
+            "boston",
+            "region boundaries",
+            "census",
+            "neighborhoods"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
@@ -124,6 +148,11 @@
         "name": "Boston Census 2020 Block Groups",
         "description": "Block groups (between 600 and 3,000 people per block) for Boston from the 2020 census",
         "category": "region",
+        "tags": [
+            "boston",
+            "region boundaries",
+            "census"
+        ],
         "files": [
             {
                 "url": "https://data.boston.gov/dataset/c478b600-3e3e-46fd-9f57-da89459e9928/resource/11282722-9386-4272-8a82-2fcec89e6d55/download/census2020_blockgroups.zip",
@@ -140,6 +169,10 @@
         "name": "Boston Zip Codes",
         "description": "Zip codes 01001-02791",
         "category": "region",
+        "tags": [
+            "boston",
+            "region boundaries"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64fbb4c6e99e9e6006f00114/download",
