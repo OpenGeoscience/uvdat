@@ -87,6 +87,13 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class DatasetSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField('get_owner')
+
+    def get_owner(self, obj):
+        owner = obj.owner()
+        if owner is not None:
+            return UserSerializer(owner).data
+
     class Meta:
         model = Dataset
         fields = '__all__'

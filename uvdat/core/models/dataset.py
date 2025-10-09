@@ -24,7 +24,7 @@ class Dataset(models.Model):
             list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))
         )
         if len(users) != 1:
-            raise Exception('Dataset must have exactly one owner')
+            return None
         return users[0]
 
     @transaction.atomic()

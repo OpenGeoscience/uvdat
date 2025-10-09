@@ -30,6 +30,11 @@ class DatasetViewSet(ModelViewSet):
 
         return qs.filter(project=int(project_id))
 
+    def perform_create(self, serializer):
+        # Set the owner of the object to the current user
+        instance = serializer.save()
+        instance.set_owner(self.request.user)
+
     @action(detail=True, methods=['get'])
     def layers(self, request, **kwargs):
         dataset: Dataset = self.get_object()

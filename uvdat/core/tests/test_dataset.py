@@ -63,7 +63,7 @@ def test_rest_dataset_data_objects(
 
 
 @pytest.mark.django_db
-def test_rest_create_dataset(authenticated_api_client):
+def test_rest_create_dataset(authenticated_api_client, user):
     dataset_expected = dict(
         name='My Test Dataset',
         description='created to test dataset uploads',
@@ -76,6 +76,7 @@ def test_rest_create_dataset(authenticated_api_client):
     for key, value in dataset_expected.items():
         assert serialized_dataset[key] == value
     assert 'id' in serialized_dataset
+    assert serialized_dataset['owner']['id'] == user.id
 
 
 @pytest.mark.django_db
