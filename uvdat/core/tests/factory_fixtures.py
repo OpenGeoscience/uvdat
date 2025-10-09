@@ -7,6 +7,7 @@ from .factories import (
     FileItemFactory,
     LayerFactory,
     LayerFrameFactory,
+    LayerStyleFactory,
     NetworkEdgeFactory,
     NetworkFactory,
     NetworkNodeFactory,
@@ -150,3 +151,14 @@ def layer_frame_factory():
 @pytest.fixture
 def layer_frame(layer_frame_factory):
     return layer_frame_factory()
+
+
+# Layer Style
+@pytest.fixture
+def layer_style_factory():
+    return LayerStyleFactory
+
+
+@pytest.fixture
+def layer_style(layer_style_factory):
+    return layer_style_factory()

@@ -1,7 +1,6 @@
 from django.db import models
 from jsonschema import validate
 
-from .layer import LayerStyle
 from .project import Project
 
 MARKER_SCHEMA = dict(
@@ -42,13 +41,3 @@ class Colormap(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
-
-    def delete(self):
-        default = Colormap.objects.filter(project=None).first()
-        for style in LayerStyle.objects.all():
-            for color_spec in style.style_spec.get('colors'):
-                colormap = color_spec.get('colormap')
-                if colormap is not None and colormap.get('id') == self.id:
-                    colormap['id'] = default.id
-                    style.save()
-        super(Colormap, self).delete()
