@@ -1,6 +1,7 @@
 import {
     getProjects,
     getProjectDatasets,
+    getDatasetTags,
 } from '@/api/rest';
 import { Dataset, Project } from '@/types';
 import { defineStore } from 'pinia';
@@ -31,7 +32,7 @@ export const useProjectStore = defineStore('project', () => {
     const projectConfigMode = ref<"new" | "existing">();
     const loadingDatasets = ref<boolean>(false);
     const availableDatasets = ref<Dataset[]>();
-
+    const availableDatasetTags = ref<string[]>([]);
 
     function fetchProjectDatasets() {
         if (!currentProject.value) { return; }
@@ -44,6 +45,10 @@ export const useProjectStore = defineStore('project', () => {
             ));
             loadingDatasets.value = false;
         });
+    }
+
+    function fetchAvailableDatasetTags() {
+        getDatasetTags().then((tags) => availableDatasetTags.value = tags)
     }
 
     watch(currentProject, () => {
@@ -103,7 +108,9 @@ export const useProjectStore = defineStore('project', () => {
         projectConfigMode,
         loadingDatasets,
         availableDatasets,
+        availableDatasetTags,
         fetchProjectDatasets,
+        fetchAvailableDatasetTags,
         clearState,
         clearProjectState,
         loadProjects,

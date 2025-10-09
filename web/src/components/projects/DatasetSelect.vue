@@ -97,6 +97,14 @@ const datasetsWithLayers = computed(() => {
             </div>
           </v-expansion-panel-title>
           <v-expansion-panel-text class="pb-2">
+            <div>
+              <v-chip
+                v-for="tag in dataset.tags"
+                :text="tag"
+                variant="outlined"
+                size="small"
+              />
+            </div>
             <div
               v-for="layer in dataset.layers"
               class="item-title"

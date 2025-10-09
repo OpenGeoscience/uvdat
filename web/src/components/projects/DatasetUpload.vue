@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { createDataset, createFileItem, getDatasetTags, spawnDatasetConversion, uploadFile } from '@/api/rest';
+import { createDataset, createFileItem, spawnDatasetConversion, uploadFile } from '@/api/rest';
 import { Dataset } from '@/types';
 import { computed, ref, watch } from 'vue';
 
 import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
+
+import { useProjectStore } from '@/store';
+const projectStore = useProjectStore()
 
 interface LayerSpec {
     id: number;
@@ -24,7 +27,6 @@ const open = ref<boolean>(false)
 const name = ref<string>()
 const description = ref<string>()
 const category = ref<string>()
-const availableTags = ref<string[]>([])
 const tags = ref<string[]>([])
 const layers = ref<LayerSpec[]>([])
 const maxLayerId = ref<number>(0)
@@ -60,15 +62,11 @@ const canEditProject = computed(() => {
 })
 
 function init() {
-    getAvailableTags()
+    projectStore.fetchProjectDatasets()
     addLayer()
     if (canEditProject) {
         addToCurrentProject.value = true
     }
-}
-
-function getAvailableTags() {
-    getDatasetTags().then((tags) => availableTags.value = tags)
 }
 
 function cancel() {
@@ -215,7 +213,7 @@ watch(open, () => {
                     <v-combobox
                         label="Tags"
                         v-model="tags"
-                        :items="availableTags"
+                        :items="projectStore.availableDatasetTags"
                         hide-details="auto"
                         multiple
                         chips
@@ -223,7 +221,7 @@ watch(open, () => {
                     >
                         <template v-slot:append-inner>
                             <v-icon
-                                v-if="tags.length && tags.some((t) => !availableTags.includes(t))"
+                                v-if="tags.length && tags.some((t) => !projectStore.availableDatasetTags.includes(t))"
                                 icon="mdi-information-outline"
                                 class="ml-2"
                                 color="primary"

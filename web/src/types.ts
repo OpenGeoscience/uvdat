@@ -14,9 +14,11 @@ export interface Dataset {
   name?: string;
   description?: string;
   category?: string;
+  tags: string[];
   processing?: boolean;
   layers?: Layer[];
   metadata?: Record<string, any>;
+  owner: User;
 }
 
 export interface Layer {

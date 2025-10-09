@@ -10,10 +10,14 @@ const props = defineProps<{
 }>();
 
 const searchText = ref<string | undefined>();
+const selectedTags = ref<string[]>();
 const filteredDatasets = computed(() => {
   return props.datasets?.filter((dataset: any) => {
-    return  !searchText.value ||
-    dataset.name.toLowerCase().includes(searchText.value.toLowerCase())
+    const searchMatch = !searchText.value ||
+      dataset.name.toLowerCase().includes(searchText.value.toLowerCase())
+    const tagMatch = !selectedTags.value?.length ||
+      dataset.tags.some((t: string) => selectedTags.value?.includes(t))
+    return searchMatch && tagMatch
   });
 });
 const datasetGroups = computed(() => {
@@ -30,13 +34,18 @@ const datasetGroups = computed(() => {
 });
 const expandedGroups = ref();
 
+function init() {
+  projectStore.fetchAvailableDatasetTags()
+  expandAllGroups()
+}
+
 function expandAllGroups() {
   if (filteredDatasets.value) {
     expandedGroups.value = Object.keys(datasetGroups.value)
   }
 }
 
-onMounted(expandAllGroups);
+onMounted(init);
 watch(filteredDatasets, expandAllGroups)
 </script>
 
@@ -51,6 +60,24 @@ watch(filteredDatasets, expandAllGroups)
       append-inner-icon="mdi-magnify"
       hide-details
     />
+    <v-expansion-panels flat v-if="props.datasets?.length">
+      <v-expansion-panel class="mb-2 bg-transparent">
+        <v-expansion-panel-title class="tag-filter-title">
+          Filter by Tag
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <v-combobox
+            v-model="selectedTags"
+            :items="projectStore.availableDatasetTags"
+            density="compact"
+            multiple
+            chips
+            closable-chips
+            hide-details
+          />
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
     <v-card class="panel-content-inner">
       <v-expansion-panels
         v-if="props.datasets?.length"
@@ -122,5 +149,10 @@ watch(filteredDatasets, expandAllGroups)
 .item-title + .v-expansion-panel-title__icon {
   position: absolute !important;
   left: 0 !important;
+}
+.tag-filter-title {
+  padding: 0px 0px 4px 0px! important;
+  min-height: 0px!important;
+  font-size: inherit!important;
 }
 </style>
