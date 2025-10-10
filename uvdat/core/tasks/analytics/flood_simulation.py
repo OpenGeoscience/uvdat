@@ -76,7 +76,7 @@ def pull_module():
             ['git', 'clone', MODULE_REPOSITORY],
             MODULE_PATH.parent,
         )
-    run_command(['git', 'pull'], MODULE_PATH)
+    run_command(['git', 'pull', '-q'], MODULE_PATH)
 
 
 def install_module_dependencies():
