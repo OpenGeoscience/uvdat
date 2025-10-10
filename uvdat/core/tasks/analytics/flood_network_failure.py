@@ -108,6 +108,7 @@ def flood_network_failure(result_id):
             result.save()
 
             node_failures = {}
+            n_nodes = network.nodes.count()
             flood_dataset_id = flood_sim.outputs.get('flood')
             flood_layer = Layer.objects.get(dataset__id=flood_dataset_id)
 
@@ -128,24 +129,31 @@ def flood_network_failure(result_id):
                     units='EPSG:4326',
                 )
 
-            for frame in flood_layer.frames.all():
-                n_nodes = network.nodes.count()
+            # Precompute node regions
+            node_regions = {
+                node.id: get_station_region(node.location) for node in network.nodes.all()
+            }
+
+            # Assume that all frames in flood_layer refer to frames of the same RasterData
+            raster = flood_layer.frames.first().raster
+            raster_path = utilities.field_file_to_local_path(raster.cloud_optimized_geotiff)
+            source = tilesource.get_tilesource_from_path(raster_path)
+            metadata = source.getMetadata()
+
+            for frame in metadata.get('frames', []):
+                frame_index = frame.get('Index')
                 result.write_status(
-                    f'Evaluating flood levels at {n_nodes} nodes for frame {frame.index}...'
+                    f'Evaluating flood levels at {n_nodes} nodes for frame {frame_index}...'
                 )
-                raster_path = utilities.field_file_to_local_path(
-                    frame.raster.cloud_optimized_geotiff
-                )
-                source = tilesource.get_tilesource_from_path(raster_path)
-
-                node_failures[frame.index] = []
-                for node in network.nodes.all():
-                    region = get_station_region(node.location)
-                    region_data, _ = source.getRegion(region=region, format='numpy')
-                    water_heights = numpy.take(region_data, 0, axis=2)
-                    if numpy.any(numpy.where(water_heights > tolerance)):
-                        node_failures[frame.index].append(node.id)
-
+                node_failures[frame_index] = []
+                for node_id, node_region in node_regions.items():
+                    region_data, _ = source.getRegion(
+                        region=node_region,
+                        frame=frame_index,
+                        format='numpy',
+                    )
+                    if numpy.any(numpy.where(region_data > tolerance)):
+                        node_failures[frame_index].append(node_id)
             result.outputs = dict(failures=node_failures)
     except Exception as e:
         result.error = str(e)

@@ -168,16 +168,16 @@ const downloadReady = computed(() => {
     />
     <v-card class="panel-content-inner">
       <div v-if="analysisStore.currentChart" class="pa-2">
-        <div style="position: absolute; right: 0;">
+        <div style="position: absolute; right: 10px;">
           <a ref="downloadButton">
-            <v-btn
+            <v-icon
               v-tooltip="'Download'"
               icon="mdi-download"
               variant="plain"
               v-show="downloadReady"
             />
           </a>
-          <v-btn
+          <v-icon
             v-tooltip="'Close'"
             icon="mdi-close"
             variant="plain"
