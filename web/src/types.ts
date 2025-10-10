@@ -14,9 +14,11 @@ export interface Dataset {
   name?: string;
   description?: string;
   category?: string;
+  tags: string[];
   processing?: boolean;
   layers?: Layer[];
   metadata?: Record<string, any>;
+  owner: User;
 }
 
 export interface Layer {
@@ -213,7 +215,7 @@ export interface Project {
   name: string;
   default_map_center: [number, number];
   default_map_zoom: number;
-  datasets: Dataset[];
+  datasets: number[];
   created: string;
   modified: string;
   owner: User;

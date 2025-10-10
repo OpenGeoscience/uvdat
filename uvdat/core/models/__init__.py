@@ -1,7 +1,7 @@
 from .chart import Chart
 from .colormap import Colormap
 from .data import RasterData, VectorData, VectorFeature
-from .dataset import Dataset
+from .dataset import Dataset, DatasetTag
 from .file_item import FileItem
 from .layer import Layer, LayerFrame
 from .networks import Network, NetworkEdge, NetworkNode
@@ -23,6 +23,7 @@ __all__ = [
     Colormap,
     Project,
     Dataset,
+    DatasetTag,
     FileItem,
     RasterData,
     VectorData,

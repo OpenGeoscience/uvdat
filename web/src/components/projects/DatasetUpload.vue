@@ -5,6 +5,9 @@ import { computed, ref, watch } from 'vue';
 
 import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
 
+import { useProjectStore } from '@/store';
+const projectStore = useProjectStore()
+
 interface LayerSpec {
     id: number;
     name: string | undefined;
@@ -24,6 +27,7 @@ const open = ref<boolean>(false)
 const name = ref<string>()
 const description = ref<string>()
 const category = ref<string>()
+const tags = ref<string[]>([])
 const layers = ref<LayerSpec[]>([])
 const maxLayerId = ref<number>(0)
 const focusedLayerId = ref<number>(0)
@@ -69,6 +73,7 @@ function cancel() {
     name.value = undefined
     description.value = undefined
     category.value = undefined
+    tags.value = []
     layers.value = []
     maxLayerId.value = 0
     focusedLayerId.value = 0
@@ -110,6 +115,7 @@ function submit() {
         name: name.value,
         description: description.value,
         category: category.value,
+        tags: tags.value,
     }).then(async (dataset) => {
         if (addToCurrentProject.value) {
             emit('addToCurrentProject', dataset)
@@ -201,6 +207,25 @@ watch(open, () => {
                                 class="ml-2"
                                 color="primary"
                                 v-tooltip="'You are creating a new category'"
+                            />
+                        </template>
+                    </v-combobox>
+                    <v-combobox
+                        label="Tags"
+                        v-model="tags"
+                        :items="projectStore.availableDatasetTags"
+                        hide-details="auto"
+                        multiple
+                        chips
+                        closable-chips
+                    >
+                        <template v-slot:append-inner>
+                            <v-icon
+                                v-if="tags.length && tags.some((t) => !projectStore.availableDatasetTags.includes(t))"
+                                icon="mdi-information-outline"
+                                class="ml-2"
+                                color="primary"
+                                v-tooltip="'You are creating a new tag'"
                             />
                         </template>
                     </v-combobox>
