@@ -37,9 +37,9 @@ class FloodSimulation(AnalysisType):
         return {
             'time_period': ['2030-2050'],
             'hydrograph': Chart.objects.filter(name__icontains='hydrograph'),
-            'potential_evapotranspiration_percentile': [25, 50, 75, 90],
-            'soil_moisture_percentile': [25, 50, 75, 90],
-            'ground_water_percentile': [25, 50, 75, 90],
+            'potential_evapotranspiration_percentile': [dict(min=0, max=100, step=1)],
+            'soil_moisture_percentile': [dict(min=0, max=100, step=1)],
+            'ground_water_percentile': [dict(min=0, max=100, step=1)],
             'annual_probability': [dict(min=0, max=1, step=0.01)],
         }
 
