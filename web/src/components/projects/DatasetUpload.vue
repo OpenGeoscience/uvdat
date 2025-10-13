@@ -5,6 +5,14 @@ import { computed, ref, watch } from 'vue';
 
 import { VFileUpload, VFileUploadItem } from 'vuetify/labs/VFileUpload'
 
+import JsonEditorVue from 'json-editor-vue'
+import 'vanilla-jsoneditor/themes/jse-theme-dark.css'
+import { Mode } from 'vanilla-jsoneditor'
+
+import { useAppStore } from '@/store';
+const appStore = useAppStore();
+
+
 interface LayerSpec {
     id: number;
     name: string | undefined;
@@ -24,6 +32,7 @@ const open = ref<boolean>(false)
 const name = ref<string>()
 const description = ref<string>()
 const category = ref<string>()
+const metadata = ref<object>({})
 const layers = ref<LayerSpec[]>([])
 const maxLayerId = ref<number>(0)
 const focusedLayerId = ref<number>(0)
@@ -69,6 +78,7 @@ function cancel() {
     name.value = undefined
     description.value = undefined
     category.value = undefined
+    metadata.value = {}
     layers.value = []
     maxLayerId.value = 0
     focusedLayerId.value = 0
@@ -110,6 +120,7 @@ function submit() {
         name: name.value,
         description: description.value,
         category: category.value,
+        metadata: metadata.value,
     }).then(async (dataset) => {
         if (addToCurrentProject.value) {
             emit('addToCurrentProject', dataset)
@@ -204,6 +215,22 @@ watch(open, () => {
                             />
                         </template>
                     </v-combobox>
+
+                    <v-expansion-panels>
+                        <v-expansion-panel>
+                            <v-expansion-panel-title class="px-4">Metadata</v-expansion-panel-title>
+                            <v-expansion-panel-text>
+                                <json-editor-vue
+                                    v-model="metadata"
+                                    :mode="Mode.text"
+                                    :stringified="false"
+                                    :main-menu-bar="false"
+                                    :indentation="4"
+                                    :class="appStore.theme === 'dark' ? 'jse-theme-dark' : ''"
+                                />
+                            </v-expansion-panel-text>
+                        </v-expansion-panel>
+                    </v-expansion-panels>
 
                     <div class="layers-configuration">
                         <div class="px-4 py-2" style="background-color: rgb(var(--v-theme-surface)); height: 40px">
