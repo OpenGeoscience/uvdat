@@ -151,7 +151,7 @@ watch(filteredDatasets, expandAllGroups)
   left: 0 !important;
 }
 .tag-filter-title {
-  padding: 0px 0px 4px 0px! important;
+  padding: 0px 0px 4px 0px !important;
   min-height: 0px!important;
   font-size: inherit!important;
 }
