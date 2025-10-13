@@ -26,7 +26,7 @@ export async function restoreLogin() {
   }
   await oauthClient.maybeRestoreLogin();
   if (oauthClient.isLoggedIn) {
-    apiClient.get("/users/me").then((response) => {
+    apiClient.get("/users/me/").then((response) => {
       if (response.data) {
         useAppStore().currentUser = response.data;
       }

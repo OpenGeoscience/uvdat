@@ -1,6 +1,5 @@
 from celery import shared_task
 from django.contrib.gis.geos import LineString, Point
-import osmnx
 
 from uvdat.core.models import (
     Dataset,
@@ -42,6 +41,8 @@ def metadata_for_row(row):
 
 @shared_task
 def load_roads(project_id, location):
+    import osmnx
+
     project = Project.objects.get(id=project_id)
     dataset = get_or_create_road_dataset(project, location)
     vector_data = VectorData.objects.create(

@@ -52,7 +52,6 @@ setup(
         'django-large-image==0.10.0',
         'drf-yasg==1.21.7',
         'matplotlib==3.9.2',  # for raster colormaps
-        'osmnx==2.0.6',
         'geopandas==1.1.1',
         'networkx==3.3',
         'pooch==1.8.2',
@@ -77,6 +76,7 @@ setup(
         ],
         'tasks': [
             'geoai-py==0.9.2',
+            'osmnx==2.0.6',
         ],
         'test': [
             'factory-boy==3.3.1',
