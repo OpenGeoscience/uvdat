@@ -11,6 +11,9 @@ from uvdat.core.tasks.dataset import convert_dataset
 class DatasetTag(models.Model):
     tag = models.CharField(max_length=255, unique=True)
 
+    class Meta:
+        ordering = ['tag']
+
 
 class Dataset(models.Model):
     name = models.CharField(max_length=255, unique=True)
