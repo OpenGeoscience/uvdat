@@ -12,6 +12,9 @@ import { useAppStore } from "@/store";
 import "@mdi/font/css/materialdesignicons.css";
 import { THEMES } from "./themes";
 
+import JsonEditorVue from 'json-editor-vue'
+
+
 // Must first initialize pinia, so we can set the default theme
 const app = createApp(App);
 app.use(createPinia());
@@ -26,7 +29,8 @@ const vuetify = createVuetify({
     themes: THEMES
   },
 });
-app.use(vuetify);
+app.use(vuetify)
+app.use(JsonEditorVue);
 
 // Finally, mount the app
 restoreLogin().then(() => {
