@@ -12,7 +12,6 @@ from rest_framework.viewsets import ModelViewSet
 from uvdat.core.models import Project
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import ProjectPermissionsSerializer, ProjectSerializer
-from uvdat.core.tasks.osmnx import load_roads
 
 
 class ProjectViewSet(ModelViewSet):
@@ -59,6 +58,8 @@ class ProjectViewSet(ModelViewSet):
         url_path=r'load_roads/(?P<location>.+)',
     )
     def load_roads(self, request, location, **kwargs):
+        from uvdat.core.tasks.osmnx import load_roads
+
         project = self.get_object()
         load_roads.delay(project.id, location)
         return HttpResponse('Task spawned successfully.', status=200)
