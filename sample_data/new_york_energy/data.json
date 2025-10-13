@@ -19,6 +19,11 @@
         "name": "National Grid CompanyBoundary",
         "description": "CompanyBoundary vector data",
         "category": "region",
+        "tags": [
+            "new york",
+            "energy grid",
+            "region boundaries"
+        ],
         "conversion_script": "./ingest.py"
     },
     {
@@ -26,6 +31,10 @@
         "name": "County Boundaries",
         "description": "From https://gis.ny.gov/civil-boundaries",
         "category": "region",
+        "tags": [
+            "new york",
+            "region boundaries"
+        ],
         "conversion_script": "./ingest.py",
         "files": [
             {
@@ -43,14 +52,23 @@
         "name": "National Grid Substations",
         "description": "Substations vector data",
         "category": "energy",
+        "tags": [
+            "new york",
+            "energy grid",
+            "region boundaries"
+        ],
         "conversion_script": "./ingest.py"
-
     },
     {
         "type": "Dataset",
         "name": "National Grid County Networks",
         "description": "Energy networks for each county in New York",
         "category": "energy",
+        "tags": [
+            "new york",
+            "energy grid",
+            "region boundaries"
+        ],
         "conversion_script": "./ingest.py",
         "files": [
             {
@@ -60,5 +78,4 @@
             }
         ]
     }
-
 ]
