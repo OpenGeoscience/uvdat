@@ -1229,7 +1229,7 @@ onMounted(resetCurrentStyle)
                                 <v-card-subtitle>
                                     Filters ({{ currentStyleSpec.filters.length }})
                                 </v-card-subtitle>
-                                <v-btn color="primary" @click="addFilter">
+                                <v-btn color="primary" @click="addFilter" flat>
                                     <v-icon icon="mdi-plus"/>
                                     Add New Filter
                                 </v-btn>
