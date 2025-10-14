@@ -72,7 +72,8 @@ function colormapMarkersSubsample(
 
 function getRasterTilesQuery(styleSpec: StyleSpec, colormaps: Colormap[]) {
     let query: Record<string, any> = {}
-    styleSpec.colors.forEach((colorSpec) => {
+    const colorSpecs = styleSpec.colors || []
+    colorSpecs.forEach((colorSpec) => {
         const colorQuery: Record<string, any> = {}
         if (colorSpec.colormap) {
             if (colorSpec.colormap.range) {
@@ -117,7 +118,8 @@ function getVectorColorPaintProperty(
     propsSpec: Record<string, PropertySummary>,
     colormaps: Colormap[],
 ) {
-    const colorSpec = styleSpec.colors.find((c) => [groupName, 'all'].includes(c.name))
+    const colorSpecs = styleSpec.colors || []
+    const colorSpec = colorSpecs.find((c) => [groupName, 'all'].includes(c.name))
     let baseColor: any = '#000'
     if (colorSpec?.single_color) {
         baseColor = colorSpec.single_color;
@@ -372,10 +374,10 @@ export const useStyleStore = defineStore('style', () => {
         vector: VectorData | null
     ) {
         const map = mapStore.getMap();
-        let filters: StyleFilter[] = styleSpec.filters
+        let filters: StyleFilter[] = styleSpec.filters || []
         if (frame?.source_filters) {
             filters = [
-                ...styleSpec.filters,
+                ...filters,
                 ...Object.entries(frame.source_filters).map(([k, v]) => ({
                     filter_by: k,
                     list: [v],
