@@ -487,7 +487,7 @@ watch(() => projectStore.projectConfigMode, () => {
             <div v-else class="py-3 px-6 d-flex">
               <div style="width: 45%">
                 <v-card-text>Project Datasets</v-card-text>
-                <div class="pa-2 dataset-card">
+                <div class="dataset-card">
                   <DatasetSelect
                     :datasets="projDatasets"
                     :savingId="savingId"
@@ -508,7 +508,7 @@ watch(() => projectStore.projectConfigMode, () => {
                     @uploaded="datasetUploaded"
                   />
                 </div>
-                <div class="pa-2 dataset-card">
+                <div class="dataset-card">
                   <DatasetSelect
                     :datasets="allDatasets"
                     :savingId="savingId"
@@ -615,5 +615,6 @@ watch(() => projectStore.projectConfigMode, () => {
 .dataset-card {
   max-height: calc(100vh - 300px);
   overflow: auto !important;
+  position: relative;
 }
 </style>
