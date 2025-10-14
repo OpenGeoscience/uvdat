@@ -21,6 +21,7 @@ const props = defineProps<{
   activeLayer: Layer | undefined;
 }>();
 
+const unsavedChanges = ref(true);
 const showEditOptions = ref(false);
 const showDeleteConfirmation = ref(false);
 const showColormapEditor = ref(false);
@@ -426,6 +427,7 @@ function save() {
             // update other styles in case default overriden
             getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
             refreshLayer()
+            unsavedChanges.value = false;
         }
     })
 }
@@ -446,6 +448,7 @@ function saveAsNew() {
             // update other styles in case default overriden
             getLayerStyles(props.layer.id).then((styles) => availableStyles.value = styles)
             refreshLayer()
+            unsavedChanges.value = false;
         }
     })
 }
@@ -487,6 +490,7 @@ const debouncedStyleSpecUpdated = debounce(() => {
         }
         styleStore.updateLayerStyles(props.layer)
         setAvailableGroups()
+        unsavedChanges.value = true
     }
 }, 100)
 watch(currentStyleSpec, debouncedStyleSpecUpdated, {deep: true})
@@ -1363,9 +1367,17 @@ onMounted(resetCurrentStyle)
                     <v-icon color="primary" class="mr-1">mdi-close-circle</v-icon>
                     Cancel
                 </v-btn>
-                <v-btn class="primary-button" @click="save" :disabled="!currentLayerStyle.id">
-                    <v-icon color="button-text" class="mr-1">mdi-content-save</v-icon>
-                    Save
+                <v-btn
+                    class="primary-button"
+                    :disabled="!currentLayerStyle.id || !unsavedChanges"
+                    @click="save"
+                >
+                    <v-icon
+                        class="mr-1"
+                        color="button-text"
+                        :icon="unsavedChanges ? 'mdi-content-save' : 'mdi-check'"
+                    />
+                    {{ unsavedChanges ? 'Save' : 'Saved' }}
                 </v-btn>
                 <v-btn class="primary-button" @click="newNameMode = 'create'">
                     <v-icon color="button-text" class="mr-1">mdi-plus-circle</v-icon>
