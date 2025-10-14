@@ -155,7 +155,7 @@ function setLayerActive(layer: Layer, active: boolean) {
 .layers-header {
     position: sticky;
     height: 30px;
-    border-bottom: 1px solid rgb(var(--v-theme-on-surface-variant));
+    border-bottom: 1px solid rgb(var(--v-theme-border));
     margin: 4px;
 }
 .layer.v-list-item {
