@@ -258,7 +258,6 @@ watch(() => projectStore.projectConfigMode, () => {
   <div>
     <div class="project-row my-5">
       <v-select
-        label="Current Project"
         placeholder="Select a Project"
         no-data-text="No available projects."
         :items="projectStore.availableProjects"
