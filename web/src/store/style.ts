@@ -327,6 +327,7 @@ export const useStyleStore = defineStore('style', () => {
                     colormap: raster ? {
                         range,
                         color_by: 'value',
+                        discrete: false,
                         n_colors: 5,
                         null_color: 'transparent'
                     } : undefined,
