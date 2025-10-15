@@ -96,7 +96,7 @@ export const usePanelStore = defineStore('panel', () => {
     function dragPanel(event: MouseEvent) {
         let offsetX = -5;
         const offsetY = 30;
-        const minHeight = 100;
+        const minHeight = 175;
         const minWidth = 150;
 
         const panel = panelArrangement.value.find(

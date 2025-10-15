@@ -47,7 +47,7 @@ watch(filteredDatasets, expandAllGroups)
       label="Search Datasets"
       variant="outlined"
       density="compact"
-      class="mb-2"
+      class="mb-2 dataset-search"
       append-inner-icon="mdi-magnify"
       hide-details
     />
@@ -99,6 +99,11 @@ watch(filteredDatasets, expandAllGroups)
 }
 .dataset-list .v-list-item--density-default {
   min-height: 0;
+}
+.dataset-search {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 .v-selection-control--density-default {
   --v-selection-control-size: 20px;

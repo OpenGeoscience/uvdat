@@ -114,7 +114,7 @@ watch(darkMode, () => {
         <FloatingPanel
           v-for="panel, index in panelStore.panelArrangement.filter((p) => p.dock == 'left')"
           :id="panel.id"
-          :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'right').length -1"
+          :bottom="index ==  panelStore.panelArrangement.filter((p) => p.dock == 'left').length -1"
         >
           <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="projectStore.availableDatasets"/>
           <LayersPanel v-else-if="panel.id === 'layers'"/>

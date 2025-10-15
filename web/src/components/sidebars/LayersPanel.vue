@@ -76,6 +76,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                 <v-icon
                     color="primary"
                     icon="mdi-close"
+                    size="small"
                     @click="() => removeLayers(layerStore.selectedLayers)"
                     class="secondary-button"
                 />
@@ -100,6 +101,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                                     <v-icon
                                         color="primary"
                                         icon="mdi-close"
+                                        size="small"
                                         @click="() => removeLayers([element])"
                                         class="secondary-button"
                                     />
@@ -153,7 +155,7 @@ function setLayerActive(layer: Layer, active: boolean) {
 .layers-header {
     position: sticky;
     height: 30px;
-    border-bottom: 1px solid rgb(var(--v-theme-on-surface-variant));
+    border-bottom: 1px solid rgb(var(--v-theme-border));
     margin: 4px;
 }
 .layer.v-list-item {
@@ -186,5 +188,8 @@ function setLayerActive(layer: Layer, active: boolean) {
 }
 .v-selection-control--density-default {
   --v-selection-control-size: 20px!important;
+}
+.v-list-item__prepend > .v-icon {
+    opacity: 1
 }
 </style>
