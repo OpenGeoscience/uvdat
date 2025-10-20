@@ -155,6 +155,8 @@ def flood_simulation(result_id):
                 '--output_path',
                 output_path,
                 '--no_animation',
+                '--tiff-writer',
+                'large_image',
             ],
             MODULE_PATH,
         )
