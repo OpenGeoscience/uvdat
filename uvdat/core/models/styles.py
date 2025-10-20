@@ -222,7 +222,7 @@ class ColorConfig(models.Model):
     name = models.CharField(max_length=255)
     visible = models.BooleanField(default=True)
     single_color = models.CharField(
-        max_length=12, null=True
+        max_length=12, null=True, blank=True
     )  # optionally contains a color hex or 'transparent'
 
 

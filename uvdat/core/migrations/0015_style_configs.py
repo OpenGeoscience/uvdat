@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ),
                 ('name', models.CharField(max_length=255)),
                 ('visible', models.BooleanField(default=True)),
-                ('single_color', models.CharField(max_length=12, null=True)),
+                ('single_color', models.CharField(max_length=12, null=True, blank=True)),
                 (
                     'style',
                     models.ForeignKey(
