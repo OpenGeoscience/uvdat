@@ -131,10 +131,7 @@ class VectorFeatureAdmin(admin.ModelAdmin):
 
 
 class RegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_dataset_name']
-
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    list_display = ['id', 'name', 'dataset']
 
 
 class NetworkAdmin(admin.ModelAdmin):

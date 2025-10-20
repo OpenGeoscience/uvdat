@@ -56,3 +56,6 @@ class Dataset(models.Model):
         from uvdat.core.models import Region
 
         return Region.objects.filter(dataset=self)
+
+    def __str__(self):
+        return f"{self.name} ({self.pk})"
