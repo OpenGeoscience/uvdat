@@ -54,7 +54,7 @@ setup(
         'matplotlib==3.9.2',  # for raster colormaps
         'geopandas==1.1.1',
         'networkx==3.3',
-        'pooch==1.8.2',
+        'pooch[progress]==1.8.2',
         'pyshp==2.3.1',
         'rasterio==1.3.10',
         'urllib3==1.26.15',

@@ -172,12 +172,6 @@ class Command(BaseCommand):
     def ingest_file(
         self, file_info, index=0, dataset=None, chart=None, replace=False, no_cache=False
     ):
-        show_download_progress = True
-        try:
-            import tqdm  # noqa
-        except ImportError:
-            show_download_progress = False
-
         file_path = file_info.get('path')
         file_name = file_info.get('name', file_path.split('/')[-1])
         file_url = file_info.get('url')
@@ -197,7 +191,7 @@ class Command(BaseCommand):
                 fname=file_location.name,
                 path=file_location.parent,
                 known_hash=file_hash,
-                progressbar=show_download_progress,
+                progressbar=True,
             )
         elif not file_location.exists():
             raise Exception('File path does not exist and no download URL was specified.')
