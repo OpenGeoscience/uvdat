@@ -10,6 +10,9 @@ class Dataset(models.Model):
     processing = models.BooleanField(default=False)
     metadata = models.JSONField(blank=True, null=True)
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def spawn_conversion_task(
         self,
         layer_options=None,
@@ -56,6 +59,3 @@ class Dataset(models.Model):
         from uvdat.core.models import Region
 
         return Region.objects.filter(dataset=self)
-
-    def __str__(self):
-        return f"{self.name} ({self.pk})"

@@ -34,6 +34,9 @@ class Colormap(models.Model):
         null=True,
     )
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def clean(self):
         if len(self.markers):
             validate(instance=self.markers, schema=MARKER_SCHEMA)

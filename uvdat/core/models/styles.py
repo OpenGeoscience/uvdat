@@ -26,6 +26,9 @@ class LayerStyle(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def save_style_configs(self, style_spec):
         if style_spec is None:
             raise ValueError('style_spec must not be None.')

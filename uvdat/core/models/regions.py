@@ -19,3 +19,6 @@ class Region(models.Model):
             # We enforce name uniqueness across datasets
             models.UniqueConstraint(name='unique-source-region-name', fields=['dataset', 'name'])
         ]
+
+    def __str__(self):
+        return f'{self.name} ({self.id})'

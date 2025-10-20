@@ -23,6 +23,9 @@ class TaskResult(models.Model):
     created = models.DateTimeField(auto_now_add=True, editable=False)
     completed = models.DateTimeField(null=True)
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def write_error(self, err):
         if self.error is None:
             self.error = ''

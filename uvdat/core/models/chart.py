@@ -13,6 +13,9 @@ class Chart(models.Model):
     chart_options = models.JSONField(blank=True, null=True)
     editable = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def spawn_conversion_task(
         self,
         conversion_options=None,
