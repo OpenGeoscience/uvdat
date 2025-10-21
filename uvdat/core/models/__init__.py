@@ -3,10 +3,18 @@ from .colormap import Colormap
 from .data import RasterData, VectorData, VectorFeature
 from .dataset import Dataset
 from .file_item import FileItem
-from .layer import Layer, LayerFrame, LayerStyle
+from .layer import Layer, LayerFrame
 from .networks import Network, NetworkEdge, NetworkNode
 from .project import Project
 from .regions import Region
+from .styles import (
+    ColorConfig,
+    ColormapConfig,
+    FilterConfig,
+    LayerStyle,
+    SizeConfig,
+    SizeRangeConfig,
+)
 from .task_result import TaskResult
 
 __all__ = [
@@ -22,6 +30,11 @@ __all__ = [
     Layer,
     LayerFrame,
     LayerStyle,
+    ColorConfig,
+    ColormapConfig,
+    SizeConfig,
+    SizeRangeConfig,
+    FilterConfig,
     Region,
     Network,
     NetworkEdge,

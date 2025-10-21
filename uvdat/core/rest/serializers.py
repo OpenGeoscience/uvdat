@@ -118,9 +118,25 @@ class LayerStyleSerializer(serializers.ModelSerializer):
             return False
         return obj.layer.default_style.id == obj.id
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['style_spec'] = instance.repr_style_configs()
+        return data
+
+    def create(self, validated_data):
+        style_spec = self.initial_data.pop('style_spec', None)
+        instance = super().create(validated_data)
+        instance.save_style_configs(style_spec)
+        return instance
+
+    def update(self, instance, validated_data):
+        style_spec = self.initial_data.pop('style_spec', None)
+        instance.save_style_configs(style_spec)
+        return super().update(instance, validated_data)
+
     class Meta:
         model = LayerStyle
-        fields = '__all__'
+        exclude = ['default_frame', 'opacity']
 
 
 class LayerSerializer(serializers.ModelSerializer):

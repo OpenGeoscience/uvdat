@@ -6,7 +6,16 @@ import factory.django
 from factory.faker import faker
 import factory.fuzzy
 
-from uvdat.core.models import Dataset, FileItem, Layer, LayerFrame, Project, RasterData, VectorData
+from uvdat.core.models import (
+    Dataset,
+    FileItem,
+    Layer,
+    LayerFrame,
+    LayerStyle,
+    Project,
+    RasterData,
+    VectorData,
+)
 from uvdat.core.models.networks import Network, NetworkEdge, NetworkNode
 
 
@@ -123,6 +132,17 @@ class LayerFrameFactory(factory.django.DjangoModelFactory):
     layer = factory.SubFactory(LayerFactory)
     vector = factory.SubFactory(VectorDataFactory)
     raster = factory.SubFactory(RasterDataFactory)
+
+
+class LayerStyleFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = LayerStyle
+
+    name = factory.Faker('name')
+    layer = factory.SubFactory(LayerFactory)
+    project = factory.SubFactory(ProjectFactory)
+    default_frame = factory.fuzzy.FuzzyInteger(1, 10)
+    opacity = factory.fuzzy.FuzzyFloat(0.0, 1.0)
 
 
 class NetworkFactory(factory.django.DjangoModelFactory):

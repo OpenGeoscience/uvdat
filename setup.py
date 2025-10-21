@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-__version__ = '1.9.0'
+__version__ = '1.10.0'
 
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
@@ -52,10 +52,9 @@ setup(
         'django-large-image==0.10.2',
         'drf-yasg==1.21.7',
         'matplotlib==3.9.2',  # for raster colormaps
-        'osmnx==2.0.6',
         'geopandas==1.1.1',
         'networkx==3.3',
-        'pooch==1.8.2',
+        'pooch[progress]==1.8.2',
         'pyshp==2.3.1',
         'rasterio==1.3.10',
         'urllib3==1.26.15',
@@ -77,6 +76,7 @@ setup(
         ],
         'tasks': [
             'geoai-py==0.9.2',
+            'osmnx==2.0.6',
         ],
         'test': [
             'factory-boy==3.3.1',
