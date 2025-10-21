@@ -26,6 +26,9 @@ class Dataset(models.Model):
     class Meta:
         permissions = [('owner', 'Can read, write, and delete')]
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def owner(self) -> User:
         users = typing.cast(
             list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))

@@ -50,6 +50,13 @@ class Network(models.Model):
     category = models.CharField(max_length=25)
     metadata = models.JSONField(blank=True, null=True)
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
+    @property
+    def dataset(self):
+        return self.vector_data.dataset
+
     def get_gcc(self, excluded_nodes: list[int]):
         total_nodes = NetworkNode.objects.filter(network=self).count()
 
@@ -99,6 +106,13 @@ class NetworkNode(models.Model):
     capacity = models.IntegerField(null=True)
     location = geo_models.PointField()
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
+    @property
+    def dataset(self):
+        return self.network.dataset
+
     def get_adjacent_nodes(self) -> models.QuerySet:
         entering_node_ids = (
             NetworkEdge.objects.filter(to_node=self.id)
@@ -127,3 +141,10 @@ class NetworkEdge(models.Model):
     directed = models.BooleanField(default=False)
     from_node = models.ForeignKey(NetworkNode, related_name='+', on_delete=models.CASCADE)
     to_node = models.ForeignKey(NetworkNode, related_name='+', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
+    @property
+    def dataset(self):
+        return self.network.dataset

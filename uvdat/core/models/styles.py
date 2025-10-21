@@ -26,6 +26,9 @@ class LayerStyle(models.Model):
             )
         ]
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def save_style_configs(self, style_spec):
         if style_spec is None:
             raise ValueError('style_spec must not be None.')
@@ -219,7 +222,7 @@ class ColorConfig(models.Model):
     name = models.CharField(max_length=255)
     visible = models.BooleanField(default=True)
     single_color = models.CharField(
-        max_length=12, null=True
+        max_length=12, null=True, blank=True
     )  # optionally contains a color hex or 'transparent'
 
 

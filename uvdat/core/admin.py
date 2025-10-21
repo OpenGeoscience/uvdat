@@ -34,14 +34,7 @@ class DatasetAdmin(admin.ModelAdmin):
 
 
 class FileItemAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_relationship']
-
-    def get_relationship(self, obj):
-        if obj.dataset is not None:
-            return obj.dataset.name
-        if obj.chart is not None:
-            return obj.chart.name
-        return 'None'
+    list_display = ['id', 'name', 'dataset', 'chart']
 
 
 class ChartAdmin(admin.ModelAdmin):
@@ -49,24 +42,15 @@ class ChartAdmin(admin.ModelAdmin):
 
 
 class LayerAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_dataset_name']
-
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    list_display = ['id', 'name', 'dataset']
 
 
 class LayerFrameAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'index', 'get_layer_name']
-
-    def get_layer_name(self, obj):
-        return obj.layer.name
+    list_display = ['id', 'name', 'index', 'layer']
 
 
 class LayerStyleAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_layer_name']
-
-    def get_layer_name(self, obj):
-        return obj.layer.name
+    list_display = ['id', 'name', 'layer']
 
 
 class ColormapAdmin(admin.ModelAdmin):
@@ -74,24 +58,15 @@ class ColormapAdmin(admin.ModelAdmin):
 
 
 class ColorConfigAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_style_name', 'name']
-
-    def get_style_name(self, obj):
-        return obj.style.name
+    list_display = ['id', 'style', 'name']
 
 
 class ColormapConfigAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_colormap_name', 'color_by']
-
-    def get_colormap_name(self, obj):
-        return obj.colormap.name
+    list_display = ['id', 'colormap', 'color_by']
 
 
 class SizeConfigAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_style_name', 'name']
-
-    def get_style_name(self, obj):
-        return obj.style.name
+    list_display = ['id', 'style', 'name']
 
 
 class SizeRangeConfigAdmin(admin.ModelAdmin):
@@ -99,69 +74,39 @@ class SizeRangeConfigAdmin(admin.ModelAdmin):
 
 
 class FilterConfigAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_style_name', 'filter_by']
-
-    def get_style_name(self, obj):
-        return obj.style.name
+    list_display = ['id', 'style', 'filter_by']
 
 
 class RasterDataAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_source_file_name']
-
-    def get_source_file_name(self, obj):
-        if obj.source_file is not None:
-            return obj.source_file.name
-        return ''
+    list_display = ['id', 'name', 'source_file']
 
 
 class VectorDataAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_source_file_name']
-
-    def get_source_file_name(self, obj):
-        if obj.source_file is not None:
-            return obj.source_file.name
-        return ''
+    list_display = ['id', 'name', 'source_file']
 
 
 class VectorFeatureAdmin(admin.ModelAdmin):
-    list_display = ['id', 'get_dataset_name']
-
-    def get_dataset_name(self, obj):
-        return obj.vector_data.dataset.name
+    list_display = ['id', 'dataset']
+    list_select_related = ['vector_data__dataset']
 
 
 class RegionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_dataset_name']
-
-    def get_dataset_name(self, obj):
-        return obj.dataset.name
+    list_display = ['id', 'name', 'dataset']
 
 
 class NetworkAdmin(admin.ModelAdmin):
-    list_display = ['id', 'category']
+    list_display = ['id', 'category', 'dataset']
+    list_select_related = ['vector_data__dataset']
 
 
 class NetworkEdgeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_network_id', 'get_dataset_name']
-
-    def get_network_id(self, obj):
-        return obj.network.id
-
-    def get_dataset_name(self, obj):
-        return obj.network.vector_data.dataset.name
+    list_display = ['id', 'name', 'network', 'dataset']
+    list_select_related = ['network__vector_data__dataset']
 
 
 class NetworkNodeAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'get_network_id', 'get_dataset_name', 'get_adjacent_node_names']
-
-    def get_network_id(self, obj):
-        return obj.network.id
-
-    def get_dataset_name(self, obj):
-        return obj.network.vector_data.dataset.name
-
-    def get_adjacent_node_names(self, obj):
-        return ', '.join(n.name for n in obj.get_adjacent_nodes())
+    list_display = ['id', 'name', 'network', 'dataset']
+    list_select_related = ['network__vector_data__dataset']
 
 
 class TaskResultAdmin(admin.ModelAdmin):

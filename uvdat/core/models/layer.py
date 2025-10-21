@@ -16,6 +16,9 @@ class Layer(models.Model):
         'LayerStyle', null=True, related_name='default_layer', on_delete=models.SET_NULL
     )
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
 
 class LayerFrame(models.Model):
     name = models.CharField(max_length=255, default='Layer Frame')
@@ -34,6 +37,9 @@ class LayerFrame(models.Model):
                 name='exactly_one_data',
             )
         ]
+
+    def __str__(self):
+        return f'{self.name} ({self.id})'
 
     def get_data(self):
         if self.raster is not None:
