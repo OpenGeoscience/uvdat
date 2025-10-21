@@ -87,6 +87,7 @@ class VectorDataAdmin(admin.ModelAdmin):
 
 class VectorFeatureAdmin(admin.ModelAdmin):
     list_display = ['id', 'dataset']
+    list_select_related = ['vector_data__dataset']
 
 
 class RegionAdmin(admin.ModelAdmin):
@@ -95,14 +96,17 @@ class RegionAdmin(admin.ModelAdmin):
 
 class NetworkAdmin(admin.ModelAdmin):
     list_display = ['id', 'category', 'dataset']
+    list_select_related = ['vector_data__dataset']
 
 
 class NetworkEdgeAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'network', 'dataset']
+    list_select_related = ['network__vector_data__dataset']
 
 
 class NetworkNodeAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'network', 'dataset']
+    list_select_related = ['network__vector_data__dataset']
 
 
 class TaskResultAdmin(admin.ModelAdmin):
