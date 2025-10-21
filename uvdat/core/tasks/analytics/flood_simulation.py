@@ -56,17 +56,13 @@ class FloodSimulation(AnalysisType):
 
 
 def run_command(cmd, cwd):
-    print(f'Running command {cmd} in {cwd}.')
-    process = subprocess.Popen(
+    result = subprocess.run(
         cmd,
         cwd=cwd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
-    (out, err) = process.communicate()
-    print(out, err)
-    if err:
-        raise Exception(err)
+    if result.stderr:
+        raise Exception(result.stderr)
 
 
 def pull_module():
