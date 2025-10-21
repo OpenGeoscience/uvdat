@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 import os
 from pathlib import Path
 import subprocess
@@ -175,7 +175,7 @@ def flood_simulation(result_id):
                     gw_percentile=gw_percentile,
                     annual_probability=annual_probability,
                 ),
-                uploaded=datetime.now().strftime('%m/%d/%Y %H:%M:%S'),
+                uploaded=datetime.datetime.now(datetime.UTC).isoformat(),
             )
             name_match = Dataset.objects.filter(name=name)
             if name_match.count() > 0:
