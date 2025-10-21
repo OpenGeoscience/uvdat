@@ -36,7 +36,7 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
                         v, Project.objects.filter(id=project_id)
                     )
                     v = [dict(id=o.id, name=o.name) for o in filtered_queryset]
-                elif not all(isinstance(o, dict) for o in v):
+                elif any(not isinstance(o, dict) for o in v):
                     v = [dict(id=o, name=o) for o in v]
                 filtered_input_options[k] = v
             serializer = uvdat_serializers.AnalysisTypeSerializer(
