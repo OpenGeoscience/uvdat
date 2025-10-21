@@ -177,7 +177,7 @@ def flood_simulation(result_id):
                 ),
                 uploaded=datetime.datetime.now(datetime.UTC).isoformat(),
             )
-            name_match = Dataset.objects.filter(name=name)
+            name_match = Dataset.objects.filter(name__icontains=name)
             if name_match.count() > 0:
                 name += f' ({name_match.count() + 1})'
             dataset = Dataset.objects.create(
