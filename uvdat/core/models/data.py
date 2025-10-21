@@ -20,6 +20,9 @@ class RasterData(models.Model):
     cloud_optimized_geotiff = S3FileField(null=True)
     metadata = models.JSONField(blank=True, null=True)
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def get_image_data(self, resolution: float = 1.0):
         with tempfile.TemporaryDirectory() as tmp:
             raster_path = Path(tmp, 'raster')
@@ -41,6 +44,9 @@ class VectorData(models.Model):
     geojson_data = S3FileField(null=True)
     summary = models.JSONField(blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.name} ({self.id})'
 
     def write_geojson_data(self, content: str | dict):
         if isinstance(content, str):
@@ -114,6 +120,10 @@ class VectorFeature(models.Model):
     )
     geometry = geomodels.GeometryField()
     properties = models.JSONField()
+
+    @property
+    def dataset(self):
+        return self.vector_data.dataset
 
 
 @receiver(models.signals.post_delete, sender=RasterData)

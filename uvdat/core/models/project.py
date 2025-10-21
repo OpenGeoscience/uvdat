@@ -15,6 +15,9 @@ class Project(models.Model):
     default_map_zoom = models.FloatField(default=10)
     datasets = models.ManyToManyField(Dataset, blank=True)
 
+    def __str__(self):
+        return f'{self.name} ({self.id})'
+
     def owner(self) -> User:
         users = typing.cast(
             list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))
