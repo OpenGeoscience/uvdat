@@ -7,7 +7,7 @@ import tempfile
 from celery import shared_task
 from django.core.files.base import ContentFile
 
-from uvdat.core.models import Chart, Dataset, FileItem, TaskResult
+from uvdat.core.models import Chart, Colormap, Dataset, FileItem, LayerStyle, TaskResult
 
 from .analysis_type import AnalysisType
 
@@ -206,6 +206,44 @@ def flood_simulation(result_id):
                 network_options=None,
                 region_options=None,
                 asynchronous=False,
+            )
+
+            # Create a default style for new layer
+            layer = dataset.layers.first()
+            style = LayerStyle.objects.create(
+                name='Flood Depth Viridis',
+                layer=layer,
+                project=result.project,
+            )
+            layer.default_style = style
+            layer.save()
+            viridis = Colormap.objects.filter(name='viridis').first()
+            style.save_style_configs(
+                dict(
+                    default_frame=0,
+                    opacity=1,
+                    colors=[
+                        dict(
+                            name='all',
+                            visible=True,
+                            colormap=dict(
+                                id=viridis.id,
+                                discrete=False,
+                                clamp=True,
+                                color_by='value',
+                                null_color='transparent',
+                                range=[0, 2],
+                            ),
+                        )
+                    ],
+                    sizes=[
+                        dict(
+                            name='all',
+                            zoom_scaling=True,
+                            single_size=5,
+                        )
+                    ],
+                )
             )
 
             result.outputs = dict(flood=dataset.id)
