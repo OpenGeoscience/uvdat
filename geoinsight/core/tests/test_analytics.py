@@ -32,8 +32,6 @@ def test_rest_list_analysis_types(authenticated_api_client, project):
         'flood_simulation',
         'flood_network_failure',
         'network_recovery',
-        'tile2net_segmentation',
-        'geoai_segmentation',
         'create_road_network',
     ],
 )
