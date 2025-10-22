@@ -3,7 +3,7 @@ from .import_networks import perform_import
 from .export_networks import perform_export
 from .nysdp import create_consolidated_network, create_vector_features
 
-from uvdat.core.tasks.dataset import create_layers_and_frames
+from geoinsight.core.tasks.dataset import create_layers_and_frames
 
 
 DOWNLOADS_FOLDER = DOWNLOADS_FOLDER = Path('../../sample_data/downloads')

@@ -8,8 +8,8 @@ from pathlib import Path
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point, LineString
-from uvdat.core.models import Network, NetworkEdge, NetworkNode, VectorData
-from uvdat.core.tasks.networks import create_vector_features_from_network
+from geoinsight.core.models import Network, NetworkEdge, NetworkNode, VectorData
+from geoinsight.core.tasks.networks import create_vector_features_from_network
 
 
 TOLERANCE_METERS = 15

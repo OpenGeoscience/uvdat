@@ -1,4 +1,4 @@
-site_name: UVDAT Documentation
+site_name: GeoInsight Documentation
 theme: 'material'
 nav:
   - Home: README.md

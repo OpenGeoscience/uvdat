@@ -13,7 +13,7 @@ else:
     long_description = ''
 
 setup(
-    name='uvdat',
+    name='geoinsight',
     version=__version__,
     description='',
     long_description=long_description,
