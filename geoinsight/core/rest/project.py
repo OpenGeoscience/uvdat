@@ -2,7 +2,6 @@ import typing
 from typing import Any
 
 from django.contrib.auth.models import User
-from django.http import HttpResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.request import Request
@@ -12,7 +11,6 @@ from rest_framework.viewsets import ModelViewSet
 from geoinsight.core.models import Project
 from geoinsight.core.rest.access_control import GuardianFilter, GuardianPermission
 from geoinsight.core.rest.serializers import ProjectPermissionsSerializer, ProjectSerializer
-from geoinsight.core.tasks.osmnx import load_roads
 
 
 class ProjectViewSet(ModelViewSet):
@@ -51,14 +49,3 @@ class ProjectViewSet(ModelViewSet):
         )
 
         return Response(ProjectSerializer(project).data, status=200)
-
-    # TODO: This should be a POST
-    @action(
-        detail=True,
-        methods=['get'],
-        url_path=r'load_roads/(?P<location>.+)',
-    )
-    def load_roads(self, request, location, **kwargs):
-        project = self.get_object()
-        load_roads.delay(project.id, location)
-        return HttpResponse('Task spawned successfully.', status=200)
