@@ -1,6 +1,6 @@
 {
   "name": "uvdat",
-  "version": "1.10.0",
+  "version": "1.12.0",
   "private": true,
   "scripts": {
     "serve": "vite",
@@ -20,6 +20,7 @@
     "django-s3-file-field": "^1.1.0",
     "git-describe": "^4.1.1",
     "html2canvas": "^1.4.1",
+    "json-editor-vue": "^0.18.1",
     "lodash": "^4.17.21",
     "maplibre-gl": "^4.6.0",
     "pinia": "^3.0.2",

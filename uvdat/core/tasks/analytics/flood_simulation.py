@@ -1,113 +1,46 @@
-from datetime import datetime
+import datetime
 import os
 from pathlib import Path
+import subprocess
 import tempfile
-from urllib.request import urlretrieve
 
 from celery import shared_task
 from django.core.files.base import ContentFile
 
-from uvdat.core.models import Chart, Dataset, FileItem, TaskResult
+from uvdat.core.models import Chart, Colormap, Dataset, FileItem, LayerStyle, TaskResult
 
 from .analysis_type import AnalysisType
 
-HYETOGRAPHS = [
-    dict(label='Parabolic', value='parabolic'),
-    dict(label='NCRS Type II', value='type2'),
-]
-
-LIKELIHOODS = [
-    dict(label='1 in 25 year (4% chance)', value=0.04),
-    dict(label='1 in 100 year (1% chance)', value=0.01),
-]
-
-TIME_PERIODS = [
-    dict(label='2030-2050', value=[2030, 2050]),
-    dict(label='2080-2100', value=[2080, 2100]),
-    dict(label='Test', value='test'),
-]
-
-DATA_PRODUCTS = [
-    dict(
-        url='https://data.kitware.com/api/v1/item/67e4061f3e5f3e5e96b9753d/download',
-        precipitation='parabolic',
-        likelihood=0.04,
-        time_period=[2030, 2050],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67e408513e5f3e5e96b97544/download',
-        precipitation='type2',
-        likelihood=0.04,
-        time_period=[2030, 2050],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67e40d693e5f3e5e96b97547/download',
-        precipitation='parabolic',
-        likelihood=0.01,
-        time_period=[2030, 2050],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67e40f4e3e5f3e5e96b9754a/download',
-        precipitation='type2',
-        likelihood=0.01,
-        time_period=[2030, 2050],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67d875e5429cb34d95af01a4/download',
-        precipitation='parabolic',
-        likelihood=0.04,
-        time_period=[2080, 2100],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67d87697429cb34d95af01a7/download',
-        precipitation='type2',
-        likelihood=0.04,
-        time_period=[2080, 2100],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67d8773c429cb34d95af01ab/download',
-        precipitation='parabolic',
-        likelihood=0.01,
-        time_period=[2080, 2100],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/67d87868429cb34d95af01ae/download',
-        precipitation='type2',
-        likelihood=0.01,
-        time_period=[2080, 2100],
-    ),
-    dict(
-        url='https://data.kitware.com/api/v1/item/68d438a2af4f192121e81684/download',
-        precipitation='parabolic',
-        likelihood=0.01,
-        time_period='test',
-    ),
-]
+MODULE_REPOSITORY = 'https://github.com/OpenGeoscience/uvdat-flood-sim.git'
+MODULE_PATH = Path('/analytics/modules/uvdat-flood-sim')
+VENV_PATH = Path('/venvs/flood_simulation')
 
 
 class FloodSimulation(AnalysisType):
     def __init__(self):
         super().__init__(self)
         self.name = 'Flood Simulation'
-        self.description = (
-            'Select a precipitation model, likelihood, and time period to simulate a flood event.'
-        )
+        self.description = 'Select parameters to simulate a 24-hour flood of the Charles River'
         self.db_value = 'flood_simulation'
         self.input_types = {
-            'precipitation': 'Chart',
-            'likelihood': 'string',
             'time_period': 'string',
+            'hydrograph': 'Chart',
+            'potential_evapotranspiration_percentile': 'number',
+            'soil_moisture_percentile': 'number',
+            'ground_water_percentile': 'number',
+            'annual_probability': 'number',
         }
         self.output_types = {'flood': 'Dataset'}
         self.attribution = 'Northeastern University'
 
     def get_input_options(self):
         return {
-            'precipitation': Chart.objects.filter(name__icontains='hyetograph'),
-            'likelihood': [likelihood.get('label') for likelihood in LIKELIHOODS],
-            'time_period': [
-                period.get('label') for period in TIME_PERIODS if period.get('value') != 'test'
-            ],
+            'time_period': ['2030-2050'],
+            'hydrograph': Chart.objects.filter(name__icontains='hydrograph'),
+            'potential_evapotranspiration_percentile': [dict(min=0, max=100, step=1)],
+            'soil_moisture_percentile': [dict(min=0, max=100, step=1)],
+            'ground_water_percentile': [dict(min=0, max=100, step=1)],
+            'annual_probability': [dict(min=0, max=1, step=0.01)],
         }
 
     def run_task(self, project, **inputs):
@@ -122,134 +55,196 @@ class FloodSimulation(AnalysisType):
         return result
 
 
+def run_command(cmd, cwd):
+    result = subprocess.run(
+        cmd,
+        cwd=cwd,
+        capture_output=True,
+    )
+    if result.stderr:
+        raise Exception(result.stderr)
+
+
+def pull_module():
+    MODULE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if not MODULE_PATH.exists():
+        run_command(
+            ['git', 'clone', MODULE_REPOSITORY],
+            MODULE_PATH.parent,
+        )
+    run_command(['git', 'pull', '-q'], MODULE_PATH)
+
+
+def install_module_dependencies():
+    VENV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if not VENV_PATH.exists():
+        run_command(['python', '-m', 'venv', VENV_PATH], MODULE_PATH)
+    run_command(
+        [VENV_PATH / 'bin' / 'python', '-m', 'pip', 'install', '--upgrade', 'pip'],
+        MODULE_PATH,
+    )
+    run_command(
+        [VENV_PATH / 'bin' / 'python', '-m', 'pip', 'install', '-r', 'requirements.txt'],
+        MODULE_PATH,
+    )
+
+
 @shared_task
 def flood_simulation(result_id):
     result = TaskResult.objects.get(id=result_id)
 
     try:
-        # Verify inputs
-        chart = None
-        hyetograph = None
-        chart_id = result.inputs.get('precipitation')
-        if chart_id is None:
-            result.write_error('Precipitation hyetograph chart not provided')
-        else:
-            try:
-                chart = Chart.objects.get(id=chart_id)
-            except Chart.DoesNotExist:
-                result.write_error('Precipitation hyetograph chart not found')
-        if chart is not None:
-            hyetograph = next(
-                iter(
-                    hyeto
-                    for hyeto in HYETOGRAPHS
-                    if hyeto.get('label') == chart.metadata.get('precipitation_model')
-                ),
-                None,
-            )
-        if hyetograph is None:
-            result.write_error('Hyetograph selection not valid')
+        for input_key in [
+            'time_period',
+            'hydrograph',
+            'potential_evapotranspiration_percentile',
+            'soil_moisture_percentile',
+            'ground_water_percentile',
+            'annual_probability',
+        ]:
+            if result.inputs.get(input_key) is None:
+                result.write_error(f'{input_key} not provided')
+                result.complete()
+                return
 
-        likelihood = next(
-            iter(lik for lik in LIKELIHOODS if lik.get('label') == result.inputs.get('likelihood')),
-            None,
+        result.write_status(
+            'Ensuring that flood simulation module code and dependencies are up to date'
         )
-        if likelihood is None:
-            result.write_error('Likelihood selection not valid')
+        pull_module()
+        install_module_dependencies()
 
-        period = next(
-            iter(tp for tp in TIME_PERIODS if tp.get('label') == result.inputs.get('time_period')),
-            None,
+        result.write_status('Interpreting input values')
+        time_period = result.inputs.get('time_period')
+        hydrograph_id = result.inputs.get('hydrograph')
+        hydrograph_chart = Chart.objects.get(id=hydrograph_id)
+        hydrograph = hydrograph_chart.chart_data.get('datasets')[0].get('data')
+        pet_percentile = result.inputs.get('potential_evapotranspiration_percentile')
+        sm_percentile = result.inputs.get('soil_moisture_percentile')
+        gw_percentile = result.inputs.get('ground_water_percentile')
+        annual_probability = result.inputs.get('annual_probability')
+
+        name = (
+            f'{time_period} {annual_probability} Flood Simulation '
+            f'with {hydrograph_chart.name} and '
+            f'percentiles {pet_percentile}, {sm_percentile}, {gw_percentile}'
         )
-        if period is None:
-            result.write_error('Time period selection not valid')
+        result.name = name
+        result.write_status('Running flood simulation module with specified inputs')
+        output_path = Path(tempfile.gettempdir(), 'flood_simulation.tif')
 
-        data_product = None
-        if hyetograph is not None:
-            data_product = next(
-                iter(
-                    dp
-                    for dp in DATA_PRODUCTS
-                    if dp.get('precipitation') == hyetograph.get('value')
-                    and dp.get('likelihood') == likelihood.get('value')
-                    and dp.get('time_period') == period.get('value')
+        run_command(
+            [
+                VENV_PATH / 'bin' / 'python',
+                'main.py',
+                '--time_period',
+                time_period,
+                '--hydrograph',
+                *[str(v) for v in hydrograph],
+                '--pet_percentile',
+                str(pet_percentile),
+                '--sm_percentile',
+                str(sm_percentile),
+                '--gw_percentile',
+                str(gw_percentile),
+                '--annual_probability',
+                str(annual_probability),
+                '--output_path',
+                output_path,
+                '--no_animation',
+                '--tiff-writer',
+                'large_image',
+            ],
+            MODULE_PATH,
+        )
+
+        result.write_status('Saving result to database')
+        if output_path.exists():
+            metadata = dict(
+                attribution='Simulation code by August Posch at Northeastern University',
+                simulation_steps=[
+                    'downscaling_prediction',
+                    'hydrological_prediction',
+                    'hydrodynamic_prediction',
+                ],
+                module_repository=MODULE_REPOSITORY,
+                inputs=dict(
+                    time_period=time_period,
+                    hydrograph=hydrograph,
+                    pet_percentile=pet_percentile,
+                    sm_percentile=sm_percentile,
+                    gw_percentile=gw_percentile,
+                    annual_probability=annual_probability,
                 ),
-                None,
+                uploaded=datetime.datetime.now(datetime.UTC).isoformat(),
             )
-        if data_product is None:
-            result.write_error('Data product not found')
-
-        # Run task
-        if result.error is None:
-
-            # Update name
-            result.name = (
-                f'{hyetograph["label"].title()} {likelihood["value"] * 100}% '
-                f'Chance flood for {period["label"]}'
-            )
-            result.save()
-
-            result.write_status('Downloading pregenerated data product as zip file...')
-
-            folder = Path(tempfile.gettempdir(), 'flood_data_products')
-            folder.mkdir(exist_ok=True, parents=True)
-            file_name = (
-                f'{hyetograph.get("value")}_{likelihood.get("value")}'
-                f'_{period.get("label")}_flood.zip'
-            )
-            zip_path = Path(folder, file_name)
-            if not zip_path.exists():
-                urlretrieve(data_product.get('url'), zip_path)
-
-            dataset_name = hyetograph.get('label') + ' ' + likelihood.get('label')
-            dataset_name += ' Flood Simulation for ' + period.get('label')
-            dataset, created = Dataset.objects.get_or_create(
-                name=dataset_name,
-                description='Generated by Flood Simulation Analysis Task',
+            name_match = Dataset.objects.filter(name__icontains=name)
+            if name_match.count() > 0:
+                name += f' ({name_match.count() + 1})'
+            dataset = Dataset.objects.create(
+                name=name,
+                description='Generated by Flood Simulation Analytics Task',
                 category='flood',
-                metadata=dict(
-                    attribution=(
-                        'Simulated by August Posch and Jack Watson at Northeastern University'
-                    ),
-                    likelihood=likelihood.get('label'),
-                    downscaling=dict(
-                        climate_model='CESM2-LENS',
-                        ensemble_member='r1i1p1f1',
-                        emissions_scenario=370,
-                        method='LOCA (Localized Constructed Analogs) to daily 1/16 degree',
-                        time_period=period.get('label'),
-                        return_period='100 years',
-                    ),
-                    precipitation=dict(
-                        hyetograph=hyetograph.get('label'),
-                        spatially_uniform=True,
-                        dem_resolution='1/3 arcsecond = 10 m',
-                    ),
-                ),
+                metadata=metadata,
             )
-            if created:
-                file_item = FileItem.objects.create(
-                    name=file_name,
-                    dataset=dataset,
-                    file_type='zip',
-                    file_size=os.path.getsize(zip_path),
-                    metadata=dict(
-                        **dataset.metadata,
-                        uploaded=datetime.now().strftime('%m/%d/%Y %H:%M:%S'),
+            file_item = FileItem.objects.create(
+                name=output_path.name,
+                dataset=dataset,
+                file_type='tif',
+                file_size=os.path.getsize(output_path),
+                metadata=metadata,
+            )
+            with output_path.open('rb') as f:
+                file_item.file.save(output_path.name, ContentFile(f.read()))
+            dataset.spawn_conversion_task(
+                layer_options=[
+                    dict(
+                        name='Flood Simulation',
+                        source_files=[output_path.name],
+                        frame_property='frame',
                     ),
-                )
-                with zip_path.open('rb') as f:
-                    file_item.file.save(zip_path, ContentFile(f.read()))
+                ],
+                network_options=None,
+                region_options=None,
+                asynchronous=False,
+            )
 
-                result.write_status('Interpreting data in zip file...')
-                dataset.spawn_conversion_task(
-                    layer_options=[
-                        dict(name='Flood Simulation', source_file=zip_path.name),
+            # Create a default style for new layer
+            layer = dataset.layers.first()
+            style = LayerStyle.objects.create(
+                name='Flood Depth Viridis',
+                layer=layer,
+                project=result.project,
+            )
+            layer.default_style = style
+            layer.save()
+            viridis = Colormap.objects.filter(name='viridis').first()
+            style.save_style_configs(
+                dict(
+                    default_frame=0,
+                    opacity=1,
+                    colors=[
+                        dict(
+                            name='all',
+                            visible=True,
+                            colormap=dict(
+                                id=viridis.id,
+                                discrete=False,
+                                clamp=True,
+                                color_by='value',
+                                null_color='transparent',
+                                range=[0, 2],
+                            ),
+                        )
                     ],
-                    network_options=None,
-                    region_options=None,
-                    asynchronous=False,
+                    sizes=[
+                        dict(
+                            name='all',
+                            zoom_scaling=True,
+                            single_size=5,
+                        )
+                    ],
                 )
+            )
 
             result.outputs = dict(flood=dataset.id)
     except Exception as e:

@@ -1,7 +1,7 @@
 import { FloatingPanelConfig, TaskResult, Chart, Dataset, Layer, Network, RasterData, VectorData } from '@/types';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getDataset } from '@/api/rest';
+import { getChart, getDataset } from '@/api/rest';
 
 import { useAppStore, useLayerStore, useAnalysisStore, useProjectStore } from '.';
 
@@ -96,7 +96,7 @@ export const usePanelStore = defineStore('panel', () => {
     function dragPanel(event: MouseEvent) {
         let offsetX = -5;
         const offsetY = 30;
-        const minHeight = 100;
+        const minHeight = 175;
         const minWidth = 150;
 
         const panel = panelArrangement.value.find(
@@ -234,11 +234,15 @@ export const usePanelStore = defineStore('panel', () => {
     }
 
 
-    function show(showable: Showable) {
+    async function show(showable: Showable) {
         if (showable.chart) {
+            let chart = showable.chart
+            if (!chart.chart_data) {
+                chart = await getChart(chart.id)
+            }
             const chartPanel = panelArrangement.value.find((panel) => panel.id === 'charts')
             if (chartPanel && !chartPanel?.visible) chartPanel.visible = true
-            analysisStore.currentChart = showable.chart
+            analysisStore.currentChart = chart
         } else if (showable.dataset) {
             const id = showable.dataset.id
             layerStore.fetchAvailableLayersForDataset(id).then(() => {

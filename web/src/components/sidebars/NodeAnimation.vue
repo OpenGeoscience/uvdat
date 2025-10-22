@@ -24,9 +24,17 @@ const seconds = computed(() => {
 });
 
 const nodeChanges = computed(() => {
-  if (props.nodeRecoveries) return props.nodeRecoveries;
-  else return props.nodeFailures;
+  const changes = props.nodeRecoveries || props.nodeFailures || {}
+  return Object.fromEntries(
+    Object.entries(changes).filter(
+      ([key]) => !['id', 'name', 'type', 'visible', 'showable'].includes(key)
+    )
+  )
 });
+
+const numTicks = computed(() => {
+  return Object.keys(nodeChanges.value).length - 1
+})
 
 function pause() {
   clearInterval(ticker.value);
@@ -38,7 +46,7 @@ function play() {
   pause();
   currentMode.value = 'play'
   ticker.value = setInterval(() => {
-    if (nodeChanges.value && currentTick.value < Object.keys(nodeChanges.value).length) {
+    if (nodeChanges.value && currentTick.value < numTicks.value) {
       currentTick.value += 1;
     } else {
       pause();
@@ -90,7 +98,7 @@ watch(currentTick, async () => {
         track-size="8"
         min="0"
         step="1"
-        :max="Object.keys(nodeChanges).length"
+        :max="numTicks"
         hide-details
       />
       {{ currentTick + 1 }}

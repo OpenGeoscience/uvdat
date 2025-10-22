@@ -2,7 +2,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-__version__ = '1.10.0'
+__version__ = '1.12.0'
 
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
@@ -49,7 +49,7 @@ setup(
         'django-guardian==2.4.0',
         'django-oauth-toolkit==2.4.0',
         'djangorestframework==3.15.2',
-        'django-large-image==0.10.0',
+        'django-large-image==0.10.2',
         'drf-yasg==1.21.7',
         'matplotlib==3.9.2',  # for raster colormaps
         'geopandas==1.1.1',

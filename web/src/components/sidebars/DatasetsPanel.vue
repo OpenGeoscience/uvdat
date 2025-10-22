@@ -102,6 +102,7 @@ function toggleSelected(items: Layer[]) {
                 <span>
                   <v-icon
                     icon="mdi-plus"
+                    size="small"
                     color="primary"
                     class="secondary-button"
                   >

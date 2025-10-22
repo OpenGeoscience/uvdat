@@ -244,61 +244,75 @@
     },
     {
         "type": "Chart",
-        "name": "Parabolic Hyetograph",
-        "description": "Rainfall intensity over 24 hours following a parabolic model",
+        "name": "Charles River Hydrograph (Long Flow Length)",
+        "description": "Hourly hydrograph for Charles River, using a longer flow length measurement coming from Chester Brook. Uses the following units. Timestep is one hour. Values are volume without units - volume is a proportion of total flood volume. Since these are hourly timesteps, each value can also be thought of as a per-hour rate (volume/hour = discharge).",
         "project": "Boston Transportation",
         "files": [
             {
-                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c5/download",
-                "hash": "0af8013362c94a3d043c88a277abcbf8e2c44999812f7b8da33dd18e4b22686e",
-                "path": "boston/parabolic_hyetograph.csv"
+                "url": "https://data.kitware.com/api/v1/item/68d950f73ba8f1c07a875e68/download",
+                "hash": "c2c7164b0b9ad8272c225c496e2f17a40a84d0712b00fe6e5aa3f677910cef1f",
+                "path": "boston/hydrograph_charles_long.csv"
             }
         ],
         "metadata": {
-            "precipitation_model": "Parabolic"
+            "method": "NRCS lag equation",
+            "watershed_slope_percent": 3,
+            "curve_number": 85,
+            "flow_length_ft": 124080,
+            "time_of_concentration_hours": 12.3,
+            "peak_rate_factor": 484,
+            "time_to_peak_hours": 7.2,
+            "attribution": "Calculated by August Posch, September 2025, Northeastern University."
         },
         "chart_options": {
-            "chart_title": "Rainfall Intensity over 24 hours",
+            "chart_title": "Proportional Discharge over 24 hours",
             "x_title": "Hour",
-            "y_title": "Precipitation rate (mm/hr)"
+            "y_title": "Proportional discharge rate (volume/hour)"
         },
         "conversion_options": {
             "labels": "hour",
             "datasets": [
-                "precipitation"
+                "discharge"
             ],
             "palette": {
-                "precipitation": "blue"
+                "discharge": "blue"
             }
         }
     },
     {
         "type": "Chart",
-        "name": "NCRS Type II Hyetograph",
-        "description": "Rainfall intensity over 24 hours following the NCRS Type II model",
+        "name": "Charles River Hydrograph (Short Flow Length)",
+        "description": "Hourly hydrograph for Charles River, using a shorter flow length measurement directly from Waltham gage to mouth. Uses the following units. Timestep is one hour. Values are volume without units - volume is a proportion of total flood volume. Since these are hourly timesteps, each value can also be thought of as a per-hour rate (volume/hour = discharge).",
         "project": "Boston Transportation",
         "files": [
             {
-                "url": "https://data.kitware.com/api/v1/item/67d9a34e429cb34d95af01c2/download",
-                "hash": "aa83acf52af4dcc8e384fda18bcbba5d85d84ffdd30314950e8aacce772111e7",
-                "path": "boston/ncrs_type_2_hyetograph.csv"
+                "url": "https://data.kitware.com/api/v1/item/68d950f63ba8f1c07a875e65/download",
+                "hash": "d0ce5335c53bc2ee80b8762b5c458d06f0cdce8e03cfce935964d365da118c4d",
+                "path": "boston/hydrograph_charles_short.csv"
             }
         ],
         "metadata": {
-            "precipitation_model": "NCRS Type II"
+            "method": "NRCS lag equation",
+            "watershed_slope_percent": 3,
+            "curve_number": 85,
+            "flow_length_ft": 81840,
+            "time_of_concentration_hours": 8.8,
+            "peak_rate_factor": 484,
+            "time_to_peak_hours": 5.2,
+            "attribution": "Calculated by August Posch, September 2025, Northeastern University."
         },
         "chart_options": {
-            "chart_title": "Rainfall Intensity over 24 hours",
+            "chart_title": "Proportional Discharge over 24 hours",
             "x_title": "Hour",
-            "y_title": "Precipitation rate (mm/hr)"
+            "y_title": "Proportional discharge rate (volume/hour)"
         },
         "conversion_options": {
             "labels": "hour",
             "datasets": [
-                "precipitation"
+                "discharge"
             ],
             "palette": {
-                "precipitation": "blue"
+                "discharge": "blue"
             }
         }
     }

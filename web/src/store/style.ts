@@ -72,7 +72,8 @@ function colormapMarkersSubsample(
 
 function getRasterTilesQuery(styleSpec: StyleSpec, colormaps: Colormap[]) {
     let query: Record<string, any> = {}
-    styleSpec.colors.forEach((colorSpec) => {
+    const colorSpecs = styleSpec.colors || []
+    colorSpecs.forEach((colorSpec) => {
         const colorQuery: Record<string, any> = {}
         if (colorSpec.colormap) {
             if (colorSpec.colormap.range) {
@@ -117,7 +118,8 @@ function getVectorColorPaintProperty(
     propsSpec: Record<string, PropertySummary>,
     colormaps: Colormap[],
 ) {
-    const colorSpec = styleSpec.colors.find((c) => [groupName, 'all'].includes(c.name))
+    const colorSpecs = styleSpec.colors || []
+    const colorSpec = colorSpecs.find((c) => [groupName, 'all'].includes(c.name))
     let baseColor: any = '#000'
     if (colorSpec?.single_color) {
         baseColor = colorSpec.single_color;
@@ -325,6 +327,7 @@ export const useStyleStore = defineStore('style', () => {
                     colormap: raster ? {
                         range,
                         color_by: 'value',
+                        discrete: false,
                         n_colors: 5,
                         null_color: 'transparent'
                     } : undefined,
@@ -372,10 +375,10 @@ export const useStyleStore = defineStore('style', () => {
         vector: VectorData | null
     ) {
         const map = mapStore.getMap();
-        let filters: StyleFilter[] = styleSpec.filters
+        let filters: StyleFilter[] = styleSpec.filters || []
         if (frame?.source_filters) {
             filters = [
-                ...styleSpec.filters,
+                ...filters,
                 ...Object.entries(frame.source_filters).map(([k, v]) => ({
                     filter_by: k,
                     list: [v],
@@ -432,13 +435,15 @@ export const useStyleStore = defineStore('style', () => {
             if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             map.setPaintProperty(mapLayerId, "raster-opacity", opacity)
             let source = map.getSource(mapLayer.source) as RasterTileSource;
-            if (source?.tiles?.length) {
-                const oldQuery = new URLSearchParams(source.tiles[0].split('?')[1])
+            const sourceURL = mapStore.rasterSourceTileURLs[mapLayer.source]
+            if (source && sourceURL) {
+                const oldQuery = new URLSearchParams(sourceURL.split('?')[1])
                 const newQueryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
                 if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
                 const newQuery = new URLSearchParams(newQueryParams)
                 if (newQuery.toString() !== oldQuery.toString()) {
-                    source.setTiles(source.tiles.map((url) => url.split('?')[0] + '?' + newQuery))
+                    const newURL = sourceURL.split('?')[0] + '?' + newQuery
+                    source.setTiles([newURL])
                 }
             }
         }
