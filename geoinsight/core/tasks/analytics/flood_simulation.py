@@ -87,6 +87,19 @@ def install_module_dependencies():
         [VENV_PATH / 'bin' / 'python', '-m', 'pip', 'install', '-r', 'requirements.txt'],
         MODULE_PATH,
     )
+    run_command(
+        [
+            VENV_PATH / 'bin' / 'python',
+            '-m',
+            'pip',
+            'install',
+            'tifftools',
+            'large-image[gdal,zarr,converter]',
+            '--find-links',
+            'https://girder.github.io/large_image_wheels',
+        ],
+        MODULE_PATH,
+    )
 
 
 @shared_task
