@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 import os
 from pathlib import Path
 import tempfile
@@ -129,7 +129,7 @@ def tile2net_segmentation(result_id):
                             category='segmentation',
                             tags=['analytics', 'segmentation', 'imagery'],
                             metadata={
-                                'creation_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                                'creation_time': datetime.datetime.now(datetime.UTC).isoformat()
                             },
                         )
                         result.project.datasets.add(dataset)
