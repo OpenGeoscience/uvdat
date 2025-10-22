@@ -49,6 +49,7 @@ class GuardianPermission(IsAuthenticated):
             return True
 
         if obj.__class__ == models.Dataset:
+            # For datasets, prohibit delete and patch requests unless user is dataset owner
             return request.method not in ['DELETE', 'PATCH'] or obj.owner() == request.user
 
         perms = ['follower', 'collaborator', 'owner']
