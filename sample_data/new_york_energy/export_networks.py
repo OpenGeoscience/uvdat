@@ -4,7 +4,7 @@ import shapely
 from datetime import datetime
 from pathlib import Path
 
-from uvdat.core.models import Network, Region
+from geoinsight.core.models import Network, Region
 
 
 OUTPUT_FOLDER = Path('sample_data/use_cases/new_york_energy/networks')

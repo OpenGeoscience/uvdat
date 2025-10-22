@@ -7,7 +7,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 
 from django.contrib.gis.geos import GEOSGeometry, LineString, Point
-from uvdat.core.models import (
+from geoinsight.core.models import (
     Dataset,
     Layer,
     LayerFrame,
@@ -18,7 +18,7 @@ from uvdat.core.models import (
     VectorData,
     VectorFeature,
 )
-from uvdat.core.tasks.networks import create_vector_features_from_network
+from geoinsight.core.tasks.networks import create_vector_features_from_network
 
 from .interpret_network import interpret_group
 

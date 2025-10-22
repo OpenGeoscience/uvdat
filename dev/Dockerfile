@@ -12,11 +12,11 @@ ENV PYTHONUNBUFFERED=1
 RUN git clone https://github.com/VIDA-NYU/tile2net.git
 RUN python -m pip install ./tile2net
 
-COPY ./setup.py /opt/uvdat-server/setup.py
-COPY ./manage.py /opt/uvdat-server/manage.py
-COPY ./uvdat /opt/uvdat-server/uvdat
+COPY ./setup.py /opt/geoinsight-server/setup.py
+COPY ./manage.py /opt/geoinsight-server/manage.py
+COPY ./geoinsight /opt/geoinsight-server/geoinsight
 RUN pip install large-image[all] large-image-converter --find-links https://girder.github.io/large_image_wheels
-RUN pip install --editable /opt/uvdat-server[dev,tasks]
+RUN pip install --editable /opt/geoinsight-server[dev,tasks]
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
-WORKDIR /opt/uvdat-server
+WORKDIR /opt/geoinsight-server

@@ -13,7 +13,7 @@ services:
       - VUE_APP_BASE_URL=http://localhost:8080/
       - VUE_APP_OAUTH_CLIENT_ID=cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj
     volumes:
-      - .:/opt/uvdat-server
+      - .:/opt/geoinsight-server
     ports:
       - 8000:8000
     depends_on:
@@ -29,7 +29,7 @@ services:
       [
         "celery",
         "--app",
-        "uvdat.celery",
+        "geoinsight.celery",
         "worker",
         "--loglevel",
         "INFO",
@@ -41,7 +41,7 @@ services:
       - DJANGO_HOMEPAGE_REDIRECT_URL=http://localhost:8080/
     env_file: ./dev/.env.docker-compose
     volumes:
-      - .:/opt/uvdat-server
+      - .:/opt/geoinsight-server
     # NVIDIA driver and increased memory limit are required for tile2net inference
     deploy:
       resources:
