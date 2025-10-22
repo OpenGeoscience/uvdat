@@ -38,7 +38,7 @@ GeoInsight is built with Kitware's [Resonant][girder-4-cookiecutter-link] techno
 To run GeoInsight locally with `docker-compose`, follow the instructions in the [Setup Guide](setup.md).
 
 [apache-license-image]: https://img.shields.io/badge/license-Apache%202-blue.svg
-[license-link]: https://raw.githubusercontent.com/OpenGeoscience/uvdat/master/LICENSE
+[license-link]: https://raw.githubusercontent.com/OpenGeoscience/geoinsight/master/LICENSE
 [kitware-link]: https://kitware.com
 [sds-lab-link]: https://sdslab.io
 [mass-mapper-link]: https://maps.massgis.digital.mass.gov/MassMapper/MassMapper.html

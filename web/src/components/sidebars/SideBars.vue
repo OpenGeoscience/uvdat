@@ -65,7 +65,7 @@ watch(darkMode, () => {
             @update:model-value="copied = undefined">
             <v-card class="pa-3" style="width: fit-content">
               <v-card-subtitle>
-                <a href="https://github.com/OpenGeoscience/uvdat" target="_blank" style="text-decoration: none">
+                <a href="https://github.com/OpenGeoscience/geoinsight" target="_blank" style="text-decoration: none">
                   <v-icon icon="mdi-github" />
                   Source
                 </a>
