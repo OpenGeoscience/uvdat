@@ -434,7 +434,7 @@ export const useMapStore = defineStore('map', () => {
     const { layerId, layerCopyId } = parseSourceString(sourceId);
     const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`].style_spec;
     let filters: StyleFilter[] = []
-    const layer = layerStore.selectedLayers.find((l: Layer) => l.id = layerId)
+    const layer = layerStore.selectedLayers.find((l: Layer) => l.id === layerId)
     if (layer) {
       const frames = layerStore.layerFrames(layer)
       const frame = frames.find((f: LayerFrame) => f.index === layer.current_frame_index)
