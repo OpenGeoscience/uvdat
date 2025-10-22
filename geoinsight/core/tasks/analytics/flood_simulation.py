@@ -33,6 +33,12 @@ class FloodSimulation(AnalysisType):
         self.output_types = {'flood': 'Dataset'}
         self.attribution = 'Northeastern University'
 
+    @classmethod
+    def is_enabled(cls):
+        from django.conf import settings
+
+        return settings.ENABLE_TASK_FLOOD_SIMULATION
+
     def get_input_options(self):
         return {
             'time_period': ['2030-2050'],

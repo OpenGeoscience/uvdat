@@ -24,6 +24,12 @@ class GeoAISegmentation(AnalysisType):
         self.output_types = {'result': 'Dataset'}
         self.attribution = 'Open Geospatial Solutions'
 
+    @classmethod
+    def is_enabled(cls):
+        from django.conf import settings
+
+        return settings.ENABLE_TASK_GEOAI_SEGMENTATION
+
     def get_input_options(self):
         return {
             'aerial_imagery': RasterData.objects.filter(dataset__category='imagery'),

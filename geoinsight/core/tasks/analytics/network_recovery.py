@@ -41,6 +41,12 @@ class NetworkRecovery(AnalysisType):
         }
         self.attribution = 'Jack Watson, Northeastern University'
 
+    @classmethod
+    def is_enabled(cls):
+        from django.conf import settings
+
+        return settings.ENABLE_TASK_NETWORK_RECOVERY
+
     def get_input_options(self):
         from .__init__ import __all__ as analysis_types
 

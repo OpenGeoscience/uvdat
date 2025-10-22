@@ -26,6 +26,12 @@ class SegmentCurbs(AnalysisType):
         self.output_types = {'polygons': 'Dataset', 'network': 'Dataset'}
         self.attribution = 'VIDA NYU & Kitware Inc.'
 
+    @classmethod
+    def is_enabled(cls):
+        from django.conf import settings
+
+        return settings.ENABLE_TASK_SEGMENT_CURBS
+
     def get_input_options(self):
         return {'aerial_imagery': RasterData.objects.filter(dataset__category='imagery')}
 

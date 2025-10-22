@@ -44,6 +44,12 @@ class GeoInsightMixin(ConfigMixin):
         }
     }
 
+    ENABLE_TASK_FLOOD_SIMULATION = values.BooleanValue(True)
+    ENABLE_TASK_FLOOD_NETWORK_FAILURE = values.BooleanValue(True)
+    ENABLE_TASK_NETWORK_RECOVERY = values.BooleanValue(True)
+    ENABLE_TASK_GEOAI_SEGMENTATION = values.BooleanValue(True)
+    ENABLE_TASK_SEGMENT_CURBS = values.BooleanValue(True)
+
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first

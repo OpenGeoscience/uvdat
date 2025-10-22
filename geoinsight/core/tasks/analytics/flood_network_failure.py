@@ -28,6 +28,12 @@ class FloodNetworkFailure(AnalysisType):
         self.output_types = {'failures': 'network_animation'}
         self.attribution = 'Northeastern University & Kitware, Inc.'
 
+    @classmethod
+    def is_enabled(cls):
+        from django.conf import settings
+
+        return settings.ENABLE_TASK_FLOOD_NETWORK_FAILURE
+
     def get_input_options(self):
         return {
             'network': Network.objects.all(),
