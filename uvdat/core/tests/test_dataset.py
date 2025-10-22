@@ -63,11 +63,12 @@ def test_rest_dataset_data_objects(
 
 
 @pytest.mark.django_db
-def test_rest_create_dataset(authenticated_api_client):
+def test_rest_create_dataset(authenticated_api_client, user):
     dataset_expected = dict(
         name='My Test Dataset',
         description='created to test dataset uploads',
         category='test',
+        tags=['boston', 'flood', 'simulation'],
         metadata=dict(source='pytest'),
     )
     resp = authenticated_api_client.post('/api/v1/datasets/', dataset_expected)
@@ -76,6 +77,7 @@ def test_rest_create_dataset(authenticated_api_client):
     for key, value in dataset_expected.items():
         assert serialized_dataset[key] == value
     assert 'id' in serialized_dataset
+    assert serialized_dataset['owner']['id'] == user.id
 
 
 @pytest.mark.django_db
@@ -127,3 +129,50 @@ def test_rest_convert_dataset(
     resp = authenticated_api_client.get(f'/api/v1/layers/{layer_id}/frames/')
     serialized_frames = resp.json()
     assert len(serialized_frames) == 39
+
+
+@pytest.mark.django_db
+def test_dataset_set_owner(dataset, user):
+    owner = dataset.owner()
+    assert owner.id != user.id
+
+    dataset.set_owner(user)
+    assert dataset.owner().id == user.id
+
+
+@pytest.mark.django_db
+def test_rest_dataset_edit(authenticated_api_client, user, dataset: Dataset):
+    patch = dict(name='New Name')
+    resp = authenticated_api_client.patch(f'/api/v1/datasets/{dataset.id}/', patch)
+    assert resp.status_code == 403
+
+    dataset.set_owner(user)
+    resp = authenticated_api_client.patch(f'/api/v1/datasets/{dataset.id}/', patch)
+    assert resp.status_code == 200
+
+    dataset.refresh_from_db()
+    assert dataset.name == patch['name']
+
+
+@pytest.mark.django_db
+def test_rest_dataset_delete(authenticated_api_client, user, dataset: Dataset):
+    resp = authenticated_api_client.delete(f'/api/v1/datasets/{dataset.id}/')
+    assert resp.status_code == 403
+
+    dataset.set_owner(user)
+    resp = authenticated_api_client.delete(f'/api/v1/datasets/{dataset.id}/')
+    assert resp.status_code == 204
+
+
+@pytest.mark.django_db
+def test_rest_dataset_invalid_tags(authenticated_api_client):
+    dataset_expected = dict(
+        name='My Test Dataset',
+        description='created to test dataset uploads',
+        category='test',
+        tags='invalid',
+        metadata=dict(source='pytest'),
+    )
+    resp = authenticated_api_client.post('/api/v1/datasets/', dataset_expected)
+    assert resp.status_code == 400
+    assert resp.json() == {'tags': ['Dataset tags must be expressed as a list of strings.']}

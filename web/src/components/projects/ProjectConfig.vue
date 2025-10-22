@@ -4,7 +4,6 @@ import DatasetSelect from "@/components/projects/DatasetSelect.vue";
 import DatasetUpload from "@/components/projects/DatasetUpload.vue";
 import AccessControl from "@/components/projects/AccessControl.vue";
 import {
-  getDatasets,
   getProjectDatasets,
   createProject,
   deleteProject,
@@ -29,7 +28,6 @@ const filteredProjects = computed(() => {
   });
 });
 const selectedProject: Ref<Project | undefined> = ref();
-const allDatasets: Ref<Dataset[]> = ref([]);
 const projDatasets: Ref<Dataset[] | undefined> = ref();
 
 const permissions = computed(() => {
@@ -140,7 +138,7 @@ function selectProject(project: Project) {
   if (selectedProject.value?.id !== project.id) {
     selectedProject.value = project;
     projectStore.loadingDatasets = true;
-    refreshAllDatasets()
+    projectStore.refreshAllDatasets()
     refreshProjectDatasets(null);
   }
 }
@@ -189,15 +187,6 @@ function updateSelectedProject(newProjectData: Project) {
   selectedProject.value = newProjectData;
 }
 
-function refreshAllDatasets() {
-  getDatasets().then(async (datasets) => {
-    allDatasets.value = datasets
-    allDatasets.value.forEach((dataset: Dataset) => {
-      layerStore.fetchAvailableLayersForDataset(dataset.id)
-    })
-  })
-}
-
 function refreshProjectDatasets(callback: Function | null) {
   if (selectedProject.value) {
     getProjectDatasets(selectedProject.value.id).then(async (datasets) => {
@@ -224,7 +213,7 @@ function handleEditFocus(focused: boolean) {
 }
 
 function datasetUploaded(result: {dataset: Dataset, conversionTask: TaskResult}) {
-  refreshAllDatasets()
+  projectStore.refreshAllDatasets()
   refreshProjectDatasets(null)
 }
 
@@ -238,8 +227,8 @@ onMounted(() => {
 
 watch(selectedProject, resetProjectEdit);
 
-watch(allDatasets, () => {
-  if (allDatasets.value && projDatasets.value) {
+watch(() => projectStore.allDatasets, () => {
+  if (projectStore.allDatasets && projDatasets.value) {
     projectStore.loadingDatasets = false;
   }
 })
@@ -482,7 +471,7 @@ watch(() => projectStore.projectConfigMode, () => {
           <div
             v-if="currentTab === 'datasets'"
           >
-            <v-progress-linear v-if="projectStore.loadingDatasets" indeterminate></v-progress-linear>
+            <v-progress-linear v-if="projectStore.loadingDatasets || projectStore.allDatasets === undefined" indeterminate></v-progress-linear>
             <div v-else class="py-3 px-6 d-flex">
               <div style="width: 45%">
                 <v-card-text>Project Datasets</v-card-text>
@@ -490,8 +479,10 @@ watch(() => projectStore.projectConfigMode, () => {
                   <DatasetSelect
                     :datasets="projDatasets"
                     :savingId="savingId"
+                    :show-delete="false"
                     button-icon="mdi-close"
                     @buttonClick="removeDatasetFromProject"
+                    @onDelete="refreshProjectDatasets"
                   />
                 </div>
               </div>
@@ -500,20 +491,21 @@ watch(() => projectStore.projectConfigMode, () => {
                 <div class="d-flex">
                   <v-card-text>All Datasets</v-card-text>
                   <DatasetUpload
-                    v-if="projectStore.currentProject"
-                    :allDatasets="allDatasets"
-                    :projectPermission="permissions[projectStore.currentProject.id]"
+                    :allDatasets="projectStore.allDatasets"
+                    :projectPermission="permissions[selectedProject.id]"
                     @addToCurrentProject="addDatasetToProject"
                     @uploaded="datasetUploaded"
                   />
                 </div>
                 <div class="dataset-card">
                   <DatasetSelect
-                    :datasets="allDatasets"
+                    :datasets="projectStore.allDatasets"
                     :savingId="savingId"
                     :addedIds="projDatasets?.map((d) => d.id)"
+                    :show-delete="true"
                     button-icon="mdi-plus"
                     @buttonClick="addDatasetToProject"
+                    @onDelete="refreshProjectDatasets"
                   />
                 </div>
               </div>

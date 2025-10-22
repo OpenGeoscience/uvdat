@@ -16,6 +16,11 @@
         "name": "MBTA Rapid Transit",
         "description": "Boston Subway System Lines and Stops",
         "category": "transportation",
+        "tags": [
+            "boston",
+            "public transit",
+            "network"
+        ],
         "files": [
             {
                 "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",

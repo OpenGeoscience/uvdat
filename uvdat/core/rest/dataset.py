@@ -2,7 +2,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from uvdat.core.models import Dataset
+from uvdat.core.models import Dataset, DatasetTag
 from uvdat.core.rest.access_control import GuardianFilter, GuardianPermission
 from uvdat.core.rest.serializers import (
     DatasetSerializer,
@@ -29,6 +29,16 @@ class DatasetViewSet(ModelViewSet):
             return qs
 
         return qs.filter(project=int(project_id))
+
+    def perform_create(self, serializer):
+        # Set the owner of the object to the current user
+        instance = serializer.save()
+        instance.set_owner(self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def tags(self, request, **kwargs):
+        data = [t.tag for t in DatasetTag.objects.all()]
+        return Response(data, status=200)
 
     @action(detail=True, methods=['get'])
     def layers(self, request, **kwargs):

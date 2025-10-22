@@ -11,7 +11,7 @@ from uvdat.core.models.project import Project
 def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[models.Project]):
     model = queryset.model
 
-    # Dataset permissions not yet implemented, and as such, all datasets are visible to all users
+    # All datasets are visible to all users
     if model == models.Dataset:
         return queryset
     # RasterData and VectorData permissions should inherit from Dataset permissions
@@ -47,6 +47,11 @@ class GuardianPermission(IsAuthenticated):
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
             return True
+
+        if obj.__class__ == models.Dataset:
+            # For datasets, prohibit delete and patch requests unless user is dataset owner
+            return request.method not in ['DELETE', 'PATCH'] or obj.owner() == request.user
+
         perms = ['follower', 'collaborator', 'owner']
         if request.method not in SAFE_METHODS:
             perms = ['collaborator', 'owner']

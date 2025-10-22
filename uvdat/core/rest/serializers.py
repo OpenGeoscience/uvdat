@@ -7,6 +7,7 @@ from uvdat.core.models import (
     Chart,
     Colormap,
     Dataset,
+    DatasetTag,
     FileItem,
     Layer,
     LayerFrame,
@@ -86,7 +87,29 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TagsField(serializers.Field):
+    def to_internal_value(self, data):
+        if not isinstance(data, list) or any(not isinstance(v, str) for v in data):
+            raise serializers.ValidationError(
+                'Dataset tags must be expressed as a list of strings.'
+            )
+        for tag in data:
+            DatasetTag.objects.get_or_create(tag=tag)
+        return DatasetTag.objects.filter(tag__in=data)
+
+    def to_representation(self, value):
+        return [t.tag for t in value.all()]
+
+
 class DatasetSerializer(serializers.ModelSerializer):
+    owner = serializers.SerializerMethodField('get_owner')
+    tags = TagsField()
+
+    def get_owner(self, obj):
+        owner = obj.owner()
+        if owner is not None:
+            return UserSerializer(owner).data
+
     class Meta:
         model = Dataset
         fields = '__all__'

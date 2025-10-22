@@ -2,7 +2,10 @@
   {
     "type": "Project",
     "name": "Boston Transportation",
-    "default_map_center": [42.4, -71.1],
+    "default_map_center": [
+      42.4,
+      -71.1
+    ],
     "default_map_zoom": 11,
     "datasets": [
       "MBTA Rapid Transit"
@@ -13,6 +16,11 @@
     "name": "MBTA Rapid Transit",
     "description": "Boston Subway System Lines and Stops",
     "category": "transportation",
+    "tags": [
+      "boston",
+      "public transit",
+      "network"
+    ],
     "files": [
       {
         "url": "https://data.kitware.com/api/v1/item/64b95be1cf6a0eaef6c141f6/download",
@@ -34,6 +42,10 @@
     "name": "Massachusetts Elevation Data",
     "description": "Low resolution sampling of land elevation in meters above sea level",
     "category": "elevation",
+    "tags": [
+      "boston",
+      "terrain"
+    ],
     "files": [
       {
         "url": "https://data.kitware.com/api/v1/item/64907e4df04fb368544295f0/download",
@@ -58,6 +70,12 @@
     "name": "Boston Neighborhoods",
     "description": "The Neighborhood boundaries data layer is a combination of zoning neighborhood boundaries, zip code boundaries and 2010 Census tract boundaries",
     "category": "region",
+    "tags": [
+      "boston",
+      "region boundaries",
+      "census",
+      "neighborhoods"
+    ],
     "files": [
       {
         "url": "https://data.kitware.com/api/v1/item/64caa3da77edef4e1ea8ef57/download",
@@ -74,6 +92,11 @@
     "name": "Multiframe Generated Vector Data",
     "description": "Fake data generated via Python for style testing",
     "category": "test",
+    "tags": [
+      "synthetic",
+      "python",
+      "multiframe"
+    ],
     "files": [
       {
         "url": "https://data.kitware.com/api/v1/item/6841f7e0dfcff796fee73d1a/download",
@@ -132,7 +155,12 @@
     },
     "conversion_options": {
       "labels": "Date",
-      "datasets": ["HH", "H", "L", "LL"],
+      "datasets": [
+        "HH",
+        "H",
+        "L",
+        "LL"
+      ],
       "palette": {
         "HH": "red",
         "H": "pink",
