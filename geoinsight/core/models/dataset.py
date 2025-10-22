@@ -58,6 +58,12 @@ class Dataset(models.Model):
         ).delete()
         assign_perm('owner', user, self)
 
+    @transaction.atomic()
+    def set_tags(self, tags: [str]):
+        for tag in tags:
+            DatasetTag.objects.get_or_create(tag=tag)
+        self.tags.set(DatasetTag.objects.filter(tag__in=tags))
+
     def spawn_conversion_task(
         self,
         layer_options=None,

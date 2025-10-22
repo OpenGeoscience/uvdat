@@ -13,7 +13,7 @@ from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 import pooch
 
-from geoinsight.core.models import Chart, Dataset, DatasetTag, FileItem, Project
+from geoinsight.core.models import Chart, Dataset, FileItem, Project
 
 DATA_FOLDER = Path(os.environ.get('INGEST_BIND_MOUNT_POINT', 'sample_data'))
 DOWNLOADS_FOLDER = Path(DATA_FOLDER, 'downloads')
@@ -401,10 +401,5 @@ class Command(BaseCommand):
                     )
                 )
 
-            self.ingest_dataset_tags(dataset_for_conversion, dataset.get('tags'))
+            dataset_for_conversion.set_tags(dataset.get('tags'))
             dataset_for_conversion.set_owner(superuser)
-
-    def ingest_dataset_tags(self, dataset, tags):
-        for tag in tags:
-            DatasetTag.objects.get_or_create(tag=tag)
-        dataset.tags.set(DatasetTag.objects.filter(tag__in=tags))
