@@ -132,6 +132,7 @@ export const useMapStore = defineStore('map', () => {
   const tooltipOverlay = ref<Popup>();
   const clickedFeature = ref<ClickedFeatureData>();
   const rasterTooltipDataCache = ref<Record<number, RasterDataValues | undefined>>({});
+  const rasterSourceTileURLs = ref<Record<string, string>>({});
 
   const styleStore = useStyleStore();
   const layerStore = useLayerStore();
@@ -433,7 +434,7 @@ export const useMapStore = defineStore('map', () => {
     const { layerId, layerCopyId } = parseSourceString(sourceId);
     const styleSpec = styleStore.selectedLayerStyles[`${layerId}.${layerCopyId}`].style_spec;
     let filters: StyleFilter[] = []
-    const layer = layerStore.selectedLayers.find((l: Layer) => l.id = layerId)
+    const layer = layerStore.selectedLayers.find((l: Layer) => l.id === layerId)
     if (layer) {
       const frames = layerStore.layerFrames(layer)
       const frame = frames.find((f: LayerFrame) => f.index === layer.current_frame_index)
@@ -452,9 +453,10 @@ export const useMapStore = defineStore('map', () => {
       if (styleParams) queryParams.style = JSON.stringify(styleParams)
     }
     const query = new URLSearchParams(queryParams)
+    rasterSourceTileURLs.value[sourceId] = `${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${query}`
     map.addSource(sourceId, {
       type: "raster",
-      tiles: [`${baseURL}rasters/${raster.id}/tiles/{z}/{x}/{y}.png/?${query}`],
+      tiles: [rasterSourceTileURLs.value[sourceId]],
     });
     const tileSource = map.getSource(sourceId);
 
@@ -502,6 +504,7 @@ export const useMapStore = defineStore('map', () => {
     tooltipOverlay,
     clickedFeature,
     rasterTooltipDataCache,
+    rasterSourceTileURLs,
     // Functions
     handleLayerClick,
     toggleBaseLayer,

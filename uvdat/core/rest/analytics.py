@@ -1,9 +1,6 @@
-import inspect
-
 from django.db.models import QuerySet
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.serializers import ModelSerializer
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from uvdat.core.models import Project, TaskResult
@@ -38,19 +35,8 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
                     filtered_queryset = filter_queryset_by_projects(
                         v, Project.objects.filter(id=project_id)
                     )
-                    queryset_serializer = next(
-                        iter(
-                            s
-                            for name, s in inspect.getmembers(uvdat_serializers, inspect.isclass)
-                            if issubclass(s, ModelSerializer) and s.Meta.model is v.model
-                        ),
-                        None,
-                    )
-                    if queryset_serializer is None:
-                        v = None
-                    else:
-                        v = [queryset_serializer(o).data for o in filtered_queryset]
-                else:
+                    v = [dict(id=o.id, name=o.name) for o in filtered_queryset]
+                elif any(not isinstance(o, dict) for o in v):
                     v = [dict(id=o, name=o) for o in v]
                 filtered_input_options[k] = v
             serializer = uvdat_serializers.AnalysisTypeSerializer(
