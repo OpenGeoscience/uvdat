@@ -27,7 +27,15 @@ def test_rest_list_analysis_types(authenticated_api_client, project):
 
 
 @pytest.mark.parametrize(
-    'task', ['flood_simulation', 'flood_network_failure', 'network_recovery', 'segment_curbs']
+    'task',
+    [
+        'flood_simulation',
+        'flood_network_failure',
+        'network_recovery',
+        'tile2net_segmentation',
+        'geoai_segmentation',
+        'create_road_network',
+    ],
 )
 @pytest.mark.django_db
 def test_rest_run_analysis_task_no_inputs(authenticated_api_client, user, project, task):

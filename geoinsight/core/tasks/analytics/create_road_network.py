@@ -66,6 +66,8 @@ def create_road_network(result_id):
     result = TaskResult.objects.get(id=result_id)
     try:
         location = result.inputs.get('location')
+        if location is None:
+            raise ValueError('location not provided')
 
         result.write_status('Fetching road data via OSMnx...')
         roads = osmnx.graph_from_place(location, network_type='drive')
