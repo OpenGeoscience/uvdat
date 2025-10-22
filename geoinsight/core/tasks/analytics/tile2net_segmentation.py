@@ -13,15 +13,15 @@ from geoinsight.core.models import Dataset, FileItem, RasterData, TaskResult
 from .analysis_type import AnalysisType
 
 
-class SegmentCurbs(AnalysisType):
+class Tile2NetSegmentation(AnalysisType):
     def __init__(self):
         super().__init__(self)
-        self.name = 'Segment Walkable Paths'
+        self.name = 'Tile2Net Segmentation'
         self.description = (
             'Leverage tile2net to detect roads, sidewalks, '
             'footpaths, and crosswalks in aerial imagery.'
         )
-        self.db_value = 'segment_curbs'
+        self.db_value = 'tile2net_segmentation'
         self.input_types = {'aerial_imagery': 'RasterData'}
         self.output_types = {'polygons': 'Dataset', 'network': 'Dataset'}
         self.attribution = 'VIDA NYU & Kitware Inc.'
@@ -30,25 +30,25 @@ class SegmentCurbs(AnalysisType):
     def is_enabled(cls):
         from django.conf import settings
 
-        return settings.ENABLE_TASK_SEGMENT_CURBS
+        return settings.ENABLE_TASK_TILE2NET_SEGMENTATION
 
     def get_input_options(self):
         return {'aerial_imagery': RasterData.objects.filter(dataset__category='imagery')}
 
     def run_task(self, project, **inputs):
         result = TaskResult.objects.create(
-            name='Segment Curbs',
+            name='Tile2Net Segmentation',
             task_type=self.db_value,
             inputs=inputs,
             project=project,
             status='Initializing task...',
         )
-        segment_curbs.delay(result.id)
+        tile2net_segmentation.delay(result.id)
         return result
 
 
 @shared_task
-def segment_curbs(result_id):
+def tile2net_segmentation(result_id):
     result = TaskResult.objects.get(id=result_id)
 
     try:
