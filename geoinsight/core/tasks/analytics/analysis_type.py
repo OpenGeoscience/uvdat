@@ -11,6 +11,10 @@ class AnalysisType(ABC):
         self.attribution = 'Kitware, Inc.'
 
     @abstractmethod
+    def is_enabled(self):
+        raise NotImplementedError
+
+    @abstractmethod
     def get_input_options(self):
         raise NotImplementedError
 

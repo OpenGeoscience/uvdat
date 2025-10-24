@@ -1,6 +1,7 @@
 import random
 
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 import networkx as nx
 import numpy
@@ -40,6 +41,10 @@ class NetworkRecovery(AnalysisType):
             'resiliency_score': 'number',
         }
         self.attribution = 'Jack Watson, Northeastern University'
+
+    @classmethod
+    def is_enabled(cls):
+        return settings.ENABLE_TASK_NETWORK_RECOVERY
 
     def get_input_options(self):
         from .__init__ import __all__ as analysis_types

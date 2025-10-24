@@ -25,6 +25,8 @@ services:
     build:
       context: .
       dockerfile: ./dev/Dockerfile
+      args:
+        TASKS: 1
     command:
       [
         "celery",

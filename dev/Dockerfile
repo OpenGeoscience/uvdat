@@ -8,15 +8,21 @@ RUN apt-get update && \
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install tile2net (may take up to 30 mins)
-RUN git clone https://github.com/VIDA-NYU/tile2net.git
-RUN python -m pip install ./tile2net
+ARG TASKS
 
 COPY ./setup.py /opt/geoinsight-server/setup.py
 COPY ./manage.py /opt/geoinsight-server/manage.py
 COPY ./geoinsight /opt/geoinsight-server/geoinsight
+
 RUN pip install large-image[all] large-image-converter --find-links https://girder.github.io/large_image_wheels
-RUN pip install --editable /opt/geoinsight-server[dev,tasks]
+RUN pip install --editable /opt/geoinsight-server[dev]
+
+RUN if [ "$TASKS" = "1" ]; \
+    then pip install --editable /opt/geoinsight-server[tasks]; \
+    # Install tile2net (may take up to 30 mins)
+    git clone https://github.com/VIDA-NYU/tile2net.git; \
+    python -m pip install ./tile2net; \
+    fi
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.
 WORKDIR /opt/geoinsight-server

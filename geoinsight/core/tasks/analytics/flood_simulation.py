@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 
 from celery import shared_task
+from django.conf import settings
 from django.core.files.base import ContentFile
 
 from geoinsight.core.models import Chart, Colormap, Dataset, FileItem, LayerStyle, TaskResult
@@ -32,6 +33,10 @@ class FloodSimulation(AnalysisType):
         }
         self.output_types = {'flood': 'Dataset'}
         self.attribution = 'Northeastern University'
+
+    @classmethod
+    def is_enabled(cls):
+        return settings.ENABLE_TASK_FLOOD_SIMULATION
 
     def get_input_options(self):
         return {
@@ -199,6 +204,7 @@ def flood_simulation(result_id):
                 category='flood',
                 metadata=metadata,
             )
+            dataset.set_tags(['analytics', 'flood', 'simulation'])
             file_item = FileItem.objects.create(
                 name=output_path.name,
                 dataset=dataset,

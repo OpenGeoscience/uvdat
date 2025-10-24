@@ -28,6 +28,8 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
     def list_types(self, request, project_id: int, **kwargs):
         serialized = []
         for analysis_type in analysis_types:
+            if not analysis_type.is_enabled():
+                continue
             instance = analysis_type()
             filtered_input_options = {}
             for k, v in instance.get_input_options().items():
@@ -79,7 +81,7 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
         analysis_type_class = next(
             iter(at for at in analysis_types if at().db_value == task_type), None
         )
-        if analysis_type_class is None:
+        if analysis_type_class is None or not analysis_type_class.is_enabled():
             return Response(f'Analysis type "{task_type}" not found', status=404)
         result = analysis_type_class().run_task(project, **request.data)
         return Response(
