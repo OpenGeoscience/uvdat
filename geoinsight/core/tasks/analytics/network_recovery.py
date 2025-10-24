@@ -1,6 +1,7 @@
 import random
 
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 import networkx as nx
 import numpy
@@ -43,8 +44,6 @@ class NetworkRecovery(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        from django.conf import settings
-
         return settings.ENABLE_TASK_NETWORK_RECOVERY
 
     def get_input_options(self):

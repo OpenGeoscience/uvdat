@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 
 from celery import shared_task
+from django.conf import settings
 from django.core.files.base import ContentFile
 
 from geoinsight.core.models import Chart, Colormap, Dataset, FileItem, LayerStyle, TaskResult
@@ -35,8 +36,6 @@ class FloodSimulation(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        from django.conf import settings
-
         return settings.ENABLE_TASK_FLOOD_SIMULATION
 
     def get_input_options(self):

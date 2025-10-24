@@ -1,6 +1,7 @@
 import datetime
 
 from celery import shared_task
+from django.conf import settings
 from django.contrib.gis.geos import LineString, Point
 
 from geoinsight.core.models import (
@@ -31,8 +32,6 @@ class CreateRoadNetwork(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        from django.conf import settings
-
         return settings.ENABLE_TASK_CREATE_ROAD_NETWORK
 
     def get_input_options(self):

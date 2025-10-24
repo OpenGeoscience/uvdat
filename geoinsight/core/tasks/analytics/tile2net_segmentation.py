@@ -5,6 +5,7 @@ import tempfile
 import zipfile
 
 from celery import shared_task
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django_large_image import tilesource, utilities
 
@@ -28,8 +29,6 @@ class Tile2NetSegmentation(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        from django.conf import settings
-
         return settings.ENABLE_TASK_TILE2NET_SEGMENTATION
 
     def get_input_options(self):

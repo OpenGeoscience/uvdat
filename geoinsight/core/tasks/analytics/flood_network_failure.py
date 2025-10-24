@@ -1,6 +1,7 @@
 import math
 
 from celery import shared_task
+from django.conf import settings
 from django_large_image import tilesource, utilities
 import numpy
 
@@ -30,8 +31,6 @@ class FloodNetworkFailure(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        from django.conf import settings
-
         return settings.ENABLE_TASK_FLOOD_NETWORK_FAILURE
 
     def get_input_options(self):

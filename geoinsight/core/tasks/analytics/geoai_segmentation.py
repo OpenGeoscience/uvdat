@@ -2,6 +2,7 @@ import datetime
 import os
 
 from celery import shared_task
+from django.conf import settings
 from django.core.files.base import ContentFile
 from django_large_image import utilities
 import large_image
@@ -33,8 +34,6 @@ class GeoAISegmentation(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        from django.conf import settings
-
         return settings.ENABLE_TASK_GEOAI_SEGMENTATION
 
     def get_input_options(self):
