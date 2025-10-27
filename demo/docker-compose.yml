@@ -10,6 +10,10 @@ services:
       - 5433:5432
     volumes:
       - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username", "postgres"]
+      start_period: 30s
+      start_interval: 2s
 
   rabbitmq:
     image: rabbitmq:management
@@ -19,6 +23,10 @@ services:
       - 15673:15672
     volumes:
       - rabbitmq:/var/lib/rabbitmq/mnesia
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      start_period: 30s
+      start_interval: 2s
 
   minio:
     image: minio/minio:latest
@@ -32,6 +40,11 @@ services:
       - 9011:9001
     volumes:
       - minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      timeout: 1s
+      start_period: 30s
+      start_interval: 2s
 
   redis:
     image: redis:latest
