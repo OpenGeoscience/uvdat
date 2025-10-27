@@ -7,7 +7,7 @@ services:
       - demo.env
       - demo.secrets.env
     ports:
-      - 5432:5432
+      - 5433:5432
     volumes:
       - postgres:/var/lib/postgresql/data
 
@@ -15,8 +15,8 @@ services:
     image: rabbitmq:management
     restart: unless-stopped
     ports:
-      - 5672:5672
-      - 15672:15672
+      - 5673:5672
+      - 15673:15672
     volumes:
       - rabbitmq:/var/lib/rabbitmq/mnesia
 
@@ -39,7 +39,7 @@ services:
     volumes:
       - redis:/redis/data
     ports:
-      - 6379:6379
+      - 6380:6379
 
   django:
     build:
@@ -54,7 +54,7 @@ services:
     volumes:
       - ..:/opt/geoinsight-server
     ports:
-      - 8000:8000
+      - 8001:8000
     depends_on:
       postgis:
         condition: service_healthy
