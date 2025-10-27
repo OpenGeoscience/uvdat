@@ -100,15 +100,6 @@ services:
       - demo.secrets.env
     volumes:
       - ..:/opt/geoinsight-server
-    # NVIDIA driver and increased memory limit are required for tile2net inference
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    shm_size: 1gb
     depends_on:
       postgis:
         condition: service_healthy
