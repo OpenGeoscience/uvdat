@@ -128,7 +128,6 @@ services:
       - KWDEMO_IMG=https://github.com/OpenGeoscience/geoinsight/blob/master/docs/geoinsight_screenshot.png?raw=true
       - KWDEMO_READY=true
       - KWDEMO_HIDDEN=false
-    command: ["npm", "run", "serve"]
     volumes:
       - ../.git:/web/.git # allow fetching version tag
     ports:
