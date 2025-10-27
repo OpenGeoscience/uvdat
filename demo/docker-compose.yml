@@ -107,7 +107,7 @@ services:
   web:
     build:
       context: ..
-      dockerfile: web.Dockerfile
+      dockerfile: ./demo/web.Dockerfile
     restart: unless-stopped
     command: ["npm", "run", "serve"]
     volumes:
