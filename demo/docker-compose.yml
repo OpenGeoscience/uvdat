@@ -65,6 +65,9 @@ services:
     env_file:
       - demo.env
       - demo.secrets.env
+    environment:
+      - KWDEMO_KEY=geoinsight-server
+      - KWDEMO_HIDDEN=true
     volumes:
       - ..:/opt/geoinsight-server
     ports:
@@ -114,6 +117,17 @@ services:
       context: ..
       dockerfile: ./demo/web.Dockerfile
     restart: unless-stopped
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    environment:
+      - KWDEMO_KEY=geoinsight
+      - KWDEMO_NAME=GeoInsight
+      - KWDEMO_DESC=Model, Predict, and Quantify Risks to Urban Environments
+      - KWDEMO_SRCURL=https://github.com/OpenGeoscience/geoinsight
+      - KWDEMO_IMG=https://github.com/OpenGeoscience/geoinsight/blob/master/docs/geoinsight_screenshot.png?raw=true
+      - KWDEMO_READY=true
+      - KWDEMO_HIDDEN=false
     command: ["npm", "run", "serve"]
     volumes:
       - ../.git:/web/.git # allow fetching version tag
