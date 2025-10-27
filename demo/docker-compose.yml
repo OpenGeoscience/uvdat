@@ -1,0 +1,129 @@
+version: "3"
+services:
+  postgis:
+    image: postgis/postgis:14-3.3
+    restart: unless-stopped
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:management
+    restart: unless-stopped
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq/mnesia
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio:/data
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - redis:/redis/data
+    ports:
+      - 6379:6379
+
+  django:
+    build:
+      context: ..
+      dockerfile: ./dev/Dockerfile
+    restart: unless-stopped
+    command:
+      ["daphne", "-b", "0.0.0.0", "-p", "8000", "geoinsight.asgi:application"]
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    volumes:
+      - ..:/opt/geoinsight-server
+    ports:
+      - 8000:8000
+    depends_on:
+      postgis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  celery:
+    build:
+      context: ..
+      dockerfile: ./dev/Dockerfile
+      args:
+        TASKS: 1
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "--app",
+        "geoinsight.celery",
+        "worker",
+        "--loglevel",
+        "INFO",
+        "--without-heartbeat",
+        "--concurrency",
+        "4",
+      ]
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    volumes:
+      - ..:/opt/geoinsight-server
+    # NVIDIA driver and increased memory limit are required for tile2net inference
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    shm_size: 1gb
+    depends_on:
+      postgis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  web:
+    image: node:latest
+    restart: unless-stopped
+    command: ["npm", "run", "serve"]
+    working_dir: /web
+    volumes:
+      - ../web:/web
+      - ../.git:/web/.git # allow fetching version tag
+    ports:
+      - 8080:8080
+
+  mail:
+    image: bytemark/smtp
+    restart: unless-stopped
+    env_file:
+      - demo.env
+      - demo.secrets.env
+
+volumes:
+  postgres:
+  minio:
+  rabbitmq:
+  redis:
