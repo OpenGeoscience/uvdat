@@ -119,13 +119,6 @@ services:
     ports:
       - 8082:8080
 
-  mail:
-    image: bytemark/smtp
-    restart: unless-stopped
-    env_file:
-      - demo.env
-      - demo.secrets.env
-
 volumes:
   postgres:
   minio:
