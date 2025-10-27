@@ -105,12 +105,12 @@ services:
         condition: service_healthy
 
   web:
-    image: node:latest
+    build:
+      context: ..
+      dockerfile: web.Dockerfile
     restart: unless-stopped
     command: ["npm", "run", "serve"]
-    working_dir: /web
     volumes:
-      - ../web:/web
       - ../.git:/web/.git # allow fetching version tag
     ports:
       - 8082:8080
