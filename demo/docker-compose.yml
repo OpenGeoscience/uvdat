@@ -113,7 +113,7 @@ services:
       - ../web:/web
       - ../.git:/web/.git # allow fetching version tag
     ports:
-      - 8080:8080
+      - 8082:8080
 
   mail:
     image: bytemark/smtp
