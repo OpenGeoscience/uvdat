@@ -1,4 +1,5 @@
 version: "3"
+name: geoinsight-demo
 services:
   postgres:
     image: postgis/postgis:14-3.3
