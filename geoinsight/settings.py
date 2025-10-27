@@ -5,12 +5,24 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from composed_configuration import (
+    AllauthMixin,
+    CeleryMixin,
     ComposedConfiguration,
     ConfigMixin,
+    CorsMixin,
+    DatabaseMixin,
     DevelopmentBaseConfiguration,
+    DjangoMixin,
+    FilterMixin,
     HerokuProductionBaseConfiguration,
+    HttpsMixin,
+    LoggingMixin,
+    MinioStorageMixin,
     ProductionBaseConfiguration,
+    RestFrameworkMixin,
+    SmtpEmailMixin,
     TestingBaseConfiguration,
+    WhitenoiseStaticFileMixin,
 )
 from configurations import values
 
@@ -106,3 +118,31 @@ class ProductionConfiguration(GeoInsightMixin, ProductionBaseConfiguration):
 
 class HerokuProductionConfiguration(GeoInsightMixin, HerokuProductionBaseConfiguration):
     pass
+
+
+class DemoConfiguration(
+    GeoInsightMixin,
+    MinioStorageMixin,
+    SmtpEmailMixin,
+    HttpsMixin,
+    CeleryMixin,
+    RestFrameworkMixin,
+    FilterMixin,
+    CorsMixin,
+    WhitenoiseStaticFileMixin,
+    DatabaseMixin,
+    LoggingMixin,
+    AllauthMixin,
+    DjangoMixin,
+    ComposedConfiguration,
+):
+    DEBUG = False
+    ALLOWED_HOSTS = values.ListValue(['localhost', '127.0.0.1', 'demo.kitware.com'])
+
+    # Enable proxy header support for reverse proxy deployments
+    USE_X_FORWARDED_HOST = True
+
+    # Support deployments under a URL subpath (e.g., /{project}/)
+    _proxy_subpath = values.Value(environ_name='DJANGO_{PROJECT}_PROXY_SUBPATH', default=None)
+    if _proxy_subpath:
+        FORCE_SCRIPT_NAME = _proxy_subpath
