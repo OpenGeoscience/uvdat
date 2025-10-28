@@ -16,6 +16,7 @@ process.env.VITE_APP_HASH = describe.hash;
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    base: "./",
     plugins: [
         Vue({
             template: { transformAssetUrls },
