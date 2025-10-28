@@ -9,12 +9,12 @@ class Command(BaseCommand):
     help = 'Creates a client Application object for authentication purposes.'
 
     def handle(self, **kwargs):
-        uri = os.environ.get('VUE_APP_BASE_URL')
-        client_id = os.environ.get('VUE_APP_OAUTH_CLIENT_ID')
+        uri = os.environ.get('VITE_APP_BASE_URL')
+        client_id = os.environ.get('VITE_APP_OAUTH_CLIENT_ID')
         if uri is None:
-            raise CommandError('Environment variable VUE_APP_BASE_URL is not set.')
+            raise CommandError('Environment variable VITE_APP_BASE_URL is not set.')
         if client_id is None:
-            raise CommandError('Environment variable VUE_APP_OAUTH_CLIENT_ID is not set.')
+            raise CommandError('Environment variable VITE_APP_OAUTH_CLIENT_ID is not set.')
 
         site = Site.objects.get_current()  # type: ignore
         site.domain = 'geoinsight.demo'
