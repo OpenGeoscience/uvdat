@@ -65,6 +65,7 @@ services:
     env_file:
       - demo.env
       - demo.secrets.env
+      - demo.web.env
     environment:
       - KWDEMO_KEY=geoinsight-server
       - KWDEMO_HIDDEN=true
@@ -117,9 +118,6 @@ services:
       context: ..
       dockerfile: ./demo/web.Dockerfile
     restart: unless-stopped
-    env_file:
-      - demo.env
-      - demo.secrets.env
     environment:
       - KWDEMO_KEY=geoinsight
       - KWDEMO_NAME=GeoInsight
