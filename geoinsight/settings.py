@@ -143,6 +143,6 @@ class DemoConfiguration(
     USE_X_FORWARDED_HOST = True
 
     # Support deployments under a URL subpath (e.g., /{project}/)
-    _proxy_subpath = values.Value(environ_name='DJANGO_{PROJECT}_PROXY_SUBPATH', default=None)
+    _proxy_subpath = values.Value(environ_name='DJANGO_PROXY_SUBPATH', default=None)
     if _proxy_subpath:
         FORCE_SCRIPT_NAME = _proxy_subpath

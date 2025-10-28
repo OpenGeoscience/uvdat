@@ -7,6 +7,7 @@ staticfiles/
 sample_data/downloads/*
 jupyter/.ipynb_checkpoints
 dev/.env.web
+demo/demo.secrets.env
 
 # osmnx data cache folder
 cache
