@@ -11,7 +11,7 @@ export const apiClient = axios.create({
 export const oauthClient = new OauthClient(
   new URL(import.meta.env.VITE_APP_OAUTH_API_ROOT),
   import.meta.env.VITE_APP_OAUTH_CLIENT_ID,
-  { redirectUrl: window.location.origin }
+  { redirectUrl: import.meta.env.VITE_APP_API_ROOT }
 );
 
 let s3ffClient = undefined;
