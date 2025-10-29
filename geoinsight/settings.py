@@ -142,7 +142,11 @@ class DemoConfiguration(
     # Enable proxy header support for reverse proxy deployments
     USE_X_FORWARDED_HOST = True
 
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
     # Support deployments under a URL subpath (e.g., /{project}/)
     _proxy_subpath = values.Value(environ_name='DJANGO_PROXY_SUBPATH', default=None)
     if _proxy_subpath:
         FORCE_SCRIPT_NAME = _proxy_subpath
+        SESSION_COOKIE_PATH = FORCE_SCRIPT_NAME
+        CSRF_COOKIE_PATH = FORCE_SCRIPT_NAME

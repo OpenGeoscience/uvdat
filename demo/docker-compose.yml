@@ -61,7 +61,16 @@ services:
       dockerfile: ./dev/Dockerfile
     restart: unless-stopped
     command:
-      ["daphne", "-b", "0.0.0.0", "-p", "8000", "geoinsight.asgi:application"]
+      [
+        "daphne",
+        "-b",
+        "0.0.0.0",
+        "-p",
+        "8000",
+        "--root-path",
+        "/geoinsight-server",
+        "geoinsight.asgi:application",
+      ]
     env_file:
       - demo.env
       - demo.secrets.env
