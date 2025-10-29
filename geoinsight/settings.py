@@ -5,12 +5,24 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from composed_configuration import (
+    AllauthMixin,
+    CeleryMixin,
     ComposedConfiguration,
     ConfigMixin,
+    CorsMixin,
+    DatabaseMixin,
     DevelopmentBaseConfiguration,
+    DjangoMixin,
+    FilterMixin,
     HerokuProductionBaseConfiguration,
+    HttpsMixin,
+    LoggingMixin,
+    MinioStorageMixin,
     ProductionBaseConfiguration,
+    RestFrameworkMixin,
+    SmtpEmailMixin,
     TestingBaseConfiguration,
+    WhitenoiseStaticFileMixin,
 )
 from configurations import values
 
@@ -106,3 +118,37 @@ class ProductionConfiguration(GeoInsightMixin, ProductionBaseConfiguration):
 
 class HerokuProductionConfiguration(GeoInsightMixin, HerokuProductionBaseConfiguration):
     pass
+
+
+class DemoConfiguration(
+    GeoInsightMixin,
+    MinioStorageMixin,
+    SmtpEmailMixin,
+    HttpsMixin,
+    CeleryMixin,
+    RestFrameworkMixin,
+    FilterMixin,
+    CorsMixin,
+    WhitenoiseStaticFileMixin,
+    DatabaseMixin,
+    LoggingMixin,
+    AllauthMixin,
+    DjangoMixin,
+    ComposedConfiguration,
+):
+    DEBUG = False
+    ALLOWED_HOSTS = values.ListValue(['localhost', '127.0.0.1', 'demo.kitware.com'])
+
+    # Enable proxy header support for reverse proxy deployments
+    USE_X_FORWARDED_HOST = True
+
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # Support deployments under a URL subpath (e.g., /{project}/)
+    FORCE_SCRIPT_NAME = values.Value(environ_name='PROXY_SUBPATH')
+    SESSION_COOKIE_PATH = FORCE_SCRIPT_NAME
+    CSRF_COOKIE_PATH = FORCE_SCRIPT_NAME
+    STATIC_URL = f'{FORCE_SCRIPT_NAME}/static/'
+
+    LOGIN_URL = f'{FORCE_SCRIPT_NAME}/accounts/login/'
+    LOGIN_REDIRECT_URL = f'{FORCE_SCRIPT_NAME}/'

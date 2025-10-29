@@ -1,0 +1,147 @@
+version: "3"
+name: geoinsight-demo
+services:
+  postgres:
+    image: postgis/postgis:14-3.3
+    restart: unless-stopped
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    ports:
+      - 5433:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username", "postgres"]
+      start_period: 30s
+      start_interval: 2s
+
+  rabbitmq:
+    image: rabbitmq:management
+    restart: unless-stopped
+    ports:
+      - 5673:5672
+      - 15673:15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      start_period: 30s
+      start_interval: 2s
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    ports:
+      - 9010:9000
+      - 9011:9001
+    volumes:
+      - minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      timeout: 1s
+      start_period: 30s
+      start_interval: 2s
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - redis:/redis/data
+    ports:
+      - 6380:6379
+
+  django:
+    build:
+      context: ..
+      dockerfile: ./dev/Dockerfile
+    restart: unless-stopped
+    command:
+      [
+        "daphne",
+        "-b",
+        "0.0.0.0",
+        "-p",
+        "8000",
+        "--root-path",
+        "/geoinsight-server",
+        "geoinsight.asgi:application",
+      ]
+    env_file:
+      - demo.env
+      - demo.secrets.env
+      - demo.web.env
+    environment:
+      - KWDEMO_KEY=geoinsight-server
+      - KWDEMO_HIDDEN=true
+    volumes:
+      - ..:/opt/geoinsight-server
+    ports:
+      - 8001:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  celery:
+    build:
+      context: ..
+      dockerfile: ./dev/Dockerfile
+      args:
+        TASKS: 1
+    restart: unless-stopped
+    command:
+      [
+        "celery",
+        "--app",
+        "geoinsight.celery",
+        "worker",
+        "--loglevel",
+        "INFO",
+        "--without-heartbeat",
+        "--concurrency",
+        "4",
+      ]
+    env_file:
+      - demo.env
+      - demo.secrets.env
+    volumes:
+      - ..:/opt/geoinsight-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: ./demo/web.Dockerfile
+    restart: unless-stopped
+    environment:
+      - KWDEMO_KEY=geoinsight
+      - KWDEMO_NAME=GeoInsight
+      - KWDEMO_DESC=Model, Predict, and Quantify Risks to Urban Environments
+      - KWDEMO_SRCURL=https://github.com/OpenGeoscience/geoinsight
+      - KWDEMO_IMG=https://github.com/OpenGeoscience/geoinsight/blob/master/docs/geoinsight_screenshot.png?raw=true
+      - KWDEMO_READY=true
+      - KWDEMO_HIDDEN=false
+    volumes:
+      - ../.git:/web/.git # allow fetching version tag
+    ports:
+      - 8082:8080
+
+volumes:
+  postgres:
+  minio:
+  rabbitmq:
+  redis:
