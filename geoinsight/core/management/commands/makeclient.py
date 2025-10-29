@@ -9,10 +9,10 @@ class Command(BaseCommand):
     help = 'Creates a client Application object for authentication purposes.'
 
     def handle(self, **kwargs):
-        uri = os.environ.get('VITE_APP_BASE_URL')
+        uri = os.environ.get('VITE_APP_API_ROOT')
         client_id = os.environ.get('VITE_APP_OAUTH_CLIENT_ID')
         if uri is None:
-            raise CommandError('Environment variable VITE_APP_BASE_URL is not set.')
+            raise CommandError('Environment variable VITE_APP_API_ROOT is not set.')
         if client_id is None:
             raise CommandError('Environment variable VITE_APP_OAUTH_CLIENT_ID is not set.')
 
