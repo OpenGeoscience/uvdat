@@ -23,7 +23,7 @@ services:
       - 5673:5672
       - 15673:15672
     volumes:
-      - rabbitmq:/var/lib/rabbitmq/mnesia
+      - rabbitmq:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       start_period: 30s
