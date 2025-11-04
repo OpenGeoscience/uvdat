@@ -112,7 +112,6 @@ def flood_network_failure(result_id):
             )
             result.save()
 
-            node_failures = {}
             n_nodes = network.nodes.count()
             flood_dataset_id = flood_sim.outputs.get('flood')
             flood_layer = Layer.objects.get(dataset__id=flood_dataset_id)
@@ -145,21 +144,25 @@ def flood_network_failure(result_id):
             source = tilesource.get_tilesource_from_path(raster_path)
             metadata = source.getMetadata()
 
+            animation_results = {}
+            node_failures = []
             for frame in metadata.get('frames', []):
                 frame_index = frame.get('Index')
                 result.write_status(
                     f'Evaluating flood levels at {n_nodes} nodes for frame {frame_index}...'
                 )
-                node_failures[frame_index] = []
                 for node_id, node_region in node_regions.items():
                     region_data, _ = source.getRegion(
                         region=node_region,
                         frame=frame_index,
                         format='numpy',
                     )
-                    if numpy.any(numpy.where(region_data > tolerance)):
-                        node_failures[frame_index].append(node_id)
-            result.outputs = dict(failures=node_failures)
+                    if node_id not in node_failures and numpy.any(
+                        numpy.where(region_data > tolerance)
+                    ):
+                        node_failures.append(node_id)
+                animation_results[frame_index] = node_failures.copy()
+            result.outputs = dict(failures=animation_results)
     except Exception as e:
         result.error = str(e)
     result.complete()
