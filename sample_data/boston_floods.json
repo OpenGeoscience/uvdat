@@ -14,7 +14,8 @@
             "Boston Orthoimagery",
             "Boston Neighborhoods",
             "Boston Census 2020 Block Groups",
-            "Boston Zip Codes"
+            "Boston Zip Codes",
+            "Boston Rivers Boundary"
         ]
     },
     {
@@ -183,6 +184,24 @@
         "region_options": {
             "name_property": "GEOID20"
         }
+    },
+    {
+        "type": "Dataset",
+        "name": "Boston Rivers Boundary",
+        "description": "Area including Charles River, Mystic River, Boston Harbor, and other small streams",
+        "category": "region",
+        "tags": [
+            "boston",
+            "region boundaries",
+            "water"
+        ],
+        "files": [
+            {
+                "url": "https://data.kitware.com/api/v1/item/690a354103d1a144cbcf4244/download",
+                "hash": "708e4988c943db421a67b84926aee834e8dac5eb0a3b4331451ba2b401ac764a",
+                "path": "boston/water_boundary.geojson"
+            }
+        ]
     },
     {
         "type": "Chart",
