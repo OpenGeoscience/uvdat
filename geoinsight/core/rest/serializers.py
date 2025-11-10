@@ -103,12 +103,16 @@ class TagsField(serializers.Field):
 
 class DatasetSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField('get_owner')
+    n_layers = serializers.SerializerMethodField('get_n_layers')
     tags = TagsField()
 
     def get_owner(self, obj):
         owner = obj.owner()
         if owner is not None:
             return UserSerializer(owner).data
+
+    def get_n_layers(self, obj):
+        return Layer.objects.filter(dataset=obj).count()
 
     class Meta:
         model = Dataset

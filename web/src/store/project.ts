@@ -42,9 +42,6 @@ export const useProjectStore = defineStore('project', () => {
         loadingDatasets.value = true;
         getProjectDatasets(currentProject.value.id).then(async (datasets) => {
             availableDatasets.value = datasets;
-            await Promise.all(availableDatasets.value.map((dataset: Dataset) =>
-                layerStore.fetchAvailableLayersForDataset(dataset.id)
-            ));
             loadingDatasets.value = false;
         });
     }
@@ -97,9 +94,6 @@ export const useProjectStore = defineStore('project', () => {
     function refreshAllDatasets() {
         getDatasets().then(async (datasets) => {
             allDatasets.value = datasets
-            allDatasets.value.forEach((dataset: Dataset) => {
-            layerStore.fetchAvailableLayersForDataset(dataset.id)
-            })
         })
     }
 

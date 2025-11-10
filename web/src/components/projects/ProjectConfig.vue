@@ -11,11 +11,10 @@ import {
 } from "@/api/rest";
 import { Project, Dataset, TaskResult } from "@/types";
 
-import { useMapStore, useAppStore, useProjectStore, useLayerStore } from "@/store";
+import { useMapStore, useAppStore, useProjectStore } from "@/store";
 const projectStore = useProjectStore();
 const appStore = useAppStore();
 const mapStore = useMapStore();
-const layerStore = useLayerStore()
 
 const currentTab = ref();
 const searchText = ref<string | undefined>();
@@ -191,9 +190,6 @@ function refreshProjectDatasets(callback: Function | null) {
   if (selectedProject.value) {
     getProjectDatasets(selectedProject.value.id).then(async (datasets) => {
       projDatasets.value = datasets
-      projDatasets.value.forEach((dataset: Dataset) => {
-        layerStore.fetchAvailableLayersForDataset(dataset.id)
-      })
       if (callback) callback();
     });
   }
