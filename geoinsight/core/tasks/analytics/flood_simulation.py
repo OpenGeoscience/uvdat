@@ -40,7 +40,7 @@ class FloodSimulation(AnalysisType):
 
     def get_input_options(self):
         return {
-            'time_period': ['2030-2050'],
+            'time_period': ['2031-2050', '2041-2060'],
             'hydrograph': Chart.objects.filter(name__icontains='hydrograph'),
             'potential_evapotranspiration_percentile': [dict(min=0, max=100, step=1)],
             'soil_moisture_percentile': [dict(min=0, max=100, step=1)],
