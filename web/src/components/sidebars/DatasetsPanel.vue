@@ -21,6 +21,14 @@ const datasetsWithLayers = computed(() => {
   })
 })
 
+function expandDataset(expanded: any) {
+  expanded.forEach((datasetId: number) => {
+    if (!layerStore.availableLayers.some((l) => l.dataset === datasetId)) {
+      layerStore.fetchAvailableLayersForDataset(datasetId)
+    }
+  })
+}
+
 function toggleSelected(items: Layer[]) {
   items.forEach((item) => {
     const layer = item as Layer;
@@ -32,10 +40,18 @@ function toggleSelected(items: Layer[]) {
 <template>
   <DatasetList :datasets="datasetsWithLayers">
     <template v-slot:list="{ data }">
-      <v-expansion-panels multiple flat variant="accordion" elevation="0" bg-color="transparent">
+      <v-expansion-panels
+        multiple
+        flat
+        variant="accordion"
+        elevation="0"
+        bg-color="transparent"
+        @update:model-value="expandDataset"
+      >
         <v-expansion-panel
           v-for="dataset in data"
           :key="dataset.id"
+          :value="dataset.id"
         >
           <v-expansion-panel-title>
             <div style="display: flex; justify-content: space-between; width: 100%;">
@@ -66,10 +82,10 @@ function toggleSelected(items: Layer[]) {
                   <v-icon
                     icon="mdi-layers-outline"
                     size="small"
-                    v-tooltip="dataset.layers.length + ' layers'"
+                    v-tooltip="dataset.n_layers + ' layers'"
                     class="ml-2"
                   ></v-icon>
-                  <span class="secondary-text">{{ dataset.layers.length }}</span>
+                  <span class="secondary-text">{{ dataset.n_layers }}</span>
                   <v-icon
                     icon="mdi-information-outline"
                     size="small"
