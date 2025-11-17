@@ -1,6 +1,5 @@
-data "aws_route53_zone" "this" {
-  # This must be created by hand in the AWS console
-  name = "geoinsight.test"
+resource "aws_route53_zone" "this" {
+  name = "geoinsight.kitware.com"
 }
 
 data "heroku_team" "this" {
@@ -8,11 +7,23 @@ data "heroku_team" "this" {
 }
 
 module "django" {
-  source  = "girder/django/heroku"
-  version = "0.10.0"
+  source  = "kitware-resonant/resonant/heroku"
+  version = "1.1.3"
 
   project_slug     = "geoinsight"
-  route53_zone_id  = data.aws_route53_zone.this.zone_id
+  route53_zone_id  = aws_route53_zone.this.zone_id
   heroku_team_name = data.heroku_team.this.name
-  subdomain_name   = "www"
+  subdomain_name   = "api"
+
+  additional_django_vars = {
+    DJANGO_HOMEPAGE_REDIRECT_URL = "https://www.geoinsight.kitware.com/"
+    OGR_GEOJSON_MAX_OBJ_SIZE     = "500MB"
+  }
+  django_cors_origin_whitelist = [
+    "www.geoinsight.kitware.com"
+  ]
+}
+
+output "dns_nameservers" {
+  value = aws_route53_zone.this.name_servers
 }
