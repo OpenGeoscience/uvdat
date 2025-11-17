@@ -1,8 +1,8 @@
 locals {
   www_env_vars = {
     VITE_APP_OAUTH_CLIENT_ID = "cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj"
-    VITE_APP_API_ROOT        = "https://api.geoinsight.kitware.com/"
-    VITE_APP_OAUTH_API_ROOT  = "https://api.geoinsight.kitware.com/oauth/"
+    VITE_APP_API_ROOT        = "https://${module.django.fqdn}/"
+    VITE_APP_OAUTH_API_ROOT  = "https://${module.django.fqdn}/oauth/"
   }
 }
 
@@ -48,7 +48,7 @@ resource "cloudflare_pages_domain" "www" {
 }
 
 resource "aws_route53_record" "www" {
-  zone_id = data.aws_route53_zone.this.zone_id
+  zone_id = aws_route53_zone.this.zone_id
   name    = "www"
   type    = "CNAME"
   ttl     = 300
