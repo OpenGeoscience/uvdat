@@ -25,6 +25,11 @@ module "django" {
   ]
 }
 
+resource "heroku_addon" "redis" {
+  app_id = heroku_app.default.id
+  plan   = "heroku-redis:mini"
+}
+
 output "dns_nameservers" {
   value = aws_route53_zone.this.name_servers
 }
