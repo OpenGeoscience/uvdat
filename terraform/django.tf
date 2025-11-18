@@ -26,7 +26,7 @@ module "django" {
 }
 
 resource "heroku_addon" "redis" {
-  app_id = heroku_app.this.id
+  app_id = module.django.heroku_app_id
   plan   = "heroku-redis:mini"
 }
 
