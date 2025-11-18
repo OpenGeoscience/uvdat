@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from urllib.parse import urlparse
 
 from composed_configuration import (
     ComposedConfiguration,
@@ -21,6 +20,15 @@ class GeoInsightMixin(ConfigMixin):
     ROOT_URLCONF = 'geoinsight.urls'
 
     BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
+
+    # Re-configure the database for PostGIS
+    DATABASES = values.DatabaseURLValue(
+        environ_name='DATABASE_URL',
+        environ_prefix='DJANGO',
+        environ_required=True,
+        engine='django.contrib.gis.db.backends.postgis',
+        conn_max_age=600,
+    )
 
     # Override default signup sheet to ask new users for first and last name
     ACCOUNT_FORMS = {'signup': 'geoinsight.core.rest.accounts.AccountSignupForm'}
@@ -76,19 +84,6 @@ class GeoInsightMixin(ConfigMixin):
             'rest_framework.permissions.IsAuthenticated'
         ]
 
-        # Re-configure the database for PostGIS
-        db_parts = urlparse(os.environ['DJANGO_DATABASE_URL'])
-        configuration.DATABASES = {
-            'default': {
-                'ENGINE': 'django.contrib.gis.db.backends.postgis',
-                'NAME': db_parts.path.strip('/'),
-                'USER': db_parts.username,
-                'PASSWORD': db_parts.password,
-                'HOST': db_parts.hostname,
-                'PORT': db_parts.port,
-            }
-        }
-
 
 class DevelopmentConfiguration(GeoInsightMixin, DevelopmentBaseConfiguration):
     pass
@@ -105,4 +100,11 @@ class ProductionConfiguration(GeoInsightMixin, ProductionBaseConfiguration):
 
 
 class HerokuProductionConfiguration(GeoInsightMixin, HerokuProductionBaseConfiguration):
-    pass
+    DATABASES = values.DatabaseURLValue(
+        environ_name='DATABASE_URL',
+        environ_prefix=None,
+        environ_required=True,
+        engine='django.contrib.gis.db.backends.postgis',
+        conn_max_age=600,
+        ssl_require=True,
+    )
