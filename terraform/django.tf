@@ -10,10 +10,11 @@ module "django" {
   source  = "kitware-resonant/resonant/heroku"
   version = "1.1.3"
 
-  project_slug     = "geoinsight"
-  route53_zone_id  = aws_route53_zone.this.zone_id
-  heroku_team_name = data.heroku_team.this.name
-  subdomain_name   = "api"
+  project_slug           = "geoinsight"
+  route53_zone_id        = aws_route53_zone.this.zone_id
+  heroku_team_name       = data.heroku_team.this.name
+  subdomain_name         = "api"
+  heroku_postgresql_plan = "essential-0"
 
   additional_django_vars = {
     DJANGO_HOMEPAGE_REDIRECT_URL = "https://www.geoinsight.kitware.com/"
