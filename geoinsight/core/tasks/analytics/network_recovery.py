@@ -47,7 +47,7 @@ class NetworkRecovery(AnalysisType):
         return settings.ENABLE_TASK_NETWORK_RECOVERY
 
     def get_input_options(self):
-        from .__init__ import __all__ as analysis_types
+        from geoinsight.core.tasks.analytics import analysis_types
 
         node_failure_analysis_types = [
             at().db_value

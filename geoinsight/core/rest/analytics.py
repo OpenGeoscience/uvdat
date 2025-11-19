@@ -10,7 +10,7 @@ from geoinsight.core.rest.access_control import (
     filter_queryset_by_projects,
 )
 import geoinsight.core.rest.serializers as geoinsight_serializers
-from geoinsight.core.tasks.analytics import __all__ as analysis_types
+from geoinsight.core.tasks.analytics import analysis_types
 
 
 class AnalyticsViewSet(ReadOnlyModelViewSet):
