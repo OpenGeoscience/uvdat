@@ -51,9 +51,12 @@ setup(
         'djangorestframework==3.15.2',
         'django-large-image==0.10.2',
         'drf-yasg==1.21.7',
+        'large-image[gdal]==1.33.3',
+        'large-image-converter==1.33.3',
         'matplotlib==3.9.2',  # for raster colormaps
         'geopandas==1.1.1',
         'networkx==3.3',
+        'numpy==2.2.6',
         'pooch[progress]==1.8.2',
         'pyshp==2.3.1',
         'rasterio==1.3.10',
@@ -61,7 +64,7 @@ setup(
         'webcolors==24.6.0',
         # Production only
         'django-composed-configuration[prod]==0.25.0',
-        'django-s3-file-field[boto3]==1.0.1',
+        'django-s3-file-field[s3]==1.0.1',
         'gunicorn==22.0.0',
     ],
     extras_require={
