@@ -12,6 +12,7 @@ from composed_configuration import (
     TestingBaseConfiguration,
 )
 from configurations import values
+import osgeo
 
 
 class GeoInsightMixin(ConfigMixin):
@@ -51,6 +52,10 @@ class GeoInsightMixin(ConfigMixin):
             },
         }
     }
+
+    # https://github.com/girder/large_image_wheels#geodjango
+    GDAL_LIBRARY_PATH = osgeo.GDAL_LIBRARY_PATH
+    GEOS_LIBRARY_PATH = osgeo.GEOS_LIBRARY_PATH
 
     ENABLE_TASK_FLOOD_SIMULATION = values.BooleanValue(True)
     ENABLE_TASK_FLOOD_NETWORK_FAILURE = values.BooleanValue(True)
