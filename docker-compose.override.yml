@@ -2,61 +2,60 @@ services:
   django:
     build:
       context: .
-      dockerfile: ./dev/Dockerfile
-    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
-    # Log printing via Rich is enhanced by a TTY
+      dockerfile: ./dev/django.Dockerfile
+    command: [
+      "./manage.py",
+      "runserver_plus", "0.0.0.0:8000"
+    ]
+    # Log printing is enhanced by a TTY
     tty: true
-    env_file: ./dev/.env.docker-compose
     environment:
-      # ensure these match the web container
-      - DJANGO_HOMEPAGE_REDIRECT_URL=http://localhost:8080/
-      - VUE_APP_BASE_URL=http://localhost:8080/
-      - VUE_APP_OAUTH_CLIENT_ID=cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj
+      UV_ENV_FILE: ./dev/.env.docker-compose
+    working_dir: /opt/django-project
     volumes:
-      - .:/opt/geoinsight-server
+      - .:/opt/django-project
+      - uv_cache:/var/cache/uv
     ports:
       - 8000:8000
     depends_on:
-      - postgres
-      - rabbitmq
-      - minio
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   celery:
     build:
       context: .
-      dockerfile: ./dev/Dockerfile
-      args:
-        TASKS: 1
-    command:
-      [
-        "celery",
-        "--app",
-        "geoinsight.celery",
-        "worker",
-        "--loglevel",
-        "INFO",
-        "--without-heartbeat",
-      ]
+      dockerfile: ./dev/django.Dockerfile
+    command: [
+      "uv", "run",
+      "celery",
+      "--app", "geoinsight.celery",
+      "worker",
+      "--loglevel", "INFO",
+      "--without-heartbeat"
+    ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
     environment:
-      - DJANGO_HOMEPAGE_REDIRECT_URL=http://localhost:8080/
-    env_file: ./dev/.env.docker-compose
+      UV_ENV_FILE: ./dev/.env.docker-compose
+    working_dir: /opt/django-project
     volumes:
-      - .:/opt/geoinsight-server
-    # NVIDIA driver and increased memory limit are required for tile2net inference
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    shm_size: 1gb
+      - .:/opt/django-project
+      - uv_cache:/var/cache/uv
     depends_on:
-      - postgres
-      - rabbitmq
-      - minio
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   web:
     image: node:latest
@@ -67,3 +66,6 @@ services:
       - ./.git:/web/.git # allow fetching version tag
     ports:
       - 8080:8080
+
+volumes:
+  uv_cache:

@@ -36,7 +36,7 @@ class FloodSimulation(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        return settings.ENABLE_TASK_FLOOD_SIMULATION
+        return settings.GEOINSIGHT_ENABLE_TASK_FLOOD_SIMULATION
 
     def get_input_options(self):
         return {
