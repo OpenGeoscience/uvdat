@@ -16,7 +16,7 @@ from .analysis_type import AnalysisType
 
 class Tile2NetSegmentation(AnalysisType):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.name = 'Tile2Net Segmentation'
         self.description = (
             'Leverage tile2net to detect roads, sidewalks, '

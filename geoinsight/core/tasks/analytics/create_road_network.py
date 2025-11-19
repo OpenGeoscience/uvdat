@@ -22,7 +22,7 @@ from .analysis_type import AnalysisType
 
 class CreateRoadNetwork(AnalysisType):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.name = 'Create Road Network'
         self.description = 'Leverage OSMnx to create a road network for a target location'
         self.db_value = 'create_road_network'

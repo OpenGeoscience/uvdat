@@ -19,7 +19,7 @@ VENV_PATH = Path('/venvs/flood_simulation')
 
 class FloodSimulation(AnalysisType):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.name = 'Flood Simulation'
         self.description = 'Select parameters to simulate a 24-hour flood of the Charles River'
         self.db_value = 'flood_simulation'

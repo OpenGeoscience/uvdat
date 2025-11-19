@@ -6,7 +6,7 @@ import pytest
 
 @pytest.mark.django_db
 def test_rest_list_analysis_types(authenticated_api_client, project):
-    from geoinsight.core.tasks.analytics import __all__ as analysis_types
+    from geoinsight.core.tasks.analytics import analysis_types
 
     analysis_type_instances = [at() for at in analysis_types]
     resp = authenticated_api_client.get(f'/api/v1/analytics/project/{project.id}/types/')

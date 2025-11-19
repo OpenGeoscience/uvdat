@@ -13,7 +13,7 @@ from .flood_simulation import FloodSimulation
 
 class FloodNetworkFailure(AnalysisType):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.name = 'Flood Network Failure'
         self.description = (
             'Select an urban network and flood simulation result '
