@@ -14,8 +14,7 @@ COPY ./setup.py /opt/geoinsight-server/setup.py
 COPY ./manage.py /opt/geoinsight-server/manage.py
 COPY ./geoinsight /opt/geoinsight-server/geoinsight
 
-RUN pip install large-image[all] large-image-converter --find-links https://girder.github.io/large_image_wheels
-RUN pip install --editable /opt/geoinsight-server[dev]
+RUN pip install --find-links https://girder.github.io/large_image_wheels --editable /opt/geoinsight-server[dev]
 
 RUN if [ "$TASKS" = "1" ]; \
     then pip install --editable /opt/geoinsight-server[tasks]; \
