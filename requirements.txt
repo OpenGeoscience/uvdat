@@ -1,1 +1,2 @@
---find-links https://girder.github.io/large_image_wheels --editable .
+--find-links https://girder.github.io/large_image_wheels
+--editable .
