@@ -24,7 +24,7 @@ RECOVERY_MODES = [
 
 class NetworkRecovery(AnalysisType):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.name = 'Network Recovery'
         self.description = (
             'Provide a network failure state and select a '

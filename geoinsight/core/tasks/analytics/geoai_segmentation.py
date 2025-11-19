@@ -15,7 +15,7 @@ from .analysis_type import AnalysisType
 
 class GeoAISegmentation(AnalysisType):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.name = 'GeoAI Segmentation'
         self.description = (
             'Leverage GeoAI to detect objects in aerial imagery based on a text prompt'
