@@ -1,11 +1,10 @@
-import json
-import shapely
-
 from datetime import datetime
+import json
 from pathlib import Path
 
-from geoinsight.core.models import Network, Region
+import shapely
 
+from geoinsight.core.models import Network, Region
 
 OUTPUT_FOLDER = Path('sample_data/use_cases/new_york_energy/networks')
 
@@ -22,28 +21,28 @@ def perform_export():
             features = []
             for node in network.nodes.all():
                 geom = shapely.geometry.mapping(shapely.wkt.loads(node.location.wkt))
-                features.append(dict(
-                    geometry=geom,
-                    properties=dict(
-                        **node.metadata,
-                        county=zone.name
-                    )
-                ))
+                features.append(
+                    dict(geometry=geom, properties=dict(**node.metadata, county=zone.name))
+                )
             for edge in network.edges.all():
                 geom = shapely.geometry.mapping(shapely.wkt.loads(edge.line_geometry.wkt))
-                from_point = shapely.geometry.mapping(shapely.wkt.loads(edge.from_node.location.wkt))
+                from_point = shapely.geometry.mapping(
+                    shapely.wkt.loads(edge.from_node.location.wkt)
+                )
                 to_point = shapely.geometry.mapping(shapely.wkt.loads(edge.to_node.location.wkt))
-                features.append(dict(
-                    geometry=geom,
-                    properties=dict(
-                        **edge.metadata,
-                        from_point=from_point,
-                        to_point=to_point,
-                        county=zone.name
+                features.append(
+                    dict(
+                        geometry=geom,
+                        properties=dict(
+                            **edge.metadata,
+                            from_point=from_point,
+                            to_point=to_point,
+                            county=zone.name,
+                        ),
                     )
-                ))
+                )
             geodata = dict(
-                type="FeatureCollection",
+                type='FeatureCollection',
                 crs=dict(type='name', properties=dict(name='EPSG:4326')),
                 features=features,
             )

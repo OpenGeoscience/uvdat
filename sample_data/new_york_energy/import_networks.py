@@ -1,25 +1,19 @@
+from datetime import datetime
 import json
+from pathlib import Path
 import tempfile
 import zipfile
 
-from datetime import datetime
-from pathlib import Path
+from django.contrib.gis.geos import LineString, Point
 
-from django.contrib.gis.measure import D
-from django.contrib.gis.db.models.functions import Distance
-from django.contrib.gis.geos import Point, LineString
 from geoinsight.core.models import Network, NetworkEdge, NetworkNode, VectorData
 from geoinsight.core.tasks.networks import create_vector_features_from_network
-
 
 TOLERANCE_METERS = 15
 
 
 def get_metadata(feature):
-    return {
-        k: v for k, v in feature.get('properties', {}).items()
-        if k and v
-    }
+    return {k: v for k, v in feature.get('properties', {}).items() if k and v}
 
 
 def create_network(dataset, network_name, geodata):
@@ -32,7 +26,7 @@ def create_network(dataset, network_name, geodata):
         name=network_name,
         category='energy',
         vector_data=vector_data,
-        metadata=dict(name=network_name)
+        metadata=dict(name=network_name),
     )
     features = geodata.get('features')
     nodes = []
@@ -40,19 +34,23 @@ def create_network(dataset, network_name, geodata):
     for feature in features:
         geom = feature.get('geometry')
         if geom.get('type') == 'Point':
-            nodes.append(NetworkNode(
-                name=f'{network_name} {len(nodes)}',
-                network=network,
-                location=Point(*geom.get('coordinates')),
-                metadata=get_metadata(feature),
-            ))
+            nodes.append(
+                NetworkNode(
+                    name=f'{network_name} {len(nodes)}',
+                    network=network,
+                    location=Point(*geom.get('coordinates')),
+                    metadata=get_metadata(feature),
+                )
+            )
         elif geom.get('type') == 'LineString':
-            edges.append(NetworkEdge(
-                name=f'{network_name} {len(edges)}',
-                network=network,
-                line_geometry=LineString(*geom.get('coordinates')),
-                metadata=get_metadata(feature),
-            ))
+            edges.append(
+                NetworkEdge(
+                    name=f'{network_name} {len(edges)}',
+                    network=network,
+                    line_geometry=LineString(*geom.get('coordinates')),
+                    metadata=get_metadata(feature),
+                )
+            )
     NetworkNode.objects.bulk_create(nodes, batch_size=1000)
 
     # fill in node relationships on edges now that nodes exist
