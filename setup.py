@@ -42,7 +42,7 @@ setup(
         'celery==5.4.0',
         'channels[daphne]==4.2.0',  # added March 2025 for analytics
         'channels-redis==4.2.1',  # added March 2025 for analytics
-        'django==5.0.7',
+        'django==5.2.8',
         'django-configurations[database,email]==2.5.1',
         'django-extensions==3.2.3',
         'django-filter==24.3',
@@ -51,9 +51,9 @@ setup(
         'djangorestframework==3.15.2',
         'django-large-image==0.10.2',
         'drf-yasg==1.21.11',
-        # gdal 3.7 is the newest supported by Django:
-        # https://docs.djangoproject.com/en/5.0/ref/contrib/gis/install/geolibs/
-        'gdal==3.7.*',
+        # gdal 3.10 is the newest supported by Django:
+        # https://docs.djangoproject.com/en/5.2/ref/contrib/gis/install/geolibs/
+        'gdal==3.10.*',
         'large-image[gdal]==1.33.3',
         'large-image-converter==1.33.3',
         'matplotlib==3.9.2',  # for raster colormaps
