@@ -104,8 +104,8 @@ def download_all_deduped_vector_features(**kwargs):
 
     features = []
     for feature_set in feature_sets:
-        for _, feature_set in feature_set.items():
-            for feature in feature_set:
+        for _, fset in feature_set.items():
+            for feature in fset:
                 properties = feature['properties']
                 geometry = GEOSGeometry(json.dumps(feature['geometry']))
                 geoms = []
@@ -132,7 +132,7 @@ def download_all_deduped_vector_features(**kwargs):
 def create_consolidated_network(dataset, **kwargs):
     start = datetime.now()
     Network.objects.filter(vector_data__dataset=dataset).delete()
-    VectorData.objects.filter(dataset=network.dataset).delete()
+    VectorData.objects.filter(dataset=dataset).delete()
     gdf = download_all_deduped_vector_features(**kwargs)
 
     zones_dataset_name = kwargs.get('zones_dataset_name')
