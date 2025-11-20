@@ -50,7 +50,7 @@ setup(
         'django-oauth-toolkit==2.4.0',
         'djangorestframework==3.15.2',
         'django-large-image==0.10.2',
-        'drf-yasg==1.21.7',
+        'drf-yasg==1.21.11',
         # gdal 3.7 is the newest supported by Django:
         # https://docs.djangoproject.com/en/5.0/ref/contrib/gis/install/geolibs/
         'gdal==3.7.*',
