@@ -78,7 +78,7 @@ watch(filteredDatasets, expandAllGroups)
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
-    <v-card class="panel-content-inner">
+    <v-card class="panel-content-inner with-tag-filter">
       <v-expansion-panels
         v-if="props.datasets?.length"
         v-model="expandedGroups"
@@ -159,5 +159,8 @@ watch(filteredDatasets, expandAllGroups)
   padding: 0px 0px 4px 0px !important;
   min-height: 0px!important;
   font-size: inherit!important;
+}
+.panel-content-inner.with-tag-filter {
+  height: calc(100% - 75px);
 }
 </style>
