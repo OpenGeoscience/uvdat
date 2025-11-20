@@ -59,7 +59,7 @@ class NetworkRecovery(AnalysisType):
             'recovery_mode': RECOVERY_MODES,
         }
 
-    def run_task(self, project, **inputs):
+    def run_task(self, *, project, **inputs):
         result = TaskResult.objects.create(
             name='Network Recovery',
             task_type=self.db_value,

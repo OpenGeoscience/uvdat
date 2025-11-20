@@ -83,7 +83,7 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
         )
         if analysis_type_class is None or not analysis_type_class.is_enabled():
             return Response(f'Analysis type "{task_type}" not found', status=404)
-        result = analysis_type_class().run_task(project, **request.data)
+        result = analysis_type_class().run_task(project=project, **request.data)
         return Response(
             geoinsight_serializers.TaskResultSerializer(result).data,
             status=200,

@@ -29,7 +29,7 @@ class Dataset(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
-    def owner(self) -> User:
+    def owner(self) -> User | None:
         users = typing.cast(
             list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))
         )
@@ -59,7 +59,7 @@ class Dataset(models.Model):
         assign_perm('owner', user, self)
 
     @transaction.atomic()
-    def set_tags(self, tags: [str]):
+    def set_tags(self, tags: list[str]):
         for tag in tags:
             DatasetTag.objects.get_or_create(tag=tag)
         self.tags.set(DatasetTag.objects.filter(tag__in=tags))

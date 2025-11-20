@@ -16,7 +16,7 @@ class Command(BaseCommand):
         if client_id is None:
             raise CommandError('Environment variable VUE_APP_OAUTH_CLIENT_ID is not set.')
 
-        site = Site.objects.get_current()  # type: ignore
+        site = Site.objects.get_current()
         site.domain = 'geoinsight.demo'
         site.name = 'GeoInsight'
         site.save()
