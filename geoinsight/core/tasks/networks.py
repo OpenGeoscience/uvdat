@@ -38,7 +38,7 @@ def create_network(vector_data, network_options):
         # create one route line from all edges in this group
         if len(edges) < 1:
             continue
-        route = edges.unary_union
+        route = edges.union_all('unary')
         if route.geom_type == 'MultiLineString':
             route = shapely.ops.linemerge(route)
         route = shapely.extract_unique_points(route.segmentize(10))
