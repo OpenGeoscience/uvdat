@@ -21,7 +21,7 @@ module "django" {
     OGR_GEOJSON_MAX_OBJ_SIZE     = "500MB"
   }
   django_cors_origin_whitelist = [
-    "www.geoinsight.kitware.com"
+    "https://www.geoinsight.kitware.com"
   ]
 }
 
