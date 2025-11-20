@@ -28,7 +28,6 @@ class GeoInsightMixin(ConfigMixin):
         environ_prefix='DJANGO',
         environ_required=True,
         engine='django.contrib.gis.db.backends.postgis',
-        conn_max_age=600,
     )
 
     # Override default signup sheet to ask new users for first and last name
@@ -110,6 +109,12 @@ class HerokuProductionConfiguration(GeoInsightMixin, HerokuProductionBaseConfigu
         environ_prefix=None,
         environ_required=True,
         engine='django.contrib.gis.db.backends.postgis',
-        conn_max_age=600,
         ssl_require=True,
+        options=dict(
+            pool=dict(
+                # We have 20 available postgres connections on our service tier, and some
+                # will be required by the workers and maybe other miscellaneous access.
+                max_size=12,
+            )
+        ),
     )
