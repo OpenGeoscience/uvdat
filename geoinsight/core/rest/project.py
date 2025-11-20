@@ -34,14 +34,13 @@ class ProjectViewSet(ModelViewSet):
 
         # Only the owner can modify project permissions
         project: Project = self.get_object()
-        if not user.has_perm('owner', project):  # type: ignore
+        if not user.has_perm('owner', project):
             return Response(status=403)
 
         serializer = ProjectPermissionsSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
-        project: Project = self.get_object()
         project.set_permissions(
             owner=User.objects.get(id=data['owner_id']),
             collaborator=list(User.objects.filter(id__in=data['collaborator_ids'])),

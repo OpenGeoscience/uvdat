@@ -27,9 +27,7 @@ def test_rest_dataset_networks(authenticated_api_client, project: Project, netwo
 
     data: list[dict] = resp.json()
     assert len(data) == 1
-
-    data: dict = data[0]
-    assert len(data['nodes']) == 2
+    assert len(data[0]['nodes']) == 2
 
 
 @pytest.mark.django_db

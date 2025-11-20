@@ -48,7 +48,7 @@ class FloodSimulation(AnalysisType):
             'annual_probability': [dict(min=0, max=1, step=0.01)],
         }
 
-    def run_task(self, project, **inputs):
+    def run_task(self, *, project, **inputs):
         result = TaskResult.objects.create(
             name='Flood Simulation',
             task_type=self.db_value,
@@ -193,7 +193,7 @@ def flood_simulation(result_id):
                     gw_percentile=gw_percentile,
                     annual_probability=annual_probability,
                 ),
-                uploaded=datetime.datetime.now(datetime.UTC).isoformat(),
+                uploaded=datetime.datetime.now(datetime.timezone.utc).isoformat(),
             )
             name_match = Dataset.objects.filter(name__icontains=name)
             if name_match.count() > 0:

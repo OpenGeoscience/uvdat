@@ -21,7 +21,7 @@ class FileItemViewSet(ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        project_id: str = self.request.query_params.get('project')
+        project_id: str | None = self.request.query_params.get('project')
         if project_id is None or not project_id.isdigit():
             return qs
 

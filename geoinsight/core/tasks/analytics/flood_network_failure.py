@@ -41,7 +41,7 @@ class FloodNetworkFailure(AnalysisType):
             'station_radius_meters': [10, 15, 20, 25, 30, 35, 40, 45, 50],
         }
 
-    def run_task(self, project, **inputs):
+    def run_task(self, *, project, **inputs):
         result = TaskResult.objects.create(
             name='Flood Network Failure',
             task_type=self.db_value,

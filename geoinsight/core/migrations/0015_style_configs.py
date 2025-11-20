@@ -5,6 +5,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 import geoinsight
+import geoinsight.core.models.styles
 
 
 class Migration(migrations.Migration):

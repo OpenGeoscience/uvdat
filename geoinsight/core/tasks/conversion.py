@@ -67,7 +67,7 @@ def get_cog_path(file):
 
 
 def convert_files(*files, file_item=None, combine=False):
-    source_projection = 4326
+    source_projection = 'epsg:4326'
     geodata_set = []
     cog_set = []
     metadata = dict(source_filenames=[])

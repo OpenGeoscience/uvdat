@@ -6,7 +6,7 @@ from .geoai_segmentation import GeoAISegmentation
 from .network_recovery import NetworkRecovery
 from .tile2net_segmentation import Tile2NetSegmentation
 
-analysis_types: list[AnalysisType] = [
+analysis_types: list[type[AnalysisType]] = [
     FloodSimulation,
     FloodNetworkFailure,
     NetworkRecovery,
@@ -15,4 +15,4 @@ analysis_types: list[AnalysisType] = [
     CreateRoadNetwork,
 ]
 
-__all__ = list(analysis_types)
+__all__ = [analysis_type.__name__ for analysis_type in analysis_types]
