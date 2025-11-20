@@ -1,6 +1,6 @@
 locals {
   www_env_vars = {
-    VITE_APP_OAUTH_CLIENT_ID = "cBmD6D6F2YAmMWHNQZFPUr4OpaXVpW5w4Thod6Kj"
+    VITE_APP_OAUTH_CLIENT_ID = "scr1kjE9PnOECk6tllBpPna4uuVUCAoyxspG6M5B"
     VITE_APP_API_ROOT        = "https://${module.django.fqdn}/"
     VITE_APP_OAUTH_API_ROOT  = "https://${module.django.fqdn}/oauth/"
   }
