@@ -61,6 +61,7 @@ setup(
         'networkx==3.3',
         'numpy==2.2.6',
         'pooch[progress]==1.8.2',
+        'psycopg[pool]',
         'pyshp==2.3.1',
         'rasterio==1.3.10',
         'urllib3==1.26.15',
