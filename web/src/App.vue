@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watch, onMounted, computed } from "vue";
 import { oauthClient } from "./api/auth";
-import Map from "./components/map/Map.vue";
+import MapWrapper from "./components/map/MapWrapper.vue";
 import SideBars from "./components/sidebars/SideBars.vue";
 import ControlsBar from "./components/ControlsBar.vue";
 
@@ -71,7 +71,7 @@ watch(() => appStore.currentUser, onReady);
         @mousemove="panelStore.dragPanel"
         @mouseup="panelStore.stopDrag"
       >
-        <Map />
+        <MapWrapper />
         <SideBars />
         <ControlsBar />
       </div>
