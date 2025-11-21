@@ -42,19 +42,27 @@ const mapLayersB = computed(() => {
 </script>
 
 <template>
-    <Map v-show="!compareStore.isComparing" />
-    <LayerCompare v-if="compareStore.isComparing && mapStyle"
-        :map-style="mapStyle"
-        :map-layers-a="mapLayersA"
-        :map-layers-b="mapLayersB"
-        :center="mapCenter"
-        :zoom="mapZoom"
-        :orientation="compareStore.orientation"
-        class="map"
-    />
+    <div class="map-wrapper">
+        <Map v-show="!compareStore.isComparing" />
+        <LayerCompare v-if="compareStore.isComparing && mapStyle"
+            :map-style="mapStyle"
+            :map-layers-a="mapLayersA"
+            :map-layers-b="mapLayersB"
+            :center="mapCenter"
+            :zoom="mapZoom"
+            :orientation="compareStore.orientation"
+            class="map"
+        />
+    </div>
 </template>
 
 <style scoped>
+.map-wrapper {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
 .map {
   height: 100%;
   width: 100%;
