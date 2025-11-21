@@ -2,8 +2,10 @@
 import { computed, ref } from "vue";
 
 import { usePanelStore, useProjectStore } from "@/store";
+import { useMapCompareStore } from "@/store/compare";
 const panelStore = usePanelStore();
 const projectStore = useProjectStore();
+const compareStore = useMapCompareStore();
 
 const props = defineProps<{
   id: string;
@@ -103,6 +105,14 @@ function panelUpdated() {
               color="primary"
               @mousedown="projectStore.projectConfigMode = 'existing'"
             />
+            <v-icon
+              v-if="panel.id === 'layers' && projectStore.currentProject"
+              v-tooltip="'Compare Layers'"
+              icon="mdi-compare"
+              :color="compareStore.isComparing ? 'primary' : ''"
+              @mousedown="compareStore.isComparing = !compareStore.isComparing"
+            />
+
             <v-icon
               :icon="panel.collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up'"
               v-tooltip="panel.collapsed ? 'Expand' : 'Collapse'"

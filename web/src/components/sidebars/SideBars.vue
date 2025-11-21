@@ -10,12 +10,15 @@ import ChartsPanel from "@/components/sidebars/ChartsPanel.vue";
 import AnalyticsPanel from "@/components/sidebars/AnalyticsPanel.vue";
 import DatasetsPanel from "@/components/sidebars/DatasetsPanel.vue";
 import LayersPanel from "@/components/sidebars/LayersPanel.vue";
+import CompareLayersPanel from "./CompareLayersPanel.vue";
 import NetworksPanel from "@/components/sidebars/NetworksPanel.vue";
 
 import { useAppStore, usePanelStore, useProjectStore } from "@/store";
+import { useMapCompareStore } from "@/store/compare";
 const appStore = useAppStore();
 const panelStore = usePanelStore();
 const projectStore = useProjectStore();
+const compareStore = useMapCompareStore();
 
 
 const version = import.meta.env.VITE_APP_VERSION;
@@ -90,7 +93,8 @@ watch(darkMode, () => {
         <FloatingPanel v-for="panel, index in panelStore.panelArrangement.filter((p) => p.dock == 'left')"
           :id="panel.id" :bottom="index == panelStore.panelArrangement.filter((p) => p.dock == 'left').length - 1">
           <DatasetsPanel v-if="panel.id === 'datasets'" :datasets="projectStore.availableDatasets" />
-          <LayersPanel v-else-if="panel.id === 'layers'" />
+          <LayersPanel v-else-if="panel.id === 'layers' && !compareStore.isComparing" />
+          <CompareLayersPanel v-else-if="panel.id === 'layers' && compareStore.isComparing" />
           <ChartsPanel v-else-if="panel.id === 'charts'" />
           <NetworksPanel v-else-if="panel.id === 'networks'" />
           <AnalyticsPanel v-else-if="panel.id === 'analytics'" />
