@@ -29,7 +29,7 @@ class Tile2NetSegmentation(AnalysisType):
 
     @classmethod
     def is_enabled(cls):
-        return settings.ENABLE_TASK_TILE2NET_SEGMENTATION
+        return settings.GEOINSIGHT_ENABLE_TASK_TILE2NET_SEGMENTATION
 
     def get_input_options(self):
         return {'aerial_imagery': RasterData.objects.filter(dataset__category='imagery')}
