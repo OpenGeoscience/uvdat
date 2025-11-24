@@ -52,7 +52,4 @@ export default defineConfig({
             transformMixedEsModules: true,
         },
     },
-    optimizeDeps: {
-        include: ['vue-maplibre-compare'],
-    },
 })

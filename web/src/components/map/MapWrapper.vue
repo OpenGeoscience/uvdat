@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { useMapStore } from "@/store";
+import { useAppStore, useMapStore } from "@/store";
 import { useMapCompareStore } from "@/store/compare";
 import { computed, ref, watch } from "vue";
 import Map from "./Map.vue";
@@ -8,21 +8,54 @@ import { LayerCompare } from "vue-maplibre-compare";
 import { oauthClient } from "@/api/auth";
 import 'vue-maplibre-compare/dist/vue-maplibre-compare.css'
 
+interface MapStats {
+    center: [number, number];
+    zoom: number;
+    bearing: number;
+    pitch: number;
+}
+
 const mapStore = useMapStore();
-const compareStore = useMapCompareStore();;
+const compareStore = useMapCompareStore();
+const appStore = useAppStore();
 
 const mapStyle = ref<ReturnType<maplibregl.Map['getStyle']> | undefined>(undefined);
 mapStore.map?.getCenter()
 const mapCenter = ref<[number, number]>([0,0]);
 const mapZoom = ref<number>(0);
+const tempStats: MapStats = {
+    center: mapStore.map?.getCenter().toArray() as [number, number],
+    zoom: mapStore.map?.getZoom() as number,
+    bearing: mapStore.map?.getBearing() as number,
+    pitch: mapStore.map?.getPitch() as number,
+};
 const computedCompare = computed(() => compareStore.isComparing);
 watch(computedCompare, (newVal) => {
     if (newVal && mapStore.map) {
         mapStyle.value = mapStore.getMap()?.getStyle();
-        mapCenter.value = mapStore.getMap()?.getCenter().toArray() as [number, number];
-        mapZoom.value = mapStore.getMap()?.getZoom();
+        tempStats.center = mapStore.getMap()?.getCenter().toArray() as [number, number];
+        tempStats.zoom = mapStore.getMap()?.getZoom() as number;
+        tempStats.bearing = mapStore.getMap()?.getBearing() as number;
+        tempStats.pitch = mapStore.getMap()?.getPitch() as number;
+        mapCenter.value = tempStats.center;
+        mapZoom.value = tempStats.zoom;
+    } else if (!newVal && mapStore.map) {
+        mapStore.getMap()?.jumpTo({
+            center: tempStats.center,
+            zoom: tempStats.zoom,
+            bearing: tempStats.bearing,
+            pitch: tempStats.pitch,
+        });
     }
 });
+
+function updateStats(event: { center: [number, number], zoom: number, bearing: number, pitch: number }) {
+    console.log(event);
+    mapCenter.value = event.center;
+    mapZoom.value = event.zoom;
+    tempStats.bearing = event.bearing;
+    tempStats.pitch = event.pitch;  
+}
 
 function getBaseLayerSourceIds() {
     const map = mapStore.getMap();
@@ -80,6 +113,14 @@ const mapLayersB = computed(() => {
                 :zoom="mapZoom"
                 :orientation="compareStore.orientation"
                 :headers="oauthClient.authHeaders"
+                :swiper-options="{
+                    darkMode: appStore.theme === 'dark',
+                    orientation: compareStore.orientation,
+                }"
+                @panend="updateStats($event)"
+                @zoomend="updateStats($event)"
+                @pitchend="updateStats($event)"
+                @rotateend="updateStats($event)"
             />
         </div>
     </div>
