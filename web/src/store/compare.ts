@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useLayerStore } from './layer';
+import { cloneDeep } from 'lodash';
 
 interface DisplayCompareMapLayerItem {
     displayName: string;
@@ -28,13 +29,19 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
             mapLayerB: [],
         };
         layerStore.selectedLayers.forEach(layer => {
-            const layerItem: DisplayCompareMapLayerItem = {
+            const layerIds = layerStore.getMapLayersFromLayerObject(layer).flat();
+            const layerItemA: DisplayCompareMapLayerItem = {
                 displayName: layer.name,
                 state: layer.visible,
-                layerIds: layerStore.getMapLayersFromLayerObject(layer).flat()
+                layerIds: [...layerIds]
             };
-            displayLayers.mapLayerA.push(layerItem);
-            displayLayers.mapLayerB.push(layerItem);
+            const layerItemB: DisplayCompareMapLayerItem = {
+                displayName: layer.name,
+                state: layer.visible,
+                layerIds: [...layerIds]
+            };
+            displayLayers.mapLayerA.push(layerItemA);
+            displayLayers.mapLayerB.push(layerItemB);
         });
         return displayLayers;
     };
@@ -44,9 +51,20 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         }
     });
 
+    const setVisibility = (map: 'A' | 'B', displayName: string, visible=true) => {
+        const copyLayers = cloneDeep(displayLayers.value);
+        const layerItems = (map === 'A' ? copyLayers.mapLayerA : copyLayers.mapLayerB);
+        const layerItemIndex = layerItems.findIndex((l) => l.displayName === displayName);
+        if (layerItemIndex !== -1) {
+            layerItems[layerItemIndex].state = visible;
+        }
+        displayLayers.value = copyLayers;
+    };
+    
     return {
         isComparing,
         orientation,
         displayLayers,  
+        setVisibility,
     }
 });

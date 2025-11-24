@@ -9,12 +9,6 @@ const mapALayerItems = computed(() => compareStore.displayLayers.mapLayerA);
 const mapBLayerItems = computed(() => compareStore.displayLayers.mapLayerB);
 const expansionPanelsOpen = ref<string[]>(['A', 'B']);
 
-const setVisibility = (map: 'A' | 'B', displayName: string, visible=true) => {
-    const layerItem = (map === 'A' ? mapALayerItems.value : mapBLayerItems.value).find((l) => l.displayName === displayName);
-    if (layerItem) {
-        layerItem.state = visible;
-    }
-};
 
 </script>
 
@@ -32,11 +26,11 @@ const setVisibility = (map: 'A' | 'B', displayName: string, visible=true) => {
                             density="compact"
                         >
                             <div class="panel-content-inner">
-                                <v-list-item class="layer" v-for="element in mapALayerItems" :key="`A_${element.displayName}`">
+                                <v-list-item class="layer" v-for="element in mapALayerItems" :key="`A_${element.displayName}_${element.state}`">
                                     <template v-slot:prepend>
                                         <v-checkbox-btn
                                             :model-value="element.state"
-                                            @click="() => setVisibility('A', element.displayName, !element.state)"
+                                            @update:model-value="compareStore.setVisibility('A', element.displayName, $event)"
                                             style="display: inline"
                                         />
                                     </template>
@@ -56,11 +50,11 @@ const setVisibility = (map: 'A' | 'B', displayName: string, visible=true) => {
                             density="compact"
                         >
                             <div class="panel-content-inner">
-                                <v-list-item class="layer" v-for="element in mapBLayerItems" :key="`B_${element.displayName}`">
+                                <v-list-item class="layer" v-for="element in mapBLayerItems" :key="`B_${element.displayName}_${element.state}`">
                                     <template v-slot:prepend>
                                         <v-checkbox-btn
                                             :model-value="element.state"
-                                            @click="() => setVisibility('B', element.displayName, !element.state)"
+                                            @update:model-value="compareStore.setVisibility('B', element.displayName, $event)"
                                             style="display: inline"
                                         />
                                     </template>
