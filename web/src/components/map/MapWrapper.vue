@@ -7,7 +7,8 @@ import Map from "./Map.vue";
 import { LayerCompare } from "vue-maplibre-compare";
 import { oauthClient } from "@/api/auth";
 import 'vue-maplibre-compare/dist/vue-maplibre-compare.css'
-
+import { ResourceType } from "maplibre-gl";
+import { baseURL } from "@/api/auth";
 interface MapStats {
     center: [number, number];
     zoom: number;
@@ -18,6 +19,18 @@ interface MapStats {
 const mapStore = useMapStore();
 const compareStore = useMapCompareStore();
 const appStore = useAppStore();
+
+
+const transformRequest = (url: string, _resourceType?: ResourceType) => {
+    // Only add auth headers to our own tile requests
+    if (url.startsWith(baseURL)) {
+        return {
+            url,
+            headers: oauthClient?.authHeaders,
+        };
+    }
+    return { url };
+}
 
 const mapStyle = ref<ReturnType<maplibregl.Map['getStyle']> | undefined>(undefined);
 mapStore.map?.getCenter()
@@ -40,6 +53,8 @@ watch(computedCompare, (newVal) => {
         mapCenter.value = tempStats.center;
         mapZoom.value = tempStats.zoom;
     } else if (!newVal && mapStore.map) {
+        console.log('exiting compare, jumping to temp stats');
+        console.log(tempStats);
         mapStore.getMap()?.jumpTo({
             center: tempStats.center,
             zoom: tempStats.zoom,
@@ -50,9 +65,8 @@ watch(computedCompare, (newVal) => {
 });
 
 function updateStats(event: { center: [number, number], zoom: number, bearing: number, pitch: number }) {
-    console.log(event);
-    mapCenter.value = event.center;
-    mapZoom.value = event.zoom;
+    tempStats.center = event.center;
+    tempStats.zoom = event.zoom;
     tempStats.bearing = event.bearing;
     tempStats.pitch = event.pitch;  
 }
@@ -103,7 +117,10 @@ const mapLayersB = computed(() => {
 
 <template>
     <div class="map-wrapper">
-        <Map v-show="!compareStore.isComparing" />
+        <Map
+            v-show="!compareStore.isComparing"
+            :transform-request="transformRequest"
+        />
         <div v-if="compareStore.isComparing && mapStyle" class="layer-compare-wrapper">
             <LayerCompare
                 :map-style="mapStyle"
@@ -112,7 +129,7 @@ const mapLayersB = computed(() => {
                 :center="mapCenter"
                 :zoom="mapZoom"
                 :orientation="compareStore.orientation"
-                :headers="oauthClient.authHeaders"
+                :transform-request="transformRequest"
                 :swiper-options="{
                     darkMode: appStore.theme === 'dark',
                     orientation: compareStore.orientation,
