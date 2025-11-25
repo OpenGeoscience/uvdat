@@ -53,8 +53,6 @@ watch(computedCompare, (newVal) => {
         mapCenter.value = tempStats.center;
         mapZoom.value = tempStats.zoom;
     } else if (!newVal && mapStore.map) {
-        console.log('exiting compare, jumping to temp stats');
-        console.log(tempStats);
         mapStore.getMap()?.jumpTo({
             center: tempStats.center,
             zoom: tempStats.zoom,
