@@ -51,6 +51,15 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         }
     });
 
+    const setAllVisibility = (map: 'A' | 'B', visible=true) => {
+        const copyLayers = cloneDeep(displayLayers.value);
+        const layerItems = (map === 'A' ? copyLayers.mapLayerA : copyLayers.mapLayerB);
+        layerItems.forEach((layer) => {
+            layer.state = visible;
+        });
+        displayLayers.value = copyLayers;
+    }
+
     const setVisibility = (map: 'A' | 'B', displayName: string, visible=true) => {
         const copyLayers = cloneDeep(displayLayers.value);
         const layerItems = (map === 'A' ? copyLayers.mapLayerA : copyLayers.mapLayerB);
@@ -66,5 +75,6 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         orientation,
         displayLayers,  
         setVisibility,
+        setAllVisibility,
     }
 });

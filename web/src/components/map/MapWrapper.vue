@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { useAppStore, useMapStore } from "@/store";
+import { useAppStore, useLayerStore, useMapStore } from "@/store";
 import { useMapCompareStore } from "@/store/compare";
 import { computed, ref, watch } from "vue";
 import Map from "./Map.vue";
@@ -9,6 +9,8 @@ import { oauthClient } from "@/api/auth";
 import 'vue-maplibre-compare/dist/vue-maplibre-compare.css'
 import { ResourceType } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
+import CompareLayersPanel from "../sidebars/CompareLayersPanel.vue";
+import { map } from "lodash";
 interface MapStats {
     center: [number, number];
     zoom: number;
@@ -19,6 +21,7 @@ interface MapStats {
 const mapStore = useMapStore();
 const compareStore = useMapCompareStore();
 const appStore = useAppStore();
+const layerStore = useLayerStore();
 
 
 const transformRequest = (url: string, _resourceType?: ResourceType) => {
@@ -62,6 +65,7 @@ watch(computedCompare, (newVal) => {
     }
 });
 
+
 function updateStats(event: { center: [number, number], zoom: number, bearing: number, pitch: number }) {
     tempStats.center = event.center;
     tempStats.zoom = event.zoom;
@@ -80,6 +84,13 @@ function getBaseLayerSourceIds() {
 const mapLayersA = computed(() => {
     const flatList: string[] = [];
     const baseLayerSourceIds = getBaseLayerSourceIds();
+    layerStore.selectedLayers.forEach((layer) => {
+        if (compareStore.displayLayers.mapLayerA.find((l) => l.displayName === layer.name)?.state === false) {
+            return;
+        }
+        const mapLayerIds = layerStore.getMapLayersFromLayerObject(layer);
+        flatList.push(...mapLayerIds);
+    });
     if (mapStore.showMapBaseLayer) {
     baseLayerSourceIds.forEach((sourceId: string) => {
             if (sourceId) {
@@ -87,16 +98,18 @@ const mapLayersA = computed(() => {
             }
         });
     }
-    compareStore.displayLayers.mapLayerA.forEach((layer) => {
-        if (layer.state) {
-            flatList.push(...layer.layerIds);
-        }
-    });
     return flatList;
 });
 const mapLayersB = computed(() => {
     const flatList: string[] = [];
     const baseLayerSourceIds = getBaseLayerSourceIds();
+    layerStore.selectedLayers.forEach((layer) => {
+        if (compareStore.displayLayers.mapLayerB.find((l) => l.displayName === layer.name)?.state === false) {
+            return;
+        }
+        const mapLayerIds = layerStore.getMapLayersFromLayerObject(layer);
+        flatList.push(...mapLayerIds);
+    });
     if (mapStore.showMapBaseLayer) {
         baseLayerSourceIds.forEach((sourceId: string) => {
             if (sourceId) {
@@ -104,11 +117,6 @@ const mapLayersB = computed(() => {
             }
         });
     }
-    compareStore.displayLayers.mapLayerB.forEach((layer) => {
-        if (layer.state) {
-            flatList.push(...layer.layerIds);
-        }
-    });
     return flatList;
 });
 </script>
@@ -124,14 +132,16 @@ const mapLayersB = computed(() => {
                 :map-style="mapStyle"
                 :map-layers-a="mapLayersA"
                 :map-layers-b="mapLayersB"
-                :center="mapCenter"
-                :zoom="mapZoom"
-                :orientation="compareStore.orientation"
+                :camera="{
+                    center: mapCenter,
+                    zoom: mapZoom,
+                }"
                 :transform-request="transformRequest"
                 :swiper-options="{
-                    darkMode: appStore.theme === 'dark',
+                    darkMode: appStore.theme !== 'dark',
                     orientation: compareStore.orientation,
                 }"
+                layer-order="bottommost"
                 @panend="updateStats($event)"
                 @zoomend="updateStats($event)"
                 @pitchend="updateStats($event)"
