@@ -129,6 +129,7 @@ function takeScreenshot(save: boolean) {
   background-color: rgb(var(--v-theme-surface));
   display: flex;
   border-radius: 8px;
+  z-index: 3;
 }
 
 .controls-bar.shifted {

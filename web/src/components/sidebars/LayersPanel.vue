@@ -8,8 +8,24 @@ import DetailView from "../DetailView.vue";
 import SliderNumericInput from '../SliderNumericInput'
 
 import { useLayerStore, useMapStore } from "@/store";
+import { useMapCompareStore } from "@/store/compare";
 const layerStore = useLayerStore();
 const mapStore = useMapStore()
+const compareStore = useMapCompareStore();
+const isComparing = computed(() => compareStore.isComparing);
+const orientation = computed(() => compareStore.orientation);
+const mapALayerItems = computed(() => compareStore.displayLayers.mapLayerA);
+const mapBLayerItems = computed(() => compareStore.displayLayers.mapLayerB);
+const visibilityCompareMap = computed(() => {
+    const visibilityMap: { A: Record<string, boolean>, B: Record<string, boolean> } = {A: {}, B: {}};
+    mapALayerItems.value.forEach((layer) => {
+        visibilityMap.A[layer.displayName] = layer.state;
+    });
+    mapBLayerItems.value.forEach((layer) => {
+        visibilityMap.B[layer.displayName] = layer.state;
+    });
+    return visibilityMap;
+});
 
 const searchText = ref<string | undefined>();
 const filteredLayers = computed(() => {
@@ -73,7 +89,9 @@ function setLayerActive(layer: Layer, active: boolean) {
         />
         <v-card class="panel-content-inner">
             <div class="layers-header" v-if="filteredLayers?.length">
+                <!--TODO: Once support for removing is implemented add this backin-->
                 <v-icon
+                    v-if="!isComparing"
                     color="primary"
                     icon="mdi-close"
                     size="small"
@@ -81,10 +99,25 @@ function setLayerActive(layer: Layer, active: boolean) {
                     class="secondary-button"
                 />
                 <v-checkbox-btn
+                    v-if="!isComparing"
                     :model-value="layerStore.selectedLayers.every((l: Layer) => l.visible)"
                     @click="setVisibility(layerStore.selectedLayers, !allLayersVisible)"
                     style="display: inline"
                 />
+                <span v-if="isComparing">
+                    <v-checkbox-btn
+                        v-tooltip="`${ orientation === 'vertical' ? 'Left' : 'Top' } Map All Visibility`"
+                        :model-value="Object.values(visibilityCompareMap.A).every((v) => v === true)"
+                        @update:model-value="compareStore.setAllVisibility('A', $event)"
+                        style="display: inline"
+                    />
+                    <v-checkbox-btn
+                        v-tooltip="`${ orientation === 'vertical' ? 'Right' : 'Bottom' } Map All Visibility`"
+                        :model-value="Object.values(visibilityCompareMap.B).every((v) => v === true)"
+                        @update:model-value="compareStore.setAllVisibility('B', $event)"
+                        style="display: inline"
+                    />
+                </span>
             </div>
             <v-list
                 v-if="filteredLayers?.length"
@@ -98,7 +131,9 @@ function setLayerActive(layer: Layer, active: boolean) {
                         <div>
                             <v-list-item class="layer" :active="activeLayer == element">
                                 <template v-slot:prepend>
+                                    <!--TODO: Once support for removing is implemented add this backin-->
                                     <v-icon
+                                        v-if="!isComparing"
                                         color="primary"
                                         icon="mdi-close"
                                         size="small"
@@ -106,10 +141,25 @@ function setLayerActive(layer: Layer, active: boolean) {
                                         class="secondary-button"
                                     />
                                     <v-checkbox-btn
+                                        v-if="!isComparing"
                                         :model-value="element.visible"
                                         @click="() => setVisibility([element], !element.visible)"
                                         style="display: inline"
                                     />
+                                    <span v-if="isComparing">
+                                        <v-checkbox-btn
+                                            v-tooltip="`${ orientation.value === 'vertical' ? 'Left' : 'Top' } Map Visibility`"
+                                            :model-value="visibilityCompareMap.A[element.name]"
+                                            @update:model-value="compareStore.setVisibility('A', element.name, $event)"
+                                            style="display: inline"
+                                        />
+                                        <v-checkbox-btn
+                                            v-tooltip="`${ orientation.value === 'vertical' ? 'Right' : 'Bottom' } Map Visibility`"
+                                            :model-value="visibilityCompareMap.B[element.name]"
+                                            @update:model-value="compareStore.setVisibility('B', element.name, $event)"
+                                            style="display: inline"
+                                        />
+                                    </span>
                                 </template>
                                 {{ element.name }}
                                 <template v-slot:append>
@@ -120,7 +170,8 @@ function setLayerActive(layer: Layer, active: boolean) {
                                         <v-icon icon="mdi-dots-horizontal"/>
                                         <v-icon :icon="element.hideFrameMenu ? 'mdi-menu-down' :'mdi-menu-up'" />
                                     </span>
-                                    <LayerStyle :layer="element" :activeLayer="activeLayer" @setLayerActive="(v: boolean) => setLayerActive(element, v)"/>
+                                    <!--TODO: Once support for style changes is implemented add this backin-->
+                                    <LayerStyle v-if="!isComparing" :layer="element" :activeLayer="activeLayer" @setLayerActive="(v: boolean) => setLayerActive(element, v)"/>
                                     <span class="v-icon material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>
