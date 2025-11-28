@@ -1,36 +1,156 @@
-### Initial Setup
+# Setup Guide
 
-1. Prepare the web client with the following steps:
+This guide walks you through setting up GeoInsight for local development using Docker Compose.
 
-   1. Run `cp web/.env.example web/.env`.
-   2. Install client dependencies by running `cd web && npm i`.
+## Prerequisites
 
-2. Run the docker containers with `docker compose up`. Be sure to check that all containers were able to start and stay running successfully before continuing.
-3. While the containers are up, run the following commands in a separate terminal to prepare the database:
+- [Docker](https://docs.docker.com/get-docker/) (v20.10+)
+- [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [npm](https://www.npmjs.com/)
 
-   a. Run `docker compose run --rm django ./manage.py migrate`.
+---
 
-   b. Run `docker compose run --rm django ./manage.py createsuperuser`
-   and follow the prompts to create your own user.
+## Initial Setup
 
-   c. Run `docker compose run --rm django ./manage.py makeclient` to create a client Application object for authentication.
+### 1. Prepare the Web Client
 
-   d. Run `docker compose run --rm django ./manage.py ingest {JSON file}` to use sample data.
+```bash
+# Copy environment configuration
+cp web/.env.example web/.env
 
-      - The JSON file can either be `multiframe_test.json`, `boston_floods.json`, `la_wildfires.json` or `./new_york_energy/data.json`
+# Install frontend dependencies
+cd web && npm i
+cd ..
+```
 
-### Run Application
+### 2. Build and Start Docker Containers
 
-1. Run `docker compose up`.
-2. You can access the admin page at port 8000: http://localhost:8000/admin/
-3. The user interface is on port **8080**: http://localhost:8080/
-4. When finished, use `Ctrl+C` to stop the docker compose command.
+```bash
+docker compose build
+docker compose up
+```
 
-### Application Maintenance
+> **Note:** Ensure all containers start and stay running before continuing. Check the logs for any errors.
 
-Occasionally, new package dependencies or schema changes will necessitate
-maintenance. To non-destructively update your development stack at any time:
+### 3. Initialize the Database
 
-1. Run `docker compose pull`
-2. Run `docker compose build --pull --no-cache`
-3. Run `docker compose run --rm django ./manage.py migrate`
+While the containers are running, open a **separate terminal** and run:
+
+```bash
+# Apply database migrations
+docker compose run --rm django ./manage.py migrate
+
+# Create an admin user
+docker compose run --rm django ./manage.py createsuperuser
+
+# Create OAuth client for authentication
+docker compose run --rm django ./manage.py makeclient
+```
+
+### 4. Load Sample Data (Optional)
+
+```bash
+docker compose run --rm django ./manage.py ingest {JSON_FILE}
+```
+
+Available sample datasets:
+- `sample_data/multiframe_test.json`
+- `sample_data/boston_floods.json`
+- `sample_data/la_wildfires.json`
+- `sample_data/new_york_energy/data.json`
+
+---
+
+## Running the Application
+
+### Start the Services
+
+**Default (CPU-only):**
+```bash
+docker compose up
+```
+
+**With GPU acceleration (NVIDIA systems only):**
+```bash
+docker compose up --scale celery=0 --profile gpu
+```
+
+> **Note:** GPU mode requires NVIDIA drivers and [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) runtime. This enables accelerated tile2net inference.
+
+### Access Points
+
+| Service | URL |
+|---------|-----|
+| Admin Panel | http://localhost:8000/admin/ |
+| User Interface | http://localhost:8080/ |
+
+### Stop the Services
+
+Press `Ctrl+C` in the terminal running `docker compose up`, or run:
+
+```bash
+docker compose down
+```
+
+---
+
+## Application Maintenance
+
+When new package dependencies or database schema changes occur, update your development environment:
+
+```bash
+# Pull latest base images
+docker compose pull
+
+# Rebuild containers (no cache)
+docker compose build --pull --no-cache
+
+# Apply any new migrations
+docker compose run --rm django ./manage.py migrate
+```
+
+---
+
+## Troubleshooting
+
+### Container Build Failures
+
+If you encounter build errors related to Python packages:
+
+1. **Clear Docker build cache:**
+   ```bash
+   docker compose build --no-cache
+   ```
+
+2. **Prune unused Docker resources:**
+   ```bash
+   docker system prune -a
+   ```
+
+### Database Connection Issues
+
+Ensure PostgreSQL is running and healthy:
+
+```bash
+docker compose ps
+docker compose logs postgres
+```
+
+### Port Conflicts
+
+If ports 8000, 8080, 5432, or 9000 are in use, modify the port mappings in `docker-compose.override.yml`.
+
+### GPU Not Available
+
+If you see an error like:
+```
+Error response from daemon: could not select device driver "nvidia" with capabilities: [[gpu]]
+```
+
+This means GPU mode was requested but NVIDIA drivers aren't available. Use the default CPU mode instead:
+```bash
+docker compose up
+```
+
+GPU acceleration is optional and only needed for faster tile2net inference.
