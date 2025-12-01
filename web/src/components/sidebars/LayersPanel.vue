@@ -91,7 +91,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                 density="compact"
             >
                 <draggable
-                    v-model="layerStore.selectedLayers"
+                    v-model="filteredLayers"
                     item-key="id"
                 >
                     <template #item="{ element }">
