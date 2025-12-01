@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import ssl
 
 from composed_configuration import (
     ComposedConfiguration,
@@ -47,7 +48,11 @@ class GeoInsightMixin(ConfigMixin):
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
             'CONFIG': {
                 # Use /1 for channels backend, as /0 is used by celery
-                'hosts': [f'{os.environ["REDIS_URL"]}/1'],
+                'hosts': [
+                    {
+                        'address': f'{os.environ["REDIS_URL"]}/1',
+                    }
+                ],
             },
         }
     }
@@ -118,3 +123,10 @@ class HerokuProductionConfiguration(GeoInsightMixin, HerokuProductionBaseConfigu
             )
         ),
     )
+
+    @staticmethod
+    def mutate_configuration(configuration: ComposedConfiguration) -> None:
+        # Heroku Redis uses self-signed certs
+        configuration.CHANNEL_LAYERS['default']['CONFIG']['hosts'][0][
+            'ssl_cert_reqs'
+        ] = ssl.CERT_NONE

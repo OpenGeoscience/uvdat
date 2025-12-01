@@ -124,7 +124,7 @@ function takeScreenshot(save: boolean) {
   padding: 3px 8px;
   position: absolute;
   top: 10px;
-  left: 180px;
+  left: 225px;
   opacity: 80%;
   background-color: rgb(var(--v-theme-surface));
   display: flex;

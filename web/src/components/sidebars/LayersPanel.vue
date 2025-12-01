@@ -28,12 +28,17 @@ const visibilityCompareMap = computed(() => {
 });
 
 const searchText = ref<string | undefined>();
-const filteredLayers = computed(() => {
-    return layerStore.selectedLayers?.filter((layer: Layer) => {
-        return  !searchText.value ||
-        layer.name.toLowerCase().includes(searchText.value.toLowerCase())
-    })
-})
+const filteredLayers = computed({
+    get() {
+        return layerStore.selectedLayers?.filter((layer: Layer) => {
+            return  !searchText.value ||
+            layer.name.toLowerCase().includes(searchText.value.toLowerCase())
+        })
+    },
+    set(newValue) {
+        layerStore.selectedLayers = newValue;
+    }
+});
 const allLayersVisible = computed(() => layerStore.selectedLayers.every((l: Layer) => l.visible))
 const activeLayer = ref<Layer>();
 
@@ -122,7 +127,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                 density="compact"
             >
                 <draggable
-                    v-model="layerStore.selectedLayers"
+                    v-model="filteredLayers"
                     item-key="id"
                 >
                     <template #item="{ element }">
