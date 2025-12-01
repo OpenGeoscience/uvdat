@@ -89,9 +89,7 @@ function setLayerActive(layer: Layer, active: boolean) {
         />
         <v-card class="panel-content-inner">
             <div class="layers-header" v-if="filteredLayers?.length">
-                <!--TODO: Once support for removing is implemented add this backin-->
                 <v-icon
-                    v-if="!isComparing"
                     color="primary"
                     icon="mdi-close"
                     size="small"
@@ -131,9 +129,7 @@ function setLayerActive(layer: Layer, active: boolean) {
                         <div>
                             <v-list-item class="layer" :active="activeLayer == element">
                                 <template v-slot:prepend>
-                                    <!--TODO: Once support for removing is implemented add this backin-->
                                     <v-icon
-                                        v-if="!isComparing"
                                         color="primary"
                                         icon="mdi-close"
                                         size="small"
@@ -148,13 +144,13 @@ function setLayerActive(layer: Layer, active: boolean) {
                                     />
                                     <span v-if="isComparing">
                                         <v-checkbox-btn
-                                            v-tooltip="`${ orientation.value === 'vertical' ? 'Left' : 'Top' } Map Visibility`"
+                                            v-tooltip="`${ orientation === 'vertical' ? 'Left' : 'Top' } Map Visibility`"
                                             :model-value="visibilityCompareMap.A[element.name]"
                                             @update:model-value="compareStore.setVisibility('A', element.name, $event)"
                                             style="display: inline"
                                         />
                                         <v-checkbox-btn
-                                            v-tooltip="`${ orientation.value === 'vertical' ? 'Right' : 'Bottom' } Map Visibility`"
+                                            v-tooltip="`${ orientation === 'vertical' ? 'Right' : 'Bottom' } Map Visibility`"
                                             :model-value="visibilityCompareMap.B[element.name]"
                                             @update:model-value="compareStore.setVisibility('B', element.name, $event)"
                                             style="display: inline"

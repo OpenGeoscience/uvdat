@@ -65,6 +65,12 @@ watch(computedCompare, (newVal) => {
     }
 });
 
+watch(layerStore.selectedLayers, () => {
+    if (compareStore.isComparing) {
+        mapStyle.value = mapStore.getMap()?.getStyle();
+    }
+}, { deep: true });
+
 
 function updateStats(event: { center: [number, number], zoom: number, bearing: number, pitch: number }) {
     tempStats.center = event.center;
