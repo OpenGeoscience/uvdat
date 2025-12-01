@@ -9,8 +9,7 @@ import { oauthClient } from "@/api/auth";
 import 'vue-maplibre-compare/dist/vue-maplibre-compare.css'
 import { ResourceType } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
-import CompareLayersPanel from "../sidebars/CompareLayersPanel.vue";
-import { map } from "lodash";
+import { useTheme } from 'vuetify';
 interface MapStats {
     center: [number, number];
     zoom: number;
@@ -126,6 +125,11 @@ const mapLayersB = computed(() => {
     }
     return flatList;
 });
+
+const swiperColor = computed(() => {
+    const theme = useTheme();
+    return theme.global.current.value.colors.primary
+});
 </script>
 
 <template>
@@ -147,6 +151,9 @@ const mapLayersB = computed(() => {
                 :swiper-options="{
                     darkMode: appStore.theme !== 'dark',
                     orientation: compareStore.orientation,
+                    grabThickness: 20,
+                    lineColor: swiperColor,
+                    handleColor: swiperColor
                 }"
                 layer-order="bottommost"
                 @panend="updateStats($event)"
