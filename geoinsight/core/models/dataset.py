@@ -29,6 +29,11 @@ class Dataset(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        # Dataset permissions are not determined by Project permissions
+        return queryset
+
     def owner(self) -> User | None:
         users = typing.cast(
             list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))

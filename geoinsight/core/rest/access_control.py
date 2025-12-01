@@ -1,5 +1,3 @@
-from django.db.models import Model, Q
-from django.db.models.query import QuerySet
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.filters import BaseFilterBackend
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
@@ -8,57 +6,18 @@ from geoinsight.core import models
 from geoinsight.core.models.project import Project
 
 
-def filter_queryset_by_projects(queryset: QuerySet[Model], projects: QuerySet[models.Project]):
-    model = queryset.model
-
-    # All datasets are visible to all users
-    if model == models.Dataset:
-        return queryset
-    # RasterData and VectorData permissions should inherit from Dataset permissions
-    if model in [models.RasterData, models.VectorData]:
-        return queryset
-
-    if model == models.Project:
-        return queryset.filter(id__in=projects.values_list('id', flat=True))
-    if model == models.TaskResult:
-        return queryset.filter(Q(project__isnull=True) | Q(project__in=projects))
-    if model == models.Colormap:
-        return queryset.filter(Q(project__isnull=True) | Q(project__in=projects))
-    if model == models.Chart:
-        return queryset.filter(project__in=projects)
-    if model in [
-        models.FileItem,
-        models.Layer,
-        models.Region,
-    ]:
-        return queryset.filter(dataset__project__in=projects)
-    if model in [models.LayerFrame, models.LayerStyle]:
-        return queryset.filter(layer__dataset__project__in=projects)
-    if model == models.Network:
-        return queryset.filter(vector_data__dataset__project__in=projects)
-    if model in [models.NetworkNode, models.NetworkEdge]:
-        return queryset.filter(network__dataset__project__in=projects)
-
-    # If any models are un-caught, raise an exception
-    raise NotImplementedError
-
-
 class GuardianPermission(IsAuthenticated):
     def has_object_permission(self, request, view, obj):
         if request.user.is_superuser:
             return True
-
-        if obj.__class__ == models.Dataset:
-            # For datasets, prohibit delete and patch requests unless user is dataset owner
-            return request.method not in ['DELETE', 'PATCH'] or obj.owner() == request.user
+        if not hasattr(obj, 'filter_queryset_by_projects'):
+            raise NotImplementedError
 
         perms = ['follower', 'collaborator', 'owner']
         if request.method not in SAFE_METHODS:
             perms = ['collaborator', 'owner']
         if request.method == 'DELETE':
             perms = ['owner']
-        if not isinstance(obj, Model):
-            raise Exception('Only Django models may be used in permission check')
 
         # Create queryset out of single object, so it can be passed to the filter function
         queryset = obj.__class__.objects.filter(pk=obj.pk)
@@ -70,26 +29,41 @@ class GuardianPermission(IsAuthenticated):
 
         # If the object remains in the queryset after this function filters it, then the user has
         # the required permission on at least one associated project
-        return filter_queryset_by_projects(queryset=queryset, projects=user_projects).exists()
+        return queryset.model.filter_queryset_by_projects(
+            queryset=queryset, projects=user_projects
+        ).exists()
+
+
+class DatasetGuardianPermission(GuardianPermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_superuser:
+            return True
+
+        # Prohibit delete and patch requests unless user is owner
+        return request.method not in ['DELETE', 'PATCH'] or obj.owner() == request.user
 
 
 class GuardianFilter(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
+        if not hasattr(queryset.model, 'filter_queryset_by_projects'):
+            raise NotImplementedError
+
         ids = request.query_params.get('project', request.query_params.get('project_id'))
         if ids:
             # Return queryset filtered by objects that are within these projects
-            return filter_queryset_by_projects(
+            return queryset.model.filter_queryset_by_projects(
                 queryset=queryset, projects=Project.objects.filter(id__in=ids)
             )
 
         if request.user.is_superuser:
             return queryset
 
-        # Allow user to have any level of permission
-        all_perms = [x for x, _ in Project._meta.permissions]
         user_projects = get_objects_for_user(
-            klass=models.Project, user=request.user, perms=all_perms, any_perm=True
+            klass=models.Project,
+            user=request.user,
+            perms=['follower', 'collaborator', 'owner'],
+            any_perm=True,
         )
 
         # Return queryset filtered by objects that are within these projects
-        return filter_queryset_by_projects(queryset=queryset, projects=user_projects)
+        return queryset.model.filter_queryset_by_projects(queryset=queryset, projects=user_projects)

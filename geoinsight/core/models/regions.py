@@ -22,3 +22,7 @@ class Region(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.id})'
+
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(dataset__project__in=projects)
