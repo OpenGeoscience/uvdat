@@ -18,10 +18,10 @@ const mapALayerItems = computed(() => compareStore.displayLayers.mapLayerA);
 const mapBLayerItems = computed(() => compareStore.displayLayers.mapLayerB);
 const visibilityCompareMap = computed(() => {
     const visibilityMap: { A: Record<string, boolean>, B: Record<string, boolean> } = {A: {}, B: {}};
-    mapALayerItems.value.forEach((layer) => {
+    compareStore.displayLayers.mapLayerA.forEach((layer) => {
         visibilityMap.A[layer.displayName] = layer.state;
     });
-    mapBLayerItems.value.forEach((layer) => {
+    compareStore.displayLayers.mapLayerB.forEach((layer) => {
         visibilityMap.B[layer.displayName] = layer.state;
     });
     return visibilityMap;

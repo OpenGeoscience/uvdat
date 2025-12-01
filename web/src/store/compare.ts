@@ -24,7 +24,7 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
     const layerStore = useLayerStore();
 
     const generateDisplayLayers = () => {
-        const displayLayers: DisplaycompareMapLayer = {
+        const localDisplayLayers: DisplaycompareMapLayer = {
             mapLayerA: [],
             mapLayerB: [],
         };
@@ -40,14 +40,14 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
                 state: layer.visible,
                 layerIds: [...layerIds]
             };
-            displayLayers.mapLayerA.push(layerItemA);
-            displayLayers.mapLayerB.push(layerItemB);
+            localDisplayLayers.mapLayerA.push(layerItemA);
+            localDisplayLayers.mapLayerB.push(layerItemB);
         });
-        return displayLayers;
+        displayLayers.value = localDisplayLayers;
     };
     watch(isComparing, (newVal) => {
         if (newVal) {
-            displayLayers.value = generateDisplayLayers();
+           generateDisplayLayers();
         }
     });
 
@@ -76,5 +76,6 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         displayLayers,  
         setVisibility,
         setAllVisibility,
+        generateDisplayLayers,
     }
 });

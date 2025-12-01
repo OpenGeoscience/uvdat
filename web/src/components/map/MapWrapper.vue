@@ -65,9 +65,10 @@ watch(computedCompare, (newVal) => {
     }
 });
 
-watch(layerStore.selectedLayers, () => {
+watch(() => layerStore.selectedLayers, () => {
     if (compareStore.isComparing) {
         mapStyle.value = mapStore.getMap()?.getStyle();
+        compareStore.generateDisplayLayers();
     }
 }, { deep: true });
 
