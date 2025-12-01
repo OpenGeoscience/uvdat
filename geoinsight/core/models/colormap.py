@@ -37,6 +37,10 @@ class Colormap(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(models.Q(project__isnull=True) | models.Q(project__in=projects))
+
     def clean(self):
         if len(self.markers):
             validate(instance=self.markers, schema=MARKER_SCHEMA)

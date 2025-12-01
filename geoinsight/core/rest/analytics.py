@@ -7,7 +7,6 @@ from geoinsight.core.models import Project, TaskResult
 from geoinsight.core.rest.access_control import (
     GuardianFilter,
     GuardianPermission,
-    filter_queryset_by_projects,
 )
 import geoinsight.core.rest.serializers as geoinsight_serializers
 from geoinsight.core.tasks.analytics import analysis_types
@@ -34,7 +33,7 @@ class AnalyticsViewSet(ReadOnlyModelViewSet):
             filtered_input_options = {}
             for k, v in instance.get_input_options().items():
                 if isinstance(v, QuerySet):
-                    filtered_queryset = filter_queryset_by_projects(
+                    filtered_queryset = v.model.filter_queryset_by_projects(
                         v, Project.objects.filter(id=project_id)
                     )
                     v = [dict(id=o.id, name=o.name) for o in filtered_queryset]

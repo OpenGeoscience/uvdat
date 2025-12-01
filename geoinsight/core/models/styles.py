@@ -29,6 +29,10 @@ class LayerStyle(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(layer__dataset__project__in=projects)
+
     def save_style_configs(self, style_spec):
         if style_spec is None:
             raise ValueError('style_spec must not be None.')

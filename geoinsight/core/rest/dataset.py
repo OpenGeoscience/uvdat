@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from geoinsight.core.models import Dataset, DatasetTag
-from geoinsight.core.rest.access_control import GuardianFilter, GuardianPermission
+from geoinsight.core.rest.access_control import DatasetGuardianPermission, GuardianFilter
 from geoinsight.core.rest.serializers import (
     DatasetSerializer,
     FileItemSerializer,
@@ -18,7 +18,7 @@ from geoinsight.core.rest.serializers import (
 class DatasetViewSet(ModelViewSet):
     queryset = Dataset.objects.all()
     serializer_class = DatasetSerializer
-    permission_classes = [GuardianPermission]
+    permission_classes = [DatasetGuardianPermission]
     filter_backends = [GuardianFilter]
     lookup_field = 'id'
 

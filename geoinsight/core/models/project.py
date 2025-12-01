@@ -18,6 +18,10 @@ class Project(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(id__in=projects.values_list('id', flat=True))
+
     def owner(self) -> User:
         users = typing.cast(
             list[User], list(get_users_with_perms(self, only_with_perms_in=['owner']))
