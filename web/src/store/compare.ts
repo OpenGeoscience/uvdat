@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { useLayerStore } from './layer';
 import { cloneDeep } from 'lodash';
 import { useMapStore } from './map';
+import { MapLayerStyleRaw } from './style';
 
 interface DisplayCompareMapLayerItem {
     displayName: string;
@@ -51,8 +52,8 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
             bearing: map.getBearing() as number,
             pitch: map.getPitch() as number,
         };
-        mapAStyle.value = style;
-        mapBStyle.value = style;
+        mapAStyle.value = cloneDeep(style);
+        mapBStyle.value = cloneDeep(style);
         generateDisplayLayers();
     }
 
@@ -111,6 +112,28 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
             const layerWithSource = layer as { source?: string };
             return layerWithSource.source?.includes('openstreetmap');
         }).map((layer: any) => layer.id);
+    }
+
+
+    const updateMapLayerStyle = (map: 'A' | 'B', mapLayerId: string, style: MapLayerStyleRaw) => {
+        const mapStyle = map === 'A' ? mapAStyle.value : mapBStyle.value;
+        if (!mapStyle) return;
+        const sources = new Set<string>();
+        mapStyle.layers.forEach((layer: any) => {
+            if (layer.id === mapLayerId) {
+                layer.paint = style.paint;
+                sources.add(layer.source);
+            }
+        });
+        console.log(sources);
+        console.log(style.tileURL);
+        if (style.tileURL && sources.size > 0) {
+            sources.forEach((sourceId) => {
+                if (mapStyle.sources[sourceId] && mapStyle.sources[sourceId].type === 'raster') {
+                    mapStyle.sources[sourceId].url = style.tileURL;
+                }
+            });
+        }
     }
 
     // Array of Enabled map layer IDs for Map A in order
@@ -180,6 +203,7 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         setAllVisibility,
         generateDisplayLayers,
         updateMapStats,
+        updateMapLayerStyle,
         mapAStyle,
         mapBStyle,
         mapLayersA,

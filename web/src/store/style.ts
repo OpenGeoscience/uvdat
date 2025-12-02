@@ -20,6 +20,23 @@ import chroma from 'chroma-js';
 
 import { useMapStore, useLayerStore, useProjectStore, useNetworkStore } from '.';
 
+export interface MapLayerStyleRaw {
+        paint: {
+            'fill-opacity'?: any;
+            'fill-color'?: any;
+            'line-opacity'?: any;
+            'line-color'?: any;
+            'line-width'?: any;
+            'circle-opacity'?: any;
+            'circle-stroke-opacity'?: any;
+            'circle-color'?: any;
+            'circle-stroke-color'?: any;
+            'circle-radius'?: any;
+            'raster-opacity'?: any;
+        }
+        tileURL?: string;
+    }
+
 
 function getMidMarker(
     markerA: {color: string, value: number},
@@ -449,22 +466,6 @@ export const useStyleStore = defineStore('style', () => {
         }
     }
 
-    interface MapLayerStyleRaw {
-        paint: {
-            'fill-opacity'?: any;
-            'fill-color'?: any;
-            'line-opacity'?: any;
-            'line-color'?: any;
-            'line-width'?: any;
-            'circle-opacity'?: any;
-            'circle-stroke-opacity'?: any;
-            'circle-color'?: any;
-            'circle-stroke-color'?: any;
-            'circle-radius'?: any;
-            'raster-opacity'?: any;
-        }
-    }
-
     function returnMapLayerStyle(
         mapLayerId: string,
         styleSpec: StyleSpec,
@@ -534,16 +535,15 @@ export const useStyleStore = defineStore('style', () => {
             const rasterTilesQuery = getRasterTilesQuery({...styleSpec, filters}, colormaps.value)
             if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
             rawStyleObj.paint["raster-opacity"] = opacity;
-            let source = map.getSource(mapLayer.source) as RasterTileSource;
             const sourceURL = mapStore.rasterSourceTileURLs[mapLayer.source]
-            if (source && sourceURL) {
+            if (sourceURL) {
                 const oldQuery = new URLSearchParams(sourceURL.split('?')[1])
                 const newQueryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
                 if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
                 const newQuery = new URLSearchParams(newQueryParams)
                 if (newQuery.toString() !== oldQuery.toString()) {
                     const newURL = sourceURL.split('?')[0] + '?' + newQuery
-                    source.setTiles([newURL])
+                    rawStyleObj.tileURL = newURL;
                 }
             }
         }

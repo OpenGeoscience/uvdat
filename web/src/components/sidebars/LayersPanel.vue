@@ -4,6 +4,7 @@ import { Layer } from "@/types";
 import { computed, ref } from "vue";
 import draggable from "vuedraggable";
 import LayerStyle from "./LayerStyle.vue";
+import CompareLayerStyle from "./CompareLayerStyle.vue";
 import DetailView from "../DetailView.vue";
 import SliderNumericInput from '../SliderNumericInput'
 
@@ -73,9 +74,19 @@ function getLayerCurrentFrames(layer: Layer) {
     return layerStore.layerFrames(layer).filter((frame) => frame.index === layer.current_frame_index)
 }
 
-function setLayerActive(layer: Layer, active: boolean) {
-    if (active) activeLayer.value = layer
-    else activeLayer.value = undefined
+const activeCompareLayer = ref<'A' | 'B'>();
+
+function setLayerActive(layer: Layer, active: boolean, compareLayer?: 'A' | 'B') {
+    if (active) {
+        activeLayer.value = layer;
+    }
+    else {
+        activeLayer.value = undefined;
+        activeCompareLayer.value = undefined;
+    }
+    if (compareLayer) {
+        activeCompareLayer.value = active ? compareLayer : undefined;
+    }
 }
 </script>
 
@@ -171,6 +182,8 @@ function setLayerActive(layer: Layer, active: boolean) {
                                     </span>
                                     <!--TODO: Once support for style changes is implemented add this backin-->
                                     <LayerStyle v-if="!isComparing" :layer="element" :activeLayer="activeLayer" @setLayerActive="(v: boolean) => setLayerActive(element, v)"/>
+                                    <CompareLayerStyle v-if="isComparing" compare-layer="A" :layer="element" :activeLayer="activeLayer" :activeCompareLayer="activeCompareLayer" @setLayerActive="(v: boolean) => setLayerActive(element, v, 'A')"/>
+                                    <CompareLayerStyle v-if="isComparing" compare-layer="B" :layer="element" :activeLayer="activeLayer" :activeCompareLayer="activeCompareLayer" @setLayerActive="(v: boolean) => setLayerActive(element, v, 'B')"/>
                                     <span class="v-icon material-symbols-outlined" style="cursor: grab;">
                                         format_line_spacing
                                     </span>
