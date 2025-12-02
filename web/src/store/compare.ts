@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useLayerStore } from './layer';
 import { cloneDeep } from 'lodash';
+import { useMapStore } from './map';
 
 interface DisplayCompareMapLayerItem {
     displayName: string;
@@ -14,14 +15,46 @@ interface DisplaycompareMapLayer {
     mapLayerB: DisplayCompareMapLayerItem[];
 }
 
+export interface MapStats {
+    center: [number, number];
+    zoom: number;
+    bearing: number;
+    pitch: number;
+}
+
+
+
 export const useMapCompareStore = defineStore('mapCompare', () => {
+    const mapStore = useMapStore();
+    const layerStore = useLayerStore();
     const isComparing = ref<boolean>(false);
     const orientation = ref<'horizontal' | 'vertical'>('vertical');
     const displayLayers = ref<DisplaycompareMapLayer>({
         mapLayerA: [],
         mapLayerB: [],
     });
-    const layerStore = useLayerStore();
+    const mapStats = ref<MapStats>({
+        center: [0,0],
+        zoom: 0,
+        bearing: 0,
+        pitch: 0,
+    });
+    const mapAStyle = ref<ReturnType<maplibregl.Map['getStyle']> | undefined>(undefined);
+    const mapBStyle = ref<ReturnType<maplibregl.Map['getStyle']> | undefined>(undefined);
+
+    const initlizeComparing = () => {
+        const map = mapStore.getMap();
+        const style = map.getStyle();
+        mapStats.value = {
+            center: map.getCenter().toArray() as [number, number],
+            zoom: map.getZoom() as number,
+            bearing: map.getBearing() as number,
+            pitch: map.getPitch() as number,
+        };
+        mapAStyle.value = style;
+        mapBStyle.value = style;
+        generateDisplayLayers();
+    }
 
     const generateDisplayLayers = () => {
         const localDisplayLayers: DisplaycompareMapLayer = {
@@ -45,11 +78,7 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         });
         displayLayers.value = localDisplayLayers;
     };
-    watch(isComparing, (newVal) => {
-        if (newVal) {
-           generateDisplayLayers();
-        }
-    });
+
 
     const setAllVisibility = (map: 'A' | 'B', visible=true) => {
         const copyLayers = cloneDeep(displayLayers.value);
@@ -69,13 +98,91 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
         }
         displayLayers.value = copyLayers;
     };
-    
+    function updateMapStats(event: { center: [number, number], zoom: number, bearing: number, pitch: number }) {
+        mapStats.value.center = event.center;
+        mapStats.value.zoom = event.zoom;
+        mapStats.value.bearing = event.bearing;
+        mapStats.value.pitch = event.pitch;  
+    }
+
+    const getBaseLayerSourceIds = () => {
+        const map = mapStore.getMap();
+        return map.getStyle().layers.filter((layer: any) => {
+            const layerWithSource = layer as { source?: string };
+            return layerWithSource.source?.includes('openstreetmap');
+        }).map((layer: any) => layer.id);
+    }
+
+    // Array of Enabled map layer IDs for Map A in order
+    const mapLayersA = computed(() => {
+        const flatList: string[] = [];
+        const baseLayerSourceIds = getBaseLayerSourceIds();
+        layerStore.selectedLayers.forEach((layer) => {
+            if (displayLayers.value.mapLayerA.find((l) => l.displayName === layer.name)?.state === false) {
+                return;
+            }
+            const mapLayerIds = layerStore.getMapLayersFromLayerObject(layer);
+            flatList.push(...mapLayerIds);
+        });
+        if (mapStore.showMapBaseLayer) {
+        baseLayerSourceIds.forEach((sourceId: string) => {
+                if (sourceId) {
+                    flatList.push(sourceId);
+                }
+            });
+        }
+        return flatList;
+    });
+
+    // Array of enabled Layers for Map B in order
+    const mapLayersB = computed(() => {
+        const flatList: string[] = [];
+        const baseLayerSourceIds = getBaseLayerSourceIds();
+        layerStore.selectedLayers.forEach((layer) => {
+            if (displayLayers.value.mapLayerB.find((l) => l.displayName === layer.name)?.state === false) {
+                return;
+            }
+            const mapLayerIds = layerStore.getMapLayersFromLayerObject(layer);
+            flatList.push(...mapLayerIds);
+        });
+        if (mapStore.showMapBaseLayer) {
+            baseLayerSourceIds.forEach((sourceId: string) => {
+                if (sourceId) {
+                    flatList.push(sourceId);
+                }
+            });
+        }
+        return flatList;
+    });
+
+
+    watch(isComparing, (newVal) => {
+        if (newVal) {
+            initlizeComparing();
+        }
+    });
+
+
+    watch(() => layerStore.selectedLayers, () => {
+        if (isComparing.value) {
+            mapAStyle.value = mapStore.getMap()?.getStyle();
+            mapBStyle.value = mapStore.getMap()?.getStyle();
+            generateDisplayLayers();
+        }
+    }, { deep: true });
+
     return {
         isComparing,
         orientation,
-        displayLayers,  
+        displayLayers,
+        mapStats,
         setVisibility,
         setAllVisibility,
         generateDisplayLayers,
+        updateMapStats,
+        mapAStyle,
+        mapBStyle,
+        mapLayersA,
+        mapLayersB,
     }
 });

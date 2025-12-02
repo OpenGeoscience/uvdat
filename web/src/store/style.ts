@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { RasterTileSource } from "maplibre-gl";
+import { FilterSpecification, LayerSpecification, RasterTileSource } from "maplibre-gl";
 import {
     AppliedColormap,
     Colormap,
@@ -449,6 +449,107 @@ export const useStyleStore = defineStore('style', () => {
         }
     }
 
+    interface MapLayerStyleRaw {
+        paint: {
+            'fill-opacity'?: any;
+            'fill-color'?: any;
+            'line-opacity'?: any;
+            'line-color'?: any;
+            'line-width'?: any;
+            'circle-opacity'?: any;
+            'circle-stroke-opacity'?: any;
+            'circle-color'?: any;
+            'circle-stroke-color'?: any;
+            'circle-radius'?: any;
+            'raster-opacity'?: any;
+        }
+    }
+
+    function returnMapLayerStyle(
+        mapLayerId: string,
+        styleSpec: StyleSpec,
+        frame: LayerFrame | undefined,
+        vector: VectorData | null
+    ) {
+        const map = mapStore.getMap();
+        const rawStyleObj: MapLayerStyleRaw = {
+            paint: {} as any,
+        };
+        let filters: StyleFilter[] = styleSpec.filters || []
+        if (frame?.source_filters) {
+            filters = [
+                ...filters,
+                ...Object.entries(frame.source_filters).map(([k, v]) => ({
+                    filter_by: k,
+                    list: [v],
+                    include: true,
+                    transparency: true,
+                    apply: true,
+                }))
+            ]
+        }
+
+        const mapLayer = map.getLayer(mapLayerId) as MapLibreLayerWithMetadata | undefined;
+        if (mapLayer === undefined) {
+            return;
+        }
+
+        // Opacity can be zero, so must check for undefined explicitly
+        let opacity = styleSpec.opacity;
+        if (opacity === undefined) {
+            opacity = 1;
+        }
+
+        const propsSpec = vector?.summary?.properties
+        if (mapLayerId.includes("fill") && propsSpec && rawStyleObj.paint) {
+            rawStyleObj.paint['fill-opacity'] = opacity / 2;
+            const color = getVectorColorPaintProperty(styleSpec, 'polygons', propsSpec, colormaps.value)
+            if (color) rawStyleObj.paint['fill-color'] = color;
+            const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'polygons')
+            if (visibility !== undefined) rawStyleObj.paint['fill-opacity'] = visibility;
+        } else if (mapLayerId.includes("line") && propsSpec) {
+            rawStyleObj.paint['line-opacity'] = opacity;
+            const color = getVectorColorPaintProperty(styleSpec, 'lines', propsSpec, colormaps.value)
+            if (color) rawStyleObj.paint['line-color'] = color;
+            const size = getVectorSizePaintProperty(styleSpec, 'lines', propsSpec)
+            if (size) rawStyleObj.paint['line-width'] = size;
+            const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'lines')
+            if (visibility !== undefined) rawStyleObj.paint['line-opacity'] = visibility;
+        } else if (mapLayerId.includes("circle") && propsSpec) {
+            rawStyleObj.paint['circle-opacity'] = opacity;
+            rawStyleObj.paint['circle-stroke-opacity'] = opacity;
+            const color = getVectorColorPaintProperty(styleSpec, 'points', propsSpec, colormaps.value)
+            if (color) {
+                rawStyleObj.paint['circle-color'] = color;
+                rawStyleObj.paint['circle-stroke-color'] = color;
+            }
+            const size = getVectorSizePaintProperty(styleSpec, 'points', propsSpec)
+            if (size) rawStyleObj.paint['circle-radius'] = size;
+            const visibility = getVectorVisibilityPaintProperty({ ...styleSpec, filters }, 'points')
+            if (visibility !== undefined) {
+                rawStyleObj.paint['circle-opacity'] = visibility;
+                rawStyleObj.paint['circle-stroke-opacity'] = visibility;
+            }
+        } else if (mapLayerId.includes("raster")) {
+            const rasterTilesQuery = getRasterTilesQuery({...styleSpec, filters}, colormaps.value)
+            if (rasterTilesQuery?.bands && !rasterTilesQuery.bands.length) opacity = 0
+            rawStyleObj.paint["raster-opacity"] = opacity;
+            let source = map.getSource(mapLayer.source) as RasterTileSource;
+            const sourceURL = mapStore.rasterSourceTileURLs[mapLayer.source]
+            if (source && sourceURL) {
+                const oldQuery = new URLSearchParams(sourceURL.split('?')[1])
+                const newQueryParams: { projection: string, style?: string } = { projection: 'epsg:3857' }
+                if (rasterTilesQuery) newQueryParams.style = JSON.stringify(rasterTilesQuery)
+                const newQuery = new URLSearchParams(newQueryParams)
+                if (newQuery.toString() !== oldQuery.toString()) {
+                    const newURL = sourceURL.split('?')[0] + '?' + newQuery
+                    source.setTiles([newURL])
+                }
+            }
+        }
+        return rawStyleObj;
+    }
+
     return {
         colormaps,
         selectedLayerStyles,
@@ -460,5 +561,6 @@ export const useStyleStore = defineStore('style', () => {
         getVectorColorPaintProperty,
         updateLayerStyles,
         setMapLayerStyle,
+        returnMapLayerStyle,
     }
 });

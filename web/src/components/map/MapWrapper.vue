@@ -4,18 +4,12 @@ import { useAppStore, useLayerStore, useMapStore } from "@/store";
 import { useMapCompareStore } from "@/store/compare";
 import { computed, ref, watch } from "vue";
 import Map from "./Map.vue";
-import { LayerCompare } from "vue-maplibre-compare";
+import { MapCompare } from "vue-maplibre-compare";
 import { oauthClient } from "@/api/auth";
 import 'vue-maplibre-compare/dist/vue-maplibre-compare.css'
 import { ResourceType } from "maplibre-gl";
 import { baseURL } from "@/api/auth";
 import { useTheme } from 'vuetify';
-interface MapStats {
-    center: [number, number];
-    zoom: number;
-    bearing: number;
-    pitch: number;
-}
 
 const mapStore = useMapStore();
 const compareStore = useMapCompareStore();
@@ -34,97 +28,23 @@ const transformRequest = (url: string, _resourceType?: ResourceType) => {
     return { url };
 }
 
-const mapStyle = ref<ReturnType<maplibregl.Map['getStyle']> | undefined>(undefined);
-mapStore.map?.getCenter()
-const mapCenter = ref<[number, number]>([0,0]);
-const mapZoom = ref<number>(0);
-const tempStats: MapStats = {
-    center: mapStore.map?.getCenter().toArray() as [number, number],
-    zoom: mapStore.map?.getZoom() as number,
-    bearing: mapStore.map?.getBearing() as number,
-    pitch: mapStore.map?.getPitch() as number,
-};
 const computedCompare = computed(() => compareStore.isComparing);
+const mapStats = computed(() => compareStore.mapStats);
 watch(computedCompare, (newVal) => {
-    if (newVal && mapStore.map) {
-        mapStyle.value = mapStore.getMap()?.getStyle();
-        tempStats.center = mapStore.getMap()?.getCenter().toArray() as [number, number];
-        tempStats.zoom = mapStore.getMap()?.getZoom() as number;
-        tempStats.bearing = mapStore.getMap()?.getBearing() as number;
-        tempStats.pitch = mapStore.getMap()?.getPitch() as number;
-        mapCenter.value = tempStats.center;
-        mapZoom.value = tempStats.zoom;
-    } else if (!newVal && mapStore.map) {
+   if (!newVal && mapStore.map) {
         mapStore.getMap()?.jumpTo({
-            center: tempStats.center,
-            zoom: tempStats.zoom,
-            bearing: tempStats.bearing,
-            pitch: tempStats.pitch,
+            center: mapStats.value?.center,
+            zoom: mapStats.value?.zoom,
+            bearing: mapStats.value?.bearing,
+            pitch: mapStats.value?.pitch,
         });
     }
 });
 
-watch(() => layerStore.selectedLayers, () => {
-    if (compareStore.isComparing) {
-        mapStyle.value = mapStore.getMap()?.getStyle();
-        compareStore.generateDisplayLayers();
-    }
-}, { deep: true });
-
-
-function updateStats(event: { center: [number, number], zoom: number, bearing: number, pitch: number }) {
-    tempStats.center = event.center;
-    tempStats.zoom = event.zoom;
-    tempStats.bearing = event.bearing;
-    tempStats.pitch = event.pitch;  
-}
-
-function getBaseLayerSourceIds() {
-    const map = mapStore.getMap();
-    return map.getStyle().layers.filter((layer: any) => {
-        const layerWithSource = layer as { source?: string };
-        return layerWithSource.source?.includes('openstreetmap');
-    }).map((layer: any) => layer.id);
-  }
-
-const mapLayersA = computed(() => {
-    const flatList: string[] = [];
-    const baseLayerSourceIds = getBaseLayerSourceIds();
-    layerStore.selectedLayers.forEach((layer) => {
-        if (compareStore.displayLayers.mapLayerA.find((l) => l.displayName === layer.name)?.state === false) {
-            return;
-        }
-        const mapLayerIds = layerStore.getMapLayersFromLayerObject(layer);
-        flatList.push(...mapLayerIds);
-    });
-    if (mapStore.showMapBaseLayer) {
-    baseLayerSourceIds.forEach((sourceId: string) => {
-            if (sourceId) {
-                flatList.push(sourceId);
-            }
-        });
-    }
-    return flatList;
-});
-const mapLayersB = computed(() => {
-    const flatList: string[] = [];
-    const baseLayerSourceIds = getBaseLayerSourceIds();
-    layerStore.selectedLayers.forEach((layer) => {
-        if (compareStore.displayLayers.mapLayerB.find((l) => l.displayName === layer.name)?.state === false) {
-            return;
-        }
-        const mapLayerIds = layerStore.getMapLayersFromLayerObject(layer);
-        flatList.push(...mapLayerIds);
-    });
-    if (mapStore.showMapBaseLayer) {
-        baseLayerSourceIds.forEach((sourceId: string) => {
-            if (sourceId) {
-                flatList.push(sourceId);
-            }
-        });
-    }
-    return flatList;
-});
+const mapStyleA = computed(() => compareStore.mapAStyle);
+const mapStyleB = computed(() => compareStore.mapBStyle);
+const mapLayersA = computed(() => compareStore.mapLayersA);
+const mapLayersB = computed(() => compareStore.mapLayersB);
 
 const swiperColor = computed(() => {
     const theme = useTheme();
@@ -138,14 +58,15 @@ const swiperColor = computed(() => {
             v-show="!compareStore.isComparing"
             :transform-request="transformRequest"
         />
-        <div v-if="compareStore.isComparing && mapStyle" class="layer-compare-wrapper">
-            <LayerCompare
-                :map-style="mapStyle"
+        <div v-if="compareStore.isComparing && mapStyleA && mapStyleB" class="layer-compare-wrapper">
+            <MapCompare
+                :map-style-a="mapStyleA"
+                :map-style-b="mapStyleB"
                 :map-layers-a="mapLayersA"
                 :map-layers-b="mapLayersB"
                 :camera="{
-                    center: mapCenter,
-                    zoom: mapZoom,
+                    center: mapStats.center,
+                    zoom: mapStats.zoom,
                 }"
                 :transform-request="transformRequest"
                 :swiper-options="{
@@ -156,10 +77,10 @@ const swiperColor = computed(() => {
                     handleColor: swiperColor
                 }"
                 layer-order="bottommost"
-                @panend="updateStats($event)"
-                @zoomend="updateStats($event)"
-                @pitchend="updateStats($event)"
-                @rotateend="updateStats($event)"
+                @panend="compareStore.updateMapStats($event)"
+                @zoomend="compareStore.updateMapStats($event)"
+                @pitchend="compareStore.updateMapStats($event)"
+                @rotateend="compareStore.updateMapStats($event)"
             />
         </div>
     </div>

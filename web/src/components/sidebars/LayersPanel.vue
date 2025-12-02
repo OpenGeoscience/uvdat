@@ -14,8 +14,6 @@ const mapStore = useMapStore()
 const compareStore = useMapCompareStore();
 const isComparing = computed(() => compareStore.isComparing);
 const orientation = computed(() => compareStore.orientation);
-const mapALayerItems = computed(() => compareStore.displayLayers.mapLayerA);
-const mapBLayerItems = computed(() => compareStore.displayLayers.mapLayerB);
 const visibilityCompareMap = computed(() => {
     const visibilityMap: { A: Record<string, boolean>, B: Record<string, boolean> } = {A: {}, B: {}};
     compareStore.displayLayers.mapLayerA.forEach((layer) => {
