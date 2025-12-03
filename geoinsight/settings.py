@@ -65,7 +65,6 @@ class GeoInsightMixin(ConfigMixin):
     ENABLE_TASK_FLOOD_NETWORK_FAILURE = values.BooleanValue(True)
     ENABLE_TASK_NETWORK_RECOVERY = values.BooleanValue(True)
     ENABLE_TASK_GEOAI_SEGMENTATION = values.BooleanValue(True)
-    ENABLE_TASK_TILE2NET_SEGMENTATION = values.BooleanValue(True)
     ENABLE_TASK_CREATE_ROAD_NETWORK = values.BooleanValue(True)
 
     @staticmethod
