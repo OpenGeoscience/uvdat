@@ -35,6 +35,7 @@ export interface MapLayerStyleRaw {
             'raster-opacity'?: any;
         }
         tileURL?: string;
+        visibility: 'visible' | 'none';
     }
 
 
@@ -470,11 +471,13 @@ export const useStyleStore = defineStore('style', () => {
         mapLayerId: string,
         styleSpec: StyleSpec,
         frame: LayerFrame | undefined,
-        vector: VectorData | null
+        vector: VectorData | null,
+        visibility: 'visible' | 'none' = 'visible',
     ) {
         const map = mapStore.getMap();
         const rawStyleObj: MapLayerStyleRaw = {
             paint: {} as any,
+            visibility,
         };
         let filters: StyleFilter[] = styleSpec.filters || []
         if (frame?.source_filters) {
