@@ -18,9 +18,6 @@ RUN pip install --find-links https://girder.github.io/large_image_wheels --edita
 
 RUN if [ "$TASKS" = "1" ]; \
     then pip install --editable /opt/geoinsight-server[tasks]; \
-    # Install tile2net (may take up to 30 mins)
-    git clone https://github.com/VIDA-NYU/tile2net.git; \
-    python -m pip install ./tile2net; \
     fi
 
 # Use a directory name which will never be an import name, as isort considers this as first-party.

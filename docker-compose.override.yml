@@ -44,15 +44,6 @@ services:
     env_file: ./dev/.env.docker-compose
     volumes:
       - .:/opt/geoinsight-server
-    # NVIDIA driver and increased memory limit are required for tile2net inference
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    shm_size: 1gb
     depends_on:
       - postgres
       - rabbitmq

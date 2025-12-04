@@ -53,6 +53,10 @@ class Network(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(vector_data__dataset__project__in=projects)
+
     @property
     def dataset(self):
         return self.vector_data.dataset
@@ -109,6 +113,10 @@ class NetworkNode(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(network__dataset__project__in=projects)
+
     @property
     def dataset(self):
         return self.network.dataset
@@ -144,6 +152,10 @@ class NetworkEdge(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.id})'
+
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(network__dataset__project__in=projects)
 
     @property
     def dataset(self):

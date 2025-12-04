@@ -23,6 +23,10 @@ class RasterData(models.Model):
     def __str__(self):
         return f'{self.name} ({self.id})'
 
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(dataset__project__in=projects)
+
     def get_image_data(self, resolution: float = 1.0):
         with tempfile.TemporaryDirectory() as tmp:
             raster_path = Path(tmp, 'raster')
@@ -47,6 +51,10 @@ class VectorData(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.id})'
+
+    @classmethod
+    def filter_queryset_by_projects(cls, queryset, projects):
+        return queryset.filter(dataset__project__in=projects)
 
     def write_geojson_data(self, content: str | dict):
         if isinstance(content, str):
