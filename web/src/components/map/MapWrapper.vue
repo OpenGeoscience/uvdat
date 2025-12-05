@@ -14,7 +14,6 @@ import { useTheme } from 'vuetify';
 const mapStore = useMapStore();
 const compareStore = useMapCompareStore();
 const appStore = useAppStore();
-const layerStore = useLayerStore();
 
 
 const transformRequest = (url: string, _resourceType?: ResourceType) => {

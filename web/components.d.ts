@@ -32,5 +32,6 @@ declare module 'vue' {
     RecursiveTable: typeof import('./src/components/RecursiveTable.vue')['default']
     SideBars: typeof import('./src/components/sidebars/SideBars.vue')['default']
     SliderNumericInput: typeof import('./src/components/SliderNumericInput.vue')['default']
+    ToggleCompareMap: typeof import('./src/components/map/ToggleCompareMap.vue')['default']
   }
 }

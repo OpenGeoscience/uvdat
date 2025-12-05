@@ -1,0 +1,245 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+<script setup lang="ts">
+import { useAppStore, useLayerStore, useMapStore } from "@/store";
+import { useMapCompareStore } from "@/store/compare";
+import { computed, onMounted, Ref, ref, watch } from "vue";
+import { ToggleCompare } from "vue-maplibre-compare";
+import { oauthClient } from "@/api/auth";
+import 'vue-maplibre-compare/dist/vue-maplibre-compare.css'
+import { addProtocol, AttributionControl, Popup } from "maplibre-gl";
+import type { StyleSpecification, Map, ResourceType } from "maplibre-gl";
+import { baseURL } from "@/api/auth";
+import { useTheme } from 'vuetify';
+import { Protocol } from "pmtiles";
+import { THEMES } from "@/themes";
+
+const ATTRIBUTION = [
+  "<a target='_blank' href='https://maplibre.org/'>© MapLibre</a>",
+  "<span> | </span>",
+  "<a target='_blank' href='https://www.openstreetmap.org/copyright'>© OpenStreetMap</a>",
+];
+
+addProtocol("pmtiles", new Protocol().tile);
+
+const appStore = useAppStore();
+const mapStore = useMapStore();
+const compareStore = useMapCompareStore();
+const layerStore = useLayerStore();
+
+// MapLibre refs
+const tooltip = ref<HTMLElement>();
+const attributionControl = new AttributionControl({
+  compact: true,
+  customAttribution: ATTRIBUTION,
+});
+attributionControl.onAdd = (map: Map): HTMLElement => {
+  attributionControl._map = map;
+  const container = document.createElement("div");
+  container.innerHTML = ATTRIBUTION.join("");
+  attributionControl._container = container;
+  setAttributionControlStyle();
+  return container;
+};
+
+function setAttributionControlStyle() {
+  const container = attributionControl._container;
+  container.style.padding = "3px 8px";
+  container.style.marginRight = "5px";
+  container.style.borderRadius = "15px";
+  container.style.position = "relative";
+  container.style.right = appStore.openSidebars.includes("right")
+    ? "360px"
+    : "0px";
+  container.style.background = appStore.theme === "light" ? "white" : "black";
+  container.childNodes.forEach((child) => {
+    const childElement = child as HTMLElement;
+    childElement.style.color = appStore.theme === "light" ? "black" : "white";
+  });
+}
+
+const handleMapReady = (newMap: Map) => {
+    console.log("Compare maps ready");
+    newMap.addControl(attributionControl);
+    newMap.on('error', (response) => {
+        // AbortErrors are raised when updating style of raster layers; ignore these
+        if (response.error.message !== 'AbortError') console.error(response.error)
+    });
+
+    /**
+     * This is called on every click, and technically hides the tooltip on every click.
+     * However, if a feature layer is clicked, that event is fired after this one, and the
+     * tooltip is re-enabled and rendered with the desired contents. The net result is that
+     * this only has a real effect when the base map is clicked, as that means that no other
+     * feature layer can "catch" the event, and the tooltip stays hidden.
+     */
+    newMap.on("click", () => {mapStore.clickedFeature = undefined});
+    mapStore.map = newMap;
+    mapStore.setMapCenter(undefined, true);
+    createMapControls();
+    newMap.once('idle', () => {
+    //layerStore.updateLayersShown();
+  });
+
+}
+
+
+function createMapControls() {
+  if (!mapStore.map || !tooltip.value) {
+    throw new Error("Map or refs not initialized!");
+  }
+
+  // Add tooltip overlay
+  const popup = new Popup({
+    anchor: "bottom-left",
+    closeOnClick: false,
+    maxWidth: "none",
+    closeButton: true,
+  });
+
+  // Link overlay ref to dom, allowing for modification elsewhere
+  popup.setDOMContent(tooltip.value);
+
+  // Set store value
+  mapStore.tooltipOverlay = popup;
+}
+
+
+watch(() => appStore.theme, () => {
+  if (!mapStore.map) return;
+  const map = mapStore.getMap();
+  map.setStyle(THEMES[appStore.theme].mapStyle);
+  setAttributionControlStyle();
+  //layerStore.updateLayersShown();
+});
+
+watch(() => appStore.openSidebars, () => {
+  setAttributionControlStyle();
+});
+
+const transformRequest = (url: string, _resourceType?: ResourceType) => {
+    // Only add auth headers to our own tile requests
+    if (url.startsWith(baseURL)) {
+        return {
+            url,
+            headers: oauthClient?.authHeaders,
+        };
+    }
+    return { url };
+}
+
+const computedCompare = computed(() => compareStore.isComparing);
+const mapStats = computed(() => compareStore.mapStats);
+const mapStyleA: Ref<StyleSpecification> = ref(THEMES[appStore.theme].mapStyle);
+watch(computedCompare, (newVal) => {
+   if (!newVal && mapStore.map) {
+        mapStore.getMap()?.jumpTo({
+            center: mapStats.value?.center,
+            zoom: mapStats.value?.zoom,
+            bearing: mapStats.value?.bearing,
+            pitch: mapStats.value?.pitch,
+        });
+    } else if (newVal) {
+        mapStyleA.value = mapStore.getMap()!.getStyle();
+    }
+});
+
+watch(() => compareStore.mapAStyle, (newStyle) => {
+    if (compareStore.isComparing && mapStore.map) {
+        mapStyleA.value = newStyle;
+    }
+}, { deep: true});
+
+
+
+const mapStyleB = computed(() => compareStore.mapBStyle);
+const mapLayersA = computed(() => compareStore.mapLayersA);
+const mapLayersB = computed(() => compareStore.mapLayersB);
+
+const swiperColor = computed(() => {
+    const theme = useTheme();
+    return theme.global.current.value.colors.primary
+});
+</script>
+
+<template>
+    <div>
+        <ToggleCompare
+            :map-style-a="mapStyleA"
+            :map-style-b="mapStyleB"
+            :map-layers-a="mapLayersA"
+            :map-layers-b="mapLayersB"
+            :compare-enabled="compareStore.isComparing"
+            :camera="{
+                center: mapStats.center,
+                zoom: mapStats.zoom,
+            }"
+            :transform-request="transformRequest"
+            :swiper-options="{
+                darkMode: appStore.theme !== 'dark',
+                orientation: compareStore.orientation,
+                grabThickness: 20,
+                lineColor: swiperColor,
+                handleColor: swiperColor
+            }"
+            layer-order="bottommost"
+            @panend="compareStore.updateMapStats($event)"
+            @zoomend="compareStore.updateMapStats($event)"
+            @pitchend="compareStore.updateMapStats($event)"
+            @rotateend="compareStore.updateMapStats($event)"
+            @map-ready="handleMapReady"
+            class="map"
+        />
+
+        <div id="map-tooltip" ref="tooltip" class="tooltip pa-0">
+        <MapTooltip />
+        </div>
+    </div>
+</template>
+
+<style scoped>
+.map {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner:after {
+  content: "";
+  box-sizing: border-box;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin-top: -20px;
+  margin-left: -20px;
+  border-radius: 50%;
+  border: 5px solid rgba(180, 180, 180, 0.6);
+  border-top-color: rgba(0, 0, 0, 0.6);
+  animation: spinner 0.6s linear infinite;
+}
+
+.tooltip {
+  border-radius: 5px;
+  padding: 10px 20px;
+  word-break: break-word;
+  text-wrap: wrap;
+  width: fit-content;
+  min-width: 50px;
+  max-width: 350px;
+}
+
+.base-layer-control {
+  float: right;
+  position: absolute;
+  top: 2%;
+  right: 2%;
+  z-index: 2;
+}
+</style>

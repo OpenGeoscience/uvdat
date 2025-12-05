@@ -151,6 +151,7 @@ export const useLayerStore = defineStore('layer', () => {
   watch(selectedLayers, updateLayersShown);
   watch(framesByLayerId, updateLayersShown);
   function updateLayersShown() {
+    if (!mapStore.map) return;
     const map = mapStore.getMap();
     const userMapLayers = mapStore.getUserMapLayers();
 

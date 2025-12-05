@@ -117,6 +117,7 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
 
     const getBaseLayerSourceIds = () => {
         const map = mapStore.getMap();
+        if (!map) return [];
         return map.getStyle().layers.filter((layer: any) => {
             const layerWithSource = layer as { source?: string };
             return layerWithSource.source?.includes('openstreetmap');
@@ -147,6 +148,9 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
     // Array of Enabled map layer IDs for Map A in order
     const mapLayersA = computed(() => {
         const flatList: string[] = [];
+        if (!mapStore.map) {
+            return flatList;
+        }
         const baseLayerSourceIds = getBaseLayerSourceIds();
         layerStore.selectedLayers.forEach((layer) => {
             if (displayLayers.value.mapLayerA.find((l) => l.displayName === layer.name)?.state === false) {
@@ -168,6 +172,9 @@ export const useMapCompareStore = defineStore('mapCompare', () => {
     // Array of enabled Layers for Map B in order
     const mapLayersB = computed(() => {
         const flatList: string[] = [];
+        if (!mapStore.map) {
+            return flatList;
+        }
         const baseLayerSourceIds = getBaseLayerSourceIds();
         layerStore.selectedLayers.forEach((layer) => {
             if (displayLayers.value.mapLayerB.find((l) => l.displayName === layer.name)?.state === false) {
