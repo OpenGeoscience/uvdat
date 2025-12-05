@@ -1,15 +1,27 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-import { Map, Popup, AttributionControl, addProtocol } from "maplibre-gl";
+import { Map, Popup, AttributionControl, addProtocol, ResourceType } from "maplibre-gl";
 import { Protocol } from "pmtiles";
-import { onMounted, ref, watch } from "vue";
+import { defineProps, onMounted, ref, watch } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import MapTooltip from "./MapTooltip.vue";
-import { oauthClient } from "@/api/auth";
 import { THEMES } from "@/themes";
 
 import { useAppStore, useMapStore, useLayerStore } from "@/store";
+
+const props = withDefaults(
+  defineProps<{
+    transformRequest?: (
+      url: string,
+      resourceType?: ResourceType
+    ) => { url: string; headers?: Record<string, string> }
+  }>(),
+  {
+    transformRequest: undefined
+  }
+);
+
 const appStore = useAppStore();
 const mapStore = useMapStore();
 const layerStore = useLayerStore();
@@ -59,12 +71,7 @@ function createMap() {
     attributionControl: false,
     preserveDrawingBuffer: true, // allows screenshots
     // transformRequest adds auth headers to tile requests
-    transformRequest: (url) => {
-      return {
-        url,
-        headers: oauthClient?.authHeaders,
-      };
-    },
+    transformRequest: props.transformRequest,
     style: THEMES[appStore.theme].mapStyle,
     center: [0, 0],
     zoom: 1, // Initial zoom level
