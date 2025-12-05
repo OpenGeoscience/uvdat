@@ -6,7 +6,7 @@ This guide walks you through setting up GeoInsight for local development using D
 
 - [Docker](https://docs.docker.com/get-docker/) (v20.10+)
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0+)
-- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [Node.js](https://nodejs.org/) (v22+ recommended)
 - [npm](https://www.npmjs.com/)
 
 ---
@@ -18,10 +18,6 @@ This guide walks you through setting up GeoInsight for local development using D
 ```bash
 # Copy environment configuration
 cp web/.env.example web/.env
-
-# Install frontend dependencies
-cd web && npm i
-cd ..
 ```
 
 ### 2. Build and Start Docker Containers
@@ -80,7 +76,7 @@ docker compose up
 docker compose --profile gpu up --scale celery=0
 ```
 
-> **Note:** GPU mode requires NVIDIA drivers and [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) runtime. This enables accelerated tile2net inference.
+> **Note:** GPU mode requires NVIDIA drivers and [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) runtime.
 
 ### Access Points
 
@@ -160,4 +156,4 @@ This means GPU mode was requested but NVIDIA drivers aren't available. Use the d
 docker compose up
 ```
 
-GPU acceleration is optional and only needed for faster tile2net inference.
+GPU acceleration is optional and only needed for accelerated inferencing.
