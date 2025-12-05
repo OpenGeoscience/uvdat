@@ -39,26 +39,30 @@ While the containers are running, open a **separate terminal** and run:
 
 ```bash
 # Apply database migrations
-docker compose run --rm django ./manage.py migrate
+docker compose run --rm django python manage.py migrate
 
-# Create an admin user
-docker compose run --rm django ./manage.py createsuperuser
+# Create an admin user (you will be prompted for email and password)
+docker compose run --rm django python manage.py createsuperuser
 
 # Create OAuth client for authentication
-docker compose run --rm django ./manage.py makeclient
+docker compose run --rm django python manage.py makeclient
 ```
+
+> **Note:** The `createsuperuser` command prompts you to create login credentials (email and password). Use these credentials to sign into both the Admin Panel and User Interface. If you forget your password, run `createsuperuser` again to create a new admin account.
 
 ### 4. Load Sample Data (Optional)
 
+The ingest command loads datasets, charts, and project configuration from an ingestion file:
+
 ```bash
-docker compose run --rm django ./manage.py ingest {JSON_FILE}
+docker compose run --rm django python manage.py ingest {JSON_FILE}
 ```
 
-Available sample datasets:
-- `sample_data/multiframe_test.json`
-- `sample_data/boston_floods.json`
-- `sample_data/la_wildfires.json`
-- `sample_data/new_york_energy/data.json`
+Available ingest options (paths relative to `sample_data/`):
+- `multiframe_test.json`
+- `boston_floods.json`
+- `la_wildfires.json`
+- `new_york_energy/data.json`
 
 ---
 
@@ -73,7 +77,7 @@ docker compose up
 
 **With GPU acceleration (NVIDIA systems only):**
 ```bash
-docker compose up --scale celery=0 --profile gpu
+docker compose --profile gpu up --scale celery=0
 ```
 
 > **Note:** GPU mode requires NVIDIA drivers and [nvidia-docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) runtime. This enables accelerated tile2net inference.
@@ -82,15 +86,18 @@ docker compose up --scale celery=0 --profile gpu
 
 | Service | URL |
 |---------|-----|
-| Admin Panel | http://localhost:8000/admin/ |
 | User Interface | http://localhost:8080/ |
+| Admin Panel | http://localhost:8000/admin/ |
+| API Documentation | http://localhost:8000/api/docs/swagger/ |
+
+Log in using the credentials you created with `createsuperuser`.
 
 ### Stop the Services
 
 Press `Ctrl+C` in the terminal running `docker compose up`, or run:
 
 ```bash
-docker compose down
+docker compose stop
 ```
 
 ---
@@ -107,7 +114,7 @@ docker compose pull
 docker compose build --pull --no-cache
 
 # Apply any new migrations
-docker compose run --rm django ./manage.py migrate
+docker compose run --rm django python manage.py migrate
 ```
 
 ---
